@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Happy Place Carpentry">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#1F3F3C"/><stop offset="1" stop-color="#162b29"/></linearGradient></defs>
+  <rect width="1600" height="900" fill="url(#g)"/>
+  <circle cx="1280" cy="180" r="306" fill="#d99a4e" opacity="0.22"/>
+  
+        <rect x="0" y="558" width="1600" height="342" fill="#caa97e"/>
+        <rect x="96" y="522" width="1408" height="54" fill="#9c7a52"/>
+        <rect x="160" y="306" width="40" height="234" fill="#7c5a3a"/>
+        <rect x="1408" y="306" width="40" height="234" fill="#7c5a3a"/>
+        <rect x="160" y="306" width="1280" height="27" fill="#9c7a52"/>
+        <rect x="480" y="360" width="640" height="162" fill="#e9d8bf"/>
+  <text x="96" y="774" font-family="Georgia, serif" font-size="65" font-weight="700" fill="#f4efe6">Happy Place Carpentry</text>
+  <text x="96" y="839" font-family="Arial, sans-serif" font-size="27" fill="rgba(244,239,230,0.72)">Custom carpentry in the Willamette Valley</text>
+</svg>

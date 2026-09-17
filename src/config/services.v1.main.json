@@ -1,0 +1,891 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-07-22T00:00:00.000Z",
+  "services": [
+    {
+      "id": "decks",
+      "name": "Decks",
+      "slug": "decks",
+      "description": "A deck should become part of the way you use your home, not something that only looks good in listing photos.",
+      "icon": "deck",
+      "featured": true,
+      "homepageEligible": true,
+      "order": 6,
+      "capabilities": {
+        "paintableSurface": true,
+        "surfaceType": "wood",
+        "paintingType": "deck_stain",
+        "estimationAuthority": "building"
+      },
+      "estimateQuestions": [
+        {
+          "id": "deck_intent",
+          "label": "What would you like done?",
+          "type": "select",
+          "category": "intent",
+          "isScopeQuestion": true,
+          "options": [
+            "Build new deck",
+            "Replace existing deck",
+            "Repair existing deck",
+            "Refinish or stain deck"
+          ],
+          "next": {
+            "Build new deck": "deck_new_size",
+            "Replace existing deck": "deck_replace_reason",
+            "Repair existing deck": "deck_repair_what",
+            "Refinish or stain deck": "deck_finish_type"
+          }
+        },
+        {
+          "id": "deck_new_size",
+          "label": "Approximately how large?",
+          "type": "number",
+          "category": "scope",
+          "measurementType": "area",
+          "measurementUnit": "square_feet",
+          "next": {
+            "*": "deck_new_material"
+          }
+        },
+        {
+          "id": "deck_new_material",
+          "label": "What material are you thinking?",
+          "type": "select",
+          "category": "material",
+          "options": [
+            "Cedar",
+            "Pressure treated",
+            "Composite",
+            "Not sure"
+          ],
+          "next": {
+            "*": "deck_new_elevation"
+          }
+        },
+        {
+          "id": "deck_new_elevation",
+          "label": "What elevation?",
+          "type": "select",
+          "category": "intent",
+          "options": [
+            "Ground level",
+            "Raised (2-4 feet)",
+            "Second story",
+            "Not sure"
+          ]
+        },
+        {
+          "id": "deck_replace_reason",
+          "label": "Why are you replacing it?",
+          "type": "select",
+          "category": "condition",
+          "options": [
+            "Rot",
+            "Structural issues",
+            "Just old",
+            "Different style",
+            "Storm damage"
+          ],
+          "next": {
+            "*": "deck_replace_size"
+          }
+        },
+        {
+          "id": "deck_replace_size",
+          "label": "Approximately how large?",
+          "type": "number",
+          "category": "scope",
+          "measurementType": "area",
+          "measurementUnit": "square_feet"
+        },
+        {
+          "id": "deck_repair_what",
+          "label": "What needs repair?",
+          "type": "select",
+          "category": "condition",
+          "options": [
+            "Rotting boards",
+            "Structural issues",
+            "Railings or stairs",
+            "Multiple issues"
+          ],
+          "next": {
+            "*": "deck_repair_size"
+          }
+        },
+        {
+          "id": "deck_repair_size",
+          "label": "About how much is affected?",
+          "type": "select",
+          "category": "scope",
+          "options": [
+            "A small area",
+            "About half the deck",
+            "Most of the deck"
+          ]
+        },
+        {
+          "id": "deck_finish_type",
+          "label": "What finish are you planning?",
+          "type": "select",
+          "category": "intent",
+          "options": [
+            "Transparent stain",
+            "Semi-transparent stain",
+            "Solid stain",
+            "Paint",
+            "Not sure"
+          ],
+          "next": {
+            "*": "deck_finish_condition"
+          }
+        },
+        {
+          "id": "deck_finish_condition",
+          "label": "What condition is the deck in?",
+          "type": "select",
+          "category": "condition",
+          "options": [
+            "Just needs a fresh coat",
+            "Peeling or faded",
+            "Cracking or weathered",
+            "Has damaged boards"
+          ],
+          "next": {
+            "*": "deck_finish_size"
+          }
+        },
+        {
+          "id": "deck_finish_size",
+          "label": "Approximately how large?",
+          "type": "number",
+          "category": "scope",
+          "measurementType": "area",
+          "measurementUnit": "square_feet"
+        }
+      ],
+      "archived": true
+    },
+    {
+      "id": "fences",
+      "name": "Fencing",
+      "slug": "fences",
+      "description": "A fence should stay straight, the gate should close without dragging, and it should still look good after a few Oregon winters.",
+      "icon": "fence",
+      "featured": true,
+      "homepageEligible": true,
+      "order": 5,
+      "archived": false,
+      "capabilities": {
+        "paintableSurface": true,
+        "surfaceType": "wood",
+        "paintingType": "fence_stain",
+        "estimationAuthority": "building"
+      },
+      "estimateQuestions": [
+        {
+          "id": "fence_intent",
+          "label": "What would you like done?",
+          "type": "select",
+          "category": "intent",
+          "isScopeQuestion": true,
+          "options": [
+            "Build new fence",
+            "Replace existing fence",
+            "Repair existing fence",
+            "Refinish or stain fence"
+          ],
+          "next": {
+            "Build new fence": "fence_new_length",
+            "Replace existing fence": "fence_replace_reason",
+            "Repair existing fence": "fence_repair_what",
+            "Refinish or stain fence": "fence_finish_type"
+          }
+        },
+        {
+          "id": "fence_new_length",
+          "label": "Approximately how much fencing?",
+          "type": "number",
+          "category": "scope",
+          "measurementType": "length",
+          "measurementUnit": "feet",
+          "next": {
+            "*": "fence_new_material"
+          }
+        },
+        {
+          "id": "fence_new_material",
+          "label": "What material are you thinking?",
+          "type": "select",
+          "category": "material",
+          "options": [
+            "Cedar",
+            "Pressure treated",
+            "Vinyl",
+            "Metal",
+            "Composite",
+            "Not sure"
+          ],
+          "next": {
+            "*": "fence_new_purpose"
+          }
+        },
+        {
+          "id": "fence_new_purpose",
+          "label": "What's the fence mainly for?",
+          "type": "select",
+          "category": "intent",
+          "options": [
+            "Privacy",
+            "Marking the property line",
+            "Containing pets or livestock",
+            "Security",
+            "Decorative"
+          ]
+        },
+        {
+          "id": "fence_replace_reason",
+          "label": "Why are you replacing it?",
+          "type": "select",
+          "category": "condition",
+          "options": [
+            "Storm damage",
+            "Rot",
+            "Leaning or heaving",
+            "Just old",
+            "Different style"
+          ],
+          "next": {
+            "*": "fence_replace_material"
+          }
+        },
+        {
+          "id": "fence_replace_material",
+          "label": "What material are you thinking?",
+          "type": "select",
+          "category": "material",
+          "options": [
+            "Cedar",
+            "Pressure treated",
+            "Vinyl",
+            "Metal",
+            "Composite",
+            "Not sure"
+          ],
+          "next": {
+            "*": "fence_replace_length"
+          }
+        },
+        {
+          "id": "fence_replace_length",
+          "label": "Approximately how much fencing?",
+          "type": "number",
+          "category": "scope",
+          "measurementType": "length",
+          "measurementUnit": "feet"
+        },
+        {
+          "id": "fence_repair_what",
+          "label": "What needs repair?",
+          "type": "select",
+          "category": "condition",
+          "options": [
+            "Broken or missing boards",
+            "Leaning posts",
+            "Gate not closing right",
+            "Multiple issues"
+          ],
+          "next": {
+            "*": "fence_repair_material"
+          }
+        },
+        {
+          "id": "fence_repair_material",
+          "label": "What material are you thinking?",
+          "type": "select",
+          "category": "material",
+          "options": [
+            "Cedar",
+            "Pressure treated",
+            "Vinyl",
+            "Metal",
+            "Composite",
+            "Not sure"
+          ],
+          "next": {
+            "*": "fence_repair_extent"
+          }
+        },
+        {
+          "id": "fence_repair_extent",
+          "label": "About how much is affected?",
+          "type": "select",
+          "category": "scope",
+          "options": [
+            "A single section",
+            "A few sections",
+            "Most of the fence"
+          ]
+        },
+        {
+          "id": "fence_finish_type",
+          "label": "What finish are you planning?",
+          "type": "select",
+          "category": "intent",
+          "options": [
+            "Transparent stain",
+            "Semi-transparent stain",
+            "Solid stain",
+            "Paint",
+            "Not sure"
+          ],
+          "next": {
+            "*": "fence_finish_condition"
+          }
+        },
+        {
+          "id": "fence_finish_condition",
+          "label": "What condition is the fence in?",
+          "type": "select",
+          "category": "condition",
+          "options": [
+            "Just needs a fresh coat",
+            "Peeling or faded",
+            "Cracking or weathered",
+            "Has damaged boards"
+          ],
+          "next": {
+            "*": "fence_finish_length"
+          }
+        },
+        {
+          "id": "fence_finish_length",
+          "label": "Approximately how much fencing?",
+          "type": "number",
+          "category": "scope",
+          "measurementType": "length",
+          "measurementUnit": "feet"
+        }
+      ]
+    },
+    {
+      "id": "bathrooms",
+      "name": "Bathroom Remodeling",
+      "slug": "bathrooms",
+      "description": "Start every morning in a space that works better, feels brighter, and makes everyday routines a little easier.",
+      "icon": "bathroom",
+      "featured": true,
+      "homepageEligible": true,
+      "order": 3,
+      "archived": true,
+      "capabilities": {
+        "paintableSurface": true,
+        "surfaceType": "interior",
+        "paintingType": "interior",
+        "estimationAuthority": "building"
+      },
+      "estimateQuestions": [
+        {
+          "id": "bathroom_scope",
+          "label": "What type of bathroom work do you need?",
+          "type": "select",
+          "options": [
+            "Full remodel",
+            "Shower/tub only",
+            "Vanity + fixtures",
+            "Tile + paint",
+            "Not sure"
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "painting",
+      "name": "Painting",
+      "slug": "painting",
+      "description": "Most paint failures start before the first coat goes on. We clean, sand, repair damaged areas, and prime everything first, because good prep is what keeps paint on the house.",
+      "icon": "paint-brush",
+      "featured": true,
+      "homepageEligible": true,
+      "order": 1,
+      "archived": false,
+      "capabilities": {
+        "paintableSurface": true,
+        "surfaceType": "general",
+        "paintingType": "interior",
+        "estimationAuthority": "painting"
+      },
+      "skipsIntentStep": true,
+      "defaultProjectIntent": "Paint / Stain / Refinish existing",
+      "estimateQuestions": [
+        {
+          "id": "painting_target",
+          "label": "What are you painting?",
+          "type": "select",
+          "category": "intent",
+          "isScopeQuestion": true,
+          "options": [
+            "Exterior",
+            "Interior",
+            "Cabinets",
+            "Deck",
+            "Fence",
+            "Other"
+          ],
+          "next": {
+            "Exterior": "painting_ext_surface",
+            "Interior": "painting_int_rooms",
+            "Cabinets": "painting_cab_count",
+            "Deck": "deck_finish_type",
+            "Fence": "fence_finish_type"
+          }
+        },
+        {
+          "id": "painting_ext_surface",
+          "label": "Which exterior surfaces?",
+          "type": "select",
+          "category": "intent",
+          "options": [
+            "Siding",
+            "Trim",
+            "Doors",
+            "Garage",
+            "Whole house"
+          ],
+          "next": {
+            "*": "painting_ext_condition"
+          }
+        },
+        {
+          "id": "painting_ext_condition",
+          "label": "Current condition?",
+          "type": "select",
+          "category": "condition",
+          "options": [
+            "Ready for paint",
+            "Peeling paint",
+            "Bare wood",
+            "Water damage",
+            "Chalky surface"
+          ],
+          "next": {
+            "*": "painting_ext_prep"
+          }
+        },
+        {
+          "id": "painting_ext_prep",
+          "label": "How much prep do you think it needs?",
+          "type": "select",
+          "category": "scope",
+          "options": [
+            "Just a light wash",
+            "Scraping and sanding",
+            "Wood repairs needed",
+            "Not sure"
+          ]
+        },
+        {
+          "id": "painting_int_rooms",
+          "label": "How many rooms, roughly?",
+          "type": "number",
+          "category": "scope",
+          "measurementType": "count",
+          "measurementUnit": "rooms",
+          "next": {
+            "*": "painting_int_condition"
+          }
+        },
+        {
+          "id": "painting_int_condition",
+          "label": "Current condition?",
+          "type": "select",
+          "category": "condition",
+          "options": [
+            "Ready for paint",
+            "Needs patching or repair",
+            "Has smoke or water stains",
+            "Not sure"
+          ]
+        },
+        {
+          "id": "painting_cab_count",
+          "label": "About how many cabinets or doors?",
+          "type": "number",
+          "category": "scope",
+          "measurementType": "count",
+          "measurementUnit": "doors",
+          "next": {
+            "*": "painting_cab_finish"
+          }
+        },
+        {
+          "id": "painting_cab_finish",
+          "label": "Current finish?",
+          "type": "select",
+          "category": "condition",
+          "options": [
+            "Painted",
+            "Stained wood",
+            "Laminate",
+            "Not sure"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finish-carpentry",
+      "name": "Built-Ins & Finish Carpentry",
+      "slug": "finish-carpentry",
+      "description": "The best built-ins don't draw attention to themselves. They look like they were part of the house from the beginning.",
+      "icon": "shelf",
+      "featured": true,
+      "homepageEligible": true,
+      "order": 5,
+      "archived": true,
+      "capabilities": {
+        "paintableSurface": true,
+        "surfaceType": "wood",
+        "paintingType": "interior",
+        "estimationAuthority": "building"
+      },
+      "estimateQuestions": [
+        {
+          "id": "finish_carpentry_scope",
+          "label": "What type of built-in or trim work do you need?",
+          "type": "select",
+          "options": [
+            "Built-in shelving",
+            "Trim & molding",
+            "Crown molding",
+            "Custom storage",
+            "Not sure"
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "historic-restoration",
+      "name": "Historic Restoration",
+      "slug": "historic-restoration",
+      "description": "Old houses usually tell you how they were built. We pay attention before we start replacing things that don't need replacing.",
+      "icon": "restoration",
+      "featured": false,
+      "homepageEligible": false,
+      "order": 9,
+      "archived": true,
+      "capabilities": {
+        "paintableSurface": true,
+        "surfaceType": "mixed",
+        "paintingType": "interior",
+        "estimationAuthority": "building"
+      },
+      "estimateQuestions": [
+        {
+          "id": "historic_restoration_scope",
+          "label": "What type of historic restoration work do you need?",
+          "type": "select",
+          "options": [
+            "Full restoration",
+            "Partial restoration",
+            "Structural repair",
+            "Cosmetic restoration",
+            "Not sure"
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "repairs",
+      "name": "Repairs",
+      "slug": "repairs",
+      "description": "Small problems usually tell you about a bigger one. Fix them early and they're repairs. Wait too long and they become replacements.",
+      "icon": "repair",
+      "featured": true,
+      "homepageEligible": true,
+      "order": 2,
+      "archived": false,
+      "capabilities": {
+        "paintableSurface": false,
+        "estimationAuthority": "building"
+      },
+      "skipsIntentStep": true,
+      "defaultProjectIntent": "Restore / Repair existing",
+      "estimateQuestions": [
+        {
+          "id": "repair_area",
+          "label": "What needs attention?",
+          "type": "select",
+          "options": [
+            "Wall",
+            "Door",
+            "Window",
+            "Rot",
+            "Trim",
+            "Siding",
+            "Drywall",
+            "Floor",
+            "Fence",
+            "Not sure"
+          ],
+          "required": true
+        },
+        {
+          "id": "repair_urgency",
+          "label": "How urgent is this repair?",
+          "type": "select",
+          "options": [
+            "Emergency - needs immediate attention",
+            "Within a week",
+            "Within a month",
+            "Flexible timing"
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "pergolas",
+      "name": "Steel-Framed Covered Courtyards",
+      "slug": "pergolas",
+      "description": "Oregon weather doesn't stop because it's the weekend. A covered courtyard gives you an outdoor space you can actually use most of the year.",
+      "icon": "pergola",
+      "featured": true,
+      "homepageEligible": true,
+      "order": 7,
+      "archived": true,
+      "capabilities": {
+        "paintableSurface": true,
+        "surfaceType": "wood",
+        "paintingType": "exterior",
+        "estimationAuthority": "building"
+      },
+      "estimateQuestions": [
+        {
+          "id": "pergola_replacement",
+          "label": "Is this replacing an existing structure?",
+          "type": "select",
+          "options": [
+            "No - new construction",
+            "Yes - replacing existing structure",
+            "Not sure"
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "adus",
+      "name": "ADUs",
+      "slug": "adus",
+      "description": "Whether it's for family or rental income, an ADU has to fit the property before it fits the floor plan.",
+      "icon": "home",
+      "featured": false,
+      "homepageEligible": false,
+      "order": 10,
+      "archived": true,
+      "capabilities": {
+        "paintableSurface": true,
+        "surfaceType": "mixed",
+        "paintingType": "interior",
+        "estimationAuthority": "building"
+      },
+      "estimateQuestions": [
+        {
+          "id": "adu_scope",
+          "label": "What type of ADU work do you need?",
+          "type": "select",
+          "options": [
+            "New construction",
+            "Conversion (garage/basement)",
+            "Addition to existing",
+            "Not sure"
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "pole-barns",
+      "name": "Pole Barns",
+      "slug": "pole-barns",
+      "description": "Equipment, a workshop, livestock, storage \u00e2\u20ac\u201d every pole barn starts with how you're actually going to use it.",
+      "icon": "barn",
+      "featured": false,
+      "homepageEligible": false,
+      "order": 11,
+      "archived": true,
+      "capabilities": {
+        "paintableSurface": true,
+        "surfaceType": "wood",
+        "paintingType": "exterior",
+        "estimationAuthority": "building"
+      },
+      "estimateQuestions": [
+        {
+          "id": "pole_barn_purpose",
+          "label": "What will the pole barn be used for?",
+          "type": "select",
+          "options": [
+            "Storage / equipment",
+            "Livestock",
+            "Workshop",
+            "Vehicle storage",
+            "Not sure"
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "flooring",
+      "name": "Flooring",
+      "slug": "flooring",
+      "description": "Good flooring starts underneath the flooring. If the subfloor isn't flat and solid, the finish floor won't stay that way either.",
+      "icon": "flooring",
+      "featured": true,
+      "homepageEligible": true,
+      "order": 4,
+      "archived": true,
+      "capabilities": {
+        "paintableSurface": false,
+        "estimationAuthority": "building"
+      },
+      "estimateQuestions": [
+        {
+          "id": "flooring_type",
+          "label": "What type of flooring do you need?",
+          "type": "select",
+          "options": [
+            "Hardwood",
+            "Laminate / LVP",
+            "Tile",
+            "Not sure"
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "restoration",
+      "name": "Restoration",
+      "slug": "restoration",
+      "description": "Bring worn surfaces back to life. We refinish fences, decks, and other woodwork to protect your investment and make your home look like new again.",
+      "icon": "restoration",
+      "featured": true,
+      "homepageEligible": true,
+      "order": 3,
+      "archived": false,
+      "capabilities": {
+        "paintableSurface": true,
+        "surfaceType": "wood",
+        "paintingType": "fence_stain",
+        "estimationAuthority": "building"
+      },
+      "skipsIntentStep": true,
+      "defaultProjectIntent": "Paint / Stain / Refinish existing",
+      "estimateQuestions": [
+        {
+          "id": "restoration_target",
+          "label": "What would you like restored or refinished?",
+          "type": "select",
+          "category": "intent",
+          "isScopeQuestion": true,
+          "options": [
+            "Fence",
+            "Deck",
+            "Other"
+          ],
+          "next": {
+            "Fence": "fence_finish_type",
+            "Deck": "deck_finish_type"
+          }
+        }
+      ]
+    },
+    {
+      "id": "drywall",
+      "name": "Drywall",
+      "slug": "drywall",
+      "description": "From small hole repairs to full installations, we handle drywall work that's smooth, seamless, and ready for paint.",
+      "icon": "wall",
+      "featured": true,
+      "homepageEligible": true,
+      "order": 4,
+      "archived": false,
+      "capabilities": {
+        "paintableSurface": false,
+        "estimationAuthority": "building"
+      },
+      "estimateQuestions": [
+        {
+          "id": "drywall_scope",
+          "label": "What's going on with the drywall?",
+          "type": "select",
+          "category": "intent",
+          "isScopeQuestion": true,
+          "options": [
+            "New installation",
+            "Repair",
+            "Water damage",
+            "Texture matching"
+          ],
+          "next": {
+            "New installation": "drywall_area",
+            "Repair": "drywall_repair_size",
+            "Water damage": "drywall_damage_extent",
+            "Texture matching": "drywall_texture_type"
+          }
+        },
+        {
+          "id": "drywall_area",
+          "label": "Approximately how large?",
+          "type": "number",
+          "category": "scope",
+          "measurementType": "area",
+          "measurementUnit": "square_feet"
+        },
+        {
+          "id": "drywall_repair_size",
+          "label": "About how large is the repair area?",
+          "type": "select",
+          "category": "scope",
+          "options": [
+            "Small hole or patch",
+            "Several holes",
+            "Large section",
+            "Multiple rooms"
+          ]
+        },
+        {
+          "id": "drywall_damage_extent",
+          "label": "How extensive is the water damage?",
+          "type": "select",
+          "category": "condition",
+          "options": [
+            "Small spot",
+            "One wall section",
+            "Multiple walls",
+            "Entire room"
+          ]
+        },
+        {
+          "id": "drywall_texture_type",
+          "label": "What texture needs matching?",
+          "type": "select",
+          "category": "material",
+          "options": [
+            "Smooth",
+            "Orange peel",
+            "Knockdown",
+            "Popcorn",
+            "Not sure"
+          ]
+        }
+      ]
+    }
+  ]
+}

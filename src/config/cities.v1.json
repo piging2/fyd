@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-07-22T00:00:00.000Z",
+  "cities": [
+    {
+      "id": "philomath",
+      "name": "Philomath",
+      "county": "Benton County",
+      "state": "Oregon",
+      "zipCodes": ["97370"],
+      "featured": true,
+      "homepageEligible": true,
+      "order": 1
+    },
+    {
+      "id": "albany",
+      "name": "Albany",
+      "county": "Linn County",
+      "state": "Oregon",
+      "zipCodes": ["97321", "97322"],
+      "featured": true,
+      "homepageEligible": true,
+      "order": 2
+    },
+    {
+      "id": "monmouth",
+      "name": "Monmouth",
+      "county": "Polk County",
+      "state": "Oregon",
+      "zipCodes": ["97361"],
+      "featured": true,
+      "homepageEligible": true,
+      "order": 3
+    },
+    {
+      "id": "independence",
+      "name": "Independence",
+      "county": "Polk County",
+      "state": "Oregon",
+      "zipCodes": ["97351"],
+      "featured": true,
+      "homepageEligible": true,
+      "order": 4
+    }
+  ]
+}

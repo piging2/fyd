@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-08-06T00:00:00Z",
+  "presets": {
+    "grid": {
+      "columns": 3,
+      "gap": "1rem"
+    },
+    "masonry": {
+      "columns": 2,
+      "gap": "1rem"
+    }
+  }
+}

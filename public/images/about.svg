@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="Taylor & Lanie">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#1F3F3C"/><stop offset="1" stop-color="#162b29"/></linearGradient></defs>
+  <rect width="1200" height="900" fill="url(#g)"/>
+  <circle cx="960" cy="180" r="306" fill="#d99a4e" opacity="0.22"/>
+  
+        <circle cx="600" cy="378" r="144" fill="#caa97e"/>
+        <path d="M288 828 Q600 522 912 828 Z" fill="#9a8466"/>
+  <text x="72" y="774" font-family="Georgia, serif" font-size="65" font-weight="700" fill="#f4efe6">Taylor & Lanie</text>
+  <text x="72" y="839" font-family="Arial, sans-serif" font-size="27" fill="rgba(244,239,230,0.72)">The people behind the work</text>
+</svg>

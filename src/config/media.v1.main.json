@@ -1,0 +1,3686 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-09-02T01:30:00.000Z",
+  "media": [
+    {
+      "id": "fences-001-hero",
+      "driveId": "fences-001-master",
+      "filename": "FENCE BUILD.jpg",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/fences/FENCE BUILD-1080.webp",
+        "web": "/images/projects/fences/FENCE BUILD-1080.webp",
+        "webp": "/images/projects/fences/FENCE BUILD-1080.webp",
+        "avif": "/images/projects/fences/FENCE BUILD-1080.avif",
+        "thumbnail": "/images/projects/fences/FENCE BUILD-thumb.webp"
+      },
+      "alt": "Completed fence installation",
+      "description": "Professional fence construction and installation",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "fences-001",
+      "tags": [
+        "fences",
+        "construction",
+        "corvallis"
+      ],
+      "roles": [
+        "hero"
+      ],
+      "featured": true,
+      "heroEligible": true,
+      "homepageEligible": true,
+      "createdAt": "2026-07-20T00:00:00.000Z",
+      "updatedAt": "2026-07-20T00:00:00.000Z",
+      "uploadedAt": "2026-07-20T00:00:00.000Z",
+      "fileSize": 282546,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "802ccc84e0637b56cdf517cc6ca39168e71681d24d523eaa5e7a255b3f10433a",
+      "storage": "static"
+    },
+    {
+      "id": "fences-001-before",
+      "driveId": "drive-c266e5096e43",
+      "filename": "FENCE BEFORE.jpg",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/fences/FENCE BUILD-1080.webp",
+        "web": "/images/projects/fences/FENCE BUILD-1080.webp",
+        "webp": "/images/projects/fences/FENCE BUILD-1080.webp",
+        "avif": "/images/projects/fences/FENCE BUILD-1080.avif",
+        "thumbnail": "/images/projects/fences/FENCE BUILD-thumb.webp"
+      },
+      "alt": "Before fence installation",
+      "description": "Property before fence construction",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "fences-001",
+      "tags": [
+        "fences",
+        "before",
+        "corvallis"
+      ],
+      "roles": [
+        "before"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-20T00:00:00.000Z",
+      "updatedAt": "2026-07-20T00:00:00.000Z",
+      "uploadedAt": "2026-07-20T00:00:00.000Z",
+      "fileSize": 282546,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "802ccc84e0637b56cdf517cc6ca39168e71681d24d523eaa5e7a255b3f10433a",
+      "storage": "static"
+    },
+    {
+      "id": "fences-001-after",
+      "driveId": "drive-7a4b33c8b2bb",
+      "filename": "FENCE AFTER.jpg",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/fences/FENCEREBUILDMATCHINGSTAIN-1080.webp",
+        "web": "/images/projects/fences/FENCEREBUILDMATCHINGSTAIN-1080.webp",
+        "webp": "/images/projects/fences/FENCEREBUILDMATCHINGSTAIN-1080.webp",
+        "avif": "/images/projects/fences/FENCEREBUILDMATCHINGSTAIN-1080.avif",
+        "thumbnail": "/images/projects/fences/FENCEREBUILDMATCHINGSTAIN-thumb.webp"
+      },
+      "alt": "After fence installation",
+      "description": "Completed fence with matching stain",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "fences-001",
+      "tags": [
+        "fences",
+        "after",
+        "corvallis"
+      ],
+      "roles": [
+        "after"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-20T00:00:00.000Z",
+      "updatedAt": "2026-07-20T00:00:00.000Z",
+      "uploadedAt": "2026-07-20T00:00:00.000Z",
+      "fileSize": 100492,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "d2824f848e00a433307b704281ef1380408ab5fcf9edd92e9f7f46caf2d9128f",
+      "storage": "static"
+    },
+    {
+      "id": "fences-001-matching",
+      "driveId": "fences-001-variant-001",
+      "filename": "FENCEREBUILDMATCHINGSTAIN.png",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/fences/FENCEREBUILDMATCHINGSTAIN-1080.webp",
+        "web": "/images/projects/fences/FENCEREBUILDMATCHINGSTAIN-1080.webp",
+        "webp": "/images/projects/fences/FENCEREBUILDMATCHINGSTAIN-1080.webp",
+        "avif": "/images/projects/fences/FENCEREBUILDMATCHINGSTAIN-1080.avif",
+        "thumbnail": "/images/projects/fences/FENCEREBUILDMATCHINGSTAIN-thumb.webp"
+      },
+      "alt": "Fence with matching stain",
+      "description": "Fence rebuild with matching stain finish",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "fences-001",
+      "tags": [
+        "fences",
+        "staining",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-20T00:00:00.000Z",
+      "updatedAt": "2026-07-20T00:00:00.000Z",
+      "uploadedAt": "2026-07-20T00:00:00.000Z",
+      "fileSize": 100492,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "d2824f848e00a433307b704281ef1380408ab5fcf9edd92e9f7f46caf2d9128f",
+      "storage": "static"
+    },
+    {
+      "id": "builtins-001-hero",
+      "driveId": "builtins-001-master",
+      "filename": "FINISHEDCARPENTRY.png",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/built-ins/FINISHEDCARPENTRY-1080.webp",
+        "web": "/images/projects/built-ins/FINISHEDCARPENTRY-1080.webp",
+        "webp": "/images/projects/built-ins/FINISHEDCARPENTRY-1080.webp",
+        "avif": "/images/projects/built-ins/FINISHEDCARPENTRY-1080.avif",
+        "thumbnail": "/images/projects/built-ins/FINISHEDCARPENTRY-thumb.webp"
+      },
+      "alt": "Custom built-in shelving",
+      "description": "Professional custom built-in shelving installation",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "builtins-001",
+      "tags": [
+        "built-ins",
+        "custom-shelving",
+        "corvallis"
+      ],
+      "roles": [
+        "hero"
+      ],
+      "featured": true,
+      "heroEligible": true,
+      "homepageEligible": true,
+      "createdAt": "2026-07-19T00:00:00.000Z",
+      "updatedAt": "2026-07-19T00:00:00.000Z",
+      "uploadedAt": "2026-07-19T00:00:00.000Z",
+      "fileSize": 174430,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "ae917cfeb9ceb14394c7632e6073d3cd26ee6593029481c43cba785e005691ed",
+      "storage": "static"
+    },
+    {
+      "id": "builtins-001-secondary",
+      "driveId": "builtins-001-variant-001",
+      "filename": "FINISHEDCARPENTRY0.png",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/built-ins/FINISHEDCARPENTRY0-1080.webp",
+        "web": "/images/projects/built-ins/FINISHEDCARPENTRY0-1080.webp",
+        "webp": "/images/projects/built-ins/FINISHEDCARPENTRY0-1080.webp",
+        "avif": "/images/projects/built-ins/FINISHEDCARPENTRY0-1080.avif",
+        "thumbnail": "/images/projects/built-ins/FINISHEDCARPENTRY0-thumb.webp"
+      },
+      "alt": "Custom built-in shelving detail",
+      "description": "Detail of custom built-in shelving work",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "builtins-001",
+      "tags": [
+        "built-ins",
+        "custom-shelving",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-19T00:00:00.000Z",
+      "updatedAt": "2026-07-19T00:00:00.000Z",
+      "uploadedAt": "2026-07-19T00:00:00.000Z",
+      "fileSize": 51376,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "4dbea1df879f0a54aba9c32c63edf0f0027f55789f169ec2a09f80f891519bad",
+      "storage": "static"
+    },
+    {
+      "id": "repairs-001-hero",
+      "driveId": "repairs-001-master",
+      "filename": "TRIMREPAIR.png",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/repairs/TRIMREPAIR-1080.webp",
+        "web": "/images/projects/repairs/TRIMREPAIR-1080.webp",
+        "webp": "/images/projects/repairs/TRIMREPAIR-1080.webp",
+        "avif": "/images/projects/repairs/TRIMREPAIR-1080.avif",
+        "thumbnail": "/images/projects/repairs/TRIMREPAIR-thumb.webp"
+      },
+      "alt": "Trim repair work",
+      "description": "Professional trim repair and installation",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "repairs-001",
+      "tags": [
+        "repairs",
+        "trim",
+        "corvallis"
+      ],
+      "roles": [
+        "hero"
+      ],
+      "featured": true,
+      "heroEligible": true,
+      "homepageEligible": false,
+      "createdAt": "2026-07-18T00:00:00.000Z",
+      "updatedAt": "2026-07-18T00:00:00.000Z",
+      "uploadedAt": "2026-07-18T00:00:00.000Z",
+      "fileSize": 230130,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "dc88f6260c4ea3830894f17e7933cdc145a10b0ecdde018cfe71ed56c7db767a",
+      "storage": "static"
+    },
+    {
+      "id": "repairs-001-drywall",
+      "driveId": "repairs-001-variant-001",
+      "filename": "DRYWALL.png",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/repairs/DRYWALL-1080.webp",
+        "web": "/images/projects/repairs/DRYWALL-1080.webp",
+        "webp": "/images/projects/repairs/DRYWALL-1080.webp",
+        "avif": "/images/projects/repairs/DRYWALL-1080.avif",
+        "thumbnail": "/images/projects/repairs/DRYWALL-thumb.webp"
+      },
+      "alt": "Drywall repair work",
+      "description": "Professional drywall repair and finishing",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "repairs-001",
+      "tags": [
+        "repairs",
+        "drywall",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-18T00:00:00.000Z",
+      "updatedAt": "2026-07-18T00:00:00.000Z",
+      "uploadedAt": "2026-07-18T00:00:00.000Z",
+      "fileSize": 116814,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "52fb74e290da1a967aefa31118dfe79bec5c5f16109eb7351b4dec46ec2ffa2e",
+      "storage": "static"
+    },
+    {
+      "id": "repairs-001-floor",
+      "driveId": "repairs-001-variant-002",
+      "filename": "FLOOR.png",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/repairs/FLOOR-1080.webp",
+        "web": "/images/projects/repairs/FLOOR-1080.webp",
+        "webp": "/images/projects/repairs/FLOOR-1080.webp",
+        "avif": "/images/projects/repairs/FLOOR-1080.avif",
+        "thumbnail": "/images/projects/repairs/FLOOR-thumb.webp"
+      },
+      "alt": "Floor repair work",
+      "description": "Professional floor repair and installation",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "repairs-001",
+      "tags": [
+        "repairs",
+        "floor",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-18T00:00:00.000Z",
+      "updatedAt": "2026-07-18T00:00:00.000Z",
+      "uploadedAt": "2026-07-18T00:00:00.000Z",
+      "fileSize": 71190,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "e051518487e49cb0a989d7712400294600dee44d087fbccbc6915c9e8f597691",
+      "storage": "static"
+    },
+    {
+      "id": "repairs-001-gutter",
+      "driveId": "repairs-001-variant-003",
+      "filename": "GUTTERCLEANING.jpg",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/repairs/GUTTERCLEANING-1080.webp",
+        "web": "/images/projects/repairs/GUTTERCLEANING-1080.webp",
+        "webp": "/images/projects/repairs/GUTTERCLEANING-1080.webp",
+        "avif": "/images/projects/repairs/GUTTERCLEANING-1080.avif",
+        "thumbnail": "/images/projects/repairs/GUTTERCLEANING-thumb.webp"
+      },
+      "alt": "Gutter cleaning and repair",
+      "description": "Professional gutter cleaning and maintenance",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "repairs-001",
+      "tags": [
+        "repairs",
+        "gutter",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-18T00:00:00.000Z",
+      "updatedAt": "2026-07-18T00:00:00.000Z",
+      "uploadedAt": "2026-07-18T00:00:00.000Z",
+      "fileSize": 34178,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "489d6e150e51aa78bbf87bcd9611c4b42cce1f482969aa0c679deafa2da32df7",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-001-hero",
+      "driveId": "painting-001-master",
+      "filename": "IMG_0535.JPG",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0535-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0535-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0535-480.webp",
+        "avif": "/images/projects/outdoor-living/IMG_0535-480.avif",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0535-thumb.webp"
+      },
+      "alt": "Exterior painting work in progress",
+      "description": "Exterior painting and surface restoration work",
+      "service": "painting",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "exterior-painting-001",
+      "tags": [
+        "painting",
+        "exterior",
+        "restoration",
+        "corvallis"
+      ],
+      "roles": [
+        "hero"
+      ],
+      "featured": true,
+      "heroEligible": true,
+      "homepageEligible": true,
+      "createdAt": "2026-07-17T00:00:00.000Z",
+      "updatedAt": "2026-07-17T00:00:00.000Z",
+      "uploadedAt": "2026-07-17T00:00:00.000Z",
+      "fileSize": 72504,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "0d412c4c9b40d5416cde4681b7f9df706c0354b1518609527ee0c31ac07a4aa7",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-001-2",
+      "driveId": "painting-001-variant-001",
+      "filename": "IMG_0555.JPG",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0555-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0555-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0555-480.webp",
+        "avif": "/images/projects/outdoor-living/IMG_0555-480.avif",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0555-thumb.webp"
+      },
+      "alt": "Exterior painting detail work",
+      "description": "Detail of exterior painting and surface restoration",
+      "service": "painting",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "exterior-painting-001",
+      "tags": [
+        "painting",
+        "exterior",
+        "restoration",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-17T00:00:00.000Z",
+      "updatedAt": "2026-07-17T00:00:00.000Z",
+      "uploadedAt": "2026-07-17T00:00:00.000Z",
+      "fileSize": 70366,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "872f28df8a83b72d320eff700d6bea1a553156df6ffe37aa48c8c0b443ff20ca",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-001-3",
+      "driveId": "painting-001-variant-002",
+      "filename": "IMG_0559.JPG",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0559-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0559-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0559-480.webp",
+        "avif": "/images/projects/outdoor-living/IMG_0559-480.avif",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0559-thumb.webp"
+      },
+      "alt": "Exterior painting surface preparation",
+      "description": "Surface preparation for exterior painting and restoration",
+      "service": "painting",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "exterior-painting-001",
+      "tags": [
+        "painting",
+        "exterior",
+        "restoration",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-17T00:00:00.000Z",
+      "updatedAt": "2026-07-17T00:00:00.000Z",
+      "uploadedAt": "2026-07-17T00:00:00.000Z",
+      "fileSize": 28584,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "9d867371a9fb84f90e64c1f61991a0469107a9c3f69669d1ddce092fc0d541c9",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-001-4",
+      "driveId": "painting-001-variant-003",
+      "filename": "IMG_0737.JPG",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0737-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0737-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0737-480.webp",
+        "avif": "/images/projects/outdoor-living/IMG_0737-480.avif",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0737-thumb.webp"
+      },
+      "alt": "Exterior painting sanding work",
+      "description": "Sanding and surface preparation for exterior painting",
+      "service": "painting",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "exterior-painting-001",
+      "tags": [
+        "painting",
+        "exterior",
+        "restoration",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-17T00:00:00.000Z",
+      "updatedAt": "2026-07-17T00:00:00.000Z",
+      "uploadedAt": "2026-07-17T00:00:00.000Z",
+      "fileSize": 68246,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "e9de72e40f6d1ad5620387198e0d36eeb6931145410bea75eab34107ce7da9ca",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-001-5",
+      "driveId": "painting-001-variant-004",
+      "filename": "IMG_0805.JPG",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0805-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0805-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0805-480.webp",
+        "avif": "/images/projects/outdoor-living/IMG_0805-480.avif",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0805-thumb.webp"
+      },
+      "alt": "Exterior painting priming work",
+      "description": "Priming and preparation for exterior painting",
+      "service": "painting",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "exterior-painting-001",
+      "tags": [
+        "painting",
+        "exterior",
+        "restoration",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-17T00:00:00.000Z",
+      "updatedAt": "2026-07-17T00:00:00.000Z",
+      "uploadedAt": "2026-07-17T00:00:00.000Z",
+      "fileSize": 54778,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "a7ffdcffaae5a6f858aa7b331e4cdd6b926c4733d833984ebacac5552c83a4a8",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-001-6",
+      "driveId": "painting-001-variant-005",
+      "filename": "IMG_0841.JPG",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0841-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0841-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0841-480.webp",
+        "avif": "/images/projects/outdoor-living/IMG_0841-480.avif",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0841-thumb.webp"
+      },
+      "alt": "Exterior painting finished work",
+      "description": "Completed exterior painting and surface restoration",
+      "service": "painting",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "exterior-painting-001",
+      "tags": [
+        "painting",
+        "exterior",
+        "restoration",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-17T00:00:00.000Z",
+      "updatedAt": "2026-07-17T00:00:00.000Z",
+      "uploadedAt": "2026-07-17T00:00:00.000Z",
+      "fileSize": 36778,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "c89b1a8bf9a10aac0227032c8d5419f3357b57fbc052ee22606642bf1f5cc0cc",
+      "storage": "static"
+    },
+    {
+      "id": "bathroom-remodeling-001-hero",
+      "driveId": "bathroom-001-master",
+      "filename": "BATHROOM_WALL.png",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/bathroom-remodeling/BATHROOM_WALL-1080.webp",
+        "web": "/images/projects/bathroom-remodeling/BATHROOM_WALL-1080.webp",
+        "webp": "/images/projects/bathroom-remodeling/BATHROOM_WALL-1080.webp",
+        "avif": "/images/projects/bathroom-remodeling/BATHROOM_WALL-1080.avif",
+        "thumbnail": "/images/projects/bathroom-remodeling/BATHROOM_WALL-thumb.webp"
+      },
+      "alt": "Bathroom remodeling work",
+      "description": "Bathroom wall finish and remodeling",
+      "service": "bathrooms",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "bathroom-remodeling-001",
+      "tags": [
+        "bathroom",
+        "remodeling",
+        "corvallis"
+      ],
+      "roles": [
+        "hero"
+      ],
+      "featured": true,
+      "heroEligible": true,
+      "homepageEligible": true,
+      "createdAt": "2026-07-16T00:00:00.000Z",
+      "updatedAt": "2026-07-16T00:00:00.000Z",
+      "uploadedAt": "2026-07-16T00:00:00.000Z",
+      "fileSize": 54050,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "104aee1cbe39ca22ac438cd6053c42eb65a753fd73681100e14b9ed1dc970a8d",
+      "storage": "static"
+    },
+    {
+      "id": "brand-featured",
+      "driveId": "drive-7fc72d02ab05",
+      "filename": "featured.jpeg",
+      "type": "image",
+      "orientation": "portrait",
+      "dimensions": {
+        "width": 480,
+        "height": 640
+      },
+      "variants": {
+        "original": "/images/projects/featured/featured-480.webp",
+        "web": "/images/projects/featured/featured-480.webp",
+        "webp": "/images/projects/featured/featured-480.webp",
+        "avif": "/images/projects/featured/featured-480.avif",
+        "thumbnail": "/images/projects/featured/featured-thumb.webp"
+      },
+      "alt": "Featured project photo",
+      "description": "Featured project highlight image",
+      "service": null,
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": null,
+      "tags": [
+        "featured",
+        "brand"
+      ],
+      "roles": [
+        "brand"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-21T00:00:00.000Z",
+      "updatedAt": "2026-07-21T00:00:00.000Z",
+      "uploadedAt": "2026-07-21T00:00:00.000Z",
+      "fileSize": 27050,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "b80f586dbaa049d8900595cda5e7b2ffb07ce2f73d92d4c4db7eb5d858376ca2",
+      "storage": "static"
+    },
+    {
+      "id": "brand-hero",
+      "driveId": "brand-hero-001",
+      "filename": "hero.jpeg",
+      "type": "image",
+      "orientation": "portrait",
+      "dimensions": {
+        "width": 480,
+        "height": 640
+      },
+      "variants": {
+        "original": "/images/projects/hero/hero-480.webp",
+        "web": "/images/projects/hero/hero-480.webp",
+        "webp": "/images/projects/hero/hero-480.webp",
+        "avif": "/images/projects/hero/hero-480.avif",
+        "thumbnail": "/images/projects/hero/hero-thumb.webp"
+      },
+      "alt": "Happy Place Carpentry hero image",
+      "description": "Homepage hero photograph",
+      "service": null,
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": null,
+      "tags": [
+        "hero",
+        "brand",
+        "homepage"
+      ],
+      "roles": [
+        "hero",
+        "brand"
+      ],
+      "featured": true,
+      "heroEligible": true,
+      "homepageEligible": true,
+      "createdAt": "2026-07-21T00:00:00.000Z",
+      "updatedAt": "2026-07-21T00:00:00.000Z",
+      "uploadedAt": "2026-07-21T00:00:00.000Z",
+      "fileSize": 64212,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "a6d46b0115772e90a125828f753a2035ab0aa81eeae40e36edfffb86b873f594",
+      "storage": "static"
+    },
+    {
+      "id": "brand-portrait",
+      "driveId": "brand-portrait-001",
+      "filename": "portrait.jpeg",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 640,
+        "height": 427
+      },
+      "variants": {
+        "original": "/images/projects/portrait/portrait-480.webp",
+        "web": "/images/projects/portrait/portrait-480.webp",
+        "webp": "/images/projects/portrait/portrait-480.webp",
+        "avif": "/images/projects/portrait/portrait-480.avif",
+        "thumbnail": "/images/projects/portrait/portrait-thumb.webp"
+      },
+      "alt": "Taylor & Lanie of Happy Place Carpentry",
+      "description": "Owner portrait photograph",
+      "service": null,
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": null,
+      "tags": [
+        "portrait",
+        "brand",
+        "owners"
+      ],
+      "roles": [
+        "portrait",
+        "brand"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-21T00:00:00.000Z",
+      "updatedAt": "2026-07-21T00:00:00.000Z",
+      "uploadedAt": "2026-07-21T00:00:00.000Z",
+      "fileSize": 5434,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "eecbf99794e531e35a4f17a1c331d3e583124abbd0d3ae213d1d1588dd6df4fb",
+      "storage": "static"
+    },
+    {
+      "id": "repairs-001-floor0",
+      "driveId": "repairs-001-variant-004",
+      "filename": "FLOOR0.jpg",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1280,
+        "height": 1017
+      },
+      "variants": {
+        "original": "/images/projects/repairs/FLOOR0-1080.webp",
+        "web": "/images/projects/repairs/FLOOR0-1080.webp",
+        "webp": "/images/projects/repairs/FLOOR0-1080.webp",
+        "avif": "/images/projects/repairs/FLOOR0-1080.avif",
+        "thumbnail": "/images/projects/repairs/FLOOR0-thumb.webp"
+      },
+      "alt": "Floor repair before photo",
+      "description": "Floor repair detail - before state",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "repairs-001",
+      "tags": [
+        "repairs",
+        "floor",
+        "before",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-21T00:00:00.000Z",
+      "updatedAt": "2026-07-21T00:00:00.000Z",
+      "uploadedAt": "2026-07-21T00:00:00.000Z",
+      "fileSize": 146402,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "757f5b1b4e69dd56b38b63645a8699a838a1d2eb572361e074e5792f4ce3c264",
+      "storage": "static"
+    },
+    {
+      "id": "repairs-001-img0544",
+      "driveId": "repairs-001-variant-005",
+      "filename": "IMG_0544.JPG",
+      "type": "image",
+      "orientation": "portrait",
+      "dimensions": {
+        "width": 480,
+        "height": 640
+      },
+      "variants": {
+        "original": "/images/projects/repairs/IMG_0544-480.webp",
+        "web": "/images/projects/repairs/IMG_0544-480.webp",
+        "webp": "/images/projects/repairs/IMG_0544-480.webp",
+        "avif": "/images/projects/repairs/IMG_0544-480.avif",
+        "thumbnail": "/images/projects/repairs/IMG_0544-thumb.webp"
+      },
+      "alt": "Repair detail photo",
+      "description": "Home repair detail photograph",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "repairs-001",
+      "tags": [
+        "repairs",
+        "detail",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-21T00:00:00.000Z",
+      "updatedAt": "2026-07-21T00:00:00.000Z",
+      "uploadedAt": "2026-07-21T00:00:00.000Z",
+      "fileSize": 27744,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "d65fdffc28f842195cd5a7fb192ba316480343e3f598d6e9027f9cbe339779dc",
+      "storage": "static"
+    },
+    {
+      "id": "repairs-001-img0546",
+      "driveId": "repairs-001-variant-006",
+      "filename": "IMG_0546.JPG",
+      "type": "image",
+      "orientation": "portrait",
+      "dimensions": {
+        "width": 480,
+        "height": 640
+      },
+      "variants": {
+        "original": "/images/projects/repairs/IMG_0546-480.webp",
+        "web": "/images/projects/repairs/IMG_0546-480.webp",
+        "webp": "/images/projects/repairs/IMG_0546-480.webp",
+        "avif": "/images/projects/repairs/IMG_0546-480.avif",
+        "thumbnail": "/images/projects/repairs/IMG_0546-thumb.webp"
+      },
+      "alt": "Repair detail photo",
+      "description": "Home repair detail photograph",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "repairs-001",
+      "tags": [
+        "repairs",
+        "detail",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-21T00:00:00.000Z",
+      "updatedAt": "2026-07-21T00:00:00.000Z",
+      "uploadedAt": "2026-07-21T00:00:00.000Z",
+      "fileSize": 68536,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "8f5183d8389469e044f3775236ca903b01f154333151707ece6aca1ff29bd781",
+      "storage": "static"
+    },
+    {
+      "id": "pergolas-001-hero",
+      "driveId": "pergolas-001-master",
+      "filename": "HOMESERVICEPROJECTPERGOLAS.jpg",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 4367,
+        "height": 3275
+      },
+      "variants": {
+        "original": "/images/projects/pergolas/HOMESERVICEPROJECTPERGOLAS-1080.webp",
+        "web": "/images/projects/pergolas/HOMESERVICEPROJECTPERGOLAS-1080.webp",
+        "webp": "/images/projects/pergolas/HOMESERVICEPROJECTPERGOLAS-1080.webp",
+        "avif": "/images/projects/pergolas/HOMESERVICEPROJECTPERGOLAS-1080.avif",
+        "thumbnail": "/images/projects/pergolas/HOMESERVICEPROJECTPERGOLAS-thumb.webp"
+      },
+      "alt": "Completed pergola construction project",
+      "description": "Custom pergola design and construction",
+      "service": "pergolas",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "pergolas-001",
+      "tags": [
+        "pergolas",
+        "construction",
+        "corvallis"
+      ],
+      "roles": [
+        "hero"
+      ],
+      "featured": true,
+      "heroEligible": true,
+      "homepageEligible": false,
+      "createdAt": "2026-07-22T00:00:00.000Z",
+      "updatedAt": "2026-07-22T00:00:00.000Z",
+      "uploadedAt": "2026-07-22T00:00:00.000Z",
+      "fileSize": 2081361,
+      "format": "JPG",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "57b84a974acbebeb30d1bb2ba45139e31405a7bf38ddfa0c98247b0de0c5a06b",
+      "storage": "static"
+    },
+    {
+      "id": "pergolas-001-before",
+      "driveId": "pergolas-001-variant-001",
+      "filename": "1.png",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 4367,
+        "height": 3275
+      },
+      "variants": {
+        "original": "/images/projects/pergolas/1.png",
+        "web": "/images/projects/pergolas/1.png",
+        "webp": "/images/projects/pergolas/1.png",
+        "avif": "/images/projects/pergolas/1.png",
+        "thumbnail": "/images/projects/pergolas/1.png"
+      },
+      "alt": "Pergola before construction",
+      "description": "Original pergola site before construction",
+      "service": "pergolas",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "pergolas-001",
+      "tags": [
+        "pergolas",
+        "before",
+        "corvallis"
+      ],
+      "roles": [
+        "before"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-22T00:00:00.000Z",
+      "updatedAt": "2026-07-22T00:00:00.000Z",
+      "uploadedAt": "2026-07-22T00:00:00.000Z",
+      "fileSize": 2637377,
+      "format": "PNG",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "f8a835afbe43e1c4787fb5235b24c8fac661905b49c5a00bae7bf22ea2d80b67",
+      "storage": "static"
+    },
+    {
+      "id": "pergolas-001-after",
+      "driveId": "pergolas-001-master",
+      "filename": "HOMESERVICEPROJECTPERGOLAS.jpg",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 4367,
+        "height": 3275
+      },
+      "variants": {
+        "original": "/images/projects/pergolas/HOMESERVICEPROJECTPERGOLAS-1080.webp",
+        "web": "/images/projects/pergolas/HOMESERVICEPROJECTPERGOLAS-1080.webp",
+        "webp": "/images/projects/pergolas/HOMESERVICEPROJECTPERGOLAS-1080.webp",
+        "avif": "/images/projects/pergolas/HOMESERVICEPROJECTPERGOLAS-1080.avif",
+        "thumbnail": "/images/projects/pergolas/HOMESERVICEPROJECTPERGOLAS-thumb.webp"
+      },
+      "alt": "Pergola after construction",
+      "description": "Completed pergola construction",
+      "service": "pergolas",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "pergolas-001",
+      "tags": [
+        "pergolas",
+        "after",
+        "corvallis"
+      ],
+      "roles": [
+        "after"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-22T00:00:00.000Z",
+      "updatedAt": "2026-07-22T00:00:00.000Z",
+      "uploadedAt": "2026-07-22T00:00:00.000Z",
+      "fileSize": 2081361,
+      "format": "JPG",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "57b84a974acbebeb30d1bb2ba45139e31405a7bf38ddfa0c98247b0de0c5a06b",
+      "storage": "static"
+    },
+    {
+      "id": "bathroom-remodeling-0",
+      "filename": "BATHROOM_WALL-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/bathroom-remodeling/BATHROOM_WALL-1080.webp",
+        "web": "/images/projects/bathroom-remodeling/BATHROOM_WALL-1080.webp",
+        "webp": "/images/projects/bathroom-remodeling/BATHROOM_WALL-1080.webp",
+        "thumbnail": "/images/projects/bathroom-remodeling/BATHROOM_WALL-1080.webp"
+      },
+      "alt": "bathroom-remodeling - BATHROOM_WALL-1080.webp",
+      "service": "bathroom-remodeling",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "bathroom-remodeling",
+      "tags": [
+        "bathroom-remodeling"
+      ],
+      "roles": [
+        "hero",
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.625Z",
+      "updatedAt": "2026-07-27T22:02:43.625Z",
+      "fileSize": 54050,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "bathroom-remodeling-1",
+      "filename": "BATHROOM_WALL-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/bathroom-remodeling/BATHROOM_WALL-480.webp",
+        "web": "/images/projects/bathroom-remodeling/BATHROOM_WALL-480.webp",
+        "webp": "/images/projects/bathroom-remodeling/BATHROOM_WALL-480.webp",
+        "thumbnail": "/images/projects/bathroom-remodeling/BATHROOM_WALL-480.webp"
+      },
+      "alt": "bathroom-remodeling - BATHROOM_WALL-480.webp",
+      "service": "bathroom-remodeling",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "bathroom-remodeling",
+      "tags": [
+        "bathroom-remodeling"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.627Z",
+      "updatedAt": "2026-07-27T22:02:43.627Z",
+      "fileSize": 16218,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "bathroom-remodeling-2",
+      "filename": "BATHROOM_WALL-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/bathroom-remodeling/BATHROOM_WALL-768.webp",
+        "web": "/images/projects/bathroom-remodeling/BATHROOM_WALL-768.webp",
+        "webp": "/images/projects/bathroom-remodeling/BATHROOM_WALL-768.webp",
+        "thumbnail": "/images/projects/bathroom-remodeling/BATHROOM_WALL-768.webp"
+      },
+      "alt": "bathroom-remodeling - BATHROOM_WALL-768.webp",
+      "service": "bathroom-remodeling",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "bathroom-remodeling",
+      "tags": [
+        "bathroom-remodeling"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.628Z",
+      "updatedAt": "2026-07-27T22:02:43.628Z",
+      "fileSize": 32950,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "bathroom-remodeling-3",
+      "filename": "BATHROOM_WALL-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/bathroom-remodeling/BATHROOM_WALL-thumb.webp",
+        "web": "/images/projects/bathroom-remodeling/BATHROOM_WALL-thumb.webp",
+        "webp": "/images/projects/bathroom-remodeling/BATHROOM_WALL-thumb.webp",
+        "thumbnail": "/images/projects/bathroom-remodeling/BATHROOM_WALL-thumb.webp"
+      },
+      "alt": "bathroom-remodeling - BATHROOM_WALL-thumb.webp",
+      "service": "bathroom-remodeling",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "bathroom-remodeling",
+      "tags": [
+        "bathroom-remodeling"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.628Z",
+      "updatedAt": "2026-07-27T22:02:43.628Z",
+      "fileSize": 15648,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "built-ins-0",
+      "filename": "FINISHEDCARPENTRY-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/built-ins/FINISHEDCARPENTRY-1080.webp",
+        "web": "/images/projects/built-ins/FINISHEDCARPENTRY-1080.webp",
+        "webp": "/images/projects/built-ins/FINISHEDCARPENTRY-1080.webp",
+        "thumbnail": "/images/projects/built-ins/FINISHEDCARPENTRY-1080.webp"
+      },
+      "alt": "built-ins - FINISHEDCARPENTRY-1080.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "hero",
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.629Z",
+      "updatedAt": "2026-07-27T22:02:43.629Z",
+      "fileSize": 174430,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "built-ins-1",
+      "filename": "FINISHEDCARPENTRY-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/built-ins/FINISHEDCARPENTRY-480.webp",
+        "web": "/images/projects/built-ins/FINISHEDCARPENTRY-480.webp",
+        "webp": "/images/projects/built-ins/FINISHEDCARPENTRY-480.webp",
+        "thumbnail": "/images/projects/built-ins/FINISHEDCARPENTRY-480.webp"
+      },
+      "alt": "built-ins - FINISHEDCARPENTRY-480.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.631Z",
+      "updatedAt": "2026-07-27T22:02:43.631Z",
+      "fileSize": 33190,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "built-ins-2",
+      "filename": "FINISHEDCARPENTRY-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/built-ins/FINISHEDCARPENTRY-768.webp",
+        "web": "/images/projects/built-ins/FINISHEDCARPENTRY-768.webp",
+        "webp": "/images/projects/built-ins/FINISHEDCARPENTRY-768.webp",
+        "thumbnail": "/images/projects/built-ins/FINISHEDCARPENTRY-768.webp"
+      },
+      "alt": "built-ins - FINISHEDCARPENTRY-768.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.632Z",
+      "updatedAt": "2026-07-27T22:02:43.632Z",
+      "fileSize": 90540,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "built-ins-3",
+      "filename": "FINISHEDCARPENTRY-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/built-ins/FINISHEDCARPENTRY-thumb.webp",
+        "web": "/images/projects/built-ins/FINISHEDCARPENTRY-thumb.webp",
+        "webp": "/images/projects/built-ins/FINISHEDCARPENTRY-thumb.webp",
+        "thumbnail": "/images/projects/built-ins/FINISHEDCARPENTRY-thumb.webp"
+      },
+      "alt": "built-ins - FINISHEDCARPENTRY-thumb.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.632Z",
+      "updatedAt": "2026-07-27T22:02:43.632Z",
+      "fileSize": 32432,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "built-ins-4",
+      "filename": "FINISHEDCARPENTRY0-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/built-ins/FINISHEDCARPENTRY0-1080.webp",
+        "web": "/images/projects/built-ins/FINISHEDCARPENTRY0-1080.webp",
+        "webp": "/images/projects/built-ins/FINISHEDCARPENTRY0-1080.webp",
+        "thumbnail": "/images/projects/built-ins/FINISHEDCARPENTRY0-1080.webp"
+      },
+      "alt": "built-ins - FINISHEDCARPENTRY0-1080.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.633Z",
+      "updatedAt": "2026-07-27T22:02:43.633Z",
+      "fileSize": 51376,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "built-ins-5",
+      "filename": "FINISHEDCARPENTRY0-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/built-ins/FINISHEDCARPENTRY0-480.webp",
+        "web": "/images/projects/built-ins/FINISHEDCARPENTRY0-480.webp",
+        "webp": "/images/projects/built-ins/FINISHEDCARPENTRY0-480.webp",
+        "thumbnail": "/images/projects/built-ins/FINISHEDCARPENTRY0-480.webp"
+      },
+      "alt": "built-ins - FINISHEDCARPENTRY0-480.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.634Z",
+      "updatedAt": "2026-07-27T22:02:43.634Z",
+      "fileSize": 15346,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "built-ins-6",
+      "filename": "FINISHEDCARPENTRY0-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/built-ins/FINISHEDCARPENTRY0-768.webp",
+        "web": "/images/projects/built-ins/FINISHEDCARPENTRY0-768.webp",
+        "webp": "/images/projects/built-ins/FINISHEDCARPENTRY0-768.webp",
+        "thumbnail": "/images/projects/built-ins/FINISHEDCARPENTRY0-768.webp"
+      },
+      "alt": "built-ins - FINISHEDCARPENTRY0-768.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.636Z",
+      "updatedAt": "2026-07-27T22:02:43.636Z",
+      "fileSize": 31098,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "built-ins-7",
+      "filename": "FINISHEDCARPENTRY0-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/built-ins/FINISHEDCARPENTRY0-thumb.webp",
+        "web": "/images/projects/built-ins/FINISHEDCARPENTRY0-thumb.webp",
+        "webp": "/images/projects/built-ins/FINISHEDCARPENTRY0-thumb.webp",
+        "thumbnail": "/images/projects/built-ins/FINISHEDCARPENTRY0-thumb.webp"
+      },
+      "alt": "built-ins - FINISHEDCARPENTRY0-thumb.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.636Z",
+      "updatedAt": "2026-07-27T22:02:43.636Z",
+      "fileSize": 14942,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "davis-bathroom-remodel-0",
+      "filename": "BATHROOM_WALL-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-1080.webp",
+        "web": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-1080.webp",
+        "webp": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-1080.webp",
+        "thumbnail": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-1080.webp"
+      },
+      "alt": "davis-bathroom-remodel - BATHROOM_WALL-1080.webp",
+      "service": "bathroom-remodeling",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "davis-bathroom-remodel",
+      "tags": [
+        "bathroom-remodeling"
+      ],
+      "roles": [
+        "hero",
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.017Z",
+      "updatedAt": "2026-07-31T22:51:58.017Z",
+      "fileSize": 54050,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "davis-bathroom-remodel-1",
+      "filename": "BATHROOM_WALL-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-480.webp",
+        "web": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-480.webp",
+        "webp": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-480.webp",
+        "thumbnail": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-480.webp"
+      },
+      "alt": "davis-bathroom-remodel - BATHROOM_WALL-480.webp",
+      "service": "bathroom-remodeling",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "davis-bathroom-remodel",
+      "tags": [
+        "bathroom-remodeling"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.018Z",
+      "updatedAt": "2026-07-31T22:51:58.018Z",
+      "fileSize": 16218,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "davis-bathroom-remodel-2",
+      "filename": "BATHROOM_WALL-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-768.webp",
+        "web": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-768.webp",
+        "webp": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-768.webp",
+        "thumbnail": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-768.webp"
+      },
+      "alt": "davis-bathroom-remodel - BATHROOM_WALL-768.webp",
+      "service": "bathroom-remodeling",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "davis-bathroom-remodel",
+      "tags": [
+        "bathroom-remodeling"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.019Z",
+      "updatedAt": "2026-07-31T22:51:58.019Z",
+      "fileSize": 32950,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "davis-bathroom-remodel-3",
+      "filename": "BATHROOM_WALL-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-thumb.webp",
+        "web": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-thumb.webp",
+        "webp": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-thumb.webp",
+        "thumbnail": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-thumb.webp"
+      },
+      "alt": "davis-bathroom-remodel - BATHROOM_WALL-thumb.webp",
+      "service": "bathroom-remodeling",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "davis-bathroom-remodel",
+      "tags": [
+        "bathroom-remodeling"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.020Z",
+      "updatedAt": "2026-07-31T22:51:58.020Z",
+      "fileSize": 15648,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "johnson-cedar-fence-0",
+      "filename": "FENCE BUILD-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/johnson-cedar-fence/FENCE BUILD-1080.webp",
+        "web": "/images/projects/johnson-cedar-fence/FENCE BUILD-1080.webp",
+        "webp": "/images/projects/johnson-cedar-fence/FENCE BUILD-1080.webp",
+        "thumbnail": "/images/projects/johnson-cedar-fence/FENCE BUILD-1080.webp"
+      },
+      "alt": "johnson-cedar-fence - FENCE BUILD-1080.webp",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "johnson-cedar-fence",
+      "tags": [
+        "fences"
+      ],
+      "roles": [
+        "hero",
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.023Z",
+      "updatedAt": "2026-07-31T22:51:58.023Z",
+      "fileSize": 282546,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "johnson-cedar-fence-1",
+      "filename": "FENCE BUILD-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/johnson-cedar-fence/FENCE BUILD-480.webp",
+        "web": "/images/projects/johnson-cedar-fence/FENCE BUILD-480.webp",
+        "webp": "/images/projects/johnson-cedar-fence/FENCE BUILD-480.webp",
+        "thumbnail": "/images/projects/johnson-cedar-fence/FENCE BUILD-480.webp"
+      },
+      "alt": "johnson-cedar-fence - FENCE BUILD-480.webp",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "johnson-cedar-fence",
+      "tags": [
+        "fences"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.024Z",
+      "updatedAt": "2026-07-31T22:51:58.024Z",
+      "fileSize": 56412,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "johnson-cedar-fence-2",
+      "filename": "FENCE BUILD-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/johnson-cedar-fence/FENCE BUILD-768.webp",
+        "web": "/images/projects/johnson-cedar-fence/FENCE BUILD-768.webp",
+        "webp": "/images/projects/johnson-cedar-fence/FENCE BUILD-768.webp",
+        "thumbnail": "/images/projects/johnson-cedar-fence/FENCE BUILD-768.webp"
+      },
+      "alt": "johnson-cedar-fence - FENCE BUILD-768.webp",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "johnson-cedar-fence",
+      "tags": [
+        "fences"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.025Z",
+      "updatedAt": "2026-07-31T22:51:58.025Z",
+      "fileSize": 147056,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "johnson-cedar-fence-3",
+      "filename": "FENCE BUILD-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/johnson-cedar-fence/FENCE BUILD-thumb.webp",
+        "web": "/images/projects/johnson-cedar-fence/FENCE BUILD-thumb.webp",
+        "webp": "/images/projects/johnson-cedar-fence/FENCE BUILD-thumb.webp",
+        "thumbnail": "/images/projects/johnson-cedar-fence/FENCE BUILD-thumb.webp"
+      },
+      "alt": "johnson-cedar-fence - FENCE BUILD-thumb.webp",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "johnson-cedar-fence",
+      "tags": [
+        "fences"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.027Z",
+      "updatedAt": "2026-07-31T22:51:58.027Z",
+      "fileSize": 55722,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "johnson-cedar-fence-4",
+      "filename": "FENCEREBUILDMATCHINGSTAIN-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-1080.webp",
+        "web": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-1080.webp",
+        "webp": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-1080.webp",
+        "thumbnail": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-1080.webp"
+      },
+      "alt": "johnson-cedar-fence - FENCEREBUILDMATCHINGSTAIN-1080.webp",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "johnson-cedar-fence",
+      "tags": [
+        "fences"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.028Z",
+      "updatedAt": "2026-07-31T22:51:58.028Z",
+      "fileSize": 100492,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "johnson-cedar-fence-5",
+      "filename": "FENCEREBUILDMATCHINGSTAIN-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-480.webp",
+        "web": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-480.webp",
+        "webp": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-480.webp",
+        "thumbnail": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-480.webp"
+      },
+      "alt": "johnson-cedar-fence - FENCEREBUILDMATCHINGSTAIN-480.webp",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "johnson-cedar-fence",
+      "tags": [
+        "fences"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.030Z",
+      "updatedAt": "2026-07-31T22:51:58.030Z",
+      "fileSize": 23332,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "johnson-cedar-fence-6",
+      "filename": "FENCEREBUILDMATCHINGSTAIN-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-768.webp",
+        "web": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-768.webp",
+        "webp": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-768.webp",
+        "thumbnail": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-768.webp"
+      },
+      "alt": "johnson-cedar-fence - FENCEREBUILDMATCHINGSTAIN-768.webp",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "johnson-cedar-fence",
+      "tags": [
+        "fences"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.032Z",
+      "updatedAt": "2026-07-31T22:51:58.032Z",
+      "fileSize": 55132,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "johnson-cedar-fence-7",
+      "filename": "FENCEREBUILDMATCHINGSTAIN-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-thumb.webp",
+        "web": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-thumb.webp",
+        "webp": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-thumb.webp",
+        "thumbnail": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-thumb.webp"
+      },
+      "alt": "johnson-cedar-fence - FENCEREBUILDMATCHINGSTAIN-thumb.webp",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "johnson-cedar-fence",
+      "tags": [
+        "fences"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.032Z",
+      "updatedAt": "2026-07-31T22:51:58.032Z",
+      "fileSize": 22744,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-0",
+      "filename": "IMG_0535-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0535-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0535-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0535-480.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0535-480.webp"
+      },
+      "alt": "outdoor-living - IMG_0535-480.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "hero",
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.653Z",
+      "updatedAt": "2026-07-27T22:02:43.653Z",
+      "fileSize": 72504,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-1",
+      "filename": "IMG_0535-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0535-thumb.webp",
+        "web": "/images/projects/outdoor-living/IMG_0535-thumb.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0535-thumb.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0535-thumb.webp"
+      },
+      "alt": "outdoor-living - IMG_0535-thumb.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.654Z",
+      "updatedAt": "2026-07-27T22:02:43.654Z",
+      "fileSize": 71528,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-2",
+      "filename": "IMG_0555-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0555-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0555-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0555-480.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0555-480.webp"
+      },
+      "alt": "outdoor-living - IMG_0555-480.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.655Z",
+      "updatedAt": "2026-07-27T22:02:43.655Z",
+      "fileSize": 70366,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-3",
+      "filename": "IMG_0555-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0555-thumb.webp",
+        "web": "/images/projects/outdoor-living/IMG_0555-thumb.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0555-thumb.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0555-thumb.webp"
+      },
+      "alt": "outdoor-living - IMG_0555-thumb.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.656Z",
+      "updatedAt": "2026-07-27T22:02:43.656Z",
+      "fileSize": 68322,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-4",
+      "filename": "IMG_0559-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0559-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0559-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0559-480.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0559-480.webp"
+      },
+      "alt": "outdoor-living - IMG_0559-480.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.657Z",
+      "updatedAt": "2026-07-27T22:02:43.657Z",
+      "fileSize": 28584,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-5",
+      "filename": "IMG_0559-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0559-thumb.webp",
+        "web": "/images/projects/outdoor-living/IMG_0559-thumb.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0559-thumb.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0559-thumb.webp"
+      },
+      "alt": "outdoor-living - IMG_0559-thumb.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.657Z",
+      "updatedAt": "2026-07-27T22:02:43.657Z",
+      "fileSize": 28014,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-6",
+      "filename": "IMG_0737-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0737-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0737-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0737-480.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0737-480.webp"
+      },
+      "alt": "outdoor-living - IMG_0737-480.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.659Z",
+      "updatedAt": "2026-07-27T22:02:43.659Z",
+      "fileSize": 68246,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-7",
+      "filename": "IMG_0737-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0737-thumb.webp",
+        "web": "/images/projects/outdoor-living/IMG_0737-thumb.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0737-thumb.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0737-thumb.webp"
+      },
+      "alt": "outdoor-living - IMG_0737-thumb.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.659Z",
+      "updatedAt": "2026-07-27T22:02:43.659Z",
+      "fileSize": 66464,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-8",
+      "filename": "IMG_0805-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0805-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0805-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0805-480.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0805-480.webp"
+      },
+      "alt": "outdoor-living - IMG_0805-480.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.660Z",
+      "updatedAt": "2026-07-27T22:02:43.660Z",
+      "fileSize": 54778,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-9",
+      "filename": "IMG_0805-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0805-thumb.webp",
+        "web": "/images/projects/outdoor-living/IMG_0805-thumb.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0805-thumb.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0805-thumb.webp"
+      },
+      "alt": "outdoor-living - IMG_0805-thumb.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.660Z",
+      "updatedAt": "2026-07-27T22:02:43.660Z",
+      "fileSize": 54524,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-10",
+      "filename": "IMG_0841-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0841-480.webp",
+        "web": "/images/projects/outdoor-living/IMG_0841-480.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0841-480.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0841-480.webp"
+      },
+      "alt": "outdoor-living - IMG_0841-480.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.663Z",
+      "updatedAt": "2026-07-27T22:02:43.663Z",
+      "fileSize": 36778,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "outdoor-living-11",
+      "filename": "IMG_0841-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/outdoor-living/IMG_0841-thumb.webp",
+        "web": "/images/projects/outdoor-living/IMG_0841-thumb.webp",
+        "webp": "/images/projects/outdoor-living/IMG_0841-thumb.webp",
+        "thumbnail": "/images/projects/outdoor-living/IMG_0841-thumb.webp"
+      },
+      "alt": "outdoor-living - IMG_0841-thumb.webp",
+      "service": "outdoor-living",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "outdoor-living",
+      "tags": [
+        "outdoor-living"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-27T22:02:43.664Z",
+      "updatedAt": "2026-07-27T22:02:43.664Z",
+      "fileSize": 35640,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "smith-built-ins-0",
+      "filename": "FINISHEDCARPENTRY-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-1080.webp",
+        "web": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-1080.webp",
+        "webp": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-1080.webp",
+        "thumbnail": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-1080.webp"
+      },
+      "alt": "smith-built-ins - FINISHEDCARPENTRY-1080.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "smith-built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "hero",
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.049Z",
+      "updatedAt": "2026-07-31T22:51:58.049Z",
+      "fileSize": 174430,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "smith-built-ins-1",
+      "filename": "FINISHEDCARPENTRY-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-480.webp",
+        "web": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-480.webp",
+        "webp": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-480.webp",
+        "thumbnail": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-480.webp"
+      },
+      "alt": "smith-built-ins - FINISHEDCARPENTRY-480.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "smith-built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.050Z",
+      "updatedAt": "2026-07-31T22:51:58.050Z",
+      "fileSize": 33190,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "smith-built-ins-2",
+      "filename": "FINISHEDCARPENTRY-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-768.webp",
+        "web": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-768.webp",
+        "webp": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-768.webp",
+        "thumbnail": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-768.webp"
+      },
+      "alt": "smith-built-ins - FINISHEDCARPENTRY-768.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "smith-built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.051Z",
+      "updatedAt": "2026-07-31T22:51:58.051Z",
+      "fileSize": 90540,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "smith-built-ins-3",
+      "filename": "FINISHEDCARPENTRY-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-thumb.webp",
+        "web": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-thumb.webp",
+        "webp": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-thumb.webp",
+        "thumbnail": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-thumb.webp"
+      },
+      "alt": "smith-built-ins - FINISHEDCARPENTRY-thumb.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "smith-built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.051Z",
+      "updatedAt": "2026-07-31T22:51:58.051Z",
+      "fileSize": 32432,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "smith-built-ins-4",
+      "filename": "FINISHEDCARPENTRY0-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-1080.webp",
+        "web": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-1080.webp",
+        "webp": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-1080.webp",
+        "thumbnail": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-1080.webp"
+      },
+      "alt": "smith-built-ins - FINISHEDCARPENTRY0-1080.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "smith-built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.052Z",
+      "updatedAt": "2026-07-31T22:51:58.052Z",
+      "fileSize": 51376,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "smith-built-ins-5",
+      "filename": "FINISHEDCARPENTRY0-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-480.webp",
+        "web": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-480.webp",
+        "webp": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-480.webp",
+        "thumbnail": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-480.webp"
+      },
+      "alt": "smith-built-ins - FINISHEDCARPENTRY0-480.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "smith-built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.052Z",
+      "updatedAt": "2026-07-31T22:51:58.052Z",
+      "fileSize": 15346,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "smith-built-ins-6",
+      "filename": "FINISHEDCARPENTRY0-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-768.webp",
+        "web": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-768.webp",
+        "webp": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-768.webp",
+        "thumbnail": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-768.webp"
+      },
+      "alt": "smith-built-ins - FINISHEDCARPENTRY0-768.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "smith-built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.053Z",
+      "updatedAt": "2026-07-31T22:51:58.053Z",
+      "fileSize": 31098,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "smith-built-ins-7",
+      "filename": "FINISHEDCARPENTRY0-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-thumb.webp",
+        "web": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-thumb.webp",
+        "webp": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-thumb.webp",
+        "thumbnail": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-thumb.webp"
+      },
+      "alt": "smith-built-ins - FINISHEDCARPENTRY0-thumb.webp",
+      "service": "built-ins",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "smith-built-ins",
+      "tags": [
+        "built-ins"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.053Z",
+      "updatedAt": "2026-07-31T22:51:58.053Z",
+      "fileSize": 14942,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "test-project-corvallis-0",
+      "filename": "hero-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/test-project-corvallis/hero-1080.webp",
+        "web": "/images/projects/test-project-corvallis/hero-1080.webp",
+        "webp": "/images/projects/test-project-corvallis/hero-1080.webp",
+        "thumbnail": "/images/projects/test-project-corvallis/hero-1080.webp"
+      },
+      "alt": "test-project-corvallis - hero-1080.webp",
+      "service": "test-project",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "test-project-corvallis",
+      "tags": [
+        "test-project"
+      ],
+      "roles": [
+        "hero",
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.055Z",
+      "updatedAt": "2026-07-31T22:51:58.055Z",
+      "fileSize": 114936,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "test-project-corvallis-1",
+      "filename": "hero-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/test-project-corvallis/hero-480.webp",
+        "web": "/images/projects/test-project-corvallis/hero-480.webp",
+        "webp": "/images/projects/test-project-corvallis/hero-480.webp",
+        "thumbnail": "/images/projects/test-project-corvallis/hero-480.webp"
+      },
+      "alt": "test-project-corvallis - hero-480.webp",
+      "service": "test-project",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "test-project-corvallis",
+      "tags": [
+        "test-project"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.056Z",
+      "updatedAt": "2026-07-31T22:51:58.056Z",
+      "fileSize": 24038,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "test-project-corvallis-2",
+      "filename": "hero-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/test-project-corvallis/hero-768.webp",
+        "web": "/images/projects/test-project-corvallis/hero-768.webp",
+        "webp": "/images/projects/test-project-corvallis/hero-768.webp",
+        "thumbnail": "/images/projects/test-project-corvallis/hero-768.webp"
+      },
+      "alt": "test-project-corvallis - hero-768.webp",
+      "service": "test-project",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "test-project-corvallis",
+      "tags": [
+        "test-project"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.057Z",
+      "updatedAt": "2026-07-31T22:51:58.057Z",
+      "fileSize": 59434,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "test-project-corvallis-3",
+      "filename": "hero-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/test-project-corvallis/hero-thumb.webp",
+        "web": "/images/projects/test-project-corvallis/hero-thumb.webp",
+        "webp": "/images/projects/test-project-corvallis/hero-thumb.webp",
+        "thumbnail": "/images/projects/test-project-corvallis/hero-thumb.webp"
+      },
+      "alt": "test-project-corvallis - hero-thumb.webp",
+      "service": "test-project",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "test-project-corvallis",
+      "tags": [
+        "test-project"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.057Z",
+      "updatedAt": "2026-07-31T22:51:58.057Z",
+      "fileSize": 23454,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-0",
+      "filename": "DRYWALL-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/DRYWALL-1080.webp",
+        "web": "/images/projects/wilson-home-repairs/DRYWALL-1080.webp",
+        "webp": "/images/projects/wilson-home-repairs/DRYWALL-1080.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/DRYWALL-1080.webp"
+      },
+      "alt": "wilson-home-repairs - DRYWALL-1080.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "hero",
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.059Z",
+      "updatedAt": "2026-07-31T22:51:58.059Z",
+      "fileSize": 116814,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-1",
+      "filename": "DRYWALL-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/DRYWALL-480.webp",
+        "web": "/images/projects/wilson-home-repairs/DRYWALL-480.webp",
+        "webp": "/images/projects/wilson-home-repairs/DRYWALL-480.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/DRYWALL-480.webp"
+      },
+      "alt": "wilson-home-repairs - DRYWALL-480.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.060Z",
+      "updatedAt": "2026-07-31T22:51:58.060Z",
+      "fileSize": 37292,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-2",
+      "filename": "DRYWALL-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/DRYWALL-768.webp",
+        "web": "/images/projects/wilson-home-repairs/DRYWALL-768.webp",
+        "webp": "/images/projects/wilson-home-repairs/DRYWALL-768.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/DRYWALL-768.webp"
+      },
+      "alt": "wilson-home-repairs - DRYWALL-768.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.061Z",
+      "updatedAt": "2026-07-31T22:51:58.061Z",
+      "fileSize": 73626,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-3",
+      "filename": "DRYWALL-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/DRYWALL-thumb.webp",
+        "web": "/images/projects/wilson-home-repairs/DRYWALL-thumb.webp",
+        "webp": "/images/projects/wilson-home-repairs/DRYWALL-thumb.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/DRYWALL-thumb.webp"
+      },
+      "alt": "wilson-home-repairs - DRYWALL-thumb.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.062Z",
+      "updatedAt": "2026-07-31T22:51:58.062Z",
+      "fileSize": 36510,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-4",
+      "filename": "FLOOR-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/FLOOR-1080.webp",
+        "web": "/images/projects/wilson-home-repairs/FLOOR-1080.webp",
+        "webp": "/images/projects/wilson-home-repairs/FLOOR-1080.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/FLOOR-1080.webp"
+      },
+      "alt": "wilson-home-repairs - FLOOR-1080.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.062Z",
+      "updatedAt": "2026-07-31T22:51:58.062Z",
+      "fileSize": 71190,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-5",
+      "filename": "FLOOR-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/FLOOR-480.webp",
+        "web": "/images/projects/wilson-home-repairs/FLOOR-480.webp",
+        "webp": "/images/projects/wilson-home-repairs/FLOOR-480.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/FLOOR-480.webp"
+      },
+      "alt": "wilson-home-repairs - FLOOR-480.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.063Z",
+      "updatedAt": "2026-07-31T22:51:58.063Z",
+      "fileSize": 20028,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-6",
+      "filename": "FLOOR-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/FLOOR-768.webp",
+        "web": "/images/projects/wilson-home-repairs/FLOOR-768.webp",
+        "webp": "/images/projects/wilson-home-repairs/FLOOR-768.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/FLOOR-768.webp"
+      },
+      "alt": "wilson-home-repairs - FLOOR-768.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.065Z",
+      "updatedAt": "2026-07-31T22:51:58.065Z",
+      "fileSize": 43072,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-7",
+      "filename": "FLOOR-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/FLOOR-thumb.webp",
+        "web": "/images/projects/wilson-home-repairs/FLOOR-thumb.webp",
+        "webp": "/images/projects/wilson-home-repairs/FLOOR-thumb.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/FLOOR-thumb.webp"
+      },
+      "alt": "wilson-home-repairs - FLOOR-thumb.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.065Z",
+      "updatedAt": "2026-07-31T22:51:58.065Z",
+      "fileSize": 19772,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-8",
+      "filename": "FLOOR0-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/FLOOR0-1080.webp",
+        "web": "/images/projects/wilson-home-repairs/FLOOR0-1080.webp",
+        "webp": "/images/projects/wilson-home-repairs/FLOOR0-1080.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/FLOOR0-1080.webp"
+      },
+      "alt": "wilson-home-repairs - FLOOR0-1080.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.066Z",
+      "updatedAt": "2026-07-31T22:51:58.066Z",
+      "fileSize": 146402,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-9",
+      "filename": "FLOOR0-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/FLOOR0-480.webp",
+        "web": "/images/projects/wilson-home-repairs/FLOOR0-480.webp",
+        "webp": "/images/projects/wilson-home-repairs/FLOOR0-480.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/FLOOR0-480.webp"
+      },
+      "alt": "wilson-home-repairs - FLOOR0-480.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.067Z",
+      "updatedAt": "2026-07-31T22:51:58.067Z",
+      "fileSize": 26364,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-10",
+      "filename": "FLOOR0-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/FLOOR0-768.webp",
+        "web": "/images/projects/wilson-home-repairs/FLOOR0-768.webp",
+        "webp": "/images/projects/wilson-home-repairs/FLOOR0-768.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/FLOOR0-768.webp"
+      },
+      "alt": "wilson-home-repairs - FLOOR0-768.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.068Z",
+      "updatedAt": "2026-07-31T22:51:58.068Z",
+      "fileSize": 74272,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-11",
+      "filename": "FLOOR0-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/FLOOR0-thumb.webp",
+        "web": "/images/projects/wilson-home-repairs/FLOOR0-thumb.webp",
+        "webp": "/images/projects/wilson-home-repairs/FLOOR0-thumb.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/FLOOR0-thumb.webp"
+      },
+      "alt": "wilson-home-repairs - FLOOR0-thumb.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.069Z",
+      "updatedAt": "2026-07-31T22:51:58.069Z",
+      "fileSize": 25718,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-12",
+      "filename": "GUTTERCLEANING-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/GUTTERCLEANING-1080.webp",
+        "web": "/images/projects/wilson-home-repairs/GUTTERCLEANING-1080.webp",
+        "webp": "/images/projects/wilson-home-repairs/GUTTERCLEANING-1080.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/GUTTERCLEANING-1080.webp"
+      },
+      "alt": "wilson-home-repairs - GUTTERCLEANING-1080.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.070Z",
+      "updatedAt": "2026-07-31T22:51:58.070Z",
+      "fileSize": 34178,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-13",
+      "filename": "GUTTERCLEANING-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/GUTTERCLEANING-480.webp",
+        "web": "/images/projects/wilson-home-repairs/GUTTERCLEANING-480.webp",
+        "webp": "/images/projects/wilson-home-repairs/GUTTERCLEANING-480.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/GUTTERCLEANING-480.webp"
+      },
+      "alt": "wilson-home-repairs - GUTTERCLEANING-480.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.070Z",
+      "updatedAt": "2026-07-31T22:51:58.070Z",
+      "fileSize": 11792,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-14",
+      "filename": "GUTTERCLEANING-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/GUTTERCLEANING-768.webp",
+        "web": "/images/projects/wilson-home-repairs/GUTTERCLEANING-768.webp",
+        "webp": "/images/projects/wilson-home-repairs/GUTTERCLEANING-768.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/GUTTERCLEANING-768.webp"
+      },
+      "alt": "wilson-home-repairs - GUTTERCLEANING-768.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.071Z",
+      "updatedAt": "2026-07-31T22:51:58.071Z",
+      "fileSize": 21748,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-15",
+      "filename": "GUTTERCLEANING-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/GUTTERCLEANING-thumb.webp",
+        "web": "/images/projects/wilson-home-repairs/GUTTERCLEANING-thumb.webp",
+        "webp": "/images/projects/wilson-home-repairs/GUTTERCLEANING-thumb.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/GUTTERCLEANING-thumb.webp"
+      },
+      "alt": "wilson-home-repairs - GUTTERCLEANING-thumb.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.072Z",
+      "updatedAt": "2026-07-31T22:51:58.072Z",
+      "fileSize": 11526,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-16",
+      "filename": "TRIMREPAIR-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/TRIMREPAIR-1080.webp",
+        "web": "/images/projects/wilson-home-repairs/TRIMREPAIR-1080.webp",
+        "webp": "/images/projects/wilson-home-repairs/TRIMREPAIR-1080.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/TRIMREPAIR-1080.webp"
+      },
+      "alt": "wilson-home-repairs - TRIMREPAIR-1080.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.074Z",
+      "updatedAt": "2026-07-31T22:51:58.074Z",
+      "fileSize": 230130,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-17",
+      "filename": "TRIMREPAIR-480.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/TRIMREPAIR-480.webp",
+        "web": "/images/projects/wilson-home-repairs/TRIMREPAIR-480.webp",
+        "webp": "/images/projects/wilson-home-repairs/TRIMREPAIR-480.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/TRIMREPAIR-480.webp"
+      },
+      "alt": "wilson-home-repairs - TRIMREPAIR-480.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.075Z",
+      "updatedAt": "2026-07-31T22:51:58.075Z",
+      "fileSize": 47940,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-18",
+      "filename": "TRIMREPAIR-768.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/TRIMREPAIR-768.webp",
+        "web": "/images/projects/wilson-home-repairs/TRIMREPAIR-768.webp",
+        "webp": "/images/projects/wilson-home-repairs/TRIMREPAIR-768.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/TRIMREPAIR-768.webp"
+      },
+      "alt": "wilson-home-repairs - TRIMREPAIR-768.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.077Z",
+      "updatedAt": "2026-07-31T22:51:58.077Z",
+      "fileSize": 126068,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "wilson-home-repairs-19",
+      "filename": "TRIMREPAIR-thumb.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/wilson-home-repairs/TRIMREPAIR-thumb.webp",
+        "web": "/images/projects/wilson-home-repairs/TRIMREPAIR-thumb.webp",
+        "webp": "/images/projects/wilson-home-repairs/TRIMREPAIR-thumb.webp",
+        "thumbnail": "/images/projects/wilson-home-repairs/TRIMREPAIR-thumb.webp"
+      },
+      "alt": "wilson-home-repairs - TRIMREPAIR-thumb.webp",
+      "service": "repairs",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "wilson-home-repairs",
+      "tags": [
+        "repairs"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "createdAt": "2026-07-31T22:51:58.078Z",
+      "updatedAt": "2026-07-31T22:51:58.078Z",
+      "fileSize": 46872,
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "martinez-pergola-hero",
+      "filename": "HOMESERVICEPROJECTPERGOLAS-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-1080.webp",
+        "web": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-1080.webp",
+        "webp": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-1080.webp",
+        "avif": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-1080.avif",
+        "thumbnail": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-thumb.webp"
+      },
+      "alt": "Martinez Pergola - Completed project",
+      "description": "Professional pergola construction",
+      "service": "pergolas",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "martinez-pergola",
+      "tags": [
+        "pergolas",
+        "corvallis"
+      ],
+      "roles": [
+        "hero"
+      ],
+      "featured": false,
+      "heroEligible": true,
+      "homepageEligible": false,
+      "createdAt": "2026-09-02T00:00:00.000Z",
+      "updatedAt": "2026-09-02T00:00:00.000Z",
+      "uploadedAt": "2026-09-02T00:00:00.000Z",
+      "fileSize": 139390,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    },
+    {
+      "id": "martinez-pergola-gallery-1",
+      "filename": "1-1080.webp",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/martinez-pergola/1-1080.webp",
+        "web": "/images/projects/martinez-pergola/1-1080.webp",
+        "webp": "/images/projects/martinez-pergola/1-1080.webp",
+        "avif": "/images/projects/martinez-pergola/1-1080.avif",
+        "thumbnail": "/images/projects/martinez-pergola/1-thumb.webp"
+      },
+      "alt": "Martinez Pergola - Construction detail",
+      "description": "Pergola construction progress",
+      "service": "pergolas",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "martinez-pergola",
+      "tags": [
+        "pergolas",
+        "corvallis"
+      ],
+      "roles": [
+        "gallery"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-09-02T00:00:00.000Z",
+      "updatedAt": "2026-09-02T00:00:00.000Z",
+      "uploadedAt": "2026-09-02T00:00:00.000Z",
+      "fileSize": 114936,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "placeholder-hash",
+      "storage": "static"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-07-22T00:00:00.000Z",
+  "materials": [
+    {
+      "id": "cedar",
+      "name": "Cedar",
+      "description": "Natural cedar wood for fencing, decking, and siding",
+      "icon": "wood",
+      "featured": true,
+      "order": 1
+    },
+    {
+      "id": "composite",
+      "name": "Composite",
+      "description": "Composite decking and materials for low-maintenance outdoor spaces",
+      "icon": "deck",
+      "featured": true,
+      "order": 2
+    },
+    {
+      "id": "quartz",
+      "name": "Quartz",
+      "description": "Quartz countertops for kitchens and bathrooms",
+      "icon": "countertop",
+      "featured": true,
+      "order": 3
+    },
+    {
+      "id": "tile",
+      "name": "Tile",
+      "description": "Ceramic and porcelain tile for backsplashes, floors, and bathrooms",
+      "icon": "tile",
+      "featured": true,
+      "order": 4
+    },
+    {
+      "id": "pressure-treated",
+      "name": "Pressure Treated",
+      "description": "Pressure-treated lumber for outdoor structures",
+      "icon": "lumber",
+      "featured": true,
+      "order": 5
+    },
+    {
+      "id": "hardwood",
+      "name": "Hardwood",
+      "description": "Hardwood flooring and finish carpentry",
+      "icon": "floor",
+      "featured": false,
+      "order": 6
+    },
+    {
+      "id": "laminate",
+      "name": "Laminate",
+      "description": "Laminate flooring and surfaces",
+      "icon": "floor",
+      "featured": false,
+      "order": 7
+    },
+    {
+      "id": "vinyl",
+      "name": "Vinyl",
+      "description": "Vinyl flooring and siding",
+      "icon": "floor",
+      "featured": false,
+      "order": 8
+    },
+    {
+      "id": "metal",
+      "name": "Metal",
+      "description": "Metal roofing, siding, and structural elements",
+      "icon": "metal",
+      "featured": false,
+      "order": 9
+    },
+    {
+      "id": "stone",
+      "name": "Stone",
+      "description": "Natural stone for countertops, fireplaces, and exteriors",
+      "icon": "stone",
+      "featured": false,
+      "order": 10
+    },
+    {
+      "id": "concrete",
+      "name": "Concrete",
+      "description": "Concrete for foundations, patios, and driveways",
+      "icon": "concrete",
+      "featured": false,
+      "order": 11
+    },
+    {
+      "id": "drywall",
+      "name": "Drywall",
+      "description": "Drywall installation and finishing",
+      "icon": "wall",
+      "featured": false,
+      "order": 12
+    }
+  ]
+}

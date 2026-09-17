@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 40" role="img" aria-label="Happy Place Carpentry">
+  <!-- Simple tape-measure mark: rounded case + extended blade with tick marks.
+       Faithful to the original site's mark; redrawn crisp/sharpened. -->
+  <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- tape case -->
+    <rect x="3" y="13" width="22" height="18" rx="6" fill="currentColor" stroke="none"/>
+    <!-- blade extending right -->
+    <path d="M25 17 H57" stroke-width="3"/>
+    <!-- hook at the end -->
+    <path d="M57 14 V26" stroke-width="3"/>
+    <!-- tick marks on the blade -->
+    <path d="M31 17 V21 M37 17 V23 M43 17 V21 M49 17 V23 M53 17 V21" stroke-width="2"/>
+  </g>
+  <g fill="currentColor">
+    <!-- center dot on the case -->
+    <circle cx="14" cy="22" r="3"/>
+  </g>
+</svg>

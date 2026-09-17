@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-08-14T00:00:00.000Z",
+  "baseline": {
+    "source": "main",
+    "commit": "5ba201cd354b4cc2ba95f9612c39e08d813ffab1"
+  },
+  "version": 1,
+  "orders": []
+}

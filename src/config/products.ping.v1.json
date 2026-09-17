@@ -1,0 +1,59 @@
+{
+  "$schema": "products.v1",
+  "tenant": "ping",
+  "version": "1.0.0",
+  "note": "Product authority. Status labels are honest: Available means you can engage today. In development means real work is underway and documented. Future means direction, not a promise date.",
+  "products": [
+    {
+      "id": "ping-social",
+      "name": "PING Social",
+      "tagline": "AI concierge and business automation consultancy for home service businesses",
+      "status": "available",
+      "summary": "Practical automation consulting for independent home service businesses. We study how your business actually works, then recommend and implement the automation that fits: reliable inquiry capture, fast consistent response, follow-up that actually happens, review systems, and less administrative drag. Consultative, not packaged. Measurable value or the engagement does not continue.",
+      "offers": [
+        "Workflow discovery: we learn your business before recommending anything",
+        "Reliable capture: every inquiry, job detail, and follow-up lands somewhere it cannot disappear",
+        "Response systems: acknowledgment in minutes, not days",
+        "Follow-up sequences: estimates, check-ins, and review requests that run without relying on memory",
+        "Review and reputation systems: happy customers asked at the right moment, problems surfaced early"
+      ],
+      "notOffers": [
+        "One-size-fits-all packages",
+        "Technology that replaces your judgment",
+        "Systems you cannot understand or maintain"
+      ],
+      "cta": { "label": "Work with us", "href": "/contact" }
+    },
+    {
+      "id": "ping-intelligence",
+      "name": "PING",
+      "tagline": "Continuity infrastructure for AI agents and the businesses they serve",
+      "status": "in-development",
+      "summary": "The intelligence system underneath everything: event-sourced continuity, agent execution boundaries, evidence and provenance, deterministic replay. Real architecture, documented on this site as it is built. Not a product you can buy; the consultancy applies its principles to real businesses today.",
+      "documented": [
+        "Continuity: events as source truth, knowledge that accumulates, evidence attached to claims",
+        "Agents: capability boundaries, stdin-based machine execution, reversible by default",
+        "Evidence: verification grades, contradiction preservation, typed failure semantics",
+        "Replay: deterministic ordering from the same causal history"
+      ],
+      "cta": { "label": "Read the architecture", "href": "/technology" }
+    },
+    {
+      "id": "ai-concierge",
+      "name": "AI Concierge",
+      "tagline": "An always-on front desk for your business",
+      "status": "in-development",
+      "summary": "The applied form of the PING intelligence system for a single business: answers customer questions, captures job details, schedules work, and follows up, with every action recorded and attributable. Currently delivered as bespoke engagements through PING Social rather than as a standalone product.",
+      "cta": { "label": "Ask about concierge work", "href": "/contact" }
+    },
+    {
+      "id": "tenant-websites",
+      "name": "Websites on TenantOS",
+      "tagline": "One codebase, many tenants, configuration over forking",
+      "status": "future",
+      "summary": "The platform direction this site proves. TenantOS is the model where each tenant is configuration plus content plus brand plus domain, never a fork. This website is tenant one. Websites for other businesses on this model are future work, not an offering today.",
+      "proof": "This site: identity, brand, navigation, and SEO resolve from a versioned tenant authority. Re-skinning is token changes, not code edits.",
+      "cta": { "label": "See the direction", "href": "/technology/tenantos" }
+    }
+  ]
+}

@@ -1,0 +1,665 @@
+{
+  "schemaVersion": "1.0.0",
+  "description": "Machine-generated image manifest. Human curation lives in presentation.v1.json.",
+  "generatedAt": "2026-07-30T03:24:07.598Z",
+  "projects": [
+    {
+      "slug": "johnson-cedar-fence",
+      "title": "Uncategorized — Willamette Valley",
+      "category": "Uncategorized",
+      "county": ""
+    },
+    {
+      "slug": "smith-built-ins",
+      "title": "Uncategorized — Willamette Valley",
+      "category": "Uncategorized",
+      "county": ""
+    },
+    {
+      "slug": "wilson-home-repairs",
+      "title": "Uncategorized — Willamette Valley",
+      "category": "Uncategorized",
+      "county": ""
+    },
+    {
+      "slug": "thompson-exterior-painting",
+      "title": "Uncategorized — Willamette Valley",
+      "category": "Uncategorized",
+      "county": ""
+    },
+    {
+      "slug": "davis-bathroom-remodel",
+      "title": "Uncategorized — Willamette Valley",
+      "category": "Uncategorized",
+      "county": ""
+    },
+    {
+      "slug": "martinez-pergola",
+      "title": "Uncategorized — Willamette Valley",
+      "category": "Uncategorized",
+      "county": ""
+    }
+  ],
+  "assets": [
+    {
+      "uuid": "feea57b5-7ab4-5757-9525-4313f6ceec9e",
+      "contentHash": "fde707d0e89f57292087636f44c2e8a580add68c1bdf6a3f8573a15bc92623ce",
+      "stableId": "b8adf93d-6a2e-5738-9dbf-aa2350f01d55",
+      "id": "johnson-cedar-fence/fence-build",
+      "project": "johnson-cedar-fence",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "FENCE BUILD.jpg",
+      "sourcePath": "Johnson Cedar Fence/FENCE BUILD.jpg",
+      "width": 1280,
+      "height": 1436,
+      "role": "detail",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/johnson-cedar-fence/FENCE BUILD-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/johnson-cedar-fence/FENCE BUILD-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/johnson-cedar-fence/FENCE BUILD-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/johnson-cedar-fence/FENCE BUILD-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/johnson-cedar-fence/FENCE BUILD-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/johnson-cedar-fence/FENCE BUILD-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/johnson-cedar-fence/FENCE BUILD-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAADwAwCdASoQABIAPu1iqU2ppaOiMAgBMB2JZACw7Btl7rbeX6rshvrAAP203cJZfx4HNJGQjqkIJ/1IqEhLDaptb+KTyO47hPELci+y56J6LicuYtVCuJkBvLc1vjmZ5nhVwkwwD2sKsPlM0wAAAA==",
+      "createdAt": "2026-07-30T03:23:50.453Z"
+    },
+    {
+      "uuid": "d54ea7a9-3ebc-58bd-8d73-ec05b812fb46",
+      "contentHash": "e4dae37bb90595bbe466680b3295956f8a58a4589c5ce26c60ad7d4088e9535b",
+      "stableId": "f01c063d-80e9-54e5-8150-d481cd27eac6",
+      "id": "johnson-cedar-fence/fencerebuildmatchingstain",
+      "project": "johnson-cedar-fence",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "FENCEREBUILDMATCHINGSTAIN.png",
+      "sourcePath": "Johnson Cedar Fence/FENCEREBUILDMATCHINGSTAIN.png",
+      "width": 1280,
+      "height": 1008,
+      "role": "detail",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/johnson-cedar-fence/FENCEREBUILDMATCHINGSTAIN-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRmAAAABXRUJQVlA4IFQAAADwAQCdASoQAA0AA4BaJbACdADRDHzQrQAA/qvg89rPqkr4vC+n26YZleQouc7LnPjSe7aiV8Bk46Isw4c1pXFZlR6lSC3kYu74+jPw1olB8dMkQAA=",
+      "createdAt": "2026-07-30T03:23:51.616Z"
+    },
+    {
+      "uuid": "2fb8b84f-990a-5542-8e04-99f6173d5782",
+      "contentHash": "c16f37d656c830146ee3f2b54ed0b62c5d821952c06b7e85cb9c465672cd093e",
+      "stableId": "43cee174-ed0f-5190-b393-52ac748d1993",
+      "id": "smith-built-ins/finishedcarpentry0",
+      "project": "smith-built-ins",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "FINISHEDCARPENTRY0.png",
+      "sourcePath": "Smith Built-Ins/FINISHEDCARPENTRY0.png",
+      "width": 1280,
+      "height": 823,
+      "role": "detail",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/smith-built-ins/FINISHEDCARPENTRY0-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRnQAAABXRUJQVlA4IGgAAADwAQCdASoQAAoAA4BaJZACdAD6jdHeQRAA/vSpCEugaI8wOYbuc/5PuEd2QYI789GCzauL/0+ilGEak8SqbF03WgssA7SOpTUV2Rankn89qX0zY5zNEYsqrXC8rSPgG4xdPSpFwAAAAA==",
+      "createdAt": "2026-07-30T03:23:52.504Z"
+    },
+    {
+      "uuid": "f1c132be-5548-5fdd-84cc-0117240f1150",
+      "contentHash": "89a9f5d4bb013fa3978d767755fbfe05b11c3c0330ca6cf7ac02fb0d011be90e",
+      "stableId": "0a70fd32-d9f2-5aea-bd86-25437d39a7ad",
+      "id": "smith-built-ins/finishedcarpentry",
+      "project": "smith-built-ins",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "FINISHEDCARPENTRY.png",
+      "sourcePath": "Smith Built-Ins/FINISHEDCARPENTRY.png",
+      "width": 1280,
+      "height": 1078,
+      "role": "hero",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/smith-built-ins/FINISHEDCARPENTRY-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAABQAgCdASoQAA0AA4BaJQBOgMXI1Ocz5EZAWsAA/ueveCb/Y5aVz6uBnYN9sEn+0SXQqYovTuO3LF/2sp2ug/y7LFG9tRcO8Vcm1PtKB1ud7c6+Djr34925ZSzcAAAA",
+      "createdAt": "2026-07-30T03:23:53.587Z"
+    },
+    {
+      "uuid": "0330b30e-862d-5c57-9142-a6d039721c0a",
+      "contentHash": "eb41507f5cea45025ef68427cd9416c932ffc12033ad9bc1201f8504fbbbee6e",
+      "stableId": "ba4132c9-66ee-5d26-be2d-b6f68cf1930e",
+      "id": "wilson-home-repairs/floor0",
+      "project": "wilson-home-repairs",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "FLOOR0.jpg",
+      "sourcePath": "Wilson Home Repairs/FLOOR0.jpg",
+      "width": 1280,
+      "height": 1017,
+      "role": "detail",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/FLOOR0-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/FLOOR0-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/FLOOR0-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/FLOOR0-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/FLOOR0-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/FLOOR0-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/wilson-home-repairs/FLOOR0-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRlQAAABXRUJQVlA4IEgAAACwAQCdASoQAA0AA4BaJYwAAaXQw9PwAP36Sm3DEtQbDkMvPkaMAEwcxyZHyWH+BeC/TJb0Ozzhf7Ml5Q5lvO5RynLHuJgeAAA=",
+      "createdAt": "2026-07-30T03:23:54.807Z"
+    },
+    {
+      "uuid": "0142ab58-aad9-5167-8d3e-18fc75cb0de4",
+      "contentHash": "5358901c87cd8fc7a4f665825b65e576d51b671ec8d1c71ca256ed6d90218657",
+      "stableId": "898839ee-b2cf-5507-a862-6e27ecae71f4",
+      "id": "wilson-home-repairs/trimrepair",
+      "project": "wilson-home-repairs",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "TRIMREPAIR.png",
+      "sourcePath": "Wilson Home Repairs/TRIMREPAIR.png",
+      "width": 1280,
+      "height": 1280,
+      "role": "hero",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/TRIMREPAIR-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/TRIMREPAIR-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/TRIMREPAIR-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/TRIMREPAIR-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/TRIMREPAIR-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/TRIMREPAIR-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/wilson-home-repairs/TRIMREPAIR-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAADQAQCdASoQABAAA4BaJQBOgB02QinKAAD83VJNiygV8eykqEdIE1qSHSVNFOs102FdDTFTOrYHFJSqkCg2QozDXmBPH4uPVI6P8qxeEaN70X4HLFn2XzVvuL2KAA==",
+      "createdAt": "2026-07-30T03:23:56.321Z"
+    },
+    {
+      "uuid": "3fc2fcf8-5bc3-5d53-abee-8ab0020bf138",
+      "contentHash": "bb60c0ff212d897f3ab4b5101d664a2613a98d70f1c96c18facf2dc0ad0a642c",
+      "stableId": "b3dbfeba-58db-540c-b17d-9c5d3cc0e25a",
+      "id": "wilson-home-repairs/drywall",
+      "project": "wilson-home-repairs",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "DRYWALL.png",
+      "sourcePath": "Wilson Home Repairs/DRYWALL.png",
+      "width": 1280,
+      "height": 1600,
+      "role": "detail",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/DRYWALL-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/DRYWALL-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/DRYWALL-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/DRYWALL-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/DRYWALL-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/DRYWALL-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/wilson-home-repairs/DRYWALL-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRnwAAABXRUJQVlA4IHAAAACQAwCdASoQABQAPu1iqU2ppaOiMAgBMB2JZwDCgBAR6pTlTkRAAN3u8Q4IPleDsaTZ7AoxY+7Ba6Q7QlVVqp3pFIhFZ6OTz92anLm4nP+6cvAEtcjXttZX6iAc/7xIx9vWfCDqhUbhVOCUmUuR2AAA",
+      "createdAt": "2026-07-30T03:23:57.811Z"
+    },
+    {
+      "uuid": "e61f29cb-33d1-51c2-84fe-a3429af80b66",
+      "contentHash": "263a496c4392923e59d82737ea296a7c548a1dc8571a322013c52b99001ad118",
+      "stableId": "453e7646-ca98-545f-bed4-5f60952faf58",
+      "id": "wilson-home-repairs/floor",
+      "project": "wilson-home-repairs",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "FLOOR.png",
+      "sourcePath": "Wilson Home Repairs/FLOOR.png",
+      "width": 1280,
+      "height": 823,
+      "role": "detail",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/FLOOR-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/FLOOR-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/FLOOR-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/FLOOR-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/FLOOR-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/FLOOR-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/wilson-home-repairs/FLOOR-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRmAAAABXRUJQVlA4IFQAAAAwAgCdASoQAAoAA4BaJagCdAD7FuSds6ycAAD+wgbazRgn17MNNFfIG15koHLDfi1Wpi46FjdjG5SiL2k4K2Lp+EJuLDKCcw7Jyy5veU0wxWMgAAA=",
+      "createdAt": "2026-07-30T03:23:58.979Z"
+    },
+    {
+      "uuid": "3623dfa6-bde4-5df7-b341-1cea6b99c17b",
+      "contentHash": "39782328becb886acb5fcca700a27a746a19f299f0354cac7939aa08c5d663c0",
+      "stableId": "caa5f1f0-6dee-5ed9-a5b9-96334ed2cfde",
+      "id": "wilson-home-repairs/guttercleaning",
+      "project": "wilson-home-repairs",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "GUTTERCLEANING.jpg",
+      "sourcePath": "Wilson Home Repairs/GUTTERCLEANING.jpg",
+      "width": 1280,
+      "height": 1352,
+      "role": "detail",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/GUTTERCLEANING-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/GUTTERCLEANING-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/GUTTERCLEANING-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/GUTTERCLEANING-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/wilson-home-repairs/GUTTERCLEANING-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/wilson-home-repairs/GUTTERCLEANING-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/wilson-home-repairs/GUTTERCLEANING-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRnoAAABXRUJQVlA4IG4AAACwAwCdASoQABEAPu1iqU2ppaOiMAgBMB2JQBYdgyN1iNE5FhlLAAD9qKf2urLmgLfrkIwATI7alexyLkmHaZlTReDWCqRUTFumlTXWlQ90e1+SJm94xqyiC8clO1yomNWysaPk2UKIIX6keAAAAA==",
+      "createdAt": "2026-07-30T03:24:00.143Z"
+    },
+    {
+      "uuid": "7b0ab5ea-923e-5521-be69-e9d3df851de1",
+      "contentHash": "7804099b3a90f250341a8011ceaace8cfb56a02c30442c1239cebf1132c553ff",
+      "stableId": "1ac46242-e68b-575a-a4bc-03560bacadc6",
+      "id": "davis-bathroom-remodel/bathroom-wall",
+      "project": "davis-bathroom-remodel",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "BATHROOM_WALL.png",
+      "sourcePath": "Davis Bathroom Remodel/BATHROOM_WALL.png",
+      "width": 1280,
+      "height": 960,
+      "role": "hero",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/davis-bathroom-remodel/BATHROOM_WALL-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRm4AAABXRUJQVlA4IGIAAADQAQCdASoQAAwAA4BaJQBOgBJxSzk/gAD+yckh4ywjjEJoM/ASRnw2QHgyTZGsxvBn4XfAPpDCsCUS89Way39Or+3iH3+f/R6WnIixH1evUO5+2lNIInR2i1gpQrGBVgAAAA==",
+      "createdAt": "2026-07-30T03:24:01.162Z"
+    },
+    {
+      "uuid": "8601204d-46da-520c-99ba-d752744a3462",
+      "contentHash": "f8a835afbe43e1c4787fb5235b24c8fac661905b49c5a00bae7bf22ea2d80b67",
+      "stableId": "27e7115b-5e29-5fc6-abf5-a11afcff944f",
+      "id": "martinez-pergola/1",
+      "project": "martinez-pergola",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "1.png",
+      "sourcePath": "Martinez Pergola/1.png",
+      "width": 1448,
+      "height": 1086,
+      "role": "detail",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/martinez-pergola/1-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/martinez-pergola/1-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/martinez-pergola/1-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/martinez-pergola/1-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/martinez-pergola/1-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/martinez-pergola/1-1080.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/martinez-pergola/1-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRlgAAABXRUJQVlA4IEwAAACwAQCdASoQAAwAA4BaJbAAAaLD9dEAANv9nL5ux+M4xUuh24fJZpJZVilEEmPOtj5eCyae1Wgqjvdz0MqDmgbw62nfAZ6jG3U4AAAA",
+      "createdAt": "2026-07-30T03:24:02.510Z"
+    },
+    {
+      "uuid": "66be17f6-2bb0-5c17-bb8e-fe6f92d03d12",
+      "contentHash": "0ab88793f39b024e9657f4b52228b316a64ed58227babd98f05b659272f04b14",
+      "stableId": "fefd445b-c713-59b5-bb78-091cb373ace9",
+      "id": "martinez-pergola/homeserviceprojectpergolas",
+      "project": "martinez-pergola",
+      "category": "Uncategorized",
+      "county": "",
+      "originalFilename": "HOMESERVICEPROJECTPERGOLAS.jpg",
+      "sourcePath": "Martinez Pergola/HOMESERVICEPROJECTPERGOLAS.jpg",
+      "width": 4367,
+      "height": 3275,
+      "role": "detail",
+      "priority": null,
+      "variants": [
+        {
+          "width": 480,
+          "format": "avif",
+          "path": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-480.avif"
+        },
+        {
+          "width": 480,
+          "format": "webp",
+          "path": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-480.webp"
+        },
+        {
+          "width": 768,
+          "format": "avif",
+          "path": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-768.avif"
+        },
+        {
+          "width": 768,
+          "format": "webp",
+          "path": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-768.webp"
+        },
+        {
+          "width": 1080,
+          "format": "avif",
+          "path": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-1080.avif"
+        },
+        {
+          "width": 1080,
+          "format": "webp",
+          "path": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-1080.webp"
+        },
+        {
+          "width": 1600,
+          "format": "avif",
+          "path": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-1600.avif"
+        },
+        {
+          "width": 1600,
+          "format": "webp",
+          "path": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-1600.webp"
+        },
+        {
+          "width": 2000,
+          "format": "avif",
+          "path": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-2000.avif"
+        },
+        {
+          "width": 2000,
+          "format": "webp",
+          "path": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-2000.webp"
+        }
+      ],
+      "thumbnailPath": "/images/projects/martinez-pergola/HOMESERVICEPROJECTPERGOLAS-thumb.webp",
+      "blurDataURL": "data:image/webp;base64,UklGRlwAAABXRUJQVlA4IFAAAACwAQCdASoQAAwAA4BaJbACdACyWOoAAPdQdWxXdZ/oshhmki57AnBbBRKeI0jLegQgCdXOR1uic6XzERlGrvOgSJc307sOzssL4SGPw4wAAA==",
+      "createdAt": "2026-07-30T03:24:07.589Z"
+    }
+  ]
+}

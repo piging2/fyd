@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Happy Place Carpentry">
+  <rect width="64" height="64" rx="14" fill="#1F3F3C"/>
+  <g fill="none" stroke="#EDEAE0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="10" y="22" width="22" height="20" rx="6" fill="#EDEAE0" stroke="none"/>
+    <path d="M32 28 H54" stroke-width="3.2"/>
+    <path d="M54 24 V40" stroke-width="3.2"/>
+    <path d="M39 28 V33 M45 28 V35 M50 28 V33" stroke-width="2"/>
+  </g>
+  <circle cx="21" cy="32" r="3" fill="#1F3F3C"/>
+</svg>

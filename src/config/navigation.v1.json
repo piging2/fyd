@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-09-16T00:00:00.000Z",
+  "navigation": [
+    {
+      "label": "Home",
+      "href": "/"
+    },
+    {
+      "label": "Technology",
+      "href": "/technology"
+    },
+    {
+      "label": "Blog",
+      "href": "/blog"
+    },
+    {
+      "label": "Products",
+      "href": "/products"
+    },
+    {
+      "label": "About",
+      "href": "/about"
+    },
+    {
+      "label": "Contact",
+      "href": "/contact",
+      "secondary": true
+    },
+    {
+      "label": "FAQ",
+      "href": "/faq",
+      "secondary": true
+    }
+  ]
+}

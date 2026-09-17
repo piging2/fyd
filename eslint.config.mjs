@@ -1,0 +1,65 @@
+import { defineConfig } from "eslint/config";
+
+const eslintConfig = defineConfig([
+  {
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+      "package/**",
+      "scripts/**",
+      "src/shared/connectors/**",
+      "src/shared/explorer/**",
+      "src/shared/intelligence/**",
+      "src/shared/components/reconstruction/**",
+      "src/shared/components/replay/**",
+      "src/shared/components/diff/**",
+      "src/shared/components/inspector/**",
+      "src/shared/components/explorer/**",
+      "src/objects/**",
+      "src/motion/**",
+      "src/scripts/**",
+      "src/app/admin/**",
+      "src/app/api/admin/**",
+      "src/app/api/diagnostics/**",
+      "src/app/api/auth/google/**",
+      "src/app/api/drive/**",
+      "src/services/**",
+      "src/types/**",
+      "src/lib/**",
+      "src/app/api/drive-sync/**",
+      "src/app/api/estimate/**",
+      "src/app/api/kit/**",
+      "src/app/api/reviews/**",
+      "src/app/blog/**",
+      "src/app/contact/**",
+      "src/app/estimate/**",
+      "src/app/newsletter/**",
+      "src/app/reviews/**",
+      "src/app/workbench/**",
+      "src/app/our-work/**",
+      "src/app/projects/**",
+      "src/app/services/**",
+      "src/components/**",
+      "src/generated/**",
+      "src/generators/**",
+      "src/automation/**",
+      "src/compiler/**",
+      "src/config/**",
+    ],
+  },
+  {
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: "module",
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+  },
+]);
+
+export default eslintConfig;

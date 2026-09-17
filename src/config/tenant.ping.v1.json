@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "description": "Tenant authority for PING. PING is the first tenant on the TenantOS platform model: platform code + tenant configuration + content. A second tenant is a new tenant.*.v1.json plus content, never a fork.",
+  "generatedAt": "2026-09-16T00:00:00.000Z",
+  "tenant": {
+    "id": "ping",
+    "slug": "ping",
+    "siteName": "PING",
+    "tagline": "Continuity infrastructure for AI agents and the businesses they serve.",
+    "description": "PING is an evolving intelligence system. It turns information into reliable understanding, understanding into useful action, and action into evidence that can be trusted and replayed. PING Social, the consultancy, applies that infrastructure to real home service businesses.",
+    "domain": null,
+    "operator": {
+      "name": "Nolan Geske",
+      "business": "PING Social",
+      "role": "Founder and operator"
+    },
+    "brand": {
+      "wordmark": "PING",
+      "voice": "Concrete, honest, technical. No hype, no vague superlatives. Claims must be demonstrable.",
+      "colors": {
+        "ink": "#1A1729",
+        "inkDeep": "#12101D",
+        "gold": "#C9A227",
+        "violet": "#7C5CD6",
+        "paper": "#F7F7F9"
+      },
+      "mascot": {
+        "note": "The PING pig: slender metallic gold pig, purple inner ears, purple suit with gold trim. Never a generic pig."
+      }
+    },
+    "navigation": [
+      { "label": "Home", "href": "/" },
+      { "label": "Technology", "href": "/technology" },
+      { "label": "Blog", "href": "/blog" },
+      { "label": "Products", "href": "/products" },
+      { "label": "About", "href": "/about" },
+      { "label": "Contact", "href": "/contact", "secondary": true },
+      { "label": "FAQ", "href": "/faq", "secondary": true }
+    ],
+    "contact": {
+      "facebook": "https://www.facebook.com/profile.php?id=61594275542163",
+      "email": null,
+      "note": "Email intentionally unset. Add a real address when one exists; never invent one."
+    },
+    "provenance": {
+      "note": "This site was rebuilt from the Happy Place Platform website codebase. Full history is preserved in Git; it does not dominate the public site."
+    }
+  }
+}

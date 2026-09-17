@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2024-01-01T00:00:00Z",
+  "providers": [
+    {
+      "id": "google-drive",
+      "name": "Google Drive",
+      "description": "File storage and document management",
+      "scopes": [
+        "https://www.googleapis.com/auth/drive.file"
+      ],
+      "enabled": true
+    },
+    {
+      "id": "google-contacts",
+      "name": "Google Contacts",
+      "description": "Contact management and CRM integration",
+      "scopes": [
+        "https://www.googleapis.com/auth/contacts"
+      ],
+      "enabled": true
+    },
+    {
+      "id": "google-gmail",
+      "name": "Gmail",
+      "description": "Email sending and management",
+      "scopes": [
+        "https://www.googleapis.com/auth/gmail.send"
+      ],
+      "enabled": true
+    },
+    {
+      "id": "google-calendar",
+      "name": "Google Calendar",
+      "description": "Scheduling and calendar management",
+      "scopes": [
+        "https://www.googleapis.com/auth/calendar"
+      ],
+      "enabled": false
+    },
+    {
+      "id": "google-maps",
+      "name": "Google Maps",
+      "description": "Location services and mapping",
+      "scopes": [
+        "https://www.googleapis.com/auth/maps"
+      ],
+      "enabled": false
+    },
+    {
+      "id": "google-business-profile",
+      "name": "Google Business Profile",
+      "description": "Business listing and local SEO",
+      "scopes": [
+        "https://www.googleapis.com/auth/business.manage"
+      ],
+      "enabled": false
+    }
+  ]
+}

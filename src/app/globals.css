@@ -1,0 +1,827 @@
+@import "tailwindcss";
+
+/*
+ * SEMANTIC DESIGN TOKENS — PING technology brand.
+ * TenantOS model: to re-skin for another tenant, change tokens only.
+ * (CEO visual direction) Color roles, not equal-weight colors:
+ *   --color-primary     = Deep Ink       (brand: header, nav, buttons, footer, dark sections)
+ *   --color-background  = Cloud White    (page bg, bright and calm)
+ *   --color-surface-2   = Steel Blue     (secondary sections, muted blues)
+ *   --color-surface     = Fog Blue       (cards only, never large sections)
+ *   --color-accent      = Charcoal       (borders, icons, labels, dividers)
+ *   --color-honey       = PING Gold      (single warm action accent, 5-8% usage)
+ *   --color-forest      = Forest Green   (grounding accent, 10% usage)
+ * To re-skin for another business, change tokens only.
+ */
+@theme {
+  /* Brand — Deep Navy (primary brand color) */
+  --color-primary: #232033;
+  --color-primary-hover: #2E2A44;
+  --color-primary-foreground: #FAFBFC;
+
+  /* Secondary brand — Cedar Gold (single warm CTA pop, 5-8% usage) */
+  --color-honey: #C9A227;
+  --color-honey-hover: #DDBB4A;
+  --color-honey-foreground: #1c1917;
+
+  /* PING brand — violet signal accent (pig purple) */
+  --color-ping-violet: #7C5CD6;
+  --color-ping-violet-hover: #8F6FE0;
+  --color-ping-gold: #C9A227;
+  --color-ping-ink: #1A1729;
+
+  /* Accent — Charcoal (borders, icons, labels) */
+  --color-accent: #432E2D;
+  --color-accent-foreground: #FAFBFC;
+
+  /* Forest Green (grounding accent, 10% usage) */
+  --color-forest: #2E5A4F;
+  --color-forest-hover: #355B4C;
+  --color-forest-foreground: #FAFBFC;
+
+  /* Backgrounds — warm, layered whites (Phase 9) */
+  --color-background: #F7F7F9;       /* warm paper white — page (was #FAFBFC cloud white) */
+  --color-surface-2: #E8E8EF;         /* soft linen — secondary sections (was #DCEAF3 steel blue) */
+  --color-surface: #EFEFF4;           /* shoji white — cards (was #E8F1F5 fog blue) */
+  --color-surface-muted: #D8D8E2;    /* smokey taupe — subtle sections (was #D8E3EA slate mist) */
+  --color-border: #30424E;           /* charcoal borders/dividers (unchanged) */
+  --color-border-soft: #CDC4B5;      /* smokey taupe — soft borders (was #D8E3EA) */
+
+  /* Deep (hero / dark sections) */
+  --color-deep: #1A1729;             /* ripe olive for hero */
+  --color-deep-2: #12101D;           /* deep oxblood charcoal for dark sections */
+
+  /* Atmospheric Lighting — Pacific Northwest forest-inspired */
+  --color-atmosphere-shadow: #44483D;  /* Ripe Olive — deepest atmospheric foundation */
+  --color-atmosphere-primary: #5E6259; /* Pewter Green — primary drifting atmospheric layer */
+  --color-atmosphere-highlight: #858D81; /* Carolina Gull — gentle moving highlights */
+
+  /* Happy Light — warm luminous neutral for interior warmth */
+  --color-happy-light: #F5F0E6;
+
+  /* Material Palette — Phase 8 introduction (ready for gradual rollout) */
+  --color-shoji-white: #E6DFD3;      /* primary warm surface */
+  --color-smokey-taupe: #CDC4B5;     /* secondary surface */
+  --color-pewter-green: #5E6259;     /* atmospheric support (matches existing atmosphere-primary) */
+  --color-carolina-gull: #858D81;    /* subtle interface accents (matches existing atmosphere-highlight) */
+  --color-ripe-olive: #44483D;        /* deep anchors (matches existing deep/primary) */
+  --color-cavern-clay: #AC6B53;       /* premium accent (NEW - not yet applied) */
+  --color-blood-orange: #E74C3C;      /* optional future accent (token only - not yet applied) */
+
+  /* Warm Paper White — emotional center of the brand (ready for gradual rollout) */
+  --color-warm-paper: #F8F5F0;        /* warm ivory/paper white - leans slightly yellow, not cream/beige */
+
+  /* Expanded Warm Neutrals — Phase 9 (bright, layered family) */
+  --color-sunlit-white: #F6F1E8;     /* sunlit white - bright, warm illumination */
+  --color-soft-linen: #E9E1D4;       /* soft linen - subtle warm texture */
+
+  /* Text */
+  --color-text: #111827;             /* near-black */
+  --color-text-muted: #374151;       /* secondary */
+  --color-text-subtle: #4A4F58;      /* captions/meta */
+  --color-text-on-dark: #FAFBFC;     /* text on dark backgrounds */
+  --color-text-dark: #000000;        /* near-black for body text on warm backgrounds */
+
+  /* Feedback */
+  --color-success: #2E5A4F;
+  --color-warning: #C9A227;
+  --color-error: #b4543a;
+
+  /* Cedar tones (subtle accents only, 5-8% usage) */
+  --color-walnut: #5D4037;          /* deep walnut for dividers */
+  --color-burnt-cedar: #8D6E63;     /* burnt cedar for borders */
+  --color-warm-ivory: #FFF8E7;      /* warm ivory for highlights */
+  --color-cedar-dust: #D4C4B8;      /* cedar dust for subtle backgrounds */
+  --color-oak: #C4A77D;             /* oak for accents */
+  --color-pine: #5D7A5C;             /* pine for grounding */
+  --color-moss: #7A9B76;             /* moss for soft accents */
+  --color-river: #6B8E9B;            /* river for cool accents */
+  --color-sky: #8BA9B8;             /* sky for light touches */
+  --color-mist: #B8C5D1;            /* mist for subtle fills */
+
+  /* Additional accents */
+  --color-aged-bronze: #A1887F;     /* aged bronze for accents */
+  --color-charcoal: #432E2D;        /* warm charcoal for text */
+
+  /* Service category accents */
+  --color-accent-decks: #4A90A4;        /* ocean blue */
+  --color-accent-fences: #2E5A4F;      /* forest green */
+  --color-accent-pergolas: #C9A227;     /* cedar gold */
+  --color-accent-remodeling: #5A6A7A;  /* slate blue */
+  --color-accent-repairs: #4A4A4A;      /* graphite */
+  --color-accent-builtins: #5D4037;     /* walnut brown */
+
+  /* Typography — Playfair Display (display) + Georgia (body) + Playball (signature) */
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-signature: "Playball", cursive;
+
+  /* Microtypography — optical alignment and rhythm */
+  --leading-display: 1.15;      /* tight leading for display headings */
+  --leading-body: 1.6;          /* comfortable reading rhythm */
+  --leading-tight: 1.25;        /* compact headings */
+  --tracking-display: -0.02em;  /* slight letter-spacing reduction for display */
+  --tracking-body: 0.01em;      /* slight letter-spacing increase for body readability */
+  --tracking-tight: -0.01em;    /* neutral tracking for compact text */
+
+  /* Shadows — warm, layered, not harsh */
+  --shadow-warm: 0 1px 3px rgba(53, 36, 35, 0.12), 0 1px 2px rgba(53, 36, 35, 0.08);
+  --shadow-float: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
+  
+  /* Card shadows — softer, natural depth using atmospheric colors */
+  --shadow-card: 0 2px 8px -2px rgba(68, 72, 61, 0.08), 0 1px 4px -1px rgba(94, 98, 89, 0.06);
+  --shadow-card-hover: 0 4px 16px -4px rgba(68, 72, 61, 0.12), 0 2px 8px -2px rgba(94, 98, 89, 0.08);
+
+  /* Spacing tokens — consistent rhythm across components */
+  --space-card-xs: 0.5rem;   /* 8px */
+  --space-card-sm: 0.75rem;  /* 12px */
+  --space-card-md: 1rem;     /* 16px */
+  --space-card-lg: 1.25rem;  /* 20px */
+  --space-card-xl: 1.5rem;   /* 24px */
+
+  /* Radius — consistent, slightly rounded */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-card: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Secondary brand — storm for dark sections */
+  --color-secondary: #432E2D;
+  --color-secondary-hover: #352423;
+  --color-secondary-foreground: #FAFBFC;
+
+  /* Signature shadow (weighty, premium, not flat) */
+  --shadow-warm: 0 18px 40px -18px rgba(53, 36, 35, 0.45), 0 8px 20px -12px rgba(217, 154, 78, 0.25);
+  --shadow-float: 0 24px 60px -28px rgba(53, 36, 35, 0.55), 0 10px 30px -16px rgba(0, 0, 0, 0.25);
+}
+
+.dark {
+  --color-background: #111315;
+  --color-surface-2: #181B1E;
+  --color-surface: #202428;
+  --color-surface-muted: #1A1D20;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-soft: rgba(255, 255, 255, 0.06);
+  --color-deep: #1A1D20;
+  --color-deep-2: #202428;
+  --color-text: #F7F6F3;
+  --color-text-muted: #C7C5BF;
+  --color-text-subtle: #8B8983;
+  --color-primary: #2A2540;
+  --color-primary-hover: #2E2A44;
+}
+
+/*
+==================================================
+SCROLL OWNERSHIP
+==================================================
+
+DO NOT enable
+
+scroll-behavior: smooth
+
+while LenisProvider is active.
+
+Lenis owns all scroll interpolation.
+
+Only one system may control page scroll:
+✅ Native browser scrolling OR
+✅ Lenis
+
+Never both.
+
+If Lenis is enabled:
+- scroll-behavior: auto; or remove the property entirely
+
+If Lenis is disabled:
+- Native smooth scrolling may be enabled
+
+See: SCROLL_LAG_FIX.md
+==================================================
+*/
+
+html {
+  /* scroll-behavior: smooth; */ /* DISABLED - Lenis owns scroll (see SCROLL OWNERSHIP above) */
+}
+
+body {
+  background:
+    /* Pacific Northwest atmospheric lighting - indirect daylight through forest canopy */
+    /* Multiple diffuse light sources for filtered, natural feel */
+    radial-gradient(ellipse at 15% 20%, rgba(94, 98, 89, 0.015) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 30%, rgba(133, 141, 129, 0.01) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 85%, rgba(94, 98, 89, 0.008) 0%, transparent 50%),
+    radial-gradient(ellipse at 25% 75%, rgba(133, 141, 129, 0.006) 0%, transparent 45%),
+    var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.65;
+}
+
+/* Display type utility */
+.font-display { font-family: var(--font-display); }
+.font-signature { font-family: var(--font-signature); }
+
+/* Premium tracking refinement for display headings */
+.tracking-display {
+  letter-spacing: -0.02em;
+}
+
+/* Accessible focus ring for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--color-honey);
+  outline-offset: 2px;
+}
+
+/* Cedar-grain divider — subtle warm planks (Directive 032). Low-opacity texture
+   so it reads as natural wood, never a stock texture or loud element. */
+.cedar-grain {
+  background-image: repeating-linear-gradient(
+    90deg,
+    #5D4037 0px,
+    #8D6E63 3px,
+    #A1887F 6px,
+    #5D4037 9px
+  );
+  background-size: 18px 100%;
+  opacity: 0.08;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* ============================================================================
+   P0 VISUAL LANGUAGE — refinement only, no redesign.
+   Craftsmanship layers are intentionally almost invisible (3–6% opacity).
+   If you notice them immediately, they are too strong.
+   ========================================================================== */
+
+/* HERO ATMOSPHERIC LAYER
+   Combined sky gradient (single atmospheric layer) */
+.hero-craft {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+/* Subtle atmospheric gradient - Pacific Northwest forest lighting */
+.hero-craft::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: overlay;
+  opacity: 0.35;
+}
+
+/* carpenter-square corner - engraved feel */
+.hero-square {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  width: 84px;
+  height: 84px;
+  pointer-events: none;
+  opacity: 0.04;
+  z-index: 2;
+  filter: blur(0.5px);
+}
+.hero-square::before,
+.hero-square::after {
+  content: "";
+  position: absolute;
+  background: var(--color-text-on-dark);
+  border-radius: 1px;
+}
+.hero-square::before { top: 0; right: 0; width: 1px; height: 84px; }
+.hero-square::after  { top: 0; right: 0; width: 84px; height: 1px; }
+
+/* Engraved corner bracket - subtle woodworking joinery detail */
+.engraved-corner {
+  position: relative;
+}
+.engraved-corner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-top: 1px solid var(--color-walnut);
+  border-left: 1px solid var(--color-walnut);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Blueprint measurement marks - tiny dimensional indicators */
+.blueprint-marks {
+  position: relative;
+}
+.blueprint-marks::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 8px;
+  height: 1px;
+  background: var(--color-charcoal);
+  opacity: 0.3;
+}
+.blueprint-marks::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  height: 8px;
+  background: var(--color-charcoal);
+  opacity: 0.3;
+}
+/* pencil tick marks - randomized spacing */
+.hero-ticks {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  width: 84px;
+  height: 84px;
+  pointer-events: none;
+  opacity: 0.03;
+  z-index: 2;
+  background-image: repeating-linear-gradient(
+    180deg, transparent 0 7px, var(--color-text-on-dark) 7px 8px, transparent 8px 15px, var(--color-text-on-dark) 15px 16px, transparent 16px 24px
+  );
+  -webkit-mask-image: linear-gradient(90deg, transparent 78px, black 78px 84px);
+  mask-image: linear-gradient(90deg, transparent 78px, black 78px 84px);
+}
+
+/* IMAGE MOUNTING — feel mounted, not floating (Apple-like).
+   1px warm ivory stroke + inset highlight + extremely soft shadow + tiny
+   bevel + rounded corners. Replaces borderless float on photo frames. */
+.photo-mounted {
+  border-radius: var(--radius-card);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,             /* subtle inner highlight */
+    0 0 0 1px rgba(250, 251, 252, 0.75),                /* 1px cloud white stroke */
+    0 1px 2px rgba(53, 36, 35, 0.12) inset,             /* tiny bevel */
+    0 22px 46px -28px rgba(53, 36, 35, 0.5),            /* soft ambient shadow */
+    0 4px 14px -10px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Image breathing room - subtle tonal consistency overlay */
+.photo-mounted::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(94, 98, 89, 0.03) 0%,
+    transparent 50%,
+    rgba(133, 141, 129, 0.02) 100%
+  );
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0.6;
+}
+
+/* barely perceptible lift on hover — calm, confident, not flashy */
+.photo-mounted { will-change: transform; }
+@media (hover: hover) {
+  a:hover .photo-mounted,
+  .photo-mounted:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.8) inset,
+      0 0 0 1px rgba(250, 251, 252, 0.85),
+      0 1px 2px rgba(53, 36, 35, 0.14) inset,
+      0 30px 60px -30px rgba(53, 36, 35, 0.6),
+      0 6px 18px -10px rgba(0, 0, 0, 0.22);
+  }
+}
+
+/* tiny bevel on the inner edge */
+.photo-mounted > img,
+.photo-mounted > span {
+  box-shadow: inset 0 0 0 1px rgba(53, 36, 35, 0.06);
+}
+
+/* Image breathing room - refined aspect ratios and crops */
+.photo-breathe {
+  padding: 0.5rem; /* 8px breathing room */
+  transition: padding 0.3s ease;
+}
+
+@media (hover: hover) {
+  .photo-breathe:hover {
+    padding: 0.625rem; /* 10px on hover for subtle expansion */
+  }
+}
+
+/* REFINED TYPOGRAPHY HELPERS (magazine editor) */
+.measure {
+  max-width: 65ch;            /* ~65 characters optimal readability */
+}
+.measure-narrow {
+  max-width: 60ch;
+}
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Refined focus ring (calm, confident) */
+:focus-visible {
+  outline: 2px solid var(--color-honey);
+  outline-offset: 3px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 4px rgba(217, 154, 78, 0.05);
+}
+
+/* Smooth link transitions */
+a {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.dark {
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-border-soft: rgba(255, 255, 255, 0.08);
+}
+
+/* CRAFT RULE — a hairline double separator with a single honey pin.
+   Used between major sections for quiet rhythm (no loud dividers). */
+.craft-rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 1px;
+  background: transparent;
+}
+.craft-rule::before,
+.craft-rule::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  max-width: 140px;
+  background: linear-gradient(90deg, transparent, var(--color-accent));
+  opacity: 0.5;
+}
+.craft-rule::after { background: linear-gradient(90deg, var(--color-accent), transparent); }
+.craft-rule > span {
+  width: 5px; height: 5px;
+  transform: rotate(45deg);
+  background: var(--color-honey);
+  box-shadow: 0 0 0 2px rgba(217, 154, 78, 0.12);
+  opacity: 0.7;
+}
+
+/* Section eyebrow tool mark (small carpenter square) */
+.eyebrow-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.eyebrow-mark svg { width: 16px; height: 16px; color: var(--color-honey); }
+
+/* ORGANIC divider — cedar PRINCIPLE, not a texture (CEO review).
+   Asymmetric, hand-placed lengths instead of one identical rule. */
+.organic-divider {
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-accent) 8%,
+    var(--color-honey) 22%,
+    var(--color-accent) 70%,
+    transparent 100%
+  );
+  opacity: 0.6;
+  border-radius: 2px;
+}
+
+/* Weighty, premium CTA (no bounce). Shared signature across the site. */
+.cta-signature {
+  background: var(--color-honey);
+  color: var(--color-honey-foreground);
+  box-shadow: 0 1px 6px -2px rgba(217, 154, 78, 0.25), 0 0.5px 2px -1px rgba(217, 154, 78, 0.15);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s ease;
+}
+.cta-signature:hover {
+  transform: translateY(-1px);
+  background: var(--color-honey-hover);
+  box-shadow: 0 3px 12px -4px rgba(217, 154, 78, 0.35), 0 1.5px 4px -2px rgba(217, 154, 78, 0.25);
+}
+
+/* Hero parallax layer — subtle slow drift on the background photo. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-parallax {
+    will-change: transform;
+    animation: heroDrift 37s ease-in-out infinite alternate;
+  }
+  @keyframes heroDrift {
+    from { transform: scale(1.06) translateY(0); }
+    to { transform: scale(1.12) translateY(-2.5%); }
+  }
+  /* Editorial micro-motion: images breathe 1–2% while visible. */
+  .photo-breathe { transition: transform 0.7s ease-out; }
+  .group:hover .photo-breathe,
+  .photo-breathe:hover { transform: scale(1.03); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Mobile typography scaling — 80% of desktop values for readability */
+@media (max-width: 768px) {
+  :root {
+    --font-display-scale: 0.8;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 2.5rem);
+  }
+  h2 {
+    font-size: clamp(1.5rem, 4vw, 1.75rem);
+  }
+  h3 {
+    font-size: clamp(1.25rem, 3vw, 1.4rem);
+  }
+}
+
+/* Mobile touch targets — minimum 44x44px for accessibility */
+@media (max-width: 768px) {
+  a,
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  a.cta-signature,
+  button.cta-signature {
+    min-height: 48px;
+    padding: 12px 24px;
+  }
+}
+
+/* HAPPY Brand Signature Animations */
+@keyframes shimmer-slow {
+  0%, 85%, 100% {
+    background-position: -200% 0;
+    opacity: 0;
+  }
+  90%, 95% {
+    background-position: 100% 0;
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer-fast {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer-slow {
+  animation: shimmer-slow 53s ease-in-out infinite;
+}
+
+.animate-shimmer-fast {
+  animation: shimmer-fast 1s ease-in-out;
+}
+
+/* Gold exaggerated version for HappyBrandSignature */
+.happy-gold-shine {
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    #d4a84b 20%,        /* brighter gold */
+    #f5d790 35%,        /* lighter honey */
+    #fff8e7 50%,        /* bright champagne peak */
+    #f5d790 65%,
+    #d4a84b 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes happy-gold-sweep {
+  0%, 50% { background-position: 200% 0; opacity: 0; }
+  55% { opacity: 1; }
+  85% { background-position: -100% 0; }
+  90%, 100% { opacity: 0; background-position: -100% 0; }
+}
+
+.animate-happy-gold-idle {
+  animation: happy-gold-sweep 71s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer-slow,
+  .animate-shimmer-fast,
+  .animate-happy-gold-idle,
+  .ccb-shimmer {
+    animation: none;
+  }
+}
+
+/* CCB License Shimmer - one-time subtle shimmer on first scroll */
+.ccb-shimmer {
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(217, 154, 78, 0.3) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: shimmer-fast 1.5s ease-in-out;
+}
+
+/* ============================================================================
+   ENVIRONMENTAL RICHNESS — PNW-inspired backgrounds (2-8% opacity)
+   ========================================================================== */
+
+/* Pacific Northwest fog layer - atmospheric, masked */
+.pnw-fog {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.03;
+}
+
+/* ============================================================================
+   SECTION TRANSITIONS — native CSS clip-path and layering
+   ========================================================================== */
+
+/* Diagonal section transition - clip-path based */
+.section-diagonal-top {
+  position: relative;
+}
+.section-diagonal-top::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: inherit;
+  clip-path: polygon(0 100%, 100% 0, 100% 100%);
+  transform: translateY(-100%);
+  z-index: 1;
+}
+
+.section-diagonal-bottom {
+  position: relative;
+}
+.section-diagonal-bottom::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: inherit;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  transform: translateY(100%);
+  z-index: 1;
+}
+
+/* Image bleed transition with layering */
+.section-bleed-image {
+  position: relative;
+  overflow: hidden;
+}
+.section-bleed-image::before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  right: -20px;
+  bottom: -20px;
+  background: linear-gradient(135deg, rgba(217, 154, 78, 0.05) 0%, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Print stylesheet for estimate confirmation */
+@media print {
+  /* Hide navigation and footer */
+  .site-header,
+  .site-footer,
+  .scroll-to-top,
+  button:not([type="submit"]),
+  a[href^="/"],
+  .cta-signature {
+    display: none !important;
+  }
+
+  /* Clean layout for printing */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Focus on estimate content */
+  main {
+    padding: 0 !important;
+  }
+
+  /* Ensure text is readable */
+  .text-primary,
+  .text-text,
+  .text-text-muted {
+    color: black !important;
+  }
+
+  /* Remove backgrounds and shadows */
+  .bg-deep,
+  .bg-surface,
+  .bg-surface-muted,
+  .CraftCard {
+    background: white !important;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+
+  /* Ensure images print properly */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  /* Page breaks */
+  .CraftCard,
+  section {
+    page-break-inside: avoid;
+  }
+}
+
+/* Curved section transition */
+.section-curved-bottom {
+  position: relative;
+}
+.section-curved-bottom::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: inherit;
+  border-radius: 50% 50% 0 0;
+  transform: translateY(50%);
+  z-index: 1;
+}
+
+/* Asymmetric section transition */
+.section-asymmetric {
+  position: relative;
+}
+.section-asymmetric::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(135deg, transparent 30%, var(--color-background) 30%, var(--color-background) 70%, transparent 70%);
+  transform: translateY(-100%);
+  z-index: 1;
+}
+
+/* Performance optimization: content-visibility for below-the-fold sections */
+/* Skips rendering work for offscreen content until needed */
+/* Browsers that don't support this simply ignore it */
+.below-fold {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+/* Apply to specific component types that are typically below the fold */
+.CraftCard-grid,
+.faq-list,
+.gallery-grid,
+.reviews-grid {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
+}

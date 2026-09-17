@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-label="Bathroom Remodeling">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#EDEAE0"/><stop offset="1" stop-color="#E9DBC9"/></linearGradient></defs>
+  <rect width="800" height="600" fill="url(#g)"/>
+  <circle cx="640" cy="120" r="204" fill="#d99a4e" opacity="0.22"/>
+  
+        <rect x="96" y="204" width="608" height="276" fill="#e7e2d8"/>
+        <rect x="96" y="204" width="608" height="36" fill="#9c7a52"/>
+        <circle cx="400" cy="348" r="60" fill="#cfe0e3"/>
+  <text x="48" y="516" font-family="Georgia, serif" font-size="43" font-weight="700" fill="#2b2620">Bathroom Remodeling</text>
+  <text x="48" y="559" font-family="Arial, sans-serif" font-size="18" fill="rgba(43,38,32,0.62)"></text>
+</svg>

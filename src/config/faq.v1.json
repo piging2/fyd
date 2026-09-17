@@ -1,0 +1,54 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-09-16T00:00:00.000Z",
+  "faqs": [
+    {
+      "id": "f1",
+      "question": "What is PING?",
+      "answer": "PING is an evolving intelligence system. It turns information into reliable understanding, understanding into useful action, and action into evidence that can be trusted and replayed. The core idea is continuity: systems that remember what happened, why it happened, and what it means.",
+      "category": "PING"
+    },
+    {
+      "id": "f2",
+      "question": "What is PING Social?",
+      "answer": "PING Social is the consultancy that applies PING infrastructure to real businesses, starting with home service companies. It helps owners capture more opportunities, reduce administrative work, respond faster, and operate more consistently, with practical AI rather than hype.",
+      "category": "PING Social"
+    },
+    {
+      "id": "f3",
+      "question": "Is PING a finished product I can buy?",
+      "answer": "Not yet. PING Social, the consultancy, is operating today. The PING intelligence system itself is in active development, and this site documents the architecture as it is built. The products page labels everything honestly: available, in development, or future.",
+      "category": "PING"
+    },
+    {
+      "id": "f4",
+      "question": "What does continuity mean here?",
+      "answer": "Continuity means an AI system that does not start from zero every session. Events are recorded, knowledge accumulates, evidence is preserved, and behavior can be replayed and explained. Stateless chatbots forget; PING is built to remember.",
+      "category": "Architecture"
+    },
+    {
+      "id": "f5",
+      "question": "What is TenantOS?",
+      "answer": "TenantOS is the platform direction this site proves: one codebase, many tenants, where each tenant is configuration plus content plus brand plus domain, never a fork. This website is the first tenant. It is a direction, not a product you can buy today.",
+      "category": "Architecture"
+    },
+    {
+      "id": "f6",
+      "question": "How does PING Social work with a business?",
+      "answer": "It starts with a conversation about how the business actually runs: where opportunities get missed, where follow-up lags, where admin work piles up. Then PING Social recommends practical automation for those specific problems. Consultative, not one-size-fits-all, and the owner stays in control.",
+      "category": "PING Social"
+    },
+    {
+      "id": "f7",
+      "question": "Will AI replace my workers?",
+      "answer": "No. That is the opposite of the goal. AI handles repetitive communication, organization, and follow-up so owners and skilled workers can focus on customers, jobs, and decisions that need human judgment. Technology should strengthen the worker, not replace them.",
+      "category": "PING Social"
+    },
+    {
+      "id": "f8",
+      "question": "How do I follow the build?",
+      "answer": "The technology section documents the architecture, and the blog publishes implementation notes as systems are built. The newsletter sends one email when there is something worth saying.",
+      "category": "PING"
+    }
+  ]
+}
