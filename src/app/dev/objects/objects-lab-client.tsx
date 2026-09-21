@@ -2,6 +2,10 @@
 
 /**
  * Lane C: INTERNAL /dev/objects lab shell.
+ * Lane D: Card and Node slots wired to the real ObjectCard / ObjectNode
+ * (Lane B), fed by objectViewToProjection (Lane B adapter) over the same
+ * ObjectView (Lane A loader) the Circle renders. Circle, Card, and Node are
+ * three projections of the SAME object data.
  *
  * Internal development infrastructure, never customer product. No nav links
  * point here, robots are noindex/nofollow, and it is absent from the sitemap.
@@ -10,8 +14,8 @@
  * - object type: Business, Service, Person (first), Location, Post, Project
  *   (as the current PING projection allows; empty types render an explicit
  *   "renders nothing" state, never invented content)
- * - projection: Circle (live today), Card and Node (slots wired, rendering a
- *   labeled "pending Lane B" placeholder)
+ * - projection: Circle, Card, Node (all live: ObjectCircle, ObjectCard,
+ *   ObjectNode)
  * - viewport preset: mobile 390 / tablet 768 / desktop 1280 / wide 1600,
  *   applied as a max-width frame so the projection can be inspected at size
  * - viewer context: anonymous / owner / follower / unrelated authenticated.
@@ -21,10 +25,16 @@
  * - evidence state filter: direct / derived / inferred / owner-corrected.
  *   The filter is a labeled layer over the real projection data: layers with
  *   no content in the current projection render an honest empty state.
+ *
+ * Deep-link presets (dev convenience, same controls the selects drive):
+ *   /dev/objects?site=<siteId>&type=<LabTypeName>&projection=<Kind>&viewport=<Preset>
  */
 
 import { useMemo, useState } from "react";
 import { ObjectCircle } from "@/fyd/ui/object-circle";
+import { ObjectCard } from "@/fyd/object/card";
+import { ObjectNode } from "@/fyd/object/node";
+import { objectViewToProjection } from "@/fyd/object/object-projection";
 import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
 import type { ObjectView } from "@/fyd/object/types";
 import type {
@@ -64,6 +74,9 @@ interface LabClientProps {
   meta: LabMeta;
   typeGroups: LabTypeGroup[];
   views: Record<string, ObjectView>;
+  initialType?: LabTypeName;
+  initialProjection?: ProjectionKind;
+  initialViewport?: ViewportPreset;
 }
 
 function Control({
@@ -83,27 +96,6 @@ function Control({
 
 const selectClass =
   "rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900";
-
-function PendingLaneB({ projection }: { projection: "Card" | "Node" }) {
-  return (
-    <div
-      data-testid={`pending-${projection.toLowerCase()}`}
-      className="rounded-lg border-2 border-dashed border-amber-500 bg-amber-50 p-6 text-center"
-    >
-      <p className="text-sm font-bold uppercase tracking-widest text-amber-900">
-        Pending Lane B
-      </p>
-      <p className="mt-2 text-sm text-stone-700">
-        The {projection} projection slot is wired but the component is not
-        implemented yet.
-      </p>
-      <p className="mt-1 text-xs text-stone-500">
-        No placeholder content is invented here; the slot renders this label
-        until Lane B lands.
-      </p>
-    </div>
-  );
-}
 
 function EmptyState({ type }: { type: LabTypeName }) {
   return (
@@ -242,10 +234,17 @@ export function ObjectsLabClient({
   meta,
   typeGroups,
   views,
+  initialType,
+  initialProjection,
+  initialViewport,
 }: LabClientProps) {
-  const [type, setType] = useState<LabTypeName>("Business");
-  const [projection, setProjection] = useState<ProjectionKind>("Circle");
-  const [viewport, setViewport] = useState<ViewportPreset>("desktop");
+  const [type, setType] = useState<LabTypeName>(initialType ?? "Business");
+  const [projection, setProjection] = useState<ProjectionKind>(
+    initialProjection ?? "Circle",
+  );
+  const [viewport, setViewport] = useState<ViewportPreset>(
+    initialViewport ?? "desktop",
+  );
   const [viewer, setViewer] = useState<ViewerContext>("anonymous");
   const [evidence, setEvidence] = useState<EvidenceState>("direct");
   const [objectId, setObjectId] = useState<string | null>(null);
@@ -268,6 +267,17 @@ export function ObjectsLabClient({
   const activeObject =
     visibleObjects.find((o) => o.id === objectId) ?? visibleObjects[0] ?? null;
   const view = activeObject ? views[activeObject.id] : null;
+
+  // Lane D: Card/Node share the SAME ObjectView the Circle renders.
+  // objectViewToProjection is the Lane B adapter; the lab only overrides
+  // kindLabel for non-Business objects (the adapter hardcodes "Business"
+  // because it was built for the business view). Every claim the Card/Node
+  // render — facts, contact, capabilities, evidence — comes from the same
+  // view. Wiring, not rewriting: Lane B's module is untouched.
+  const projectionData = useMemo(() => {
+    if (!view) return null;
+    return { ...objectViewToProjection(view), kindLabel: type };
+  }, [view, type]);
 
   return (
     <div data-testid="lab-root" className="min-h-screen bg-stone-50 text-stone-900">
@@ -336,8 +346,8 @@ export function ObjectsLabClient({
               onChange={(e) => setProjection(e.target.value as ProjectionKind)}
             >
               <option value="Circle">Circle</option>
-              <option value="Card">Card (pending Lane B)</option>
-              <option value="Node">Node (pending Lane B)</option>
+              <option value="Card">Card</option>
+              <option value="Node">Node</option>
             </select>
           </Control>
           <Control label="Viewport">
@@ -457,12 +467,24 @@ export function ObjectsLabClient({
               ) : (
                 <EmptyState type={type} />
               )
+            ) : projection === "Card" ? (
+              projectionData ? (
+                <div data-testid="card-slot">
+                  <ObjectCard projection={projectionData} />
+                </div>
+              ) : (
+                <EmptyState type={type} />
+              )
+            ) : projectionData ? (
+              <div data-testid="node-slot">
+                <ObjectNode projection={projectionData} />
+              </div>
             ) : (
-              <PendingLaneB projection={projection} />
+              <EmptyState type={type} />
             )}
           </div>
 
-          {activeObject && view && projection === "Circle" && (
+          {activeObject && view && (
             <EvidenceLayer state={evidence} view={view} />
           )}
 

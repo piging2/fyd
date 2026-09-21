@@ -1,5 +1,8 @@
 /**
  * Lane C: INTERNAL /dev/objects lab route.
+ * Lane D: deep-link presets (type/projection/viewport) so Card and Node can
+ * be verified by plain HTTP GET, e.g.
+ *   /dev/objects?site=coppersmith-plumbing&type=Person&projection=Card
  *
  * Internal development infrastructure, NEVER customer product:
  * - robots: noindex, nofollow
@@ -18,8 +21,13 @@ import {
   getPingObjectGraph,
   listPingSiteIds,
 } from "@/fyd/data/ping-object-source";
-import { buildLabData } from "./lab-adapter";
-import { ObjectsLabClient, type LabMeta } from "./objects-lab-client";
+import { buildLabData, type LabTypeName } from "./lab-adapter";
+import {
+  ObjectsLabClient,
+  type LabMeta,
+  type ProjectionKind,
+  type ViewportPreset,
+} from "./objects-lab-client";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +37,18 @@ export const metadata: Metadata = {
     "Internal developer lab for FYD object projections. Not a customer surface.",
   robots: { index: false, follow: false },
 };
+
+const TYPE_VALUES = [
+  "Business",
+  "Service",
+  "Person",
+  "Location",
+  "Post",
+  "Project",
+  "Other",
+] as const;
+const PROJECTION_VALUES = ["Circle", "Card", "Node"] as const;
+const VIEWPORT_VALUES = ["mobile", "tablet", "desktop", "wide"] as const;
 
 function LabFailure({ title, detail }: { title: string; detail: string }) {
   return (
@@ -57,9 +77,15 @@ function LabFailure({ title, detail }: { title: string; detail: string }) {
 export default async function ObjectsLabPage({
   searchParams,
 }: {
-  searchParams: Promise<{ site?: string }>;
+  searchParams: Promise<{
+    site?: string;
+    type?: string;
+    projection?: string;
+    viewport?: string;
+  }>;
 }) {
-  const { site } = await searchParams;
+  const { site, type: rawType, projection: rawProjection, viewport: rawViewport } =
+    await searchParams;
   const siteIds = await listPingSiteIds();
   if (siteIds.length === 0) {
     return (
@@ -70,6 +96,22 @@ export default async function ObjectsLabPage({
     );
   }
   const siteId = site && siteIds.includes(site) ? site : siteIds[0];
+
+  const initialType: LabTypeName | undefined =
+    typeof rawType === "string" &&
+    (TYPE_VALUES as readonly string[]).includes(rawType)
+      ? (rawType as LabTypeName)
+      : undefined;
+  const initialProjection: ProjectionKind | undefined =
+    typeof rawProjection === "string" &&
+    (PROJECTION_VALUES as readonly string[]).includes(rawProjection)
+      ? (rawProjection as ProjectionKind)
+      : undefined;
+  const initialViewport: ViewportPreset | undefined =
+    typeof rawViewport === "string" &&
+    (VIEWPORT_VALUES as readonly string[]).includes(rawViewport)
+      ? (rawViewport as ViewportPreset)
+      : undefined;
 
   let projection;
   try {
@@ -101,6 +143,9 @@ export default async function ObjectsLabPage({
       meta={labMeta}
       typeGroups={typeGroups}
       views={views}
+      initialType={initialType}
+      initialProjection={initialProjection}
+      initialViewport={initialViewport}
     />
   );
 }
