@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "siteId": "happy-place",
+    "dumpedAt": "2026-09-21T19:26:30.598776+00:00",
+    "dumperVersion": "fyd-projection-dump@1.0.0",
+    "baseDigest": "4638e993ebb17cee24f0e2de6f1a1a9d9d9a5be5ee7183f8f66d5b5bb23d559f",
+    "fixtureFileDigest": "dbe591a640ef1441d391dc5ac4841a1efba486d5cc5a8ab1c59d48c2b6710295",
+    "fixtureHeader": "Happy Place graph fixture: MACHINE-GENERATED, not hand-written.",
+    "overlayEventIds": [
+      "39fc9971a47f807ef38cf8976cb9d4ff4360c27b52bf14f4cc1f4393094d78fd"
+    ],
+    "graphDigest": "8f4737d846b4e75491b2f8092fabd8d792bb4c896e1e331dd2aac58b38be3607",
+    "generatedAt": "2026-09-21T12:00:00.000Z",
+    "eventSequences": [
+      65,
+      83
+    ]
+  },
+  "graph": {
+    "objects": [
+      {
+        "id": "website-business-6fa5ebd99d72c4cb",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Happy Place Carpentry LLC",
+        "description": "Licensed Oregon carpentry contractor (CCB# 254240) building decks, fences, pergolas, bathrooms, and custom work across Benton, Linn, Marion & Polk Counties.",
+        "fields": {
+          "area_served": "Benton, Linn, Marion, and Polk Counties, Oregon",
+          "description": "Licensed Oregon carpentry contractor (CCB# 254240) building decks, fences, pergolas, bathrooms, and custom work across Benton, Linn, Marion & Polk Counties.",
+          "email": "taylor@happyplacecarpentry.com",
+          "images": "https://happyplacecarpentry.com/images/hero-background-enhanced.jpg",
+          "keywords": "carpenter,deck builder,fence installer,bathroom remodel,Oregon contractor,Willamette Valley",
+          "phone": "+15412865190",
+          "price_range": "$$",
+          "title": "Happy Place Carpentry LLC",
+          "website": "https://happyplacecarpentry.com",
+          "locality": "Adair Village, OR, US"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://happy-place-platform.vercel.app/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-6fa5ebd99d72c4cb-location",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Adair Village, OR, US",
+        "description": "Coarse public location claim from the website's structured data.",
+        "fields": {
+          "address_locality": "Adair Village",
+          "address_region": "OR",
+          "address_country": "US",
+          "locality": "Adair Village, OR, US",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://happy-place-platform.vercel.app/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-service-51de038c1defe8bd",
+        "title": "Pergola Design Consultations",
+        "fields": {
+          "title": "Pergola Design Consultations",
+          "description": "On-site pergola design consultations covering shade, structure, and materials for your yard."
+        },
+        "schema": "ping.social.service@1",
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "updatedAt": "2026-09-21T00:00:00.000Z",
+        "provenance": {
+          "kind": "canonical-journal",
+          "ref": "ping-event:39fc9971a47f807ef38cf8976cb9d4ff4360c27b52bf14f4cc1f4393094d78fd",
+          "derivedAt": "2026-09-21T19:26:26.042Z"
+        },
+        "visibility": "public",
+        "description": "On-site pergola design consultations covering shade, structure, and materials for your yard.",
+        "controllerId": "identity_fyd_compiler_test"
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-9b5d8035b2d8f54e",
+        "subject": "website-business-6fa5ebd99d72c4cb",
+        "predicate": "located_at",
+        "object": "website-business-6fa5ebd99d72c4cb-location",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:postal-address"
+      },
+      {
+        "id": "rel-a9834ffb0c62122f",
+        "object": "website-service-51de038c1defe8bd",
+        "status": "active",
+        "subject": "website-business-6fa5ebd99d72c4cb",
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "predicate": "provides",
+        "evidenceRef": "ping-event:39fc9971a47f807ef38cf8976cb9d4ff4360c27b52bf14f4cc1f4393094d78fd"
+      }
+    ]
+  }
+}

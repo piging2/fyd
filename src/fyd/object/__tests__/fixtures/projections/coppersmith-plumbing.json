@@ -1,0 +1,136 @@
+{
+  "meta": {
+    "siteId": "coppersmith-plumbing",
+    "dumpedAt": "2026-09-21T18:44:35.306626+00:00",
+    "dumperVersion": "fyd-projection-dump@1.0.0",
+    "baseDigest": "afbc132fc86b90fb3959d05dd3114a823018c6a28e00cf0b09dcb4a820f70664",
+    "fixtureFileDigest": "28582903975ca35f4b4c99d84cfd713306df14bb434d400dd4559a84deacaaeb",
+    "fixtureHeader": "Coppersmith Plumbing & HVAC graph fixture: MACHINE-GENERATED, not hand-written.",
+    "overlayEventIds": [],
+    "graphDigest": "afbc132fc86b90fb3959d05dd3114a823018c6a28e00cf0b09dcb4a820f70664",
+    "generatedAt": "2026-09-21T12:01:10.844Z",
+    "eventSequences": null
+  },
+  "graph": {
+    "objects": [
+      {
+        "id": "website-business-2f1327c09d622175",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Coppersmith Plumbing - HVAC - Mechanical",
+        "description": "Coppersmith Plumbing & HVAC has serviced Western Colorado for over 25 years. With a proven track record of quality work and diverse skill sets, our team",
+        "fields": {
+          "description": "Coppersmith Plumbing & HVAC has serviced Western Colorado for over 25 years. With a proven track record of quality work and diverse skill sets, our team",
+          "hours": "Mo,Tu,We,Th,Fr 07:30-16:00",
+          "locale": "en_US",
+          "phone": "970-245-3869",
+          "site_name": "Coppersmith Plumbing - HVAC - Mechanical",
+          "title": "Coppersmith Plumbing - HVAC - Mechanical",
+          "type": "website",
+          "updated_time": "2025-10-01T10:31:10-06:00",
+          "website": "https://coppersmithplumbing.com",
+          "locality": "Grand Junction, Colorado, 81501, United States"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-2f1327c09d622175-ext-89604af059c2",
+        "schema": "ping.social.external_identity@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "coppersmithplumbing.com",
+        "description": "External profile linked from the website's structured data.",
+        "fields": {
+          "url": "https://coppersmithplumbing.com",
+          "platform": "coppersmithplumbing.com",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-2f1327c09d622175-location",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Grand Junction, Colorado, 81501, United States",
+        "description": "Coarse public location claim from the website's structured data.",
+        "fields": {
+          "address_locality": "Grand Junction",
+          "address_region": "Colorado",
+          "postal_code": "81501",
+          "address_country": "United States",
+          "locality": "Grand Junction, Colorado, 81501, United States",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-2f1327c09d622175-person-377048d67856",
+        "schema": "ping.social.person@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "coppersmithplm",
+        "description": "Person described in the website's structured data.",
+        "fields": {
+          "name": "coppersmithplm",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-8627fe1497c235f5",
+        "subject": "website-business-2f1327c09d622175-person-377048d67856",
+        "predicate": "works_for",
+        "object": "website-business-2f1327c09d622175",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:structured:worksFor"
+      },
+      {
+        "id": "rel-9a6aa2e50f4789ed",
+        "subject": "website-business-2f1327c09d622175-person-377048d67856",
+        "predicate": "links_to",
+        "object": "website-business-2f1327c09d622175-ext-89604af059c2",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:sameAs:https://www.coppersmithplumbing.com/author/coppersmithplm/"
+      },
+      {
+        "id": "rel-d0a40ed4fc7eb0ab",
+        "subject": "website-business-2f1327c09d622175",
+        "predicate": "located_at",
+        "object": "website-business-2f1327c09d622175-location",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:postal-address"
+      }
+    ]
+  }
+}

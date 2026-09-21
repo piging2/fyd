@@ -1,0 +1,116 @@
+/**
+ * Tests for the FYD circle projection layer.
+ *
+ * - coppersmith-plumbing resolves an image background: it has authorized
+ *   site media, so the circle uses the smallest (blur) derivative.
+ * - happy-place resolves a deterministic gradient: its only manifest asset
+ *   is external_reference, so no site media qualifies.
+ * - The projection never emits "view"; "follow" and "ask" are always there.
+ * - Unknown ids return null.
+ * Run from the repo root so manifests resolve via process.cwd().
+ */
+
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { resolveCircleBackground } from "../../media/circle-background";
+import { buildCircleProjection, loadCircleProjection } from "../view";
+
+beforeEach(() => {
+  // Isolate owner state so tests never touch real demo data, and point the
+  // PING-backed source at the test projections.
+  process.env.FYD_OWNER_DIR = mkdtempSync(join(tmpdir(), "fyd-circle-test-"));
+  process.env.FYD_PROJECTION_DIR = join(__dirname, "fixtures", "projections");
+});
+
+function manifestBytesForSrc(objectId: string, src: string): number {
+  const manifest = JSON.parse(
+    readFileSync(
+      join(process.cwd(), "src", "fyd", "media", "manifests", objectId + ".json"),
+      "utf8",
+    ),
+  ) as { media?: { variants?: { url: string; bytes: number }[] }[] };
+  for (const m of manifest.media ?? []) {
+    for (const v of m.variants ?? []) {
+      if (v.url === src) return v.bytes;
+    }
+  }
+  throw new Error("src not found in manifest: " + src);
+}
+
+describe("resolveCircleBackground", () => {
+  test("coppersmith resolves an image background from a tiny derivative", () => {
+    const bg = resolveCircleBackground("coppersmith-plumbing");
+    expect(bg.kind).toBe("image");
+    if (bg.kind !== "image") return;
+    expect(bg.src.startsWith("/fyd-media/")).toBe(true);
+    // The src is the blur (tiny optimized) derivative: a few hundred bytes.
+    expect(manifestBytesForSrc("coppersmith-plumbing", bg.src)).toBeLessThan(1000);
+    expect(bg.basis).toBe("Website photo, tiny optimized derivative");
+    expect(bg.digest).not.toBe("");
+    expect(bg.observedAt).not.toBe("");
+  });
+
+  test("happy-place resolves a deterministic gradient", () => {
+    const first = resolveCircleBackground("happy-place");
+    const second = resolveCircleBackground("happy-place");
+    expect(first).toEqual(second);
+    expect(first.kind).toBe("gradient");
+    if (first.kind !== "gradient") return;
+    expect(first.css).toMatch(
+      /^radial-gradient\(circle at 35% 30%, hsl\(\d+ 45% 62%\), hsl\(\d+ 50% 38%\)\)$/,
+    );
+    // Warm artisan palette: leading hue 18..42.
+    const hue = Number(/hsl\((\d+)/.exec(first.css)![1]);
+    expect(hue).toBeGreaterThanOrEqual(18);
+    expect(hue).toBeLessThanOrEqual(42);
+    expect(first.basis).toBe("Deterministic fallback, no authorized site media");
+    expect(first.observedAt).not.toBe("");
+  });
+
+  test("the two objects look visually distinct", () => {
+    const copper = resolveCircleBackground("coppersmith-plumbing");
+    const happy = resolveCircleBackground("happy-place");
+    expect(copper.kind).not.toBe(happy.kind);
+  });
+});
+
+describe("loadCircleProjection", () => {
+  test("returns null for unknown objects", () => {
+    expect(loadCircleProjection("nope")).toBeNull();
+  });
+
+  test("coppersmith circle: no view capability, follow and ask always present", () => {
+    const proj = loadCircleProjection("coppersmith-plumbing");
+    expect(proj).not.toBeNull();
+    const kinds = proj!.capabilities.map((c) => c.kind);
+    expect(kinds).not.toContain("view");
+    expect(kinds).toContain("follow");
+    expect(kinds).toContain("ask");
+    expect(proj!.background.kind).toBe("image");
+    // Tagline is the summary's first 90 chars, trimmed at a word boundary.
+    expect(proj!.tagline.length).toBeLessThanOrEqual(90);
+    expect(proj!.topFacts.length).toBeLessThanOrEqual(3);
+    expect(proj!.sampleQuestions).toHaveLength(3);
+    expect(proj!.provenanceLabel).not.toBe("");
+    expect(proj!.provenanceDetail).not.toBe("");
+  });
+
+  test("happy-place circle: gradient background, word-boundary tagline", () => {
+    const proj = loadCircleProjection("happy-place");
+    expect(proj).not.toBeNull();
+    expect(proj!.background.kind).toBe("gradient");
+    expect(proj!.tagline.length).toBeLessThanOrEqual(90);
+    expect(proj!.topFacts.length).toBeLessThanOrEqual(3);
+    // Happy Place's only structured service (PING journal overlay) is the fact.
+    expect(proj!.topFacts).toEqual(["Pergola Design Consultations"]);
+    const kinds = proj!.capabilities.map((c) => c.kind);
+    expect(kinds).toContain("follow");
+  });
+
+  test("legacy buildCircleProjection alias still resolves", () => {
+    expect(buildCircleProjection("happy-place")?.topFacts).toEqual([
+      "Pergola Design Consultations",
+    ]);
+  });
+});
