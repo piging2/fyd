@@ -1,0 +1,142 @@
+/**
+ * Lane D: server-side helpers for the customize API route. SERVER ONLY.
+ *
+ * loadCustomizedSite: projection -> generateSiteSpec -> apply the
+ * presentation-intent layer. The proposal/approve path always reasons
+ * over the CURRENT layered spec, so sequential customizations compose.
+ *
+ * emitOverlayEvent: appends a FYD_SITE_OVERLAY event to the FYD demo
+ * journal (the repo-booted gateway; no auth on its event route). The
+ * projection dump picks it up on the next regen. Demo-journal only;
+ * nothing here touches the main deployment journal.
+ */
+
+import { createHash } from "node:crypto";
+import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+import { generateSiteSpec } from "@/fyd/proceduralize/generator";
+import type { FYDSiteSpec, ObjectGraph } from "@/fyd/sitespec/types";
+import { applyPresentationIntent } from "./apply-layer";
+import type {
+  PresentationIntentBlock,
+  PresentationIntentDirective,
+  PresentationIntentOverlayOp,
+} from "./types";
+
+export interface CustomizedSite {
+  siteId: string;
+  graph: ObjectGraph;
+  /** Spec as rendered: base compiled spec + approved presentation intents. */
+  spec: FYDSiteSpec;
+  /** Digest of the base compiled spec (before the intent layer). */
+  baseSpecDigest: string;
+  /** Digest of the layered spec the owner reviews and approves against. */
+  specDigest: string;
+  presentationIntent: PresentationIntentBlock | null;
+  appliedIntentIds: string[];
+  unresolved: { intentId: string; reason: string }[];
+}
+
+function sha256Hex(s: string): string {
+  return createHash("sha256").update(s, "utf8").digest("hex");
+}
+
+export async function loadCustomizedSite(siteId: string): Promise<CustomizedSite> {
+  const { graph, meta, presentationIntent } = await getPingObjectGraph(siteId);
+  // generatedAt comes from the projection meta (stable per dump), never the
+  // wall clock: the spec digest must be reproducible across calls.
+  const base = generateSiteSpec(graph, { generatedAt: meta.generatedAt });
+  const { canonicalize } = await import("@/lib/ping/ask-composer");
+  const baseSpecDigest = sha256Hex(canonicalize(base));
+  const layered = applyPresentationIntent(base, presentationIntent, graph);
+  const specDigest = sha256Hex(canonicalize(layered.spec));
+  return {
+    siteId,
+    graph,
+    spec: layered.spec,
+    baseSpecDigest,
+    specDigest,
+    presentationIntent,
+    appliedIntentIds: layered.applied.map((a) => a.intentId),
+    unresolved: layered.unresolved,
+  };
+}
+
+/** Deterministic directive id: "pi-" + sha256(siteId + proposalDigest)[0:16]. */
+export function directiveIdFor(siteId: string, proposalDigest: string): string {
+  return "pi-" + sha256Hex(siteId + "|" + proposalDigest).slice(0, 16);
+}
+
+function gatewayUrl(): string {
+  return process.env.FYD_CUSTOMIZE_GATEWAY_URL ?? "http://127.0.0.1:18199/events";
+}
+
+/**
+ * Emit one FYD_SITE_OVERLAY event carrying presentation-intent ops to the
+ * FYD demo journal. Returns the accepted event_id. Throws on rejection:
+ * an unrecorded approval is never reported as recorded.
+ */
+export async function emitOverlayEvent(
+  siteId: string,
+  ops: PresentationIntentOverlayOp[],
+): Promise<string> {
+  const envelope = {
+    event_type: "FYD_SITE_OVERLAY",
+    aggregate_id: "fyd-site:" + siteId,
+    aggregate_type: "fyd_site",
+    event_data: { siteId, ops },
+  };
+  let res: Response;
+  try {
+    res = await fetch(gatewayUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(envelope),
+    });
+  } catch (e) {
+    throw new Error(
+      "customize: demo gateway unreachable at " + gatewayUrl() + ": " +
+        (e instanceof Error ? e.message : String(e)),
+    );
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      "customize: demo gateway rejected the overlay event (" + res.status + "): " + text.slice(0, 300),
+    );
+  }
+  let doc: unknown;
+  try {
+    doc = await res.json();
+  } catch {
+    throw new Error("customize: demo gateway returned non-JSON on event emit.");
+  }
+  const eid =
+    doc && typeof doc === "object"
+      ? ((doc as Record<string, unknown>)["event_id"] ??
+        (doc as Record<string, unknown>)["id"])
+      : null;
+  if (typeof eid !== "string" || eid.length === 0) {
+    throw new Error("customize: gateway accepted the event but returned no event_id.");
+  }
+  return eid;
+}
+
+export function buildDirective(
+  siteId: string,
+  siteIntent: PresentationIntentDirective["siteIntent"],
+  proposal: PresentationIntentDirective["proposal"],
+  approvedAt: string,
+): PresentationIntentOverlayOp {
+  return {
+    op: "set_presentation_intent",
+    intentId: directiveIdFor(siteId, proposal.proposalDigest),
+    siteIntent,
+    proposal,
+    approval: {
+      proposalDigest: proposal.proposalDigest,
+      approvedBy: "demo-owner (seeded, unverified)",
+      approvedAt,
+      note: "DEMO OWNER MODE - not real authentication. No identity was verified.",
+    },
+  };
+}
