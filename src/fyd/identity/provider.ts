@@ -13,11 +13,10 @@
  * This module is server-only. The client secret never leaves the server.
  */
 
-import { createHash, createPublicKey, createVerify, randomBytes } from "node:crypto";
+import { createHash, createPublicKey, createVerify, randomBytes, type JsonWebKey } from "node:crypto";
 
-export type OidcProviderId = "google" | "apple";
-
-/** Apple is a preserved seam: the interface supports it, no config yet. */
+/** Google is the only wired provider. Apple is OFF by directive (2026-09-21): no Apple provider path now. The generic OIDC interface keeps the seam for future providers. */
+export type OidcProviderId = "google";
 export const SUPPORTED_PROVIDERS: OidcProviderId[] = ["google"];
 
 /** Canonical external identifier for a provider account: issuer + subject. */
@@ -219,63 +218,78 @@ export async function verifyGoogleIdToken(
   args: { expectedNonce?: string; nowSeconds?: number } = {},
   fetchImpl: FetchImpl = fetch
 ): Promise<VerifiedAccount> {
-  const fail = (code: string, message: string): never => {
-    throw new IdTokenVerificationError(code, message);
-  };
   const parts = idToken.split(".");
-  if (parts.length !== 3) fail("MALFORMED_TOKEN", "ID token is not a three-part JWT");
+  if (parts.length !== 3) {
+    throw new IdTokenVerificationError("MALFORMED_TOKEN", "ID token is not a three-part JWT");
+  }
   let header: Record<string, unknown>;
   let claims: Record<string, unknown>;
   try {
     header = base64urlJson(parts[0]);
     claims = base64urlJson(parts[1]);
   } catch {
-    fail("MALFORMED_TOKEN", "ID token header or payload is not valid JSON");
-    throw new Error("unreachable");
+    throw new IdTokenVerificationError("MALFORMED_TOKEN", "ID token header or payload is not valid JSON");
   }
-  if (header["alg"] !== "RS256") fail("UNEXPECTED_ALG", "ID token alg must be RS256");
+  if (header["alg"] !== "RS256") {
+    throw new IdTokenVerificationError("UNEXPECTED_ALG", "ID token alg must be RS256");
+  }
   const kid = header["kid"];
-  if (typeof kid !== "string" || kid.length === 0) fail("MISSING_KID", "ID token has no kid");
+  if (typeof kid !== "string" || kid.length === 0) {
+    throw new IdTokenVerificationError("MISSING_KID", "ID token has no kid");
+  }
 
   let jwks: { keys?: JwksKey[] };
   try {
     const res = await fetchImpl(config.jwksUri);
-    if (!res.ok) fail("JWKS_FETCH_FAILED", "JWKS fetch failed with status " + res.status);
+    if (!res.ok) {
+      throw new IdTokenVerificationError("JWKS_FETCH_FAILED", "JWKS fetch failed with status " + res.status);
+    }
     jwks = (await res.json()) as { keys?: JwksKey[] };
   } catch (err) {
     if (err instanceof IdTokenVerificationError) throw err;
-    fail("JWKS_FETCH_FAILED", "JWKS endpoint unreachable");
-    throw new Error("unreachable");
+    throw new IdTokenVerificationError("JWKS_FETCH_FAILED", "JWKS endpoint unreachable");
   }
   const jwk = (jwks.keys || []).find((k) => k.kid === kid && k.kty === "RSA");
-  if (!jwk) fail("UNKNOWN_KID", "No matching JWKS key for kid");
+  if (!jwk) {
+    throw new IdTokenVerificationError("UNKNOWN_KID", "No matching JWKS key for kid");
+  }
 
   const signature = Buffer.from(parts[2], "base64url");
   const signingInput = Buffer.from(parts[0] + "." + parts[1], "utf8");
   let ok = false;
   try {
-    const key = createPublicKey({ key: jwk as object, format: "jwk" });
+    const key = createPublicKey({ key: jwk as unknown as JsonWebKey, format: "jwk" });
     ok = createVerify("RSA-SHA256").update(signingInput).verify(key, signature);
   } catch {
     ok = false;
   }
-  if (!ok) fail("BAD_SIGNATURE", "ID token signature verification failed");
+  if (!ok) {
+    throw new IdTokenVerificationError("BAD_SIGNATURE", "ID token signature verification failed");
+  }
 
   const now = args.nowSeconds ?? Math.floor(Date.now() / 1000);
   const iss = claims["iss"];
   if (iss !== "https://accounts.google.com" && iss !== "accounts.google.com") {
-    fail("BAD_ISSUER", "ID token issuer is not Google");
+    throw new IdTokenVerificationError("BAD_ISSUER", "ID token issuer is not Google");
   }
-  if (claims["aud"] !== config.clientId) fail("BAD_AUDIENCE", "ID token audience mismatch");
+  if (claims["aud"] !== config.clientId) {
+    throw new IdTokenVerificationError("BAD_AUDIENCE", "ID token audience mismatch");
+  }
   const exp = claims["exp"];
-  if (typeof exp !== "number" || exp + CLOCK_SKEW_SECONDS < now) fail("TOKEN_EXPIRED", "ID token is expired");
+  if (typeof exp !== "number" || exp + CLOCK_SKEW_SECONDS < now) {
+    throw new IdTokenVerificationError("TOKEN_EXPIRED", "ID token is expired");
+  }
   const iat = claims["iat"];
-  if (typeof iat !== "number" || iat > now + CLOCK_SKEW_SECONDS) fail("BAD_IAT", "ID token issued-at is in the future");
+  if (typeof iat !== "number" || iat > now + CLOCK_SKEW_SECONDS) {
+    throw new IdTokenVerificationError("BAD_IAT", "ID token issued-at is in the future");
+  }
   if (args.expectedNonce !== undefined && claims["nonce"] !== args.expectedNonce) {
-    fail("BAD_NONCE", "ID token nonce mismatch");
+    throw new IdTokenVerificationError("BAD_NONCE", "ID token nonce mismatch");
   }
   const sub = claims["sub"];
-  if (typeof sub !== "string" || sub.length === 0) fail("MISSING_SUB", "ID token has no subject");
+  if (typeof sub !== "string" || sub.length === 0) {
+    throw new IdTokenVerificationError("MISSING_SUB", "ID token has no subject");
+  }
 
   const email = claims["email"];
   return {
