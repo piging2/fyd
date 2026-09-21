@@ -336,6 +336,7 @@ const LITERAL_FACTS: Record<string, string> = {
   sameAs: "socials",
   priceRange: "price_range",
   areaServed: "area_served",
+  serviceType: "service_type",
   slogan: "slogan",
   foundingDate: "founded",
   datePublished: "date_published",
@@ -390,6 +391,9 @@ const PREDICATE_MAP: Record<string, string> = {
   brand: "has_brand",
   makesOffer: "makes_offer",
   areaServed: "serves_area",
+  provider: "provided_by",
+  itemOffered: "item_offered",
+  offers: "offers",
 };
 
 /** Node types that are site chrome, never business entities. */

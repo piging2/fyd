@@ -17,6 +17,7 @@
 import { createHash } from "node:crypto";
 import type {
   AskAnswer,
+  AskClaimClassification,
   AskContext,
   AskEvidenceRef,
   AskProposal,
@@ -110,6 +111,41 @@ export interface AskContextInput {
   relatedObjects: PingObject[];
   relationships: PingRelationship[];
   plan: CapabilityPlan | null;
+  /** Optional per-object field epistemic classes (pipeline FactClass vocabulary). */
+  fieldClasses?: Record<string, Record<string, string>>;
+}
+
+/** Extract deduped source URLs from object provenance refs. Deterministic. */
+function provenanceSourceUrls(objects: Array<PingObject | null>): string[] {
+  const urls = new Set<string>();
+  for (const o of objects) {
+    const ref = o?.provenance?.ref;
+    if (!ref) continue;
+    const m = /^website-ingestion:(https?:\/\/.+)$/.exec(ref);
+    if (m) {
+      urls.add(m[1]);
+      continue;
+    }
+    const u = /https?:\/\/[^\s"']+/.exec(ref);
+    if (u) urls.add(u[0]);
+  }
+  return [...urls].sort();
+}
+
+/**
+ * Epistemic classification for one object field claim. Prefers the
+ * pipeline FactClass vocabulary when the context carries field classes;
+ * falls back to the object's own claim kind; never invents certainty.
+ */
+function claimClassification(
+  fieldClasses: Record<string, Record<string, string>>,
+  obj: PingObject,
+  field: string,
+): string {
+  const fc = fieldClasses[obj.id]?.[field];
+  if (fc) return fc;
+  const ck = obj.fields["claimKind"];
+  return typeof ck === "string" && ck !== "" ? ck : "unknown";
 }
 
 function truncateField(value: string | string[]): string | string[] {
@@ -173,6 +209,8 @@ export function buildAskContext(input: AskContextInput): AskContext {
     evidenceRefs,
     plan: input.plan,
     limits: { ...ASK_LIMITS, maxRelated: ASK_LIMITS.maxRelated, maxRelationships: ASK_LIMITS.maxRelationships, maxFieldChars: ASK_LIMITS.maxFieldChars },
+    fieldClasses: input.fieldClasses ?? {},
+    sourceUrls: provenanceSourceUrls([target, ...related]),
   };
 }
 
@@ -224,9 +262,22 @@ function detectProposableField(question: string): string | null {
   return null;
 }
 
-function baseAnswer(ctx: AskContext): Pick<AskAnswer, "evidenceRefs" | "relatedObjects" | "suggestedActions"> {
+function baseAnswer(
+  ctx: AskContext,
+): Pick<
+  AskAnswer,
+  | "evidenceRefs"
+  | "relatedObjects"
+  | "suggestedActions"
+  | "claimClassifications"
+  | "unknowns"
+  | "sourceUrls"
+> {
   return {
     evidenceRefs: ctx.evidenceRefs,
+    claimClassifications: [],
+    unknowns: [],
+    sourceUrls: ctx.sourceUrls,
     relatedObjects: ctx.relatedObjects.slice(0, ASK_LIMITS.maxRelatedInAnswer).map((o) => ({
       id: o.id,
       schema: o.schema,
@@ -249,13 +300,14 @@ function baseAnswer(ctx: AskContext): Pick<AskAnswer, "evidenceRefs" | "relatedO
   };
 }
 
-function noEvidenceAnswer(ctx: AskContext, question: string): AskAnswer {
+function noEvidenceAnswer(ctx: AskContext, question: string, unknowns: string[] = []): AskAnswer {
   const consulted =
     ctx.evidenceRefs.length > 0
       ? `I consulted: ${ctx.evidenceRefs.map((e) => e.label).join("; ")}.`
       : "The current context contains no objects or relationships to consult.";
   return {
     ...baseAnswer(ctx),
+    unknowns,
     answer: [
       "I do not have evidence for that in the current context, so I will not guess.",
       consulted,
@@ -384,6 +436,7 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
   // -- Factual intents about the target -------------------------------------
   if (target) {
     const sentences: Sentence[] = [];
+    const claimClassifications: AskClaimClassification[] = [];
     const title = target.title || target.id;
     const desc = target.description || fieldOf(target, "bio", "summary");
 
@@ -408,9 +461,17 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
           text: `Related offerings: ${relatedServices.map((o) => o.title).join("; ")}.`,
           cites: evIdx >= 0 ? [evIdx] : [],
         });
+        for (const s of relatedServices) {
+          const refId = ctx.evidenceRefs.find((e) => e.id === s.id)?.id;
+          claimClassifications.push({
+            claim: `${title} offers ${s.title}`,
+            classification: claimClassification(ctx.fieldClasses, s, "name"),
+            evidenceRefIds: refId ? [refId] : [],
+          });
+        }
       }
       if (!services && relatedServices.length === 0) {
-        return noEvidenceAnswer(ctx, question);
+        return noEvidenceAnswer(ctx, question, ["services offered by this business"]);
       }
     }
 
@@ -460,6 +521,7 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       return {
         ...base,
         answer: sentences.map((s) => cite(s.text, s.cites)).join("\n\n"),
+        claimClassifications,
         proposal: null,
         partial: false,
       };

@@ -151,7 +151,7 @@ describe("locked fixtures", () => {
     const rel = ex.relationships.find(
       (r) => r.subjectKey === svc.key && r.property === "provider",
     );
-    expect(rel?.predicate).toBe("references"); // unmapped relation property: honest generic
+    expect(rel?.predicate).toBe("provided_by"); // provider is a known semantic edge (service lane)
     expect(rel?.objectKey).toBe("https://acme.example.com/#organization");
   });
 

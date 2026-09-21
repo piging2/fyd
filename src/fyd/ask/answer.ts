@@ -28,9 +28,22 @@ const SITE_PATCH_ACTION_KINDS = new Set([
   "propose_site_patch",
 ]);
 
-function baseFields(ctx: AskFydContext): Pick<AskAnswer, "evidenceRefs" | "relatedObjects" | "suggestedActions"> {
+function baseFields(
+  ctx: AskFydContext,
+): Pick<
+  AskAnswer,
+  | "evidenceRefs"
+  | "relatedObjects"
+  | "suggestedActions"
+  | "claimClassifications"
+  | "unknowns"
+  | "sourceUrls"
+> {
   return {
     evidenceRefs: ctx.base.evidenceRefs,
+    claimClassifications: [],
+    unknowns: [],
+    sourceUrls: ctx.base.sourceUrls,
     relatedObjects: ctx.base.relatedObjects
       .slice(0, 5)
       .map((o) => ({ id: o.id, schema: o.schema, title: o.title || o.id })),

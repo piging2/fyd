@@ -208,6 +208,21 @@ export interface AskEvidenceRef {
   detail?: string;
 }
 
+/** Per-claim epistemic status for the factual claims in an AskAnswer. */
+export interface AskClaimClassification {
+  /** The claim text as stated in the answer. */
+  claim: string;
+  /**
+   * Epistemic status. Reuses the extraction pipeline's FactClass vocabulary
+   * (DIRECT_FACT, DERIVED_FACT, INFERENCE, GENERATED_COPY, USER_OVERRIDE)
+   * when the ask context carries field classes; otherwise the object's own
+   * claim kind (e.g. "website_statement").
+   */
+  classification: string;
+  /** Ids into the answer's evidenceRefs supporting this claim. */
+  evidenceRefIds: string[];
+}
+
 export interface AskProposalBody {
   kind: "object_update" | "object_create";
   targetObjectId: string | null;
@@ -316,6 +331,12 @@ export interface AskAnswer {
   /** Draft only. Agents propose, cannot publish. Human approves exact digest. */
   proposal: AskProposal | null;
   partial: boolean;
+  /** Per-claim epistemic status for the factual claims in `answer`. */
+  claimClassifications: AskClaimClassification[];
+  /** What the question asked about that has no supporting evidence. */
+  unknowns: string[];
+  /** Deduped source URLs behind the evidence (from object provenance refs). */
+  sourceUrls: string[];
 }
 
 export interface AskContext {
@@ -327,6 +348,10 @@ export interface AskContext {
   evidenceRefs: AskEvidenceRef[];
   plan: CapabilityPlan | null;
   limits: { maxRelated: number; maxRelationships: number; maxFieldChars: number };
+  /** Per-object field epistemic classes, when the caller has them. */
+  fieldClasses: Record<string, Record<string, string>>;
+  /** Deduped source URLs behind the evidence (from object provenance refs). */
+  sourceUrls: string[];
 }
 
 /** Everything the Node page needs in one payload. */
