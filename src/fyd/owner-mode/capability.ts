@@ -43,7 +43,8 @@ export type OwnerCapability =
   | "owner.attest-regen"
   | "owner.edit-visibility"
   | "owner.publish"
-  | "owner.customize-approve";
+  | "owner.customize-approve"
+  | "owner.correct-fact";
 
 export interface CapabilityVerdict {
   capability: OwnerCapability;
@@ -94,6 +95,7 @@ const ALL_CAPABILITIES: OwnerCapability[] = [
   "owner.edit-visibility",
   "owner.publish",
   "owner.customize-approve",
+  "owner.correct-fact",
 ];
 
 export function listOwnerCapabilities(): OwnerCapability[] {
@@ -163,6 +165,22 @@ export function evaluateCapability(
           "presentation-intent overlay for the demo journal; facts are " +
           "untouched and the approval itself carries the " +
           "\"DEMO OWNER MODE - not real authentication\" marker.",
+      };
+    case "owner.correct-fact":
+      // Low-risk owner corrections stay streamlined: contact-field
+      // corrections, service order/visibility, and address visibility.
+      // Each correction is journaled as a provenance-backed event and the
+      // source record is never rewritten, so the allow is bounded to
+      // facts. External effects (publish, message, purchase) stay on
+      // their own capabilities and remain deny-by-default.
+      return {
+        ...base,
+        allowed: true,
+        reason:
+          "demo: allow - controller may correct low-risk facts; every " +
+          "correction is journaled as a provenance-backed event with the " +
+          "source value preserved, and source state is never rewritten. " +
+          "External effects remain on their own denied capabilities.",
       };
   }
 }
