@@ -1,0 +1,30 @@
+/**
+ * Jest config for the Ask FYD lane (fyd/ask-capabilities). Scoped to this
+ * lane's tests only; sibling lanes own their own test scope. Run with:
+ * npx jest --config src/fyd/ask/jest.config.cjs
+ */
+module.exports = {
+  preset: "ts-jest",
+  testEnvironment: "node",
+  rootDir: "../../..",
+  testMatch: ["<rootDir>/src/fyd/ask/__tests__/*.test.ts"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
+  transform: {
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        tsconfig: {
+          target: "ES2017",
+          module: "commonjs",
+          moduleResolution: "node",
+          jsx: "react-jsx",
+          esModuleInterop: true,
+          strict: true,
+          skipLibCheck: true,
+        },
+      },
+    ],
+  },
+};

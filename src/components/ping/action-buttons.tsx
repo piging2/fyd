@@ -10,8 +10,9 @@
  * - follow/unfollow -> existing practice BFF (signed as the viewer identity)
  * - like/unlike     -> existing practice BFF (signed as the viewer identity)
  * - open            -> Node page link
+ * - open_site       -> FYD site Node page link (capability site.read)
  * - open_website    -> external link
- * - ask/reply/propose_update -> Ask PING panel via onAsk
+ * - ask/reply/propose_update/propose_site_patch -> Ask PING panel via onAsk
  * - reference       -> copies the stable reference id
  */
 
@@ -158,10 +159,11 @@ export function ActionButtons({ actions, onAsk, onChanged, className }: ActionBu
           </button>
         );
       case "open":
+      case "open_site":
         if (t?.kind !== "object") return null;
         return (
           <Link key={key} href={`/node/${encodeURIComponent(t.objectId)}`} className={cn(BTN, SUBTLE)}>
-            Open
+            {action.kind === "open_site" ? "Open site" : "Open"}
           </Link>
         );
       case "open_website":
@@ -182,10 +184,11 @@ export function ActionButtons({ actions, onAsk, onChanged, className }: ActionBu
         );
       case "reply":
       case "propose_update":
+      case "propose_site_patch":
         if (t?.kind !== "ask") return null;
         return (
           <button key={key} type="button" onClick={() => onAsk?.(t.prefill, t.objectId)} className={cn(BTN, SUBTLE)}>
-            {action.kind === "reply" ? "Reply" : "Propose update"}
+            {action.kind === "reply" ? "Reply" : action.kind === "propose_site_patch" ? "Propose site change" : "Propose update"}
           </button>
         );
       case "reference":

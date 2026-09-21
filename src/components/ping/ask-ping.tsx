@@ -13,9 +13,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Loader2, Send } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Send, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { AskAnswer, AskEvidenceRef, AskProposal } from "@/lib/ping/types";
+import type { AskAnswer, AskEvidenceRef, AskProposal, SitePatchOperation } from "@/lib/ping/types";
 import { ActionButtons } from "./action-buttons";
 import { schemaLabel } from "./object-preview";
 
@@ -55,6 +55,70 @@ function EvidenceList({ refs }: { refs: AskEvidenceRef[] }) {
   );
 }
 
+function opTransition(op: SitePatchOperation, which: "before" | "after"): string {
+  const value = op[which];
+  const shown = Array.isArray(value) ? value.join(", ") : JSON.stringify(value);
+  if (op.op === "reorder_section_objects") return `Section ${op.sectionId} order: ${shown}`;
+  return `Section ${op.sectionId} ${op.field}: ${shown}`;
+}
+
+/**
+ * Human review surface for a site_patch proposal: Before, After, Evidence
+ * reason, Affected objects. Approval stays a human act; the digest is
+ * re-verified server-side before anything is applied.
+ */
+function SitePatchReview({ proposal }: { proposal: Extract<AskProposal, { kind: "site_patch" }> }) {
+  const patch = proposal.sitePatch;
+  return (
+    <div className="mt-3 space-y-3 rounded-lg border border-border-soft bg-background p-3" aria-label="Site change review">
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-accent/50">Before</h4>
+        <ul className="mt-1 space-y-1">
+          {patch.operations.map((op, i) => (
+            <li key={i} className="text-sm text-accent/80">
+              {opTransition(op, "before")}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-accent/50">After</h4>
+        <ul className="mt-1 space-y-1">
+          {patch.operations.map((op, i) => (
+            <li key={i} className="text-sm text-accent/80">
+              {opTransition(op, "after")}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-accent/50">Evidence reason</h4>
+        <p className="mt-1 text-sm text-accent/80">{patch.evidenceReason}</p>
+      </div>
+      {patch.affectedObjects.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-accent/50">Affected objects</h4>
+          <ul className="mt-1 space-y-1">
+            {patch.affectedObjects.map((o) => (
+              <li key={o.id}>
+                <Link
+                  href={`/node/${encodeURIComponent(o.id)}`}
+                  className="text-sm text-ping-violet hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet"
+                >
+                  {o.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="text-xs text-accent/50">
+        Spec digest: <span className="break-all font-mono">{patch.siteSpecDigest}</span>
+      </p>
+    </div>
+  );
+}
+
 function ProposalCard({
   proposal,
   onApproved,
@@ -62,7 +126,7 @@ function ProposalCard({
   proposal: AskProposal;
   onApproved: () => void;
 }) {
-  const [state, setState] = React.useState<"idle" | "approving" | "approved" | "error">("idle");
+  const [state, setState] = React.useState<"idle" | "approving" | "approved" | "rejected" | "error">("idle");
   const [error, setError] = React.useState<string | null>(null);
   const [eventId, setEventId] = React.useState<string | null>(null);
 
@@ -92,7 +156,7 @@ function ProposalCard({
   return (
     <div className="mt-4 rounded-xl border border-ping-violet/40 bg-ping-violet/5 p-4" aria-label="Draft proposal">
       <h4 className="text-sm font-semibold text-accent">
-        Draft proposal: {proposal.kind === "object_update" ? "update object" : "create object"}
+        Draft proposal: {proposal.kind === "object_update" ? "update object" : proposal.kind === "site_patch" ? "site change" : "create object"}
       </h4>
       <p className="mt-1 text-sm text-accent/70">{proposal.note}</p>
       <dl className="mt-3 space-y-1.5 text-sm">
@@ -120,6 +184,7 @@ function ProposalCard({
           </div>
         ))}
       </dl>
+      {proposal.kind === "site_patch" && <SitePatchReview proposal={proposal} />}
       <details className="mt-3">
         <summary className="cursor-pointer text-xs text-accent/60 hover:text-accent">
           Exact digest ({proposal.digestAlgorithm})
@@ -133,16 +198,28 @@ function ProposalCard({
           <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
           Approved and submitted{eventId ? ` (event ${eventId.slice(0, 12)})` : ""}. The gateway governs the write.
         </p>
+      ) : state === "rejected" ? (
+        <p className="mt-3 text-sm text-accent/60">Rejected. Nothing changed.</p>
       ) : (
-        <button
-          type="button"
-          onClick={approve}
-          disabled={state === "approving"}
-          className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet disabled:opacity-50"
-        >
-          {state === "approving" && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-          Approve exact proposal
-        </button>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={approve}
+            disabled={state === "approving"}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet disabled:opacity-50"
+          >
+            {state === "approving" && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+            Approve exact proposal
+          </button>
+          <button
+            type="button"
+            onClick={() => setState("rejected")}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-border-soft bg-background px-4 py-2 text-sm font-medium text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+            Reject
+          </button>
+        </div>
       )}
       {state === "error" && error && (
         <p className="mt-2 text-sm text-red-700" role="alert">
@@ -151,6 +228,7 @@ function ProposalCard({
       )}
       <p className="mt-2 text-xs text-accent/50">
         Approving submits this exact proposal as your identity. Nothing is published without your approval.
+        Approval is a human act; the digest is re-verified server-side before anything is applied.
       </p>
     </div>
   );

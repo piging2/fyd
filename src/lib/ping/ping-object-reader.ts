@@ -43,6 +43,7 @@ import type {
   PingRelationship,
 } from "./types";
 import { planActions as planActionsPure } from "./action-planner";
+import { grantsForViewer, isSiteCapableSchema } from "./grants";
 import { buildAskContext, composeAnswer, verifyProposalDigest } from "./ask-composer";
 import { compareRanked, rankScore } from "./feed-rank";
 import { getWebsiteObjects, getWebsiteRelationships } from "./website-objects";
@@ -1083,6 +1084,14 @@ class GatewayPingObjectReader implements PingObjectReader {
       (typeof object.fields.website === "string" && object.fields.website) ||
       (typeof object.fields.url === "string" && object.fields.url.startsWith("http") ? object.fields.url : null) ||
       null;
+    // Explicit grants from the user-facing grant authority. The planner is
+    // still the capability authority; these grants only open the FYD site
+    // actions for site-capable objects the viewer controls.
+    const grants = grantsForViewer({
+      viewerId,
+      controllerId: object.controllerId,
+      isSite: isSiteCapableSchema(object.schema),
+    });
     return planActionsPure({
       viewerId,
       target: object,
@@ -1090,6 +1099,7 @@ class GatewayPingObjectReader implements PingObjectReader {
       followedByViewer,
       likedByViewer,
       website,
+      grants,
     });
   }
 
@@ -1211,6 +1221,40 @@ class GatewayPingObjectReader implements PingObjectReader {
         objectId: obj.id,
         schema: proposal.schema,
         changes: proposal.changes,
+      });
+      return { eventId };
+    }
+    if (proposal.kind === "site_patch") {
+      // Agent-drafted SiteSpec transition. The digest was re-verified above;
+      // the envelope binding is checked at the API boundary (the FYD lane
+      // owns the signing key material). Approval is a human act: the owner
+      // approves the exact digest, and the approved patch is recorded as one
+      // governed OBJECT_UPDATED. The agent never applies it directly and
+      // nothing is published by this path.
+      const obj = await this.getObject(proposal.targetObjectId, viewerId);
+      if (obj.controllerId !== viewerId) {
+        throw new BadRequestError("Only the controlling identity can approve a site change.");
+      }
+      const siteGrants = grantsForViewer({
+        viewerId,
+        controllerId: obj.controllerId,
+        isSite: isSiteCapableSchema(obj.schema),
+      });
+      if (!siteGrants.includes("site.propose")) {
+        throw new BadRequestError("This identity cannot propose site changes for this site.");
+      }
+      if (proposal.envelope && proposal.envelope.payload_hash !== proposal.digest) {
+        throw new BadRequestError("Site-patch envelope does not bind this proposal digest.");
+      }
+      const eventId = await this.submitSignedEvent(viewerId, "OBJECT_UPDATED", {
+        objectId: obj.id,
+        schema: proposal.schema,
+        changes: {
+          ...proposal.changes,
+          site_patch: JSON.stringify(proposal.sitePatch),
+          proposal_digest: proposal.digest,
+          site_spec_digest: proposal.sitePatch.siteSpecDigest,
+        },
       });
       return { eventId };
     }

@@ -161,8 +161,8 @@ export interface IntelligentCircleData {
 }
 
 export type ActionKind =
-  | "follow" | "unfollow" | "like" | "unlike" | "open" | "open_website"
-  | "ask" | "reference" | "reply" | "propose_update" | "propose_create";
+  | "follow" | "unfollow" | "like" | "unlike" | "open" | "open_site" | "open_website"
+  | "ask" | "reference" | "reply" | "propose_update" | "propose_create" | "propose_site_patch";
 
 export interface PlannedAction {
   kind: ActionKind;
@@ -208,16 +208,104 @@ export interface AskEvidenceRef {
   detail?: string;
 }
 
-export interface AskProposal {
+export interface AskProposalBody {
   kind: "object_update" | "object_create";
   targetObjectId: string | null;
   schema: string;
   changes: Record<string, string>;
-  /** sha256 hex of canonical JSON of {kind,targetObjectId,schema,changes}. */
+}
+
+/** Deterministic agent-facing grant identifiers for FYD (Ask FYD). */
+export type FydGrant =
+  | "site.read"
+  | "site.propose"
+  | "site.publish"
+  | "message.send"
+  | "ad.buy"
+  | "purchase.make"
+  | "provider.call"
+  | "business.mutate"
+  | "object.reference";
+
+/**
+ * A deterministic SiteSpec transition drafted by the agent. Ordered; the
+ * agent never applies these directly. Each op carries its Before and After
+ * so the human reviewer sees the exact change.
+ */
+export type SitePatchOperation =
+  | {
+      op: "reorder_section_objects";
+      pageSlug: string;
+      sectionId: string;
+      before: string[];
+      after: string[];
+    }
+  | {
+      op: "set_presentation";
+      pageSlug: string;
+      sectionId: string;
+      field: string;
+      before: string | string[] | boolean | null;
+      after: string | string[] | boolean | null;
+    };
+
+export interface SitePatchPayload {
+  /** Stable site object id this patch applies to. */
+  siteId: string;
+  pageSlug: string;
+  operations: SitePatchOperation[];
+  /** Digest of the exact SiteSpec the patch was drafted against. */
+  siteSpecDigest: string;
+  affectedObjects: { id: string; title: string }[];
+  /** Why the agent believes this change is warranted, tied to evidence. */
+  evidenceReason: string;
+}
+
+export interface SitePatchProposalBody {
+  kind: "site_patch";
+  targetObjectId: string;
+  schema: string;
+  /** One human-readable line per operation, keyed op1, op2, ... */
+  changes: Record<string, string>;
+  sitePatch: SitePatchPayload;
+}
+
+/** Canonical envelope the agent uses when signing a site_patch draft. */
+export interface EnvelopeProof {
+  verification_method: "ed25519";
+  signature: string;
+  public_key: string;
+}
+
+export interface SitePatchEnvelope {
+  canonical_bytes_hash: string;
+  payload_hash: string;
+  body: Record<string, unknown>;
+  proof: EnvelopeProof;
+}
+
+export interface AskProposalBase {
+  /**
+   * sha256 hex of canonical JSON of the proposal body: for object
+   * proposals {kind,targetObjectId,schema,changes}, for site_patch the
+   * same plus sitePatch.
+   */
   digest: string;
   digestAlgorithm: "sha256-canonical-json-v1";
   note: string;
+  /** Present when the agent signed the draft; absent otherwise. */
+  envelope?: SitePatchEnvelope | null;
 }
+
+export interface ObjectAskProposal extends AskProposalBase, AskProposalBody {}
+export interface SitePatchAskProposal extends AskProposalBase, SitePatchProposalBody {}
+
+/**
+ * Discriminated union: object update/create proposals plus agent-drafted
+ * site_patch proposals. The digest law is shared: canonicalize the body
+ * only (never digest, algorithm, note, or envelope) and sha256 it.
+ */
+export type AskProposal = ObjectAskProposal | SitePatchAskProposal;
 
 export interface AskAnswer {
   /** Sentences; every factual sentence cites evidence as [n]. */

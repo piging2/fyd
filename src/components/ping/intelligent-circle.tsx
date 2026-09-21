@@ -35,7 +35,9 @@ import {
   UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { IntelligentCircleData } from "@/lib/ping/types";
+import type { CapabilityPlan, IntelligentCircleData } from "@/lib/ping/types";
+import { circleUiActions } from "@/fyd/ask/circle-actions";
+import type { CircleUiAction } from "@/fyd/ask/circle-actions";
 
 interface IntelligentCircleProps {
   identityId: string;
@@ -44,6 +46,17 @@ interface IntelligentCircleProps {
   fetchOnOpen?: boolean;
   onAsk?: (prefill: string | null, objectId: string | null) => void;
   className?: string;
+  /**
+   * CapabilityPlan for the circled object. When present, the action row is
+   * rendered from circleUiActions: every rendered action binds to a real
+   * capability, and unknown kinds never render. When absent, the legacy
+   * action row renders unchanged.
+   */
+  plan?: CapabilityPlan | null;
+  /** Label for the ask action; Ask FYD passes "Ask FYD". */
+  askLabel?: string;
+  /** FYD node href override for the Open action; defaults to the Node page. */
+  nodeHref?: string | null;
 }
 
 function initials(name: string): string {
@@ -62,14 +75,139 @@ function KindBadge({ kind }: { kind: string }) {
   );
 }
 
+/**
+ * Capability-gated action row. Renders ONLY actions present in the plan;
+ * unknown future kinds are skipped by circleUiActions, never rendered dead.
+ * Visual and accessibility behavior matches the legacy row: 44px targets,
+ * focus-visible rings, aria-pressed on follow toggles.
+ */
+function GatedActions({
+  plan,
+  askLabel,
+  nodeHref,
+  objectId,
+  website,
+  onAsk,
+  onToggleFollow,
+  followPending,
+}: {
+  plan: CapabilityPlan;
+  askLabel: string;
+  nodeHref: string | null;
+  objectId: string;
+  website: string | null;
+  onAsk?: (prefill: string | null, objectId: string | null) => void;
+  onToggleFollow: () => void;
+  followPending: boolean;
+}) {
+  const uiActions = circleUiActions(plan, askLabel);
+  if (uiActions.length === 0) return null;
+  const openHref = nodeHref ?? `/node/${encodeURIComponent(objectId)}`;
+  const render = (ua: CircleUiAction, index: number) => {
+    const key = `${ua.kind}:${index}`;
+    switch (ua.kind) {
+      case "follow":
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={onToggleFollow}
+            disabled={followPending}
+            aria-pressed={false}
+            className={cn(
+              "inline-flex min-h-[44px] items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet disabled:opacity-50",
+              "bg-primary text-primary-foreground hover:bg-primary-hover",
+            )}
+          >
+            <UserPlus className="h-4 w-4" aria-hidden="true" />
+            Follow
+          </button>
+        );
+      case "unfollow":
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={onToggleFollow}
+            disabled={followPending}
+            aria-pressed={true}
+            className={cn(
+              "inline-flex min-h-[44px] items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet disabled:opacity-50",
+              "border border-border-soft bg-background text-accent hover:bg-surface-2",
+            )}
+          >
+            <UserMinus className="h-4 w-4" aria-hidden="true" />
+            Unfollow
+          </button>
+        );
+      case "open":
+      case "open_site":
+        return (
+          <Link
+            key={key}
+            href={openHref}
+            className="inline-flex min-h-[44px] items-center rounded-lg border border-border-soft bg-background px-4 py-2 text-sm font-medium text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet"
+          >
+            {ua.kind === "open_site" ? "Open site" : "Open"}
+          </Link>
+        );
+      case "ask":
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onAsk?.(null, objectId)}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-border-soft bg-background px-4 py-2 text-sm font-medium text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet"
+          >
+            <MessageCircleQuestion className="h-4 w-4" aria-hidden="true" />
+            {ua.label}
+          </button>
+        );
+      case "propose_site_patch":
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onAsk?.("Propose a site change: ", objectId)}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-border-soft bg-background px-4 py-2 text-sm font-medium text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet"
+          >
+            {ua.label}
+          </button>
+        );
+      case "open_website":
+        return website ? (
+          <a
+            key={key}
+            href={website}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-border-soft bg-background px-4 py-2 text-sm font-medium text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            Visit website
+          </a>
+        ) : null;
+      default:
+        return null;
+    }
+  };
+  return <div className="mt-4 flex flex-wrap gap-2">{uiActions.map(render)}</div>;
+}
+
 function CardBody({
   data,
   onAsk,
   onFollowed,
+  plan = null,
+  askLabel = "Ask PING",
+  nodeHref = null,
 }: {
   data: IntelligentCircleData;
   onAsk?: (prefill: string | null, objectId: string | null) => void;
   onFollowed: () => void;
+  plan?: CapabilityPlan | null;
+  askLabel?: string;
+  nodeHref?: string | null;
 }) {
   const { identity, relationshipContext } = data;
   const [pending, setPending] = React.useState(false);
@@ -239,6 +377,18 @@ function CardBody({
         </p>
       )}
 
+      {plan ? (
+        <GatedActions
+          plan={plan}
+          askLabel={askLabel}
+          nodeHref={nodeHref}
+          objectId={data.objectId}
+          website={data.website}
+          onAsk={onAsk}
+          onToggleFollow={toggleFollow}
+          followPending={pending}
+        />
+      ) : (
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
@@ -276,6 +426,7 @@ function CardBody({
           Ask PING
         </button>
       </div>
+      )}
     </div>
   );
 }
@@ -286,6 +437,9 @@ export function IntelligentCircle({
   fetchOnOpen = true,
   onAsk,
   className,
+  plan = null,
+  askLabel = "Ask PING",
+  nodeHref = null,
 }: IntelligentCircleProps) {
   const [data, setData] = React.useState<IntelligentCircleData | null>(initialData);
   const [status, setStatus] = React.useState<"idle" | "loading" | "ready" | "error">(
@@ -442,7 +596,7 @@ export function IntelligentCircle({
               </button>
             </div>
           ) : (
-            <CardBody data={data} onAsk={onAsk} onFollowed={() => void fetchData(true)} />
+            <CardBody data={data} onAsk={onAsk} onFollowed={() => void fetchData(true)} plan={plan} askLabel={askLabel} nodeHref={nodeHref} />
           )}
         </div>
       )}
@@ -495,7 +649,7 @@ export function IntelligentCircle({
                 </button>
               </div>
             ) : (
-              <CardBody data={data} onAsk={onAsk} onFollowed={() => void fetchData(true)} />
+              <CardBody data={data} onAsk={onAsk} onFollowed={() => void fetchData(true)} plan={plan} askLabel={askLabel} nodeHref={nodeHref} />
             )}
           </div>
         </div>

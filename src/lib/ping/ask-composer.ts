@@ -24,6 +24,7 @@ import type {
   PingObject,
   PingRelationship,
   PlannedAction,
+  SitePatchProposalBody,
 } from "./types";
 
 export const ASK_LIMITS = {
@@ -49,7 +50,7 @@ const PROPOSABLE_FIELDS: Record<string, string> = {
 // Canonical JSON + digest (sha256-canonical-json-v1)
 // ---------------------------------------------------------------------------
 
-function canonicalize(value: unknown): string {
+export function canonicalize(value: unknown): string {
   if (value === null || value === undefined) return "null";
   if (typeof value === "string") return JSON.stringify(value);
   if (typeof value === "number" || typeof value === "boolean") return JSON.stringify(value);
@@ -62,24 +63,40 @@ function canonicalize(value: unknown): string {
   return "null";
 }
 
-export interface ProposalBody {
+export interface ObjectProposalBody {
   kind: "object_update" | "object_create";
   targetObjectId: string | null;
   schema: string;
   changes: Record<string, string>;
 }
 
+/**
+ * Digest input for every AskProposal. The digest law is shared: hash the
+ * canonical body only, never the digest, algorithm label, note, or
+ * signature envelope.
+ */
+export type ProposalBody = ObjectProposalBody | SitePatchProposalBody;
+
 export function proposalDigest(body: ProposalBody): string {
   return createHash("sha256").update(canonicalize(body), "utf8").digest("hex");
 }
 
 export function verifyProposalDigest(proposal: AskProposal): boolean {
-  const body: ProposalBody = {
-    kind: proposal.kind,
-    targetObjectId: proposal.targetObjectId,
-    schema: proposal.schema,
-    changes: proposal.changes,
-  };
+  const body: ProposalBody =
+    proposal.kind === "site_patch"
+      ? {
+          kind: proposal.kind,
+          targetObjectId: proposal.targetObjectId,
+          schema: proposal.schema,
+          changes: proposal.changes,
+          sitePatch: proposal.sitePatch,
+        }
+      : {
+          kind: proposal.kind,
+          targetObjectId: proposal.targetObjectId,
+          schema: proposal.schema,
+          changes: proposal.changes,
+        };
   return proposal.digest === proposalDigest(body);
 }
 
@@ -216,7 +233,18 @@ function baseAnswer(ctx: AskContext): Pick<AskAnswer, "evidenceRefs" | "relatedO
       title: o.title || o.id,
     })),
     suggestedActions: (ctx.plan?.actions ?? []).filter((a) =>
-      ["follow", "unfollow", "like", "unlike", "open", "open_website", "reply", "propose_update"].includes(a.kind),
+      [
+        "follow",
+        "unfollow",
+        "like",
+        "unlike",
+        "open",
+        "open_site",
+        "open_website",
+        "reply",
+        "propose_update",
+        "propose_site_patch",
+      ].includes(a.kind),
     ) as PlannedAction[],
   };
 }

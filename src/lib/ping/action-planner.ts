@@ -14,9 +14,12 @@
  * - reply is available on posts for a signed-in viewer.
  * - propose_update is available only when the viewer controls the object.
  * - open_website appears only when the object carries a public website/url.
+ * - The planner stays the capability authority for the target object; FYD
+ *   grants never replace it. site.read enables opening the site, site.propose
+ *   enables drafting a site_patch. propose never implies publish.
  */
 
-import type { CapabilityPlan, PingObject, PlannedAction } from "./types";
+import type { CapabilityPlan, FydGrant, PingObject, PlannedAction } from "./types";
 
 /** Schemas whose controller is an identity the viewer can follow. */
 const IDENTITY_SCHEMAS = new Set([
@@ -35,6 +38,11 @@ export interface PlannerInput {
   followedByViewer: boolean;
   likedByViewer: boolean;
   website: string | null;
+  /**
+   * FYD grants from the deterministic grant authority. Absent for legacy
+   * callers, in which case no site actions are planned (fail closed).
+   */
+  grants?: FydGrant[];
 }
 
 function referenceAction(objectId: string): PlannedAction {
@@ -47,6 +55,7 @@ function referenceAction(objectId: string): PlannedAction {
 }
 
 export function planActions(input: PlannerInput): CapabilityPlan {
+  const grants: FydGrant[] = input.grants ?? [];
   const { viewerId, target, targetIdentityId, followedByViewer, likedByViewer, website } = input;
   const actions: PlannedAction[] = [];
   const isIdentityTarget = targetIdentityId !== null && IDENTITY_SCHEMAS.has(target.schema);
@@ -59,6 +68,15 @@ export function planActions(input: PlannerInput): CapabilityPlan {
     target: { kind: "object", objectId: target.id, schema: target.schema },
     reason: "Open the full Node page for this object.",
   });
+
+  if (grants.includes("site.read")) {
+    actions.push({
+      kind: "open_site",
+      label: "Open site",
+      target: { kind: "object", objectId: target.id, schema: target.schema },
+      reason: "Capability site.read: this object is an FYD site you may view.",
+    });
+  }
   actions.push({
     kind: "ask",
     label: "Ask PING",
@@ -122,6 +140,16 @@ export function planActions(input: PlannerInput): CapabilityPlan {
       reason:
         "You control this object, so you can propose updates. Nothing changes until you approve the exact digest.",
     });
+
+    if (grants.includes("site.propose")) {
+      actions.push({
+        kind: "propose_site_patch",
+        label: "Propose site change",
+        target: { kind: "ask", objectId: target.id, prefill: "Propose a site change: " },
+        reason:
+          "Capability site.propose: draft a site_patch proposal. The agent cannot apply it; only your approval of the exact digest does.",
+      });
+    }
   }
 
   if (website) {
