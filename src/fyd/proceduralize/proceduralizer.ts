@@ -908,10 +908,20 @@ export function project(
   }
 
   // Deterministic order: ids are content-derived, sort for stability.
+  // Dedupe identical (subject, predicate, object) triples first: the
+  // structured address projection and the @id-reference extraction can
+  // both emit the same link (e.g. business located_at location).
+  const seenRel = new Set<string>();
+  const uniqueRelationships = relationships.filter((r) => {
+    const k = r.subject + "|" + r.predicate + "|" + r.object;
+    if (seenRel.has(k)) return false;
+    seenRel.add(k);
+    return true;
+  });
   objects.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  relationships.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  uniqueRelationships.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  return { objects, relationships, fieldClasses, droppedRelationships };
+  return { objects, relationships: uniqueRelationships, fieldClasses, droppedRelationships };
 }
 
 // ---------------------------------------------------------------------------

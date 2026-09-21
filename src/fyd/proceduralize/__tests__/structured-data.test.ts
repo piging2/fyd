@@ -129,12 +129,13 @@ describe("locked fixtures", () => {
     const ex = await extractStructuredData(FIXTURE_ID_REFERENCES.html, CTX);
     expect(ex.stats.nodesVisited).toBe(6); // place, org, webpage, website, person, address(blank)
     const pred = (p: string) => ex.relationships.filter((r) => r.predicate === p);
-    expect(pred("located_at")).toHaveLength(1);
+    // Both `location` and `address` @id/nested references map to the
+    // unified located_at predicate.
+    expect(pred("located_at")).toHaveLength(2);
     expect(pred("about")).toHaveLength(1);
     expect(pred("part_of")).toHaveLength(1);
     expect(pred("authored_by")).toHaveLength(1);
     expect(pred("works_for")).toHaveLength(1);
-    expect(pred("has_address")).toHaveLength(1);
     // No relationship points at a blank-node allocation label.
     for (const r of ex.relationships) {
       expect(r.subjectKey.startsWith("_:")).toBe(false);
@@ -190,10 +191,10 @@ describe("locked fixtures", () => {
     // Hours, logo, sameAs all visible now.
     expect(fact(ex.facts, "hours")?.value).toBe("Mo,Tu,We,Th,Fr 07:30-16:00");
     expect(fact(ex.facts, "socials")?.value).toBe("https://coppersmithplumbing.com");
-    // @id references resolved to relationships.
+    // @id references resolved to relationships (address and location both
+    // map to the unified located_at predicate).
     const preds = new Set(ex.relationships.map((r) => r.predicate));
     expect(preds.has("located_at")).toBe(true);
-    expect(preds.has("has_address")).toBe(true);
     expect(preds.has("published_by")).toBe(true);
     // Unsupported evidence is honest, not silent.
     expect(ex.unsupported.length).toBeGreaterThan(0);

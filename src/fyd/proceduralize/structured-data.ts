@@ -370,7 +370,7 @@ function visibilityForProperty(property: string): Visibility {
 /** schema.org property -> relationship predicate for @id references. */
 const PREDICATE_MAP: Record<string, string> = {
   location: "located_at",
-  address: "has_address",
+  address: "located_at",
   logo: "has_logo",
   image: "has_image",
   publisher: "published_by",
