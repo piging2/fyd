@@ -6,17 +6,34 @@
  * from source state (fixtures, manifests). Source re-ingestion reads and
  * writes only source state; it can never erase owner intent.
  *
+ * The store is APPEND-ONLY (see ./owner-events.ts): every command appends
+ * one provenance-backed event to the object's log, and the returned state
+ * is the pure projection over that log. Reverting a contact correction
+ * appends an owner.restored-fact event; the correction event stays in the
+ * log. There is no mutable owner map anymore.
+ *
+ * applyOwnerCommand / parseOwnerCommand keep their public API so the
+ * routes and UI keep working; they are adapters over the event log now.
+ *
  * All commands fail closed: unknown ids, bad shapes, and empty names are
  * rejected with a typed error and nothing is written.
  *
  * FYD_OWNER_DIR env override exists so tests can use a temp directory.
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
 import type { OwnerCommand, OwnerOverrides } from "./types";
 import type { OwnerFieldCorrection } from "../../lib/ping/types";
-import { EMPTY_OVERRIDES } from "./types";
+import {
+  ADDRESS_TARGET,
+  CONTACT_FIELD_TARGETS,
+  SERVICE_ORDER_TARGET,
+  appendOwnerEvent,
+  projectOwnerState,
+  serviceTarget,
+  type OwnerEventActor,
+  type OwnerEventDraft,
+  type OwnerEventEvidence,
+} from "./owner-events";
 import { slugifyService } from "./services";
 
 export class OwnerCommandError extends Error {
@@ -80,70 +97,13 @@ function validateFieldValue(field: CorrectableField, value: string): void {
   }
 }
 
-function ownerDir(): string {
-  const override = process.env.FYD_OWNER_DIR;
-  if (override) return override;
-  return join(process.cwd(), "data", "fyd-owner");
-}
-
-function ownerPath(objectId: string): string {
-  if (!/^[a-z0-9-]+$/.test(objectId)) {
-    throw new OwnerCommandError("Invalid object id.");
-  }
-  return join(ownerDir(), objectId + ".json");
-}
-
-function isValidOverrides(v: unknown): v is OwnerOverrides {
-  if (typeof v !== "object" || v === null) return false;
-  const r = v as Record<string, unknown>;
-  // fieldCorrections is optional on read: store files written before the
-  // correction lane exist without it and are migrated to {} in
-  // readOverrides rather than rejected.
-  const fc = r.fieldCorrections;
-  const fcOk =
-    fc === undefined ||
-    (typeof fc === "object" && fc !== null && !Array.isArray(fc));
-  return (
-    r.version === 1 &&
-    typeof r.objectId === "string" &&
-    Array.isArray(r.serviceOrder) &&
-    Array.isArray(r.hiddenServices) &&
-    Array.isArray(r.addedServices) &&
-    fcOk &&
-    Array.isArray(r.history)
-  );
-}
-
+/**
+ * Current owner-visible state for an object: the projection over its
+ * event log. Files written by the old mutable store are migrated
+ * transparently on read (see ./owner-events.ts).
+ */
 export function readOverrides(objectId: string): OwnerOverrides {
-  const base = EMPTY_OVERRIDES(objectId);
-  try {
-    const raw = readFileSync(ownerPath(objectId), "utf8");
-    const parsed: unknown = JSON.parse(raw);
-    if (!isValidOverrides(parsed) || parsed.objectId !== objectId) return base;
-    if (!parsed.fieldCorrections) parsed.fieldCorrections = {};
-    return parsed;
-  } catch {
-    return base;
-  }
-}
-
-function writeOverrides(o: OwnerOverrides): void {
-  const path = ownerPath(o.objectId);
-  mkdirSync(dirname(path), { recursive: true });
-  const tmp = path + ".tmp";
-  writeFileSync(tmp, JSON.stringify(o, null, 2) + "\n", "utf8");
-  // Atomic replace so a crash can never leave a half-written file.
-  const { renameSync } = require("node:fs") as typeof import("node:fs");
-  renameSync(tmp, path);
-}
-
-function stamp(o: OwnerOverrides): void {
-  o.updatedAt = new Date().toISOString();
-}
-
-function log(o: OwnerOverrides, text: string): void {
-  o.history.push({ at: new Date().toISOString(), text });
-  if (o.history.length > 200) o.history = o.history.slice(-200);
+  return projectOwnerState(objectId);
 }
 
 /**
@@ -153,11 +113,32 @@ function log(o: OwnerOverrides, text: string): void {
  * corrections: the source's value at correction time (so the SOURCE SAYS
  * X half of the record is never lost) and the authority label the
  * correction is recorded under (demo: the seeded demo actor label).
- * Returns the updated overrides (also persisted).
+ *
+ * The command is translated to one event draft, validated against the
+ * projected state, then appended. Nothing is written on validation
+ * failure. Returns the projected state after the append (also persisted).
  */
 export interface ApplyCommandOpts {
   sourceValue?: string | null;
   actorLabel?: string;
+}
+
+function demoActor(label?: string): OwnerEventActor {
+  return {
+    kind: "demo",
+    label: label ?? "Demo Owner (seeded, unverified)",
+  };
+}
+
+function sourceSnapshotEvidence(sourceValue: string | null): OwnerEventEvidence {
+  return {
+    kind: "source-snapshot",
+    ref: "projection:raw",
+    detail:
+      sourceValue === null
+        ? "the source listed no value at correction time"
+        : "the source listed '" + sourceValue + "' at correction time",
+  };
 }
 
 export function applyOwnerCommand(
@@ -167,14 +148,17 @@ export function applyOwnerCommand(
   knownServiceNames: Map<string, string>,
   opts?: ApplyCommandOpts,
 ): OwnerOverrides {
-  const o = readOverrides(objectId);
+  const current = readOverrides(objectId);
   const known = new Set(knownServiceIds);
+  const at = new Date().toISOString();
+  const actor = demoActor(opts?.actorLabel);
 
+  let draft: OwnerEventDraft;
   switch (cmd.type) {
     case "move-service": {
       if (!known.has(cmd.id)) throw new OwnerCommandError("Unknown service.");
       // Materialize the current order: owner order first, then any new ids.
-      const order = [...o.serviceOrder.filter((id) => known.has(id))];
+      const order = [...current.serviceOrder.filter((id) => known.has(id))];
       for (const id of knownServiceIds) if (!order.includes(id)) order.push(id);
       const idx = order.indexOf(cmd.id);
       order.splice(idx, 1);
@@ -182,135 +166,378 @@ export function applyOwnerCommand(
       else if (cmd.to === "last") order.push(cmd.id);
       else if (cmd.to === "up") order.splice(Math.max(0, idx - 1), 0, cmd.id);
       else order.splice(Math.min(order.length, idx + 1), 0, cmd.id);
-      o.serviceOrder = order;
       const name = knownServiceNames.get(cmd.id) ?? cmd.id;
-      log(o, `Moved ${name} ${cmd.to === "first" ? "to the top" : cmd.to === "last" ? "to the bottom" : cmd.to}.`);
+      draft = {
+        at,
+        objectId,
+        type: "owner.corrected-fact",
+        actor,
+        target: SERVICE_ORDER_TARGET,
+        previousBasis: current.serviceOrder,
+        newValue: order,
+        evidence: {
+          kind: "owner-attestation",
+          ref: "command:move-service",
+          detail: "owner moved '" + name + "' " + cmd.to,
+        },
+        note:
+          "Moved " +
+          name +
+          " " +
+          (cmd.to === "first"
+            ? "to the top"
+            : cmd.to === "last"
+              ? "to the bottom"
+              : cmd.to) +
+          ".",
+        generator: "fyd-owner@1",
+      };
       break;
     }
     case "set-service-visibility": {
       if (!known.has(cmd.id)) throw new OwnerCommandError("Unknown service.");
       const name = knownServiceNames.get(cmd.id) ?? cmd.id;
+      const hidden = current.hiddenServices.includes(cmd.id);
       if (cmd.visible) {
-        o.hiddenServices = o.hiddenServices.filter((id) => id !== cmd.id);
-        log(o, `Showed ${name}.`);
+        if (hidden) {
+          draft = {
+            at,
+            objectId,
+            type: "owner.restored-fact",
+            actor,
+            target: serviceTarget(cmd.id),
+            previousBasis: { hidden: true },
+            newValue: { hidden: false },
+            evidence: {
+              kind: "owner-attestation",
+              ref: "command:set-service-visibility",
+              detail: "owner re-showed '" + name + "'",
+            },
+            note: "Showed " + name + ".",
+            generator: "fyd-owner@1",
+          };
+        } else {
+          draft = {
+            at,
+            objectId,
+            type: "owner.confirmed-fact",
+            actor,
+            target: serviceTarget(cmd.id),
+            previousBasis: { hidden: false },
+            newValue: { hidden: false },
+            evidence: {
+              kind: "owner-attestation",
+              ref: "command:set-service-visibility",
+              detail: "'" + name + "' was already visible; confirmed",
+            },
+            note: name + " is already shown; confirmed.",
+            generator: "fyd-owner@1",
+          };
+        }
       } else {
-        if (!o.hiddenServices.includes(cmd.id)) o.hiddenServices.push(cmd.id);
-        log(o, `Hid ${name}.`);
+        if (hidden) {
+          draft = {
+            at,
+            objectId,
+            type: "owner.confirmed-fact",
+            actor,
+            target: serviceTarget(cmd.id),
+            previousBasis: { hidden: true },
+            newValue: { hidden: true },
+            evidence: {
+              kind: "owner-attestation",
+              ref: "command:set-service-visibility",
+              detail: "'" + name + "' was already hidden; confirmed",
+            },
+            note: name + " is already hidden; confirmed.",
+            generator: "fyd-owner@1",
+          };
+        } else {
+          draft = {
+            at,
+            objectId,
+            type: "owner.hid-fact",
+            actor,
+            target: serviceTarget(cmd.id),
+            previousBasis: { hidden: false },
+            newValue: { hidden: true },
+            evidence: {
+              kind: "owner-attestation",
+              ref: "command:set-service-visibility",
+              detail: "owner hid '" + name + "'",
+            },
+            note: "Hid " + name + ".",
+            generator: "fyd-owner@1",
+          };
+        }
       }
       break;
     }
     case "add-service": {
       const name = cmd.name.trim().replace(/\s+/g, " ");
-      if (!name || name.length > 60) throw new OwnerCommandError("Service name must be 1-60 characters.");
+      if (!name || name.length > 60)
+        throw new OwnerCommandError("Service name must be 1-60 characters.");
       const id = slugifyService(name);
-      if (known.has(id) || o.addedServices.some((s) => s.id === id)) {
+      if (
+        known.has(id) ||
+        current.addedServices.some((s) => s.id === id)
+      ) {
         throw new OwnerCommandError("That service already exists.");
       }
-      o.addedServices.push({ id, name });
-      log(o, `Added ${name}.`);
+      draft = {
+        at,
+        objectId,
+        type: "owner.added-fact",
+        actor,
+        target: serviceTarget(id),
+        previousBasis: null,
+        newValue: { id, name },
+        evidence: {
+          kind: "owner-attestation",
+          ref: "command:add-service",
+          detail: "owner added service '" + name + "'",
+        },
+        note: "Added " + name + ".",
+        generator: "fyd-owner@1",
+      };
       break;
     }
     case "set-address-visibility": {
       if (cmd.visibility !== "public" && cmd.visibility !== "hidden") {
         throw new OwnerCommandError("Visibility must be public or hidden.");
       }
-      o.addressVisibility = cmd.visibility;
-      log(o, cmd.visibility === "hidden" ? "Hid the street address." : "Made the address public.");
+      const hidden = current.addressVisibility === "hidden";
+      if (cmd.visibility === "hidden") {
+        if (hidden) {
+          draft = {
+            at,
+            objectId,
+            type: "owner.confirmed-fact",
+            actor,
+            target: ADDRESS_TARGET,
+            previousBasis: { visibility: "hidden" },
+            newValue: { visibility: "hidden" },
+            evidence: {
+              kind: "owner-attestation",
+              ref: "command:set-address-visibility",
+              detail: "address was already hidden; confirmed",
+            },
+            note: "The address is already hidden; confirmed.",
+            generator: "fyd-owner@1",
+          };
+        } else {
+          draft = {
+            at,
+            objectId,
+            type: "owner.hid-fact",
+            actor,
+            target: ADDRESS_TARGET,
+            previousBasis: { visibility: "public" },
+            newValue: { hidden: true },
+            evidence: {
+              kind: "owner-attestation",
+              ref: "command:set-address-visibility",
+              detail: "owner hid the street address",
+            },
+            note: "Hid the street address.",
+            generator: "fyd-owner@1",
+          };
+        }
+      } else {
+        if (!hidden) {
+          draft = {
+            at,
+            objectId,
+            type: "owner.confirmed-fact",
+            actor,
+            target: ADDRESS_TARGET,
+            previousBasis: { visibility: "public" },
+            newValue: { visibility: "public" },
+            evidence: {
+              kind: "owner-attestation",
+              ref: "command:set-address-visibility",
+              detail: "address was already public; confirmed",
+            },
+            note: "The address is already public; confirmed.",
+            generator: "fyd-owner@1",
+          };
+        } else {
+          draft = {
+            at,
+            objectId,
+            type: "owner.restored-fact",
+            actor,
+            target: ADDRESS_TARGET,
+            previousBasis: { hidden: true },
+            newValue: { hidden: false },
+            evidence: {
+              kind: "owner-attestation",
+              ref: "command:set-address-visibility",
+              detail: "owner made the address public again",
+            },
+            note: "Made the address public.",
+            generator: "fyd-owner@1",
+          };
+        }
+      }
       break;
     }
     case "set-contact-field": {
       // The owner attests a corrected contact value. The source record is
       // NOT rewritten: the correction is stored as its own event with the
-      // source's value at this moment preserved as sourceValue. The read
-      // model composes ownerValue over the source at serve time.
-      if (!isCorrectableField(cmd.field)) throw new OwnerCommandError("Unknown contact field.");
+      // source's value at this moment preserved as previous basis. The
+      // read model composes ownerValue over the source at serve time.
+      if (!isCorrectableField(cmd.field))
+        throw new OwnerCommandError("Unknown contact field.");
       const value = normalizeFieldValue(cmd.field, cmd.value);
       if (!value) throw new OwnerCommandError("A value is required.");
       validateFieldValue(cmd.field, value);
       const label = FIELD_LABELS[cmd.field];
       const sourceValue = opts?.sourceValue ?? null;
-      const actorLabel = opts?.actorLabel ?? "Demo Owner (seeded, unverified)";
+      const prior = current.fieldCorrections[cmd.field]?.ownerValue ?? null;
+      if (prior === value) {
+        // Nothing changed: record a confirmation, not a redundant correction.
+        draft = {
+          at,
+          objectId,
+          type: "owner.confirmed-fact",
+          actor,
+          target: CONTACT_FIELD_TARGETS[cmd.field],
+          previousBasis: { ownerValue: prior, sourceValue },
+          newValue: { ownerValue: value },
+          evidence: sourceSnapshotEvidence(sourceValue),
+          note: "Confirmed " + label + ": the owner says " + value + " (no change).",
+          generator: "fyd-owner@1",
+        };
+        break;
+      }
       const correction: OwnerFieldCorrection = {
         field: cmd.field,
         label,
         sourceValue,
         ownerValue: value,
-        correctedAt: new Date().toISOString(),
-        actorLabel,
+        correctedAt: at,
+        actorLabel: actor.label,
         basis:
           "Owner correction: the owner says this is the correct " +
           label.toLowerCase() +
           ". The source record is unchanged.",
       };
-      o.fieldCorrections[cmd.field] = correction;
-      log(
-        o,
-        "Corrected " +
+      draft = {
+        at,
+        objectId,
+        type: "owner.corrected-fact",
+        actor,
+        target: CONTACT_FIELD_TARGETS[cmd.field],
+        previousBasis: { priorOwnerValue: prior, sourceValue },
+        newValue: correction,
+        evidence: sourceSnapshotEvidence(sourceValue),
+        note:
+          "Corrected " +
           label +
           ": the site lists " +
           (sourceValue ?? "no " + label.toLowerCase()) +
           "; the owner says " +
           value +
           ".",
-      );
+        generator: "fyd-owner@1",
+      };
       break;
     }
     case "revert-contact-field": {
-      if (!isCorrectableField(cmd.field)) throw new OwnerCommandError("Unknown contact field.");
+      if (!isCorrectableField(cmd.field))
+        throw new OwnerCommandError("Unknown contact field.");
       const label = FIELD_LABELS[cmd.field];
-      const existing = o.fieldCorrections[cmd.field];
-      if (!existing) throw new OwnerCommandError("There is no " + label.toLowerCase() + " correction to revert.");
-      delete o.fieldCorrections[cmd.field];
-      log(
-        o,
-        "Reverted the " +
+      const existing = current.fieldCorrections[cmd.field];
+      if (!existing)
+        throw new OwnerCommandError(
+          "There is no " + label.toLowerCase() + " correction to revert.",
+        );
+      // Revert appends a restored event; the correction event stays in the
+      // log. The projection stops composing the correction.
+      draft = {
+        at,
+        objectId,
+        type: "owner.restored-fact",
+        actor,
+        target: CONTACT_FIELD_TARGETS[cmd.field],
+        previousBasis: { ...existing },
+        newValue: null,
+        evidence: {
+          kind: "owner-attestation",
+          ref: "command:revert-contact-field",
+          detail:
+            "owner reverted the " + label.toLowerCase() + " correction; " +
+            "the correction event is preserved in the log",
+        },
+        note:
+          "Reverted the " +
           label +
           " correction; the site's " +
           (existing.sourceValue ?? "record") +
           " is shown again.",
-      );
+        generator: "fyd-owner@1",
+      };
       break;
     }
     default:
       throw new OwnerCommandError("Unknown command.");
   }
 
-  stamp(o);
-  writeOverrides(o);
-  return o;
+  appendOwnerEvent(objectId, draft);
+  return readOverrides(objectId);
 }
 
 /** Validate a raw JSON body into an OwnerCommand, or throw. */
 export function parseOwnerCommand(body: unknown): OwnerCommand {
-  if (typeof body !== "object" || body === null) throw new OwnerCommandError("Command must be an object.");
+  if (typeof body !== "object" || body === null)
+    throw new OwnerCommandError("Command must be an object.");
   const r = body as Record<string, unknown>;
   switch (r.type) {
     case "move-service":
-      if (typeof r.id !== "string" || !["up", "down", "first", "last"].includes(r.to as string)) {
-        throw new OwnerCommandError("move-service needs { id, to: up|down|first|last }.");
+      if (
+        typeof r.id !== "string" ||
+        !["up", "down", "first", "last"].includes(r.to as string)
+      ) {
+        throw new OwnerCommandError(
+          "move-service needs { id, to: up|down|first|last }.",
+        );
       }
-      return { type: "move-service", id: r.id, to: r.to as "up" | "down" | "first" | "last" };
+      return {
+        type: "move-service",
+        id: r.id,
+        to: r.to as "up" | "down" | "first" | "last",
+      };
     case "set-service-visibility":
       if (typeof r.id !== "string" || typeof r.visible !== "boolean") {
-        throw new OwnerCommandError("set-service-visibility needs { id, visible }.");
+        throw new OwnerCommandError(
+          "set-service-visibility needs { id, visible }.",
+        );
       }
       return { type: "set-service-visibility", id: r.id, visible: r.visible };
     case "add-service":
-      if (typeof r.name !== "string") throw new OwnerCommandError("add-service needs { name }.");
+      if (typeof r.name !== "string")
+        throw new OwnerCommandError("add-service needs { name }.");
       return { type: "add-service", name: r.name };
     case "set-address-visibility":
       if (r.visibility !== "public" && r.visibility !== "hidden") {
-        throw new OwnerCommandError("set-address-visibility needs { visibility: public|hidden }.");
+        throw new OwnerCommandError(
+          "set-address-visibility needs { visibility: public|hidden }.",
+        );
       }
       return { type: "set-address-visibility", visibility: r.visibility };
     case "set-contact-field":
       if (!isCorrectableField(r.field) || typeof r.value !== "string") {
-        throw new OwnerCommandError("set-contact-field needs { field: phone|email|website, value: string }.");
+        throw new OwnerCommandError(
+          "set-contact-field needs { field: phone|email|website, value: string }.",
+        );
       }
       return { type: "set-contact-field", field: r.field, value: r.value };
     case "revert-contact-field":
       if (!isCorrectableField(r.field)) {
-        throw new OwnerCommandError("revert-contact-field needs { field: phone|email|website }.");
+        throw new OwnerCommandError(
+          "revert-contact-field needs { field: phone|email|website }.",
+        );
       }
       return { type: "revert-contact-field", field: r.field };
     default:
