@@ -4,7 +4,6 @@
  * npx jest --config src/fyd/ask/jest.config.cjs
  */
 module.exports = {
-  preset: "ts-jest",
   testEnvironment: "node",
   rootDir: "../../..",
   testMatch: ["<rootDir>/src/fyd/ask/__tests__/*.test.ts"],

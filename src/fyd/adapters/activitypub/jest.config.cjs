@@ -1,6 +1,5 @@
 /** Scoped Jest config for the ActivityPub adapter lane (grill plan item #3). */
 module.exports = {
-  preset: "ts-jest",
   testEnvironment: "node",
   rootDir: ".",
   testMatch: ["<rootDir>/__tests__/*.test.ts"],
