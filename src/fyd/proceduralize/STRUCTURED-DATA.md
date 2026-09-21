@@ -190,9 +190,10 @@ is an explicit input; wall-clock time never enters IDs.
   objects + `links_to` relationships. The primary entity's `sameAs`
   flows through page-scope `relate()`; non-primary entities' `sameAs`
   flows through entity projection. Both paths tested.
-- Nested `PostalAddress` is a real entity (`has_address`), not a
-  dot-flattened string. Street address is private; the coarse locality
-  is derived public.
+- Nested `PostalAddress` is a real entity linked by the unified
+  `located_at` predicate (both `address` and `location` references map
+  to it; identical triples are deduped), not a dot-flattened string.
+  Street address is private; the coarse locality is derived public.
 - Person entities (`author`, etc.) become `ping.social.person@1`
   objects with `works_for` relationships.
 - Service/Product entities become `service`/`product` objects with
