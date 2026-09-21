@@ -156,7 +156,7 @@ describe("answerAskFyd", () => {
             fields: { ...o.fields, phone: "+15415550123" },
             ownerFieldCorrections: [
               {
-                field: "phone",
+                field: "phone" as const,
                 label: "Phone",
                 sourceValue: "+15412865190",
                 ownerValue: "+15415550123",
