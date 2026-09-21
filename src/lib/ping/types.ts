@@ -109,6 +109,54 @@ export interface PingObject {
   createdAt: string;
   updatedAt: string;
   provenance: ObjectProvenance;
+  /**
+   * Owner-attested field corrections composed onto the projection by the
+   * FYD read seam (src/fyd/object/owner-overlay.ts), AFTER the projection's
+   * digest verification. The PING dump never writes this key: it is read-
+   * model state, not source state. fields[] carries the EFFECTIVE
+   * (owner-winning) value; each record here preserves what the source said
+   * (sourceValue) alongside what the owner says (ownerValue), plus the
+   * correction's own provenance. Absent when the owner corrected nothing.
+   */
+  ownerFieldCorrections?: OwnerFieldCorrection[];
+}
+
+/**
+ * One owner-attested field correction. The system of record is the owner
+ * store (data/fyd-owner/<objectId>.json); the read seam attaches copies
+ * here so every consumer of the projection sees the same effective value
+ * with the same provenance. SOURCE SAYS X / OWNER SAYS Y is never
+ * collapsed: sourceValue is the source's value when the correction was
+ * recorded (the source record itself is untouched), ownerValue is what
+ * the owner attests.
+ */
+export interface OwnerFieldCorrection {
+  /** Correctable contact field. */
+  field: "phone" | "email" | "website";
+  /** Human label, e.g. "Phone". */
+  label: string;
+  /** What the source projection said when the correction was recorded. Null when the source had no value. */
+  sourceValue: string | null;
+  /** What the owner says the value is. This is the effective value. */
+  ownerValue: string;
+  /** ISO timestamp of the correction. */
+  correctedAt: string;
+  /**
+   * Authority label for the actor that recorded the correction. In demo
+   * mode this is the seeded demo actor label ("Demo Owner (seeded,
+   * unverified)"): an explicit non-identity, never a verified owner.
+   * The real-identity seam attaches here later.
+   */
+  actorLabel: string;
+  /** Human basis sentence, e.g. "Owner correction: the owner says this is the main number." */
+  basis: string;
+  /**
+   * Read-model derivation (never stored): true when the source's CURRENT
+   * value differs from sourceValue, i.e. the source was re-observed after
+   * the correction and now contradicts what it said then. The owner value
+   * still wins; this flag makes the drift visible instead of silent.
+   */
+  sourceDrifted?: boolean;
 }
 
 export interface PingRelationship {
