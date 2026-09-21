@@ -137,6 +137,11 @@ export default async function ObjectNodePage({
   const visibleServices = view.services.filter((s) => s.visible);
   const showLocality =
     view.contact.addressVisibility === "public" && view.contact.locality;
+  // Owner-corrected contact fields, for the honest SOURCE SAYS X /
+  // OWNER SAYS Y display. The contact block shows the effective
+  // (owner-winning) value; these records keep the distinction.
+  const phoneCorrection =
+    view.fieldCorrections.find((c) => c.field === "phone") ?? null;
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
@@ -245,10 +250,15 @@ export default async function ObjectNodePage({
             {view.contact.phone && (
               <div className="flex items-center justify-between gap-4 px-4 py-3.5">
                 <dt className="text-sm font-medium text-stone-500">Phone</dt>
-                <dd>
+                <dd className="text-right">
                   <a href={"tel:" + view.contact.phone.replace(/\s/g, "")} className="text-base font-semibold text-amber-800 hover:underline">
                     {view.contact.phone}
                   </a>
+                  {phoneCorrection ? (
+                    <p className="mt-0.5 text-xs text-stone-400">
+                      Owner-corrected; the site lists {phoneCorrection.sourceValue ?? "no number"}.
+                    </p>
+                  ) : null}
                 </dd>
               </div>
             )}
@@ -283,6 +293,46 @@ export default async function ObjectNodePage({
             <p className="mt-2 text-xs text-stone-400">The owner has hidden the location.</p>
           )}
         </Section>
+
+        {view.fieldCorrections.length > 0 && (
+          <Section title="Source vs owner">
+            <p className="max-w-2xl text-sm text-stone-600">
+              The owner corrected {view.fieldCorrections.length === 1 ? "a detail" : "some details"} below.
+              The site's own record is unchanged; the owner's value is what every
+              surface shows, and both are listed here so the distinction is never hidden.
+            </p>
+            <ul className="mt-3 max-w-2xl space-y-3">
+              {view.fieldCorrections.map((c) => (
+                <li key={c.field} className="rounded-xl border border-stone-200 bg-white px-4 py-3">
+                  <div className="text-sm font-semibold text-stone-900">{c.label}</div>
+                  <div className="mt-1 text-sm text-stone-700">
+                    Owner says: <span className="font-semibold">{c.ownerValue}</span>
+                  </div>
+                  <div className="text-sm text-stone-500">
+                    Source says: {c.sourceValue ?? "(no value on the site)"}
+                  </div>
+                  {c.sourceDrifted ? (
+                    <div className="mt-1 text-xs text-amber-700">
+                      The source was re-observed after this correction and now says
+                      something different than it did then. The owner's value still stands.
+                    </div>
+                  ) : null}
+                  <div className="mt-2">
+                    <WhyThis
+                      claim={c.label + " correction"}
+                      steps={[
+                        { step: "Owner statement", detail: c.basis },
+                        { step: "Recorded by", detail: c.actorLabel + " on " + c.correctedAt.slice(0, 10) },
+                        { step: "Source value at correction time", detail: c.sourceValue ?? "(none)" },
+                        { step: "Where it is stored", detail: "The owner store for this object; the source projection was not modified." },
+                      ]}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )}
 
         <section id="ask" className="mt-10 scroll-mt-6">
           <h2 className="text-xl font-bold text-stone-900">Ask {view.name}</h2>

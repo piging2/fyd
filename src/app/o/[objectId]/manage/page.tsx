@@ -22,7 +22,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ChevronsDown, ChevronsUp, Eye, EyeOff, Plus } from "lucide-react";
 import { ObjectCircle } from "@/fyd/ui/object-circle";
-import type { ObjectView, OwnerCommand } from "@/fyd/object/types";
+import type { FieldCorrectionView, ObjectView, OwnerCommand } from "@/fyd/object/types";
 
 type Status = "loading" | "ready" | "error";
 
@@ -34,6 +34,24 @@ interface HistoryEntry {
 interface Proposal {
   command: OwnerCommand;
   summary: string;
+}
+
+type CorrectableField = "phone" | "email" | "website";
+
+const CORRECTABLE_FIELDS: { field: CorrectableField; label: string }[] = [
+  { field: "phone", label: "Phone" },
+  { field: "email", label: "Email" },
+  { field: "website", label: "Website" },
+];
+
+/** What the source says for a contact field: the recorded source value when
+ * the owner corrected it, else the current (effective) value, which is the
+ * source's when uncorrected. */
+function sourceSaysFor(view: ObjectView, field: CorrectableField): string | null {
+  const correction = view.fieldCorrections.find((c) => c.field === field);
+  if (correction) return correction.sourceValue;
+  const v = view.contact[field];
+  return v && v.length > 0 ? v : null;
 }
 
 function humanDate(iso: string): string {
@@ -62,6 +80,8 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
   const [command, setCommand] = useState("");
   const [commandNote, setCommandNote] = useState("");
   const [pendingProposal, setPendingProposal] = useState<Proposal | null>(null);
+  const [correctField, setCorrectField] = useState<CorrectableField>("phone");
+  const [correctValue, setCorrectValue] = useState("");
 
   useEffect(() => {
     void params.then((p) => setObjectId(p.objectId));
@@ -140,8 +160,7 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
    * a typed proposal; the owner approves or rejects it below. Nothing is
    * written until Approve.
    */
-  async function runCommand() {
-    const raw = command.trim();
+  async function proposeText(raw: string) {
     if (!raw || !objectId || busy) return;
     setBusy(true);
     setError("");
@@ -171,12 +190,19 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
     }
   }
 
+  async function runCommand() {
+    const raw = command.trim();
+    await proposeText(raw);
+  }
+
   async function approveProposal() {
     if (!pendingProposal) return;
+    const wasCorrection = pendingProposal.command.type === "set-contact-field";
     const ok = await send(pendingProposal.command, pendingProposal.summary);
     if (ok) {
       setPendingProposal(null);
       setCommand("");
+      if (wasCorrection) setCorrectValue("");
       setCommandNote("Done. The public page and Circle now show the change.");
     }
   }
@@ -301,6 +327,33 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
             >
               <p className="text-sm font-bold text-amber-900">Proposed change</p>
               <p className="mt-1 text-sm text-stone-700">{pendingProposal.summary}</p>
+              {pendingProposal.command.type === "set-contact-field" && (
+                <div className="mt-2 rounded-lg bg-white p-3 text-sm">
+                  <p>
+                    <span className="font-medium text-stone-500">The site says: </span>
+                    {sourceSaysFor(view, pendingProposal.command.field) ?? "(nothing on record)"}
+                  </p>
+                  <p>
+                    <span className="font-medium text-stone-500">You say: </span>
+                    <span className="font-semibold">{pendingProposal.command.value}</span>
+                  </p>
+                  <p className="mt-1 text-xs text-stone-500">
+                    Approving records your correction as its own event. The site's
+                    record is kept alongside it and never rewritten.
+                  </p>
+                </div>
+              )}
+              {pendingProposal.command.type === "revert-contact-field" && (
+                <div className="mt-2 rounded-lg bg-white p-3 text-sm">
+                  <p>
+                    <span className="font-medium text-stone-500">Reverting restores: </span>
+                    {sourceSaysFor(view, pendingProposal.command.field) ?? "(nothing on record)"}
+                  </p>
+                  <p className="mt-1 text-xs text-stone-500">
+                    The correction's history is kept; the site's value is shown again.
+                  </p>
+                </div>
+              )}
               <p className="mt-1 text-xs text-stone-500">
                 Nothing has changed yet. Approve to apply it to the public page and Circle.
               </p>
@@ -519,6 +572,107 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
           <p className="mt-3 text-xs text-stone-400">
             The location shown publicly is the coarse "{view.contact.locality ?? "unknown"}" from the
             site. You decide whether visitors see it.
+          </p>
+        </Section>
+
+        <Section title="Correct a contact detail">
+          <p className="text-sm text-stone-500">
+            If the site has the wrong phone, email, or website, say so here.
+            Your correction is recorded as its own event: the site's record
+            stays intact, and your value is what visitors see everywhere.
+          </p>
+          {view.fieldCorrections.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {view.fieldCorrections.map((c: FieldCorrectionView) => (
+                <li key={c.field} className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="font-semibold">{c.label}</span>
+                      <div className="mt-0.5">
+                        <span className="text-stone-500">You say: </span>
+                        <span className="font-medium">{c.ownerValue}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-500">The site says: </span>
+                        {c.sourceValue ?? "(nothing on record)"}
+                      </div>
+                      {c.sourceDrifted ? (
+                        <div className="mt-0.5 text-xs text-amber-700">
+                          The site was re-observed after your correction and now
+                          says something different. Your value still stands.
+                        </div>
+                      ) : null}
+                      <div className="mt-0.5 text-xs text-stone-400">
+                        Recorded {humanDate(c.correctedAt)} by {c.actorLabel}.
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        void send(
+                          { type: "revert-contact-field", field: c.field as CorrectableField },
+                          "Reverted the " + c.label.toLowerCase() + " correction.",
+                        )
+                      }
+                      className="shrink-0 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-stone-100 disabled:opacity-50"
+                    >
+                      Revert
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form
+            className="mt-3 flex flex-col gap-2 sm:flex-row"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const value = correctValue.trim();
+              if (!value) return;
+              void proposeText("correct " + correctField + " to " + value);
+            }}
+          >
+            <label htmlFor="correct-field" className="sr-only">
+              Contact detail to correct
+            </label>
+            <select
+              id="correct-field"
+              value={correctField}
+              onChange={(e) => setCorrectField(e.target.value as CorrectableField)}
+              disabled={busy}
+              className="min-h-[44px] rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+            >
+              {CORRECTABLE_FIELDS.map((f) => (
+                <option key={f.field} value={f.field}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="correct-value" className="sr-only">
+              Corrected value
+            </label>
+            <input
+              id="correct-value"
+              type="text"
+              value={correctValue}
+              onChange={(e) => setCorrectValue(e.target.value)}
+              placeholder="The correct value, as the owner states it"
+              disabled={busy}
+              maxLength={120}
+              className="min-h-[44px] flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+            />
+            <button
+              type="submit"
+              disabled={busy || correctValue.trim().length === 0}
+              className="min-h-[44px] rounded-lg bg-amber-700 px-6 py-2.5 font-semibold text-white hover:bg-amber-800 disabled:opacity-50"
+            >
+              Propose correction
+            </button>
+          </form>
+          <p className="mt-2 text-xs text-stone-400">
+            Proposing shows you exactly what the site says and what you say
+            before anything is recorded. Approve in the Ask FYD box above.
           </p>
         </Section>
 
