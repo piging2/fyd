@@ -35,7 +35,7 @@ const KNOWLEDGE_WEBSITE = "ping.knowledge.website@1";
 
 const DEFINITIONS: FYDComponentDef[] = [
   { name: "Hero", label: "Hero", description: "Identity block: name, category, tagline, primary action.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
-  { name: "IdentityCard", label: "Identity card", description: "Compact identity card with follow and share actions.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
+  { name: "IdentityCard", label: "Identity card", description: "Compact identity card for the business. (Follow/share are unwired: no UI renders them.)", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
   { name: "BusinessSummary", label: "Business summary", description: "About-style summary from the business description.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
   { name: "Services", label: "Services", description: "Card grid of services the business provides.", acceptsSchemas: SCHEMA_ROLES.service, ownerBound: false, requiresData: true },
   { name: "Products", label: "Products", description: "Card grid of products the business offers.", acceptsSchemas: SCHEMA_ROLES.product, ownerBound: false, requiresData: true },

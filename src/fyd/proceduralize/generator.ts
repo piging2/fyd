@@ -33,7 +33,7 @@ import {
   type FYDSiteSpec,
   type ObjectGraph,
 } from "../sitespec/types";
-import { SCHEMA_ROLES, type FYDSchemaRole } from "../sitespec/schemas";
+import { SCHEMA_ROLES, eligibleComponents, type FYDSchemaRole } from "../sitespec/schemas";
 import { resolveWebsiteUrl } from "../sitespec/graph";
 
 export const GENERATOR_VERSION = "1.0.0";
@@ -234,16 +234,24 @@ function servicesPage(g: Grouped): FYDPage | null {
   };
 }
 
-/** EXPLORE: everything public, newest first. Exists when the graph is rich enough. */
+/** EXPLORE: the feed-renderable public objects, newest first. Exists
+ * when the graph is rich enough AND at least one public schema is
+ * feed-renderable. The planner asks eligibleComponents() (the registry
+ * contract): sections exist when their data exists, so no feed-renderable
+ * schema means no Explore page. */
 function explorePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
   const publicObjects = graph.objects.filter((o) => o.visibility === "public");
   if (publicObjects.length < 4) return null;
+  const feedSchemas = [...new Set(publicObjects.map((o) => o.schema))]
+    .filter((s) => eligibleComponents(s).includes("ObjectFeed"))
+    .sort();
+  if (feedSchemas.length === 0) return null;
   return {
     slug: "explore",
     title: "Explore",
     navLabel: "Explore",
     sections: [
-      section("explore", 0, "ObjectFeed", { kind: "all", limit: 20 }),
+      section("explore", 0, "ObjectFeed", { kind: "all", schemas: feedSchemas, limit: 20 }),
     ],
   };
 }

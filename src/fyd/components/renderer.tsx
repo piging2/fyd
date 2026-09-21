@@ -11,9 +11,10 @@
  * when the list is empty.
  */
 
-import type { PingObject } from "@/lib/ping/types";
+import type { OwnerFieldCorrection, PingObject } from "@/lib/ping/types";
 import type { ReactNode } from "react";
 import { getComponentDef } from "./registry";
+import { AskFydWidget } from "./ask-fyd-widget";
 import { resolveBoundField } from "../sitespec/graph";
 import type { BindingClassification } from "../sitespec/graph";
 import {
@@ -111,6 +112,12 @@ export interface RenderContext {
    */
   graph: ObjectGraph;
   viewer: ViewerContext;
+  /**
+   * Public site slug (e.g. "happy-place") threaded from the page, so the
+   * AskFYD widget knows which site to ask about. Optional: sections render
+   * fine without it, but Ask FYD shows an honest unavailable state.
+   */
+  siteId?: string;
 }
 
 /**
@@ -155,6 +162,43 @@ function ClaimBadge() {
     <span className="inline-block rounded-full border border-border-soft px-2 py-0.5 text-[11px] uppercase tracking-wide text-accent">
       Website statement
     </span>
+  );
+}
+
+/**
+ * The owner correction attached to the composed object for a field, if the
+ * owner corrected it. The read seam (owner-overlay.ts) attaches these; the
+ * renderer reads them generically, never per-surface special-cased.
+ */
+function correctionFor(
+  o: PingObject,
+  field: string,
+): OwnerFieldCorrection | null {
+  const list = o.ownerFieldCorrections;
+  if (!list) return null;
+  return list.find((c) => c.field === field) ?? null;
+}
+
+/**
+ * Honest SOURCE SAYS X / OWNER SAYS Y note under a corrected value.
+ * Customer-appropriate and contextual: it names both values and says the
+ * number came from the owner, without engineering language.
+ */
+function CorrectionNote({
+  correction,
+  theme,
+}: {
+  correction: OwnerFieldCorrection;
+  theme: FYDThemeTokens;
+}) {
+  return (
+    <p className="mt-1 text-xs" style={{ color: theme.ink, opacity: 0.65 }}>
+      Owner-corrected: the owner says this is the {correction.label.toLowerCase()}
+      {correction.sourceValue
+        ? ` (the site lists ${correction.sourceValue})`
+        : " (the site listed no " + correction.label.toLowerCase() + ")"}
+      .
+    </p>
   );
 }
 
@@ -566,8 +610,14 @@ function RecentObjectsSection({ objects, presentation, theme, ctx }: SectionProp
 function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
-  const phone = boundField(ctx, o, "phone");
-  const email = boundField(ctx, o, "email");
+  // Owner-corrected fields are read with the owner_authored
+  // classification: the displayed value is owner state (durable, survives
+  // re-ingestion), not a website statement. The correction record stays
+  // on the object so the section can name both values honestly.
+  const phoneCorrection = correctionFor(o, "phone");
+  const emailCorrection = correctionFor(o, "email");
+  const phone = boundField(ctx, o, "phone", phoneCorrection ? "owner_authored" : "direct");
+  const email = boundField(ctx, o, "email", emailCorrection ? "owner_authored" : "direct");
   const phoneLink = resolveSafeLink(phone, "call");
   const emailLink = resolveSafeLink(email, "email");
   const website = safeWebsite(ctx);
@@ -583,6 +633,7 @@ function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
             <a href={phoneLink.href} className="underline" style={{ color: theme.ink }}>
               {phone}
             </a>
+            {phoneCorrection ? <CorrectionNote correction={phoneCorrection} theme={theme} /> : null}
           </li>
         ) : null}
         {showEmail && emailLink.kind === "safe" ? (
@@ -590,6 +641,7 @@ function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
             <a href={emailLink.href} className="underline" style={{ color: theme.ink }}>
               {email}
             </a>
+            {emailCorrection ? <CorrectionNote correction={emailCorrection} theme={theme} /> : null}
           </li>
         ) : null}
         {showWebsite && website.kind === "safe" ? (
@@ -751,28 +803,9 @@ function AskFYDSection({ presentation, theme, ctx }: SectionProps) {
         <p className="mt-2 text-background/70">
           {presentation.copy ?? "Questions go to FYD Social. Answers cite website statements, never verified fact."}
         </p>
-        <form
-          className="mt-6 flex flex-col gap-3 sm:flex-row"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <input
-            type="text"
-            name="q"
-            placeholder="What do you want to know?"
-            className="flex-1 rounded border border-border-soft bg-background px-4 py-3"
-            aria-label="Ask FYD a question"
-          />
-          <button
-            type="submit"
-            className="rounded px-6 py-3 font-semibold"
-            style={{ background: theme.accent, color: theme.accentForeground }}
-          >
-            Ask
-          </button>
-        </form>
-        <p className="mt-3 text-xs text-background/50">
-          FYD Ask is built in a sibling lane; this box holds the component slot on the generated site.
-        </p>
+        <div className="text-left">
+          <AskFydWidget siteId={ctx.siteId} theme={theme} />
+        </div>
       </div>
     </section>
   );

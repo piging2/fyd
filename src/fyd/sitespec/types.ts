@@ -45,7 +45,7 @@ export type FYDQuery =
       schemas?: string[];
       limit?: number;
     }
-  | { kind: "all"; schema?: string; limit?: number }
+  | { kind: "all"; schema?: string; schemas?: string[]; limit?: number }
   | { kind: "reference"; objectIds: string[] }
   | { kind: "static" };
 

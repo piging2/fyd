@@ -110,7 +110,10 @@ function querySchemasFor(section: FYDSection, knownSchemas: Set<string>): string
     case "owner":
       return [...SCHEMA_ROLES.business];
     case "all":
-      return q.schema ? [q.schema] : [...knownSchemas];
+      // Mirrors "related": an explicit schema filter narrows expansion, but a
+      // bare "all" still expands to every known schema (fail-closed for
+      // hand-written specs).
+      return q.schemas ?? (q.schema ? [q.schema] : [...knownSchemas]);
     case "related": {
       if (q.schemas) return q.schemas;
       return q.schema ? [q.schema] : [...knownSchemas];
