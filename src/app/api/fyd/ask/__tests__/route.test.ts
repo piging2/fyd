@@ -143,6 +143,58 @@ describe("answerAskFyd", () => {
     expect(out.refusal).toBe(false);
     expect(out.answer).toContain("Coppersmith Plumbing");
   });
+
+  test("owner-corrected phone is cited as owner field evidence, not a website statement", () => {
+    const real = getSiteBundle("happy-place");
+    expect(real).not.toBeNull();
+    const objects = (real as SiteBundle).graph.objects.map((o) =>
+      o.schema === "ping.social.business@1"
+        ? {
+            ...o,
+            // In production the owner overlay applies the correction to
+            // fields; the test mirrors the composed (overlay-applied) graph.
+            fields: { ...o.fields, phone: "+15415550123" },
+            ownerFieldCorrections: [
+              {
+                field: "phone",
+                label: "Phone",
+                sourceValue: "+15412865190",
+                ownerValue: "+15415550123",
+                correctedAt: "2026-09-21T12:00:00.000Z",
+                actorLabel: "Demo Owner (seeded, unverified)",
+                basis: "owner correction (demo owner mode)",
+                sourceDrifted: false,
+              },
+            ],
+          }
+        : o,
+    );
+    const bundle: SiteBundle = {
+      ...(real as SiteBundle),
+      graph: { objects, relationships: (real as SiteBundle).graph.relationships },
+    };
+    const deps: AnswerAskFydDeps = {
+      loadBundle: (id) => (id === "happy-place-test" ? bundle : null),
+    };
+    const out = answerAskFyd(
+      { siteId: "happy-place-test", question: "What is the phone number?", mode: "visitor" },
+      deps,
+    );
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.refusal).toBe(false);
+    // The answer states the owner's value and names the site's value.
+    expect(out.answer).toContain("+15415550123");
+    expect(out.answer).toContain("+15412865190");
+    // The phone sentence cites a field-level owner-correction ref.
+    const phoneCite = out.citations.find((c) => c.id.endsWith("#phone"));
+    expect(phoneCite).toBeDefined();
+    expect(phoneCite?.source).toBe("Owner correction");
+    expect(phoneCite?.basis).toBe("Owner-set value");
+    // Uncorrected fields still cite the website as a website statement.
+    const objCite = out.citations.find((c) => c.id === "website-business-6fa5ebd99d72c4cb");
+    expect(objCite?.basis).toContain("website statement");
+  });
 });
 
 describe("AskFydWidget", () => {

@@ -188,7 +188,13 @@ function citationFor(
   let lastChecked: string | null = null;
   // Note: AskEvidenceRef.id IS the cited object/relationship id (there is no
   // separate objectId field on the ref).
-  if (ref.kind === "object" || ref.kind === "field") {
+  if (ref.kind === "field") {
+    // Field-level evidence: the ref itself is the provenance. Today the
+    // only producer of field refs is an owner field correction (the
+    // composer labels it as such), so the citation names the owner as the
+    // source instead of misattributing the value to the website.
+    source = "Owner correction";
+  } else if (ref.kind === "object") {
     const obj = objects.get(ref.id);
     const prov = obj?.provenance;
     if (prov && prov.ref.startsWith("website-ingestion:")) {

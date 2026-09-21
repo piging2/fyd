@@ -15,6 +15,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { ownerCorrectionForObject } from "@/fyd/object/owner-overlay";
 import type {
   AskAnswer,
   AskClaimClassification,
@@ -519,7 +520,10 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
     /**
      * Push a factual sentence and bind its evidence class in one step, so
      * every cited claim carries a real classification. Deterministic:
-     * same inputs, same claims, same order.
+     * same inputs, same claims, same order. `classificationOverride` lets
+     * a caller name the evidence class explicitly when the field-level
+     * record carries it (owner corrections); otherwise the standard
+     * field-class/provenance chain decides.
      */
     const pushClaim = (
       text: string,
@@ -527,6 +531,7 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       claim: string,
       obj: PingObject,
       field: string,
+      classificationOverride?: string,
     ): void => {
       sentences.push({ text, cites });
       const refIds: string[] = [];
@@ -536,7 +541,8 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       }
       claimClassifications.push({
         claim,
-        classification: claimClassification(ctx.fieldClasses, obj, field),
+        classification:
+          classificationOverride ?? claimClassification(ctx.fieldClasses, obj, field),
         evidenceRefIds: refIds,
       });
     };
@@ -680,12 +686,44 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       const site = fieldOf(target, "website", "url", "domain");
       const email = fieldOf(target, "email");
       const phone = fieldOf(target, "phone");
-      if (site)
-        pushClaim(`Website on record: ${site}.`, [0], `${title} website`, target, "website");
-      if (email)
-        pushClaim(`Email on record: ${email}.`, [0], `${title} email`, target, "email");
-      if (phone)
-        pushClaim(`Phone on record: ${phone}.`, [0], `${title} phone`, target, "phone");
+      // Owner-corrected contact fields keep the SOURCE SAYS X / OWNER SAYS
+      // Y distinction in the answer itself: the value stated is the
+      // owner's (effective), the site's value is named, and the claim is
+      // classified as an owner override. The sentence cites a dedicated
+      // FIELD-level evidence ref (the correction), not the business object:
+      // citing the object would let the Why-this view mislabel the number
+      // as a website statement.
+      const pushContactClaim = (
+        label: string,
+        field: "phone" | "email" | "website",
+        value: string,
+      ): void => {
+        const correction = ownerCorrectionForObject(target, field);
+        if (!correction) {
+          pushClaim(`${label} on record: ${value}.`, [0], `${title} ${field}`, target, field);
+          return;
+        }
+        const refIdx = ctx.evidenceRefs.length;
+        ctx.evidenceRefs.push({
+          kind: "field",
+          id: `${target.id}#${field}`,
+          label: `${label}: owner correction (recorded ${correction.correctedAt.slice(0, 10)})`,
+          detail:
+            `Owner correction by ${correction.actorLabel}: the owner says ` +
+            `${correction.ownerValue}; the site lists ${correction.sourceValue ?? "nothing"}.`,
+        });
+        pushClaim(
+          `${label} on record: ${value}. The owner corrected this ${field === "phone" ? "number" : field}; the site lists ${correction.sourceValue ?? "no " + field}.`,
+          [refIdx],
+          `${title} ${field}`,
+          target,
+          field,
+          "owner_override",
+        );
+      };
+      if (site) pushContactClaim("Website", "website", site);
+      if (email) pushContactClaim("Email", "email", email);
+      if (phone) pushContactClaim("Phone", "phone", phone);
       if (!site && !email && !phone) {
         pushClaim(
           `${title} lists no public contact details in the current context.`,
