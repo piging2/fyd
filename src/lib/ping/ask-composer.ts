@@ -133,9 +133,26 @@ function provenanceSourceUrls(objects: Array<PingObject | null>): string[] {
 }
 
 /**
+ * Epistemic classification from object provenance, used when the context
+ * carries no explicit field class and the object has no claim kind of its
+ * own. Website-derived material is the site's own words (never verified
+ * fact); canonical-journal objects are recorded facts in the site data;
+ * owner material is owner-authored. This keeps citations on a real
+ * evidence class instead of degrading to the meaningless "unknown".
+ */
+function classificationFromProvenance(obj: PingObject): string {
+  const kind = obj.provenance?.kind ?? "";
+  if (kind === "canonical-journal") return "DIRECT_FACT";
+  if (kind === "website-derived" || kind === "website-ingestion") return "website_statement";
+  if (kind === "owner") return "owner_authorship";
+  return "unknown";
+}
+
+/**
  * Epistemic classification for one object field claim. Prefers the
  * pipeline FactClass vocabulary when the context carries field classes;
- * falls back to the object's own claim kind; never invents certainty.
+ * then the object's own claim kind; then the object's provenance;
+ * never invents certainty.
  */
 function claimClassification(
   fieldClasses: Record<string, Record<string, string>>,
@@ -145,7 +162,8 @@ function claimClassification(
   const fc = fieldClasses[obj.id]?.[field];
   if (fc) return fc;
   const ck = obj.fields["claimKind"];
-  return typeof ck === "string" && ck !== "" ? ck : "unknown";
+  if (typeof ck === "string" && ck !== "") return ck;
+  return classificationFromProvenance(obj);
 }
 
 function truncateField(value: string | string[]): string | string[] {
@@ -241,6 +259,64 @@ function fieldOf(obj: PingObject, ...names: string[]): string | null {
 
 function hasWord(q: string, ...words: string[]): boolean {
   return words.some((w) => new RegExp(`\\b${w}\\b`).test(q));
+}
+
+/**
+ * Generic words carrying no topic: question scaffolding, the branches'
+ * own trigger words, and business-generic nouns. Used to decide whether
+ * a question names a SPECIFIC topic (e.g. "financing") that must match
+ * something on record before a branch fires.
+ */
+const GENERIC_WORDS: ReadonlySet<string> = new Set([
+  "a", "an", "the", "this", "that", "these", "those",
+  "is", "are", "was", "were", "be", "been", "being",
+  "do", "does", "did", "done", "doing",
+  "what", "which", "who", "whom", "whose", "when", "where", "why", "how",
+  "and", "or", "but", "if", "then", "than", "so", "such",
+  "of", "for", "with", "about", "into", "from", "to", "in", "on", "at", "by", "as",
+  "it", "its", "they", "them", "their", "you", "your", "yours",
+  "we", "our", "us", "i", "me", "my", "mine",
+  "he", "him", "his", "she", "her", "hers",
+  "business", "businesses", "company", "companies", "shop", "store", "firm",
+  "service", "services", "offer", "offers", "offered", "offering", "offerings",
+  "provide", "provides", "provided", "providing", "sell", "sells", "sold",
+  "have", "has", "had", "having", "get", "gets", "getting",
+  "there", "here", "any", "some", "all", "anyone", "anything",
+  "can", "could", "would", "should", "will", "shall", "may", "might", "must",
+  "just", "really", "please", "very", "quite",
+  "tell", "know", "kinds", "kind", "types", "type", "many", "much", "more", "most",
+  "list", "name", "names", "like",
+]);
+
+/**
+ * Content words of the question minus generic scaffolding. Empty means
+ * the question is general ("what services are offered?"); non-empty
+ * means it names a specific topic ("financing") that must match the
+ * record before a branch fires.
+ */
+function topicWords(q: string): string[] {
+  const out: string[] = [];
+  for (const w of q.toLowerCase().split(/[^a-z0-9]+/)) {
+    if (w.length > 2 && !GENERIC_WORDS.has(w) && !out.includes(w)) out.push(w);
+  }
+  return out;
+}
+
+/** Words describing the services on record (services field, titles, descriptions). */
+function serviceVocabulary(target: PingObject, relatedServices: PingObject[]): Set<string> {
+  const vocab = new Set<string>();
+  const add = (text: string | null): void => {
+    if (!text) return;
+    for (const w of text.toLowerCase().split(/[^a-z0-9]+/)) {
+      if (w.length > 2 && !GENERIC_WORDS.has(w)) vocab.add(w);
+    }
+  };
+  add(fieldOf(target, "services"));
+  for (const o of relatedServices) {
+    add(o.title);
+    add(o.description);
+  }
+  return vocab;
 }
 
 /** Extract proposed text after "to:", a quoted string, or "to <text>". */
@@ -440,13 +516,115 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
     const title = target.title || target.id;
     const desc = target.description || fieldOf(target, "bio", "summary");
 
-    if (hasWord(q, "who", "what", "describe", "tell", "about", "is", "profile")) {
-      if (desc) sentences.push({ text: `${title}: ${desc}`, cites: [0] });
-      else sentences.push({ text: `${title} is a ${ctx.schemaLabel} with no description on record.`, cites: [0] });
+    /**
+     * Push a factual sentence and bind its evidence class in one step, so
+     * every cited claim carries a real classification. Deterministic:
+     * same inputs, same claims, same order.
+     */
+    const pushClaim = (
+      text: string,
+      cites: number[],
+      claim: string,
+      obj: PingObject,
+      field: string,
+    ): void => {
+      sentences.push({ text, cites });
+      const refIds: string[] = [];
+      for (const i of cites) {
+        const id = ctx.evidenceRefs[i]?.id;
+        if (id && !refIds.includes(id)) refIds.push(id);
+      }
+      claimClassifications.push({
+        claim,
+        classification: claimClassification(ctx.fieldClasses, obj, field),
+        evidenceRefIds: refIds,
+      });
+    };
+
+    // People questions are answerable only from Person objects. A
+    // description dump names nobody, so when the site data has no person
+    // records the honest answer says so explicitly instead of guessing.
+    if (
+      hasWord(
+        q,
+        "person",
+        "people",
+        "owner",
+        "owners",
+        "founder",
+        "founders",
+        "staff",
+        "team",
+        "employee",
+        "employees",
+        "member",
+        "members",
+      )
+    ) {
+      const persons = [target, ...ctx.relatedObjects].filter((o) =>
+        o.schema.toLowerCase().includes("person"),
+      );
+      if (persons.length === 0) {
+        return {
+          ...base,
+          unknowns: ["people associated with this business"],
+          answer: [
+            `The site data contains no person records for ${title}, so I cannot answer that: there is no owner or staff information on record.`,
+            "I will not guess at names, roles, or personal details that are not on record.",
+          ].join("\n\n"),
+          proposal: null,
+          partial: true,
+        };
+      }
+      for (const p of persons) {
+        const i = ctx.evidenceRefs.findIndex((e) => e.id === p.id);
+        pushClaim(
+          `Person on record: ${p.title || p.id}.`,
+          i >= 0 ? [i] : [],
+          `${p.title || p.id} is associated with ${title}`,
+          p,
+          "name",
+        );
+      }
+    }
+
+    // The profile branch answers "what is this business"-style questions
+    // only. It must not fire on questions about a specific attribute the
+    // context cannot ground ("what is the owner blood type?"): the
+    // description does not answer those, and dumping it here is filler
+    // that also suppresses the refusal signal downstream.
+    const titleWords = title
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 2);
+    const namesBusiness =
+      hasWord(q, "business", "company", "shop", "store", "firm", "contractor") ||
+      titleWords.some((w) => hasWord(q, w));
+    // Note: hasWord is an OR over its words, so "what"+"is" needs an
+    // explicit AND here: either word alone ("what services...") is not a
+    // profile question.
+    const asksWhatIs = hasWord(q, "what") && hasWord(q, "is");
+    const profileIntent =
+      hasWord(q, "who", "describe", "tell", "about", "profile") ||
+      (asksWhatIs && (hasWord(q, "this", "it", "they", "you", "your") || namesBusiness));
+
+    if (profileIntent) {
+      if (desc)
+        pushClaim(`${title}: ${desc}`, [0], `${title} business profile`, target, "description");
+      else
+        pushClaim(
+          `${title} is a ${ctx.schemaLabel} with no description on record.`,
+          [0],
+          `${title} has no description on record`,
+          target,
+          "description",
+        );
       const loc = fieldOf(target, "location");
-      if (loc) sentences.push({ text: `Location on record: ${loc}.`, cites: [0] });
+      if (loc)
+        pushClaim(`Location on record: ${loc}.`, [0], `${title} location`, target, "location");
       const cat = fieldOf(target, "category", "businessCategory");
-      if (cat) sentences.push({ text: `Category on record: ${cat}.`, cites: [0] });
+      if (cat)
+        pushClaim(`Category on record: ${cat}.`, [0], `${title} category`, target, "category");
     }
 
     if (hasWord(q, "service", "services", "offer", "offers", "provide", "do")) {
@@ -454,30 +632,47 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       const relatedServices = ctx.relatedObjects.filter((o) =>
         ["ping.social.service@1", "ping.social.product@1", "ping.social.offer@1"].includes(o.schema),
       );
-      if (services) sentences.push({ text: `Services on record: ${services}.`, cites: [0] });
-      // Offers are evidence-chain nodes, not services: the answer names
-      // only service/product objects. Classifications cover exactly the
-      // claims the answer states.
-      const named = relatedServices.filter(
-        (o) => o.schema !== "ping.social.offer@1",
-      );
-      if (named.length > 0) {
-        const evIdx = ctx.evidenceRefs.findIndex((e) => e.id === named[0].id);
-        sentences.push({
-          text: `Related offerings: ${named.map((o) => o.title).join("; ")}.`,
-          cites: evIdx >= 0 ? [evIdx] : [],
-        });
-        for (const s of named) {
-          const refId = ctx.evidenceRefs.find((e) => e.id === s.id)?.id;
-          claimClassifications.push({
-            claim: `${title} offers ${s.title}`,
-            classification: claimClassification(ctx.fieldClasses, s, "name"),
-            evidenceRefIds: refId ? [refId] : [],
+      // The branch fires only with grounded content answering the
+      // question: a general services question, or a named offering that
+      // matches something on record. A specific topic with no match
+      // ("financing") skips the branch, so the question falls through to
+      // the honest fallback instead of dumping unrelated offerings.
+      const topics = topicWords(q);
+      const vocab = serviceVocabulary(target, relatedServices);
+      const grounded = topics.length === 0 || topics.some((w) => vocab.has(w));
+      if (grounded) {
+        if (services)
+          pushClaim(
+            `Services on record: ${services}.`,
+            [0],
+            `${title} services field`,
+            target,
+            "services",
+          );
+        // Offers are evidence-chain nodes, not services: the answer names
+        // only service/product objects. Classifications cover exactly the
+        // claims the answer states.
+        const named = relatedServices.filter(
+          (o) => o.schema !== "ping.social.offer@1",
+        );
+        if (named.length > 0) {
+          const evIdx = ctx.evidenceRefs.findIndex((e) => e.id === named[0].id);
+          sentences.push({
+            text: `Related offerings: ${named.map((o) => o.title).join("; ")}.`,
+            cites: evIdx >= 0 ? [evIdx] : [],
           });
+          for (const s of named) {
+            const refId = ctx.evidenceRefs.find((e) => e.id === s.id)?.id;
+            claimClassifications.push({
+              claim: `${title} offers ${s.title}`,
+              classification: claimClassification(ctx.fieldClasses, s, "name"),
+              evidenceRefIds: refId ? [refId] : [],
+            });
+          }
         }
-      }
-      if (!services && named.length === 0) {
-        return noEvidenceAnswer(ctx, question, ["services offered by this business"]);
+        if (!services && named.length === 0) {
+          return noEvidenceAnswer(ctx, question, ["services offered by this business"]);
+        }
       }
     }
 
@@ -485,30 +680,63 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       const site = fieldOf(target, "website", "url", "domain");
       const email = fieldOf(target, "email");
       const phone = fieldOf(target, "phone");
-      if (site) sentences.push({ text: `Website on record: ${site}.`, cites: [0] });
-      if (email) sentences.push({ text: `Email on record: ${email}.`, cites: [0] });
-      if (phone) sentences.push({ text: `Phone on record: ${phone}.`, cites: [0] });
+      if (site)
+        pushClaim(`Website on record: ${site}.`, [0], `${title} website`, target, "website");
+      if (email)
+        pushClaim(`Email on record: ${email}.`, [0], `${title} email`, target, "email");
+      if (phone)
+        pushClaim(`Phone on record: ${phone}.`, [0], `${title} phone`, target, "phone");
       if (!site && !email && !phone) {
-        sentences.push({ text: `${title} lists no public contact details in the current context.`, cites: [0] });
+        pushClaim(
+          `${title} lists no public contact details in the current context.`,
+          [0],
+          `${title} has no public contact details on record`,
+          target,
+          "contact",
+        );
       }
     }
 
     if (hasWord(q, "where", "location", "address", "based")) {
       const loc = fieldOf(target, "location", "address", "city");
-      if (loc) sentences.push({ text: `${title} is listed at: ${loc}.`, cites: [0] });
-      else sentences.push({ text: `No public location is on record for ${title}.`, cites: [0] });
+      if (loc)
+        pushClaim(
+          `${title} is listed at: ${loc}.`,
+          [0],
+          `${title} location`,
+          target,
+          "location",
+        );
+      else
+        pushClaim(
+          `No public location is on record for ${title}.`,
+          [0],
+          `${title} has no public location on record`,
+          target,
+          "location",
+        );
     }
 
     if (hasWord(q, "review", "rating", "trust", "proof", "evidence", "verif")) {
       const verified = fieldOf(target, "verified");
-      sentences.push({
-        text: verified
+      pushClaim(
+        verified
           ? `${title} carries an explicit verified mark.`
           : `${title} carries no verified mark in the current context.`,
-        cites: [0],
-      });
+        [0],
+        `${title} verification status`,
+        target,
+        "verified",
+      );
       const followers = fieldOf(target, "followerCount", "followers");
-      if (followers) sentences.push({ text: `Follower count on record: ${followers}.`, cites: [0] });
+      if (followers)
+        pushClaim(
+          `Follower count on record: ${followers}.`,
+          [0],
+          `${title} follower count`,
+          target,
+          "followerCount",
+        );
     }
 
     if (hasWord(q, "follow", "following")) {
@@ -533,19 +761,11 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       };
     }
 
-    // Fallback: summarize what is known, honestly.
-    const known: Sentence[] = [];
-    if (desc) known.push({ text: `${title}: ${desc}`, cites: [0] });
-    else known.push({ text: `${title} is a ${ctx.schemaLabel} on record.`, cites: [0] });
-    return {
-      ...base,
-      answer: [
-        ...known.map((s) => cite(s.text, s.cites)),
-        "I do not have evidence for the rest of that question in the current context, so I will not guess.",
-      ].join("\n\n"),
-      proposal: null,
-      partial: true,
-    };
+    // Fallback: no branch had grounded content answering the question.
+    // Say so explicitly with no citations, so the visitor layer surfaces
+    // a refusal. The description is deliberately not dumped here: citing
+    // it would look like an answer while answering nothing.
+    return noEvidenceAnswer(ctx, question);
   }
 
   // -- No target -------------------------------------------------------------

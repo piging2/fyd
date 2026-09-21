@@ -188,7 +188,10 @@ function citationFor(
       const url = prov.ref.slice("website-ingestion:".length);
       source = url ? `The business website (${url})` : "The business website";
     } else if (prov) {
-      source = "Site record";
+      // A canonical-journal object is a recorded object in the site data,
+      // not the site's own words: label it as such so the citation does
+      // not blur the two epistemic sources.
+      source = prov.kind === "canonical-journal" ? "Site record (canonical journal)" : "Site record";
     }
     lastChecked = prov?.derivedAt ? prov.derivedAt.slice(0, 10) : null;
   } else if (ref.kind === "relationship") {
