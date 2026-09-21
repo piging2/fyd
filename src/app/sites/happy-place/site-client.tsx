@@ -324,7 +324,7 @@ function EditorPanel({
             <label key={token} className="flex items-center gap-2 text-sm">
               <span className="w-20 capitalize text-accent">{token}</span>
               <input
-                className="flex-1 rounded border border-border-soft bg-background px-3 py-2 text-sm"
+                className="min-w-0 flex-1 rounded border border-border-soft bg-background px-3 py-2 text-sm"
                 value={tokenDrafts[token] ?? String(spec.themeTokens[token])}
                 onChange={(e) => setTokenDrafts({ ...tokenDrafts, [token]: e.target.value })}
               />
