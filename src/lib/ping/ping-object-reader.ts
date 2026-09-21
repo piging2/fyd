@@ -21,8 +21,9 @@
  *   OBJECT_CREATED, OBJECT_UPDATED, RELATIONSHIP_CREATED
  * Profile schema:  ping.social.profile@1
  * Post schema:     ping.social.post@1
- * Relationship predicates: follows, unfollows, likes, unlikes
- * (explicit revocation events keep counters as projections, never truth).
+ * Relationship predicates (canonical): follows, likes.
+ * Revocation is status: "inactive" on the same predicate. Follower and
+ * like counts stay projections computed from events, never canonical truth.
  */
 
 import type {
@@ -268,17 +269,18 @@ class GatewayPingObjectReader implements PingObjectReader {
     const edges: FollowEdge[] = [];
     for (const ev of events) {
       const p = eventPayload(ev);
-      const predicate = str(p.predicate);
-      if (predicate !== "follows" && predicate !== "unfollows") continue;
+      if (str(p.predicate) !== "follows") continue;
       const subject = str(p.subject) || str(p.subjectId);
       const target = str(p.object) || str(p.target) || str(p.targetId);
-      if (subject && target) edges.push({ subject, target: predicate === "follows" ? target : `!${target}` });
+      // Canonical revocation: status "inactive" on the same predicate.
+      const revoked = str(p.status) === "inactive";
+      if (subject && target) edges.push({ subject, target: revoked ? `!${target}` : target });
     }
     return edges;
   }
 
   private netFollows(edges: FollowEdge[]): Map<string, Set<string>> {
-    // subject -> set of currently followed targets (unfollows revoke)
+    // subject -> set of currently followed targets (inactive status revokes)
     const net = new Map<string, Set<string>>();
     for (const e of edges) {
       let set = net.get(e.subject);
@@ -297,11 +299,12 @@ class GatewayPingObjectReader implements PingObjectReader {
     const edges: LikeEdge[] = [];
     for (const ev of events) {
       const p = eventPayload(ev);
-      const predicate = str(p.predicate);
-      if (predicate !== "likes" && predicate !== "unlikes") continue;
+      if (str(p.predicate) !== "likes") continue;
       const subject = str(p.subject) || str(p.subjectId);
       const object = str(p.object) || str(p.objectId) || str(p.target);
-      if (subject && object) edges.push({ subject, object: predicate === "likes" ? object : `!${object}` });
+      // Canonical revocation: status "inactive" on the same predicate.
+      const revoked = str(p.status) === "inactive";
+      if (subject && object) edges.push({ subject, object: revoked ? `!${object}` : object });
     }
     return edges;
   }
@@ -528,8 +531,9 @@ class GatewayPingObjectReader implements PingObjectReader {
     if (!subjectId) throw new BadRequestError("No active practice identity. Select an identity first.");
     await this.submitSignedEvent(subjectId, "RELATIONSHIP_CREATED", {
       subject: subjectId,
-      predicate: "unfollows",
+      predicate: "follows",
       object: targetId,
+      status: "inactive",
     });
   }
 
@@ -547,8 +551,9 @@ class GatewayPingObjectReader implements PingObjectReader {
     if (!subjectId) throw new BadRequestError("No active practice identity. Select an identity first.");
     await this.submitSignedEvent(subjectId, "RELATIONSHIP_CREATED", {
       subject: subjectId,
-      predicate: "unlikes",
+      predicate: "likes",
       object: objectId,
+      status: "inactive",
     });
   }
 
