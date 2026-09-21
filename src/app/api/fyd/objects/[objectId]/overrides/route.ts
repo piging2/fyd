@@ -27,6 +27,8 @@ import {
   parseOwnerCommand,
   OwnerCommandError,
 } from "@/fyd/object/owner-store";
+import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+import { findBusinessObject, rawFieldValue } from "@/fyd/object/owner-overlay";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -60,7 +62,7 @@ export async function POST(
         {
           ok: false,
           error: "Not an understood command.",
-          hint: "Try: Put decks first. Hide fences. Show pergolas. Add patios.",
+          hint: "Try: Put decks first. Hide fences. Show pergolas. Add patios. Correct phone to +1 555 123 4567. Revert phone correction.",
         },
         { status: 400 },
       );
@@ -75,7 +77,30 @@ export async function POST(
     try {
       const cmd = parseOwnerCommand(rawCommand);
       const { ids, names } = knownServices(objectId);
-      const overrides = applyOwnerCommand(objectId, cmd, ids, names);
+      // Contact corrections need two things only the server can attach
+      // honestly: (1) the SOURCE's current value, read from the raw
+      // projection (overlay off) at approval time, so the record keeps
+      // SOURCE SAYS X even if the source changes later; (2) the authority
+      // label the correction is recorded under. In demo mode this is the
+      // seeded demo actor, explicitly unverified: this field is the seam
+      // where real owner identity will attach; it is never a verified
+      // identity today.
+      let opts: { sourceValue?: string | null; actorLabel?: string } | undefined;
+      if (cmd.type === "set-contact-field") {
+        let sourceValue: string | null = null;
+        try {
+          const rawGraph = getPingObjectGraphSync(objectId, { ownerOverlay: false }).graph;
+          const business = findBusinessObject(rawGraph);
+          if (business) sourceValue = rawFieldValue(business, cmd.field);
+        } catch {
+          sourceValue = null;
+        }
+        opts = {
+          sourceValue,
+          actorLabel: "Demo Owner (seeded, unverified)",
+        };
+      }
+      const overrides = applyOwnerCommand(objectId, cmd, ids, names, opts);
       const view = loadObjectView(objectId);
       return NextResponse.json({ ok: true, view, history: overrides.history });
     } catch (err) {

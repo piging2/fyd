@@ -36,6 +36,7 @@ import { resolveCircleBackground } from "../media/circle-background";
 import { listObjectMedia } from "../media/select";
 import type {
   CircleProjection,
+  FieldCorrectionView,
   ObjectCapability,
   ObjectContactView,
   ObjectMediaView,
@@ -232,6 +233,15 @@ export function loadObjectView(slug: string): ObjectView | null {
   const domain = domainOf(website);
   const firstService = services.find((s) => s.visible)?.name ?? services[0]?.name;
 
+  // Owner-attested field corrections, composed onto the graph by the read
+  // seam (src/fyd/data/ping-object-source.ts -> owner-overlay.ts). The
+  // contact block already carries the EFFECTIVE (owner-winning) values;
+  // these records keep the SOURCE SAYS X / OWNER SAYS Y distinction and
+  // the correction's own provenance for honest display.
+  const fieldCorrections: FieldCorrectionView[] = (
+    business.ownerFieldCorrections ?? []
+  ).map((c) => ({ ...c, sourceDrifted: c.sourceDrifted ?? false }));
+
   return {
     id: slug,
     schema: business.schema,
@@ -251,6 +261,7 @@ export function loadObjectView(slug: string): ObjectView | null {
       label: domain ? "Information observed on " + domain : "Information from the business website",
     },
     ownerUpdatedAt: overrides.history.length > 0 ? overrides.updatedAt : null,
+    fieldCorrections,
     sampleQuestions: [
       firstService ? "What kind of " + firstService.toLowerCase() + " work do you do?" : "What services do you offer?",
       "Where do you work?",

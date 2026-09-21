@@ -157,6 +157,7 @@ export function genericObjectView(obj: PingObject): ObjectView {
       label: "Information from the business website",
     },
     ownerUpdatedAt: null,
+    fieldCorrections: [],
     sampleQuestions: [],
   };
 }
