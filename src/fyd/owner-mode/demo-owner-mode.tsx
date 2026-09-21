@@ -22,6 +22,7 @@ import {
   type CapabilityVerdict,
 } from "./capability";
 import { attest, preconditionsFor } from "./attestation-gate";
+import { CustomizePanel } from "./customize-panel";
 
 const hazard =
   "repeating-linear-gradient(45deg, #3a2b00 0 16px, #14100a 16px 32px)";
@@ -246,6 +247,8 @@ export function DemoOwnerMode({ siteId }: { siteId: string }) {
             </div>
           ) : null}
         </div>
+
+        <CustomizePanel siteId={siteId} />
       </div>
     </section>
   );

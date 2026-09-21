@@ -42,7 +42,8 @@ export interface OwnerRelationship {
 export type OwnerCapability =
   | "owner.attest-regen"
   | "owner.edit-visibility"
-  | "owner.publish";
+  | "owner.publish"
+  | "owner.customize-approve";
 
 export interface CapabilityVerdict {
   capability: OwnerCapability;
@@ -92,6 +93,7 @@ const ALL_CAPABILITIES: OwnerCapability[] = [
   "owner.attest-regen",
   "owner.edit-visibility",
   "owner.publish",
+  "owner.customize-approve",
 ];
 
 export function listOwnerCapabilities(): OwnerCapability[] {
@@ -150,6 +152,17 @@ export function evaluateCapability(
         reason:
           "demo: deny - the demo grants no publish path; publishing would " +
           "be a real-world effect and this demo performs none.",
+      };
+    case "owner.customize-approve":
+      return {
+        ...base,
+        allowed: true,
+        reason:
+          "demo: allow - controller may approve a digest-bound " +
+          "presentation-intent proposal. Approval only journals a " +
+          "presentation-intent overlay for the demo journal; facts are " +
+          "untouched and the approval itself carries the " +
+          "\"DEMO OWNER MODE - not real authentication\" marker.",
       };
   }
 }
