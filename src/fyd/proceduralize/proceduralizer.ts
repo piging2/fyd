@@ -15,6 +15,7 @@
 
 import type { PingObject, PingRelationship } from "@/lib/ping/types";
 import { sha256Hex } from "./sha256";
+import { feedFacts } from "./feed-parser";
 
 /** A source the proceduralizer may acquire. */
 export interface SourceRecord {
@@ -22,6 +23,10 @@ export interface SourceRecord {
   sourceType: "json-ld" | "opengraph" | "html-meta" | "rss" | "atom" | "sitemap" | "html";
   discoveredAt: string;
 }
+
+/** Claim source grading. Website claims are never verified fact; feed
+ *  items are per-entry claims from an RSS/Atom feed with GUID provenance. */
+export type ClaimKind = "website_statement" | "feed_item";
 
 /** One extracted field with full provenance. */
 export interface ExtractedField {
@@ -36,8 +41,8 @@ export interface ExtractedField {
   /** 1.0 when read verbatim; lower when inferred. Always present when < 1. */
   confidence: number;
   public: boolean;
-  /** Website claims are always website_statement. */
-  claimKind: "website_statement";
+  /** Source grading for the claim; see ClaimKind. */
+  claimKind: ClaimKind;
 }
 
 /** A parsed machine-readable fact, pre-provenance. */
@@ -47,6 +52,10 @@ export interface ParsedFact {
   sourceType: SourceRecord["sourceType"];
   /** True when the value was inferred rather than read verbatim. */
   inferred: boolean;
+  /** Source grading override; provenance() defaults to website_statement. */
+  claimKind?: ClaimKind;
+  /** Extra provenance detail, e.g. a feed item GUID. */
+  evidenceDetail?: string;
 }
 
 /** Source priority for RESOLVE: machine-readable truth first. */
@@ -117,6 +126,11 @@ export async function acquire(
 
 export function parse(acquired: AcquiredSource): ParsedFact[] {
   if (!acquired.ok || !acquired.raw) return [];
+  // Feed XML never goes through the HTML extractors: the <title> regex
+  // would misfire on channel titles, and items are feed_item claims.
+  if (acquired.sourceType === "rss" || acquired.sourceType === "atom") {
+    return feedFacts(acquired);
+  }
   const facts: ParsedFact[] = [];
   const push = (name: string, value: string | string[], inferred = false) => {
     if (value === "" || (Array.isArray(value) && value.length === 0)) return;
@@ -289,7 +303,7 @@ export function provenance(
     evidenceRef: evidenceRefFor(f),
     confidence: f.inferred ? 0.7 : 1.0,
     public: true,
-    claimKind: "website_statement" as const,
+    claimKind: f.claimKind ?? "website_statement",
   }));
 }
 
