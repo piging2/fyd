@@ -10,6 +10,7 @@ import {
   normalize,
   parse,
   project,
+  runExtractionPipeline,
   provenance,
   relate,
   resolve,
@@ -37,13 +38,13 @@ describe("proceduralizer stages", () => {
     expect(sources[0].url).toBe("https://example.com/sitemap.xml");
   });
 
-  test("parse harvests JSON-LD first", () => {
+  test("parse harvests JSON-LD first", async () => {
     const html = `<html><head>
       <script type="application/ld+json">{"@type":"LocalBusiness","name":"Acme","telephone":"555-0100"}</script>
       <meta property="og:title" content="OG Title" />
       <title>Plain Title</title>
     </head></html>`;
-    const facts = parse(acquired(html));
+    const facts = await parse(acquired(html));
     const names = facts.map((f) => f.name + "=" + f.value);
     expect(names).toContain("title=Acme");
     expect(names).toContain("phone=555-0100");
@@ -85,7 +86,8 @@ describe("proceduralizer stages", () => {
       observedAt: NOW,
       evidenceRef: "ev-1",
       confidence: 1.0,
-      public: true,
+      factClass: "DIRECT_FACT",
+      visibility: "public",
       claimKind: "website_statement",
     });
   });
@@ -99,7 +101,8 @@ describe("proceduralizer stages", () => {
       observedAt: NOW,
       evidenceRef: "ev",
       confidence: 1.0,
-      public: true,
+      factClass: "DIRECT_FACT",
+      visibility: "public",
       claimKind: "website_statement" as const,
     });
     const out = resolve([mk("opengraph", "OG Title"), mk("json-ld", "JSON-LD Title")]);
@@ -117,7 +120,7 @@ describe("proceduralizer stages", () => {
         observedAt: NOW,
         evidenceRef: "ev",
         confidence: 1.0,
-        public: true,
+        visibility: "public",
         claimKind: "website_statement" as const,
       },
     ];
@@ -137,7 +140,7 @@ describe("proceduralizer stages", () => {
         observedAt: NOW,
         evidenceRef: "ev",
         confidence: 1.0,
-        public: true,
+        visibility: "public",
         claimKind: "website_statement" as const,
       },
       {
@@ -148,7 +151,7 @@ describe("proceduralizer stages", () => {
         observedAt: NOW,
         evidenceRef: "ev",
         confidence: 0.7,
-        public: true,
+        visibility: "public",
         claimKind: "website_statement" as const,
       },
     ];
@@ -172,7 +175,7 @@ describe("proceduralizer stages", () => {
         observedAt: NOW,
         evidenceRef: "ev",
         confidence: 1.0,
-        public: true,
+        visibility: "public",
         claimKind: "website_statement" as const,
       },
       {
@@ -183,7 +186,7 @@ describe("proceduralizer stages", () => {
         observedAt: NOW,
         evidenceRef: "ev",
         confidence: 0.7,
-        public: true,
+        visibility: "public",
         claimKind: "website_statement" as const,
       },
     ];
@@ -192,5 +195,104 @@ describe("proceduralizer stages", () => {
     const a = project(fields, "https://example.com/", NOW, "acme");
     const b = project(fields, "https://example.com/", NOW, "acme");
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+  });
+});
+
+
+describe("structured tiers, decoding, and privacy", () => {
+  const acquiredHtml = (html: string): AcquiredSource => ({
+    url: "https://www.coppersmithplumbing.com/",
+    sourceType: "html",
+    discoveredAt: "2026-09-21T12:00:00.000Z",
+    raw: html,
+    ok: true,
+    status: 200,
+  });
+
+  test("per-fact source tier: JSON-LD outranks OG/meta in the same fetch", async () => {
+    const html = `<!doctype html><html><head>
+<meta property="og:title" content="OG Title Loses">
+<script type="application/ld+json">${JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://x.example/#o",
+      name: "JSON-LD Title Wins",
+    })}</script>
+</head></html>`;
+    const facts = await parse(acquiredHtml(html));
+    const titles = facts.filter((f) => f.name === "title");
+    expect(titles).toHaveLength(2);
+    const tiers = Object.fromEntries(titles.map((t) => [t.sourceType, t.value]));
+    expect(tiers["json-ld"]).toBe("JSON-LD Title Wins");
+    expect(tiers["opengraph"]).toBe("OG Title Loses");
+    // And resolution picks the json-ld one deterministically.
+    const resolved = resolve(facts, { sourceUrl: "https://x.example/", observedAt: "2026-09-21T12:00:00.000Z" });
+    expect(resolved.find((f) => f.name === "title")?.value).toBe("JSON-LD Title Wins");
+  });
+
+  test("RUN-NOTES #5: HTML entities are decoded before facts are emitted", async () => {
+    const html = `<!doctype html><html><head><title>Copper &amp; Sons</title></head></html>`;
+    const facts = normalize(await parse(acquiredHtml(html)));
+    const title = facts.find((f) => f.name === "title");
+    expect(title?.value).toBe("Copper & Sons");
+  });
+
+  test("Grill 19: private facts fail closed in resolve() and project()", async () => {
+    const privateFact: ParsedFact = {
+      name: "street_address",
+      value: "123 Main St",
+      sourceType: "json-ld",
+      sourceRef: "structured:https://x.example/#o.streetAddress",
+      factClass: "DIRECT_FACT",
+      visibility: "private",
+      confidence: 0.99,
+      inferred: false,
+    };
+    const publicFact: ParsedFact = {
+      name: "phone",
+      value: "970-555-0100",
+      sourceType: "json-ld",
+      sourceRef: "structured:https://x.example/#o.telephone",
+      factClass: "DIRECT_FACT",
+      visibility: "public",
+      confidence: 0.99,
+      inferred: false,
+    };
+    const ctx = { sourceUrl: "https://x.example/", observedAt: "2026-09-21T12:00:00.000Z" };
+    expect(resolve([privateFact], ctx)).toHaveLength(0);
+    const g = project(
+      resolve([privateFact, publicFact], ctx),
+      "https://x.example/",
+      "2026-09-21T12:00:00.000Z",
+      "ctrl-test",
+    );
+    const fields = g.objects[0].fields as Record<string, unknown>;
+    expect("street_address" in fields).toBe(false);
+    expect(fields["phone"]).toBe("970-555-0100");
+    expect(JSON.stringify(g)).not.toContain("123 Main St");
+  });
+
+  test("every fact carries factClass and visibility end to end", async () => {
+    const html = `<!doctype html><html><head>
+<meta property="og:title" content="OG">
+<script type="application/ld+json">${JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://x.example/#o",
+      name: "LD",
+      telephone: "970-555-0100",
+    })}</script>
+</head></html>`;
+    const { graph } = await runExtractionPipeline([acquiredHtml(html)], {
+      sourceUrl: "https://x.example/",
+      observedAt: "2026-09-21T12:00:00.000Z",
+      controllerId: "ctrl-test",
+    });
+    const classes = graph.fieldClasses!;
+    const business = graph.objects.find((o) => o.schema === "ping.social.business@1")!;
+    for (const [field, cls] of Object.entries(classes[business.id])) {
+      expect(["DIRECT_FACT", "DERIVED_FACT", "INFERENCE", "GENERATED_COPY", "USER_OVERRIDE"]).toContain(cls);
+      expect(business.fields[field]).toBeDefined();
+    }
   });
 });

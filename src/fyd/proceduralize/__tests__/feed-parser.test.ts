@@ -98,8 +98,8 @@ describe("parseFeedXml", () => {
 });
 
 describe("feed claim flow", () => {
-  test("parse() turns rss items into feed_item facts with true tier", () => {
-    const facts = parse(acquired(RSS_ITEMS, "rss"));
+  test("parse() turns rss items into feed_item facts with true tier", async () => {
+    const facts = await parse(acquired(RSS_ITEMS, "rss"));
     expect(facts).toHaveLength(2);
     for (const f of facts) {
       expect(f.name).toBe("feed_item");
@@ -111,13 +111,13 @@ describe("feed claim flow", () => {
     expect(facts[0].evidenceDetail).toBe("item-guid-1");
   });
 
-  test("parse() never emits title facts from feed XML", () => {
-    const facts = parse(acquired(RSS_ITEMS, "rss"));
+  test("parse() never emits title facts from feed XML", async () => {
+    const facts = await parse(acquired(RSS_ITEMS, "rss"));
     expect(facts.filter((f) => f.name === "title")).toHaveLength(0);
   });
 
-  test("provenance() grades feed_item with feed URL + item GUID evidence", () => {
-    const facts = parse(acquired(RSS_ITEMS, "rss"));
+  test("provenance() grades feed_item with feed URL + item GUID evidence", async () => {
+    const facts = await parse(acquired(RSS_ITEMS, "rss"));
     const fields = provenance(
       { url: FEED_URL, sourceType: "rss", discoveredAt: NOW },
       facts,
@@ -128,13 +128,13 @@ describe("feed claim flow", () => {
     for (const fd of fields) {
       expect(fd.claimKind).toBe("feed_item");
       expect(fd.confidence).toBe(1.0);
-      expect(fd.public).toBe(true);
+      expect(fd.visibility).toBe("public");
     }
     expect(fields[0].evidenceRef).toBe(`${FEED_URL}#guid:item-guid-1`);
   });
 
-  test("broken feed bytes yield zero facts, never a throw", () => {
-    expect(parse(acquired("<rss><broken", "rss"))).toEqual([]);
+  test("broken feed bytes yield zero facts, never a throw", async () => {
+    await expect(parse(acquired("<rss><broken", "rss"))).resolves.toEqual([]);
     expect(feedFacts(acquired("", "atom"))).toEqual([]);
   });
 });
