@@ -68,6 +68,7 @@ const ROLE_PREDICATES: Record<FYDSchemaRole, string[]> = {
   location: ["located_at", "has_location"],
   person: ["employs", "has_member"],
   post: ["publishes"],
+  article: ["publishes"],
 };
 
 function group(graph: ObjectGraph): Grouped {
@@ -97,9 +98,11 @@ function group(graph: ObjectGraph): Grouped {
   const products = related("product");
   const locations = related("location");
   const people = related("person");
-  const published = related("post");
-  const articles = published.filter((o) => o.schema === "ping.social.article@1");
-  const posts = published.filter((o) => o.schema === "ping.social.post@1");
+  // Published content spans the post and article roles; the split reads
+  // the central role map, never hardcoded schema ids.
+  const published = [...related("post"), ...related("article")].sort(byId);
+  const articles = published.filter((o) => SCHEMA_ROLES.article.includes(o.schema));
+  const posts = published.filter((o) => SCHEMA_ROLES.post.includes(o.schema));
 
   return { owner, services, products, locations, people, articles, posts };
 }
@@ -116,6 +119,19 @@ function section(
     component,
     query,
     presentation,
+  };
+}
+
+/** A section query matching every predicate/schema of several roles, in canonical order. */
+function roleQueryUnion(from: string, roles: FYDSchemaRole[], limit?: number): FYDQuery {
+  const predicates = [...new Set(roles.flatMap((r) => ROLE_PREDICATES[r]))];
+  return {
+    kind: "related",
+    from,
+    predicate: predicates[0],
+    predicates,
+    schemas: roles.flatMap((r) => SCHEMA_ROLES[r]),
+    limit,
   };
 }
 
@@ -158,7 +174,7 @@ function homePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
     add("People", roleQuery(ownerId, "person"));
   }
   if (g.articles.length > 0 || g.posts.length > 0) {
-    add("RecentObjects", roleQuery(ownerId, "post", 6));
+    add("RecentObjects", roleQueryUnion(ownerId, ["post", "article"], 6));
   }
   if (hasContact(graph, g.owner)) {
     add("Contact", { kind: "owner" });

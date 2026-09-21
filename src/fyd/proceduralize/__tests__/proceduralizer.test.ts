@@ -5,7 +5,6 @@
  */
 
 import {
-  __resetProjectCounter,
   discover,
   extract,
   normalize,
@@ -129,7 +128,6 @@ describe("proceduralizer stages", () => {
   });
 
   test("project emits a business plus a location object, never a duplicated address string", () => {
-    __resetProjectCounter();
     const fields = [
       {
         name: "title",
@@ -162,5 +160,37 @@ describe("proceduralizer stages", () => {
     expect(objects[0].provenance.kind).toBe("website-derived");
     expect(relationships).toHaveLength(1);
     expect(relationships[0].predicate).toBe("located_at");
+  });
+
+  test("project is deterministic: two identical runs are byte-identical", () => {
+    const fields = [
+      {
+        name: "title",
+        value: "Acme",
+        sourceUrl: "https://example.com/",
+        sourceType: "json-ld" as const,
+        observedAt: NOW,
+        evidenceRef: "ev",
+        confidence: 1.0,
+        public: true,
+        claimKind: "website_statement" as const,
+      },
+      {
+        name: "locality",
+        value: "Grand Junction, CO",
+        sourceUrl: "https://example.com/",
+        sourceType: "json-ld" as const,
+        observedAt: NOW,
+        evidenceRef: "ev",
+        confidence: 0.7,
+        public: true,
+        claimKind: "website_statement" as const,
+      },
+    ];
+    // No counter reset between the two runs: identical inputs must yield
+    // identical output regardless of module state or call order.
+    const a = project(fields, "https://example.com/", NOW, "acme");
+    const b = project(fields, "https://example.com/", NOW, "acme");
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 });

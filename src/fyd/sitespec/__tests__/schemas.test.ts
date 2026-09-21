@@ -116,4 +116,25 @@ describe("schema derivations", () => {
     expect(a).toContain("ping.social.service@1");
     expect(a).toContain("provided_by");
   });
+
+  test("article and post are separate roles across both vocabularies", () => {
+    expect(schemaRole("ping.social.post@1")).toBe("post");
+    expect(schemaRole("ping.knowledge.post@1")).toBe("post");
+    expect(schemaRole("ping.social.article@1")).toBe("article");
+    expect(schemaRole("ping.knowledge.article@1")).toBe("article");
+    expect(SCHEMA_ROLES.post).toEqual(["ping.social.post@1", "ping.knowledge.post@1"]);
+    expect(SCHEMA_ROLES.article).toEqual([
+      "ping.social.article@1",
+      "ping.knowledge.article@1",
+    ]);
+  });
+
+  test("registry accepts knowledge content schemas through the role map", () => {
+    expect(componentForSchema("ping.knowledge.post@1")).toBe("Posts");
+    expect(componentForSchema("ping.knowledge.article@1")).toBe("Posts");
+    expect(componentForSchema("ping.knowledge.location@1")).toBe("Locations");
+    expect(componentForSchema("ping.knowledge.person@1")).toBe("People");
+    expect(eligibleComponents("ping.knowledge.post@1")).toContain("RecentObjects");
+    expect(eligibleComponents("ping.knowledge.article@1")).toContain("Posts");
+  });
 });

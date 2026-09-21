@@ -122,7 +122,14 @@ export function getSchemaDef(schemaId: string): FYDSchemaDef | undefined {
 // here mints a schema, and the proof stays exactly Business, Service, Post.
 // ---------------------------------------------------------------------------
 
-export type FYDSchemaRole = "business" | "service" | "product" | "location" | "person" | "post";
+export type FYDSchemaRole =
+  | "business"
+  | "service"
+  | "product"
+  | "location"
+  | "person"
+  | "post"
+  | "article";
 
 export const SCHEMA_ROLES: Record<FYDSchemaRole, string[]> = {
   business: ["ping.social.business@1", "ping.knowledge.business@1"],
@@ -130,7 +137,11 @@ export const SCHEMA_ROLES: Record<FYDSchemaRole, string[]> = {
   product: ["ping.social.product@1"],
   location: ["ping.social.location@1", "ping.knowledge.location@1"],
   person: ["ping.social.person@1", "ping.knowledge.person@1"],
-  post: ["ping.social.post@1", "ping.social.article@1"],
+  // Content splits into short-form posts and long-form articles so the
+  // generator can tell them apart through the role map instead of
+  // hardcoded schema ids. The knowledge vocabulary projects onto both.
+  post: ["ping.social.post@1", "ping.knowledge.post@1"],
+  article: ["ping.social.article@1", "ping.knowledge.article@1"],
 };
 
 /** The site-compiler role a schema id plays, or null when it plays none. */
@@ -252,8 +263,8 @@ const SCHEMA_COMPONENTS: Record<string, string[]> = {
   "ping.social.article@1": ["Posts", "ObjectGrid", "ObjectFeed", "RecentObjects"],
   // Knowledge vocabulary: the website object is a public object like any
   // other; the generic list components may render it. Role-projected
-  // schemas (business/service/location/person) resolve through schemaRole()
-  // in eligibleComponents below and need no entries here.
+  // schemas (business/service/location/person/post/article) resolve through
+  // schemaRole() in eligibleComponents below and need no entries here.
   "ping.knowledge.website@1": ["ObjectGrid", "ObjectFeed"],
 };
 

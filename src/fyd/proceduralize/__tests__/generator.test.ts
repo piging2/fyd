@@ -4,11 +4,54 @@
  * no page or section without data, deterministic section ids.
  */
 
+import type { PingObject, PingRelationship } from "@/lib/ping/types";
 import { HAPPY_PLACE_GRAPH } from "../__fixtures__/happy-place-graph";
 import { generateSiteSpec } from "../generator";
 import { resolveQuery } from "../../components/renderer";
 
 const OPTS = { generatedAt: "2026-09-21T12:00:00.000Z", eventSequences: [65, 83] as [number, number] };
+
+const CONTENT_AT = "2026-09-21T12:00:00.000Z";
+
+/** Minimal knowledge-vocabulary graph: business publishes an article and a post. */
+function knowledgeContentGraph(): { objects: PingObject[]; relationships: PingRelationship[] } {
+  const provenance = {
+    kind: "website-derived" as const,
+    ref: "website-ingestion:test",
+    derivedAt: CONTENT_AT,
+  };
+  const mk = (id: string, schema: string, title: string): PingObject => ({
+    id,
+    schema,
+    controllerId: "c1",
+    visibility: "public",
+    title,
+    description: "",
+    fields: {},
+    createdAt: CONTENT_AT,
+    updatedAt: CONTENT_AT,
+    provenance,
+  });
+  const owner: PingObject = {
+    ...mk("owner-1", "ping.knowledge.business@1", "Acme"),
+    description: "We do things.",
+  };
+  const article = mk("art-1", "ping.knowledge.article@1", "How we built the deck");
+  const post = mk("post-1", "ping.knowledge.post@1", "Shop update");
+  const rel = (id: string, object: string): PingRelationship => ({
+    id,
+    subject: owner.id,
+    predicate: "publishes",
+    object,
+    status: "active",
+    createdAt: CONTENT_AT,
+    evidenceRef: "ev",
+  });
+  return {
+    objects: [owner, article, post],
+    relationships: [rel("r1", article.id), rel("r2", post.id)],
+  };
+}
 
 describe("generateSiteSpec determinism", () => {
   test("same graph produces byte-identical specs", () => {
@@ -150,5 +193,37 @@ describe("generateSiteSpec determinism", () => {
         resolveQuery(qa, HAPPY_PLACE_GRAPH, a.ownerObjectId).map((o) => o.id),
       ).toEqual(resolveQuery(qb, socialGraph, b.ownerObjectId).map((o) => o.id));
     }
+  });
+
+  test("knowledge articles and posts compile through the role map", () => {
+    const graph = knowledgeContentGraph();
+    const spec = generateSiteSpec(graph, OPTS);
+    const home = spec.pages.find((p) => p.slug === "home")!;
+    const recent = home.sections.find((s) => s.component === "RecentObjects");
+    expect(recent).toBeDefined();
+    const query = recent!.query;
+    expect(query.kind).toBe("related");
+    if (query.kind !== "related") return;
+    // Canonical role-map order: post role schemas, then article role schemas.
+    expect(query.schemas).toEqual([
+      "ping.social.post@1",
+      "ping.knowledge.post@1",
+      "ping.social.article@1",
+      "ping.knowledge.article@1",
+    ]);
+    expect(query.predicates).toEqual(["publishes"]);
+    const resolved = resolveQuery(query, graph, spec.ownerObjectId);
+    expect(resolved.map((o) => o.id).sort()).toEqual(["art-1", "post-1"]);
+  });
+
+  test("an article alone is enough for RecentObjects", () => {
+    const graph = knowledgeContentGraph();
+    const onlyArticle = {
+      objects: graph.objects.filter((o) => o.id !== "post-1"),
+      relationships: graph.relationships.filter((r) => r.object !== "post-1"),
+    };
+    const spec = generateSiteSpec(onlyArticle, OPTS);
+    const home = spec.pages.find((p) => p.slug === "home")!;
+    expect(home.sections.map((s) => s.component)).toContain("RecentObjects");
   });
 });

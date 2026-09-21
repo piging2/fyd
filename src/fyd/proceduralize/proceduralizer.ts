@@ -14,6 +14,7 @@
  */
 
 import type { PingObject, PingRelationship } from "@/lib/ping/types";
+import { sha256Hex } from "./sha256";
 
 /** A source the proceduralizer may acquire. */
 export interface SourceRecord {
@@ -362,11 +363,31 @@ export function relate(fields: ExtractedField[]): RelatedPair[] {
 // Location stays an object/claim; identity and provenance are labeled.
 // ---------------------------------------------------------------------------
 
-let projectCounter = 0;
-
 export interface ProjectedGraph {
   objects: PingObject[];
   relationships: PingRelationship[];
+}
+
+/**
+ * Derive a stable business id from the projection inputs. Pure: no
+ * module state, no clock. The same website, fields, and controller
+ * always yield the same id, so re-projection deduplicates instead of
+ * forking. The observation time stays caller-injected
+ * (createdAt/updatedAt/derivedAt) so tests can pin it.
+ */
+function deriveBusinessId(
+  sourceUrl: string,
+  controllerId: string,
+  scalar: Record<string, string | string[]>,
+): string {
+  const canonical = JSON.stringify({
+    url: sourceUrl,
+    controller: controllerId,
+    fields: Object.keys(scalar)
+      .sort()
+      .map((k) => [k, scalar[k]]),
+  });
+  return "website-business-" + sha256Hex(canonical).slice(0, 16);
 }
 
 export function project(
@@ -378,7 +399,7 @@ export function project(
   const scalar: Record<string, string | string[]> = {};
   for (const f of fields) scalar[f.name] = f.value;
 
-  const businessId = "website-business-" + ++projectCounter + "-" + nowIso.slice(0, 10);
+  const businessId = deriveBusinessId(sourceUrl, controllerId, scalar);
   const provenance = {
     kind: "website-derived" as const,
     ref: "website-ingestion:" + sourceUrl,
@@ -434,7 +455,3 @@ function asString(value: string | string[]): string {
   return Array.isArray(value) ? value.join(", ") : value;
 }
 
-/** Reset the project counter. Test-only; keeps ids deterministic in tests. */
-export function __resetProjectCounter(): void {
-  projectCounter = 0;
-}
