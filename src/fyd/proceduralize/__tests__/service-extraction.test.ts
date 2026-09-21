@@ -132,6 +132,11 @@ describe("service extraction", () => {
     expect(offers.length).toBe(2);
     const offerNames = offers.map((o) => o.title).sort();
     expect(offerNames).toContain("Emergency Plumbing Offer");
+    // The catalog offer has no source name: its fallback label is
+    // DERIVED_FACT in the graph's field classes, never a direct fact.
+    const catalogOffer = offers.find((o) => o.title === "Offer");
+    if (!catalogOffer) throw new Error("missing catalog offer");
+    expect(graph.fieldClasses?.[catalogOffer.id]?.["name"]).toBe("DERIVED_FACT");
 
     const business = businessOf(graph.objects);
     const rels = graph.relationships;
@@ -244,24 +249,19 @@ describe("ask fyd services question", () => {
     expect(answer.answer).toContain("Emergency Plumbing");
     expect(answer.answer).toContain("Drain Cleaning");
     expect(answer.answer).toContain("Water Heater Install");
+    // Offer nodes are evidence-chain scaffolding, not services: the
+    // answer must not present them as offered services.
+    expect(answer.answer).not.toContain("Emergency Plumbing Offer");
     expect(answer.unknowns).toEqual([]);
     expect(answer.sourceUrls).toEqual(["https://example.test/"]);
 
-    // 3 services + 2 offers: every related object behind the answer is
-    // classified from its actual extraction class.
-    expect(answer.claimClassifications.length).toBe(5);
-    const serviceClaims = answer.claimClassifications.filter((c) =>
-      c.claim.includes("offers") && !c.claim.includes("Offer"),
-    );
-    expect(serviceClaims.length).toBe(3);
-    const counts: Record<string, number> = {};
+    // Exactly the claims the answer states: the 3 named services.
+    expect(answer.claimClassifications.length).toBe(3);
     for (const c of answer.claimClassifications) {
-      counts[c.classification] = (counts[c.classification] ?? 0) + 1;
+      expect(c.classification).toBe("DIRECT_FACT");
       expect(c.evidenceRefIds.length).toBeGreaterThanOrEqual(1);
     }
-    // 3 named services + 1 named offer are DIRECT_FACT; the catalog offer
-    // has no source name, so its fallback label is DERIVED_FACT.
-    expect(counts).toEqual({ DIRECT_FACT: 4, DERIVED_FACT: 1 });
+    expect(answer.evidenceRefs.length).toBeGreaterThanOrEqual(5);
     expect(answer.evidenceRefs.length).toBeGreaterThanOrEqual(3);
   });
 

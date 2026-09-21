@@ -455,13 +455,19 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
         ["ping.social.service@1", "ping.social.product@1", "ping.social.offer@1"].includes(o.schema),
       );
       if (services) sentences.push({ text: `Services on record: ${services}.`, cites: [0] });
-      if (relatedServices.length > 0) {
-        const evIdx = ctx.evidenceRefs.findIndex((e) => e.id === relatedServices[0].id);
+      // Offers are evidence-chain nodes, not services: the answer names
+      // only service/product objects. Classifications cover exactly the
+      // claims the answer states.
+      const named = relatedServices.filter(
+        (o) => o.schema !== "ping.social.offer@1",
+      );
+      if (named.length > 0) {
+        const evIdx = ctx.evidenceRefs.findIndex((e) => e.id === named[0].id);
         sentences.push({
-          text: `Related offerings: ${relatedServices.map((o) => o.title).join("; ")}.`,
+          text: `Related offerings: ${named.map((o) => o.title).join("; ")}.`,
           cites: evIdx >= 0 ? [evIdx] : [],
         });
-        for (const s of relatedServices) {
+        for (const s of named) {
           const refId = ctx.evidenceRefs.find((e) => e.id === s.id)?.id;
           claimClassifications.push({
             claim: `${title} offers ${s.title}`,
@@ -470,7 +476,7 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
           });
         }
       }
-      if (!services && relatedServices.length === 0) {
+      if (!services && named.length === 0) {
         return noEvidenceAnswer(ctx, question, ["services offered by this business"]);
       }
     }
