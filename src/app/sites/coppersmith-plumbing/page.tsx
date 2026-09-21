@@ -16,6 +16,7 @@ import { SiteClient } from "../_shared/site-client";
 import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
 import { generateSiteSpec } from "@/fyd/proceduralize/generator";
 import { isRenderable, validateSiteSpec } from "@/fyd/sitespec/validator";
+import { heroMediaFor } from "@/fyd/media/select";
 
 const SITE_ID = "coppersmith-plumbing";
 
@@ -42,6 +43,9 @@ export default async function CoppersmithDemoPage() {
     generatedAt: meta.generatedAt,
     eventSequences: meta.eventSequences ?? undefined,
   });
+  // Hero media, resolved once per page load at the server render
+  // seam. Null when the owner has no acquired media.
+  const heroMedia = heroMediaFor(SITE_ID, graph, spec.ownerObjectId);
   const knownSchemas = new Set(graph.objects.map((o) => o.schema));
   const findings = validateSiteSpec(spec, knownSchemas);
   const renderable = isRenderable(findings);
@@ -54,6 +58,7 @@ export default async function CoppersmithDemoPage() {
         findings={findings}
         renderable={renderable}
         siteId={SITE_ID}
+        heroMedia={heroMedia}
       />
     </main>
   );

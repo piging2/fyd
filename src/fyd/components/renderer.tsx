@@ -22,6 +22,9 @@ import {
   type FieldVisibilityDecision,
 } from "../sitespec/field-visibility";
 import { resolveSafeLink, type SafeLinkResult } from "../sitespec/safe-link";
+// Type-only: erased at compile, so the client bundle never touches the
+// server-only media store. The selector runs at the server render seam.
+import type { DisplayMedia } from "../media/select";
 import type {
   FYDPage,
   FYDQuery,
@@ -118,6 +121,14 @@ export interface RenderContext {
    * fine without it, but Ask FYD shows an honest unavailable state.
    */
   siteId?: string;
+  /**
+   * Hero media for the spec owner, resolved once at the server render seam
+   * via the canonical media selector (heroMediaFor in src/fyd/media/select).
+   * Serialized DisplayMedia: the renderer never selects media itself.
+   * Null (or absent) means the owner has no acquired media, and the Hero
+   * renders its honest typographic state, never an invented image.
+   */
+  heroMedia?: DisplayMedia | null;
 }
 
 /**
@@ -315,8 +326,35 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   const website = safeWebsite(ctx);
   const heading = presentation.heading ?? boundTitle(ctx, o);
   const copy = presentation.copy ?? boundDescription(ctx, o);
+  // Media is threaded through RenderContext from the server render seam;
+  // the renderer never selects it. Null keeps the honest typographic hero.
+  const hero = ctx.heroMedia ?? null;
   return (
-    <section className="w-full px-4 py-16 sm:px-6 sm:py-24" style={{ background: theme.ink }}>
+    <section className="w-full" style={{ background: theme.ink }}>
+      {hero ? (
+        <div
+          className="relative h-64 w-full overflow-hidden sm:h-80"
+          data-hero-media={hero.id}
+        >
+          {hero.blurUrl ? (
+            <img
+              src={hero.blurUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full scale-110 object-cover blur-md"
+            />
+          ) : null}
+          <img
+            src={hero.src}
+            alt={hero.alt}
+            width={hero.width}
+            height={hero.height}
+            loading="eager"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </div>
+      ) : null}
+      <div className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-5xl">
         <ClaimBadge />
         <h1
@@ -350,6 +388,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
             Ask FYD
           </a>
         </div>
+      </div>
       </div>
     </section>
   );

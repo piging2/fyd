@@ -17,6 +17,7 @@ import { generateSiteSpec } from "@/fyd/proceduralize/generator";
 import { isRenderable, validateSiteSpec } from "@/fyd/sitespec/validator";
 import { applyPresentationIntent } from "@/fyd/customize/apply-layer";
 import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
+import { heroMediaFor } from "@/fyd/media/select";
 
 const SITE_ID = "happy-place";
 
@@ -46,6 +47,9 @@ export default async function HappyPlaceDemoPage() {
   // PRESENTATION INTENT layer: approved owner directives applied OVER the
   // compiled spec. Facts (graph) and design system (theme) are untouched.
   const spec = applyPresentationIntent(base, presentationIntent, graph).spec;
+  // Hero media, resolved once per page load at the server render
+  // seam. Null when the owner has no acquired media.
+  const heroMedia = heroMediaFor(SITE_ID, graph, spec.ownerObjectId);
   const knownSchemas = new Set(graph.objects.map((o) => o.schema));
   const findings = validateSiteSpec(spec, knownSchemas);
   const renderable = isRenderable(findings);
@@ -58,6 +62,7 @@ export default async function HappyPlaceDemoPage() {
         findings={findings}
         renderable={renderable}
         siteId={SITE_ID}
+        heroMedia={heroMedia}
       />
       <DemoOwnerMode siteId={SITE_ID} />
     </main>
