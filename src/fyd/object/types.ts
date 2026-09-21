@@ -15,7 +15,8 @@
  *   category mapping). Services are structured records, never prose parses.
  */
 
-export type MediaRights = "authorized" | "external_reference" | "unknown";
+import type { RightsSource } from "../media/types";
+import type { OwnerFieldCorrection } from "../../lib/ping/types";
 
 export interface ObjectMediaView {
   id: string;
@@ -24,7 +25,10 @@ export interface ObjectMediaView {
   /** Local derivative URL served by FYD (preferred; no hotlink dependency). */
   src: string;
   alt: string;
-  rights: MediaRights;
+  /** Rights/source classification, visible in the read model. */
+  rightsSource: RightsSource;
+  /** Authorization basis sentence; never implies FYD copyright ownership. */
+  rightsBasis: string;
   sourceUrl: string;
   digest: string;
   observedAt: string;
@@ -93,6 +97,23 @@ export interface ObjectView {
   ownerUpdatedAt: string | null;
   /** Sample visitor questions for the Ask surface. */
   sampleQuestions: string[];
+  /**
+   * Owner-attested field corrections on this object, newest last. Each
+   * carries BOTH what the source said and what the owner says
+   * (sourceValue vs ownerValue), the correction's own provenance, and
+   * whether the source has drifted since. Empty when uncorrected.
+   * This is the read model's honest SOURCE SAYS X / OWNER SAYS Y view.
+   */
+  fieldCorrections: FieldCorrectionView[];
+}
+
+/**
+ * One field correction as exposed by the read model: the stored owner
+ * evidence plus the derived drift flag (true when the source's current
+ * value no longer matches what it said at correction time).
+ */
+export interface FieldCorrectionView extends OwnerFieldCorrection {
+  sourceDrifted: boolean;
 }
 
 /** Durable owner state. Separate file per object; never overwritten by ingest. */
@@ -105,6 +126,15 @@ export interface OwnerOverrides {
   hiddenServices: string[];
   addedServices: { id: string; name: string }[];
   addressVisibility: "public" | "hidden";
+  /**
+   * Owner-attested field corrections keyed by field ("phone" | "email" |
+   * "website"). The correction NEVER rewrites source state: the source
+   * projection keeps saying what it says; the read model composes the
+   * owner value over it (see src/fyd/object/owner-overlay.ts) and keeps
+   * the source value on the record for the SOURCE SAYS X / OWNER SAYS Y
+   * distinction.
+   */
+  fieldCorrections: Record<string, OwnerFieldCorrection>;
   /** Human-language log, newest last. */
   history: { at: string; text: string }[];
 }
@@ -117,6 +147,7 @@ export const EMPTY_OVERRIDES = (objectId: string): OwnerOverrides => ({
   hiddenServices: [],
   addedServices: [],
   addressVisibility: "public",
+  fieldCorrections: {},
   history: [],
 });
 
@@ -125,7 +156,9 @@ export type OwnerCommand =
   | { type: "move-service"; id: string; to: "up" | "down" | "first" | "last" }
   | { type: "set-service-visibility"; id: string; visible: boolean }
   | { type: "add-service"; name: string }
-  | { type: "set-address-visibility"; visibility: "public" | "hidden" };
+  | { type: "set-address-visibility"; visibility: "public" | "hidden" }
+  | { type: "set-contact-field"; field: "phone" | "email" | "website"; value: string }
+  | { type: "revert-contact-field"; field: "phone" | "email" | "website" };
 
 /**
  * Circle background: a tiny website-photo derivative when authorized site
