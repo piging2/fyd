@@ -10,7 +10,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import * as fs from "fs";
 import * as path from "path";
 import { SitePageView } from "../renderer";
-import { HAPPY_PLACE_GRAPH } from "../../proceduralize/__fixtures__/happy-place-graph";
+import { HAPPY_PLACE_RICH_GRAPH } from "../../proceduralize/__fixtures__/happy-place-rich-graph";
 import { generateSiteSpec } from "../../proceduralize/generator";
 import { isRenderable, validateSiteSpec } from "../../sitespec/validator";
 
@@ -19,18 +19,18 @@ const CSS_PATH = "/tmp/fyd-site.css";
 
 describe("render to static HTML", () => {
   test("every page renders with content, claim badges, and FYD Social branding", () => {
-    const spec = generateSiteSpec(HAPPY_PLACE_GRAPH, {
+    const spec = generateSiteSpec(HAPPY_PLACE_RICH_GRAPH, {
       generatedAt: "2026-09-21T12:00:00.000Z",
       eventSequences: [65, 83],
     });
-    const knownSchemas = new Set(HAPPY_PLACE_GRAPH.objects.map((o) => o.schema));
+    const knownSchemas = new Set(HAPPY_PLACE_RICH_GRAPH.objects.map((o) => o.schema));
     const findings = validateSiteSpec(spec, knownSchemas);
     expect(isRenderable(findings)).toBe(true);
 
     const css = fs.existsSync(CSS_PATH) ? fs.readFileSync(CSS_PATH, "utf8") : "";
     fs.mkdirSync(OUT_DIR, { recursive: true });
 
-    const ctx = { spec, graph: HAPPY_PLACE_GRAPH, viewer: { viewerId: null, displayName: null } };
+    const ctx = { spec, graph: HAPPY_PLACE_RICH_GRAPH, viewer: { viewerId: null, displayName: null } };
     for (const page of spec.pages) {
       const body = renderToStaticMarkup(SitePageView({ page, ctx }));
       const html = `<!DOCTYPE html>

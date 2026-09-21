@@ -14,7 +14,13 @@
 import type { PingObject } from "@/lib/ping/types";
 import type { ReactNode } from "react";
 import { getComponentDef } from "./registry";
-import { resolveWebsiteUrl } from "../sitespec/graph";
+import { resolveBoundField } from "../sitespec/graph";
+import type { BindingClassification } from "../sitespec/graph";
+import {
+  applyFieldVisibility,
+  type FieldVisibilityDecision,
+} from "../sitespec/field-visibility";
+import { resolveSafeLink, type SafeLinkResult } from "../sitespec/safe-link";
 import type {
   FYDPage,
   FYDQuery,
@@ -71,9 +77,15 @@ export function resolveQuery(
       return query.limit ? out.slice(0, query.limit) : out;
     }
     case "all": {
-      const out = graph.objects.filter(
-        (o) => pub(o) && (!query.schema || o.schema === query.schema),
-      );
+      // Mirrors the "related" case: a bare "all" resolves everything public;
+      // query.schema or query.schemas narrows to the listed schemas.
+      const schemaOk = (o: PingObject) =>
+        !query.schema && !query.schemas
+          ? true
+          : query.schema
+            ? o.schema === query.schema
+            : (query.schemas ?? []).includes(o.schema);
+      const out = graph.objects.filter((o) => pub(o) && schemaOk(o));
       out.sort((a, b) =>
         a.updatedAt !== b.updatedAt
           ? b.updatedAt.localeCompare(a.updatedAt)
@@ -92,8 +104,36 @@ export function resolveQuery(
 
 export interface RenderContext {
   spec: FYDSiteSpec;
+  /**
+   * The projected graph: source state after the owner's field-visibility
+   * policy. The renderer never sees withheld fields. Always built via
+   * buildRenderContext, never by hand.
+   */
   graph: ObjectGraph;
   viewer: ViewerContext;
+}
+
+/**
+ * Build the render context at the projection seam.
+ *
+ * This is the ONLY supported way to obtain a RenderContext: the source
+ * graph is projected through the owner's field-visibility decisions
+ * first, so the renderer executes the resulting projection and never
+ * touches withheld fields. Source state is never mutated; the projected
+ * graph is a new value. With no decisions, the conservative defaults in
+ * field-visibility.ts apply.
+ */
+export function buildRenderContext(
+  spec: FYDSiteSpec,
+  sourceGraph: ObjectGraph,
+  viewer: ViewerContext,
+  ownerDecisions: FieldVisibilityDecision[] = [],
+): RenderContext {
+  return {
+    spec,
+    graph: applyFieldVisibility(sourceGraph, ownerDecisions),
+    viewer,
+  };
 }
 
 interface SectionProps {
@@ -123,12 +163,79 @@ function fieldOf(o: PingObject, name: string): string {
   return typeof v === "string" ? v : Array.isArray(v) ? v.join(", ") : "";
 }
 
+// ---------------------------------------------------------------------------
+// Projection seam: binding verification + safe links.
+//
+// Every FACTUAL value rendered below is read through boundField /
+// boundTitle / boundDescription, which resolve the value via the
+// presentation-binding verifier (resolveBoundField). A value whose binding
+// does not verify returns undefined, and the caller OMITS it: no binding,
+// no factual output. This is the verifier wired into the actual
+// projection path, not a sidecar.
+//
+// Labels, action text ("Visit website", "Ask FYD"), section headings that
+// come from presentation (generated copy), and structural text are not
+// factual claims and do not go through the verifier.
+//
+// Every EXTERNAL href is resolved through resolveSafeLink. Only a
+// { kind: "safe" } result becomes an anchor element; anything else renders
+// no link at all. The renderer never interpolates a raw observed string
+// into href/src. Internal anchors ("#ask") are presentation state, not
+// untrusted external data, and are unaffected.
+// ---------------------------------------------------------------------------
+
 /**
- * Website URL for display: the website field when present, otherwise the
- * url of the website object linked by has_website. Generic across graphs.
+ * Verified factual field read. Returns the value only when the binding
+ * verifies; undefined means the caller must OMIT the value, never guess.
  */
-function websiteUrlOf(ctx: RenderContext): string {
-  return resolveWebsiteUrl(ctx.graph, ctx.spec.ownerObjectId);
+function boundField(
+  ctx: RenderContext,
+  o: PingObject,
+  field: string,
+  classification: BindingClassification = "direct",
+): string | undefined {
+  return resolveBoundField(ctx.graph, { objectId: o.id, field, classification });
+}
+
+/** Verified title read (object-level factual identity). */
+function boundTitle(ctx: RenderContext, o: PingObject): string | undefined {
+  return boundField(ctx, o, "title");
+}
+
+/** Verified description read (object-level factual identity). */
+function boundDescription(ctx: RenderContext, o: PingObject): string | undefined {
+  return boundField(ctx, o, "description");
+}
+
+/** Owner website URL gated to a safe navigable href. Never a raw string. */
+function safeWebsite(ctx: RenderContext): SafeLinkResult {
+  return resolveSafeLink(boundWebsite(ctx), "navigate");
+}
+
+/**
+ * Website URL through the binding verifier: the owner's "website" field,
+ * else the first "url" of a related website object. Mirrors
+ * resolveWebsiteUrl's lookup order, but every hop is a verified binding;
+ * an unverified website is not a linkable fact.
+ */
+function boundWebsite(ctx: RenderContext): string | undefined {
+  const graph = ctx.graph;
+  const objects = new Map(graph.objects.map((o) => [o.id, o]));
+  const owner = objects.get(ctx.spec.ownerObjectId);
+  if (owner && owner.visibility === "public") {
+    const direct = boundField(ctx, owner, "website");
+    if (direct !== undefined) return direct;
+  }
+  for (const r of graph.relationships) {
+    if (r.subject !== ctx.spec.ownerObjectId) continue;
+    if (r.status !== "active" || r.predicate !== "has_website") continue;
+    const target = objects.get(r.object);
+    if (target && target.visibility === "public") {
+      const url = boundField(ctx, target, "url");
+      if (url !== undefined) return url;
+    }
+  }
+  return undefined;
 }
 
 function SectionShell({
@@ -161,7 +268,9 @@ function SectionShell({
 function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
-  const website = websiteUrlOf(ctx);
+  const website = safeWebsite(ctx);
+  const heading = presentation.heading ?? boundTitle(ctx, o);
+  const copy = presentation.copy ?? boundDescription(ctx, o);
   return (
     <section className="w-full px-4 py-16 sm:px-6 sm:py-24" style={{ background: theme.ink }}>
       <div className="mx-auto max-w-5xl">
@@ -170,15 +279,15 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
           className="mt-4 text-4xl font-bold text-background sm:text-6xl"
           style={{ fontFamily: theme.fontDisplay }}
         >
-          {presentation.heading ?? o.title}
+          {heading}
         </h1>
-        <p className="mt-4 max-w-2xl text-lg text-background/80">
-          {presentation.copy ?? o.description}
-        </p>
+        {copy ? (
+          <p className="mt-4 max-w-2xl text-lg text-background/80">{copy}</p>
+        ) : null}
         <div className="mt-8 flex flex-wrap gap-3">
-          {website && (
+          {website.kind === "safe" ? (
             <a
-              href={website}
+              href={website.href}
               className="rounded px-6 py-3 font-semibold"
               style={{
                 background: theme.accent,
@@ -188,7 +297,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
             >
               Visit website
             </a>
-          )}
+          ) : null}
           <a
             href="#ask"
             className="rounded border px-6 py-3 font-semibold text-background"
@@ -202,66 +311,81 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   );
 }
 
-function BusinessSummary({ objects, presentation, theme }: SectionProps) {
+function BusinessSummary({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
+  const title = boundTitle(ctx, o);
   return (
     <SectionShell
       theme={theme}
-      heading={presentation.heading ?? "About " + o.title}
-      copy={presentation.copy ?? o.description}
+      heading={presentation.heading ?? (title ? "About " + title : undefined)}
+      copy={presentation.copy ?? boundDescription(ctx, o)}
     >
       <ClaimBadge />
     </SectionShell>
   );
 }
 
-function CardGrid({ objects, theme }: { objects: PingObject[]; theme: FYDThemeTokens }) {
+function CardGrid({
+  objects,
+  theme,
+  ctx,
+}: {
+  objects: PingObject[];
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+}) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {objects.map((o) => (
-        <article
-          key={o.id}
-          className="border border-border-soft bg-background p-5"
-          style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
-        >
-          <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
-            {o.title}
-          </h3>
-          {o.description && <p className="mt-2 text-sm text-accent">{o.description}</p>}
-          <div className="mt-3">
-            <ClaimBadge />
-          </div>
-        </article>
-      ))}
+      {objects.map((o) => {
+        const title = boundTitle(ctx, o);
+        const description = boundDescription(ctx, o);
+        return (
+          <article
+            key={o.id}
+            className="border border-border-soft bg-background p-5"
+            style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
+          >
+            {title ? (
+              <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
+                {title}
+              </h3>
+            ) : null}
+            {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
+            <div className="mt-3">
+              <ClaimBadge />
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }
 
 function ServicesSection(props: SectionProps) {
-  const { objects, presentation, theme } = props;
+  const { objects, presentation, theme, ctx } = props;
   const featured = presentation.featuredIds?.length
     ? objects.filter((o) => presentation.featuredIds!.includes(o.id))
     : objects;
   if (featured.length === 0) return null;
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "Services"} copy={presentation.copy}>
-      <CardGrid objects={featured} theme={theme} />
+      <CardGrid objects={featured} theme={theme} ctx={ctx} />
     </SectionShell>
   );
 }
 
 function ProductsSection(props: SectionProps) {
-  const { objects, presentation, theme } = props;
+  const { objects, presentation, theme, ctx } = props;
   if (objects.length === 0) return null;
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "Products"} copy={presentation.copy}>
-      <CardGrid objects={objects} theme={theme} />
+      <CardGrid objects={objects} theme={theme} ctx={ctx} />
     </SectionShell>
   );
 }
 
-function LocationsSection({ objects, presentation, theme }: SectionProps) {
+function LocationsSection({ objects, presentation, theme, ctx }: SectionProps) {
   if (objects.length === 0) return null;
   return (
     <SectionShell
@@ -270,15 +394,18 @@ function LocationsSection({ objects, presentation, theme }: SectionProps) {
       copy={presentation.copy}
     >
       <ul className="flex flex-wrap gap-2">
-        {objects.map((o) => (
-          <li
-            key={o.id}
-            className="rounded-full border border-border-soft px-4 py-2 text-sm"
-            style={{ color: theme.ink }}
-          >
-            {o.title}
-          </li>
-        ))}
+        {objects.map((o) => {
+          const title = boundTitle(ctx, o);
+          return title ? (
+            <li
+              key={o.id}
+              className="rounded-full border border-border-soft px-4 py-2 text-sm"
+              style={{ color: theme.ink }}
+            >
+              {title}
+            </li>
+          ) : null;
+        })}
       </ul>
       <div className="mt-3">
         <ClaimBadge />
@@ -287,109 +414,138 @@ function LocationsSection({ objects, presentation, theme }: SectionProps) {
   );
 }
 
-function PeopleSection({ objects, presentation, theme }: SectionProps) {
+function PeopleSection({ objects, presentation, theme, ctx }: SectionProps) {
   if (objects.length === 0) return null;
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "The people"} copy={presentation.copy}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {objects.map((o) => (
-          <article
-            key={o.id}
-            className="border border-border-soft p-5"
-            style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
-          >
-            <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
-              {o.title}
-            </h3>
-            {fieldOf(o, "role") && (
-              <p className="text-sm font-medium" style={{ color: theme.accent }}>
-                {fieldOf(o, "role")}
-              </p>
-            )}
-            {o.description && <p className="mt-2 text-sm text-accent">{o.description}</p>}
-          </article>
-        ))}
+        {objects.map((o) => {
+          const title = boundTitle(ctx, o);
+          const role = boundField(ctx, o, "role");
+          const description = boundDescription(ctx, o);
+          return (
+            <article
+              key={o.id}
+              className="border border-border-soft p-5"
+              style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
+            >
+              {title ? (
+                <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
+                  {title}
+                </h3>
+              ) : null}
+              {role ? (
+                <p className="text-sm font-medium" style={{ color: theme.accent }}>
+                  {role}
+                </p>
+              ) : null}
+              {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
+            </article>
+          );
+        })}
       </div>
     </SectionShell>
   );
 }
 
-function PostsSection({ objects, presentation, theme }: SectionProps) {
+function PostsSection({ objects, presentation, theme, ctx }: SectionProps) {
   if (objects.length === 0) return null;
+  // Sorting uses the raw value (deterministic ordering input, never rendered).
   const sorted = objects.slice().sort((a, b) =>
     fieldOf(b, "date").localeCompare(fieldOf(a, "date")),
   );
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "Latest"} copy={presentation.copy}>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {sorted.map((o) => (
-          <article
-            key={o.id}
-            className="border border-border-soft p-5"
-            style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
-          >
-            {fieldOf(o, "date") && (
-              <p className="text-xs uppercase tracking-wide text-accent">{fieldOf(o, "date")}</p>
-            )}
-            <h3 className="mt-1 text-lg font-semibold" style={{ color: theme.ink }}>
-              {o.title}
-            </h3>
-            {o.description && <p className="mt-2 text-sm text-accent">{o.description}</p>}
-            <div className="mt-3">
-              <ClaimBadge />
-            </div>
-          </article>
-        ))}
+        {sorted.map((o) => {
+          const date = boundField(ctx, o, "date");
+          const title = boundTitle(ctx, o);
+          const description = boundDescription(ctx, o);
+          return (
+            <article
+              key={o.id}
+              className="border border-border-soft p-5"
+              style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
+            >
+              {date ? (
+                <p className="text-xs uppercase tracking-wide text-accent">{date}</p>
+              ) : null}
+              {title ? (
+                <h3 className="mt-1 text-lg font-semibold" style={{ color: theme.ink }}>
+                  {title}
+                </h3>
+              ) : null}
+              {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
+              <div className="mt-3">
+                <ClaimBadge />
+              </div>
+            </article>
+          );
+        })}
       </div>
     </SectionShell>
   );
 }
 
 function ObjectGridSection(props: SectionProps) {
-  const { objects, presentation, theme } = props;
+  const { objects, presentation, theme, ctx } = props;
   if (objects.length === 0) return null;
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "Browse"} copy={presentation.copy}>
-      <CardGrid objects={objects} theme={theme} />
+      <CardGrid objects={objects} theme={theme} ctx={ctx} />
     </SectionShell>
   );
 }
 
-function FeedList({ objects, theme }: { objects: PingObject[]; theme: FYDThemeTokens }) {
+function FeedList({
+  objects,
+  theme,
+  ctx,
+}: {
+  objects: PingObject[];
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+}) {
   return (
     <ol className="flex flex-col gap-4">
-      {objects.map((o) => (
-        <li
-          key={o.id}
-          className="border border-border-soft p-5"
-          style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
-        >
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
-              {o.title}
-            </h3>
-            <span className="text-xs uppercase tracking-wide text-accent">{friendlySchemaLabel(o.schema)}</span>
-          </div>
-          {o.description && <p className="mt-2 text-sm text-accent">{o.description}</p>}
-          <div className="mt-3">
-            <ClaimBadge />
-          </div>
-        </li>
-      ))}
+      {objects.map((o) => {
+        const title = boundTitle(ctx, o);
+        const description = boundDescription(ctx, o);
+        return (
+          <li
+            key={o.id}
+            className="border border-border-soft p-5"
+            style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
+          >
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              {title ? (
+                <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
+                  {title}
+                </h3>
+              ) : null}
+              <span className="text-xs uppercase tracking-wide text-accent">{friendlySchemaLabel(o.schema)}</span>
+            </div>
+            {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
+            <div className="mt-3">
+              <ClaimBadge />
+            </div>
+          </li>
+        );
+      })}
     </ol>
   );
 }
 
-function ObjectFeedSection({ objects, presentation, theme }: SectionProps) {
+function ObjectFeedSection({ objects, presentation, theme, ctx }: SectionProps) {
   if (objects.length === 0) return null;
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "Explore"} copy={presentation.copy}>
-      <FeedList objects={objects} theme={theme} />
+      <FeedList objects={objects} theme={theme} ctx={ctx} />
     </SectionShell>
   );
 }
 
-function RecentObjectsSection({ objects, presentation, theme }: SectionProps) {
+function RecentObjectsSection({ objects, presentation, theme, ctx }: SectionProps) {
   if (objects.length === 0) return null;
   const sorted = objects
     .slice()
@@ -402,7 +558,7 @@ function RecentObjectsSection({ objects, presentation, theme }: SectionProps) {
     );
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "Recent"} copy={presentation.copy}>
-      <FeedList objects={sorted} theme={theme} />
+      <FeedList objects={sorted} theme={theme} ctx={ctx} />
     </SectionShell>
   );
 }
@@ -410,34 +566,39 @@ function RecentObjectsSection({ objects, presentation, theme }: SectionProps) {
 function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
-  const phone = fieldOf(o, "phone");
-  const email = fieldOf(o, "email");
-  const website = websiteUrlOf(ctx);
-  if (!phone && !email && !website) return null;
+  const phone = boundField(ctx, o, "phone");
+  const email = boundField(ctx, o, "email");
+  const phoneLink = resolveSafeLink(phone, "call");
+  const emailLink = resolveSafeLink(email, "email");
+  const website = safeWebsite(ctx);
+  const showPhone = phone !== undefined && phoneLink.kind === "safe";
+  const showEmail = email !== undefined && emailLink.kind === "safe";
+  const showWebsite = website.kind === "safe";
+  if (!showPhone && !showEmail && !showWebsite) return null;
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "Contact"} copy={presentation.copy}>
       <ul className="flex flex-col gap-2 text-base">
-        {phone && (
+        {showPhone && phoneLink.kind === "safe" ? (
           <li>
-            <a href={"tel:" + phone} className="underline" style={{ color: theme.ink }}>
+            <a href={phoneLink.href} className="underline" style={{ color: theme.ink }}>
               {phone}
             </a>
           </li>
-        )}
-        {email && (
+        ) : null}
+        {showEmail && emailLink.kind === "safe" ? (
           <li>
-            <a href={"mailto:" + email} className="underline" style={{ color: theme.ink }}>
+            <a href={emailLink.href} className="underline" style={{ color: theme.ink }}>
               {email}
             </a>
           </li>
-        )}
-        {website && (
+        ) : null}
+        {showWebsite && website.kind === "safe" ? (
           <li>
-            <a href={website} className="underline" style={{ color: theme.ink }}>
-              {website}
+            <a href={website.href} className="underline" style={{ color: theme.ink }}>
+              {website.href}
             </a>
           </li>
-        )}
+        ) : null}
       </ul>
       <div className="mt-3">
         <ClaimBadge />
@@ -451,20 +612,29 @@ function LinksSection({ objects, presentation, theme, ctx }: SectionProps) {
   if (!o) return null;
   const raw = o.fields["socials"];
   const socials: string[] = Array.isArray(raw) ? raw : typeof raw === "string" && raw ? [raw] : [];
-  const website = websiteUrlOf(ctx);
-  const links = website ? [website, ...socials] : socials;
+  // Fail closed: social links only render when the socials binding verifies.
+  const socialsBound = boundField(ctx, o, "socials") !== undefined;
+  const website = safeWebsite(ctx);
+  const links: { href: string; label: string }[] = [];
+  if (website.kind === "safe") links.push({ href: website.href, label: hostOf(website.href) });
+  if (socialsBound) {
+    for (const url of socials) {
+      const link = resolveSafeLink(url, "navigate");
+      if (link.kind === "safe") links.push({ href: link.href, label: hostOf(link.href) });
+    }
+  }
   if (links.length === 0) return null;
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "Find us"} copy={presentation.copy}>
       <ul className="flex flex-wrap gap-3">
-        {links.map((url) => (
-          <li key={url}>
+        {links.map((link) => (
+          <li key={link.href}>
             <a
-              href={url}
+              href={link.href}
               className="inline-block border px-4 py-2 text-sm underline"
               style={{ borderColor: theme.accent, color: theme.ink, borderRadius: theme.radius === "full" ? 9999 : 8 }}
             >
-              {hostOf(url)}
+              {link.label}
             </a>
           </li>
         ))}
@@ -481,12 +651,14 @@ function hostOf(url: string): string {
   }
 }
 
-function SocialProofSection({ objects, presentation, theme }: SectionProps) {
+function SocialProofSection({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
-  const raw = o.fields["reviews"] ?? o.fields["testimonials"];
+  const fieldName = o.fields["reviews"] !== undefined ? "reviews" : "testimonials";
+  const raw = o.fields[fieldName];
   const items: string[] = Array.isArray(raw) ? raw : typeof raw === "string" && raw ? [raw] : [];
-  if (items.length === 0) return null;
+  // Fail closed: quotes only render when the field binding verifies.
+  if (items.length === 0 || boundField(ctx, o, fieldName) === undefined) return null;
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "What people say"} copy={presentation.copy}>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -509,7 +681,7 @@ function SocialProofSection({ objects, presentation, theme }: SectionProps) {
 
 function CTASection({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
-  const website = o ? websiteUrlOf(ctx) : "";
+  const website = o ? safeWebsite(ctx) : { kind: "non_navigable" as const };
   return (
     <section className="w-full px-4 py-12 sm:px-6" style={{ background: theme.surface }}>
       <div className="mx-auto max-w-5xl text-center">
@@ -518,15 +690,15 @@ function CTASection({ objects, presentation, theme, ctx }: SectionProps) {
         </h2>
         {presentation.copy && <p className="mt-2 text-accent">{presentation.copy}</p>}
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          {website && (
+          {website.kind === "safe" ? (
             <a
-              href={website}
+              href={website.href}
               className="rounded px-6 py-3 font-semibold"
               style={{ background: theme.accent, color: theme.accentForeground, borderRadius: theme.radius === "full" ? 9999 : 8 }}
             >
               Visit website
             </a>
-          )}
+          ) : null}
           <a
             href="#ask"
             className="rounded border px-6 py-3 font-semibold"
@@ -540,9 +712,11 @@ function CTASection({ objects, presentation, theme, ctx }: SectionProps) {
   );
 }
 
-function IdentityCardSection({ objects, presentation, theme }: SectionProps) {
+function IdentityCardSection({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
+  const title = boundTitle(ctx, o);
+  const description = boundDescription(ctx, o);
   return (
     <SectionShell theme={theme} heading={presentation.heading} copy={presentation.copy}>
       <div
@@ -550,10 +724,12 @@ function IdentityCardSection({ objects, presentation, theme }: SectionProps) {
         style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 12 }}
       >
         <div>
-          <h3 className="text-xl font-semibold" style={{ color: theme.ink }}>
-            {o.title}
-          </h3>
-          {o.description && <p className="mt-1 text-sm text-accent">{o.description}</p>}
+          {title ? (
+            <h3 className="text-xl font-semibold" style={{ color: theme.ink }}>
+              {title}
+            </h3>
+          ) : null}
+          {description ? <p className="mt-1 text-sm text-accent">{description}</p> : null}
         </div>
         <ClaimBadge />
       </div>
@@ -562,6 +738,7 @@ function IdentityCardSection({ objects, presentation, theme }: SectionProps) {
 }
 
 function AskFYDSection({ presentation, theme, ctx }: SectionProps) {
+  const ownerName = boundOwnerTitle(ctx);
   return (
     <section id="ask" className="w-full px-4 py-12 sm:px-6" style={{ background: theme.ink }}>
       <div className="mx-auto max-w-3xl text-center">
@@ -569,7 +746,7 @@ function AskFYDSection({ presentation, theme, ctx }: SectionProps) {
           className="text-2xl font-semibold text-background sm:text-3xl"
           style={{ fontFamily: theme.fontDisplay }}
         >
-          {presentation.heading ?? "Ask FYD about " + ownerTitle(ctx)}
+          {presentation.heading ?? "Ask FYD about " + ownerName}
         </h2>
         <p className="mt-2 text-background/70">
           {presentation.copy ?? "Questions go to FYD Social. Answers cite website statements, never verified fact."}
@@ -601,16 +778,22 @@ function AskFYDSection({ presentation, theme, ctx }: SectionProps) {
   );
 }
 
-function ownerTitle(ctx: RenderContext): string {
+/**
+ * Owner name for the Ask FYD heading. The heading is a label, not a factual
+ * claim, so it falls back to "this business" when the title binding does
+ * not verify; the fallback is honest precisely because it claims nothing.
+ */
+function boundOwnerTitle(ctx: RenderContext): string {
   const owner = ctx.graph.objects.find((o) => o.id === ctx.spec.ownerObjectId);
-  return owner ? owner.title : "this business";
+  if (!owner) return "this business";
+  return boundTitle(ctx, owner) ?? "this business";
 }
 
-function GenericObjectCardSection({ objects, presentation, theme }: SectionProps) {
+function GenericObjectCardSection({ objects, presentation, theme, ctx }: SectionProps) {
   if (objects.length === 0) return null;
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "More"} copy={presentation.copy}>
-      <CardGrid objects={objects} theme={theme} />
+      <CardGrid objects={objects} theme={theme} ctx={ctx} />
     </SectionShell>
   );
 }
