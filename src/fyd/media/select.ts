@@ -129,9 +129,14 @@ export function listObjectMedia(
 }
 
 /**
- * The hero media for an object: hero-role asset first, else the best
- * available acquired asset. Null when the object has no acquired media
- * (the caller renders its typographic fallback).
+ * The hero media for an object: hero-role asset first, then other
+ * photographic roles. NEVER a logo-role asset: a logo is brand identity,
+ * not a photographic hero, and must never be stretched into a banner.
+ * Null when the object has no photographic acquired media (the caller
+ * renders its typographic fallback).
+ *
+ * Scope: the sort in select() still leads galleries with logos (the
+ * object view wants the brand mark first); this filter is hero-only.
  */
 export function heroMediaFor(
   siteId: string,
@@ -139,5 +144,8 @@ export function heroMediaFor(
   objectId: string,
 ): DisplayMedia | null {
   const all = select(siteId, graph, objectId, true);
-  return all.find((d) => d.role === "hero") ?? all[0] ?? null;
+  // DisplayMedia.role is the asset's first role; the ingest roleFor()
+  // mints "logo" only as a sole role, so a first-role check is complete.
+  const photographic = all.filter((d) => d.role !== "logo");
+  return photographic.find((d) => d.role === "hero") ?? photographic[0] ?? null;
 }

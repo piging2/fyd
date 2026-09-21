@@ -29,6 +29,7 @@
  */
 
 import { mkdir, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { dirname } from "node:path";
 import { attachMediaToGraph } from "./attach";
 import { classifyRights, discoverImages, type DiscoveredImage } from "./discover";
@@ -55,6 +56,13 @@ export interface IngestOptions {
   manifestPath: string;
   /** Cap on images ingested per site (safety bound). */
   maxImages?: number;
+  /**
+   * Experimental/preview run: the manifest is stamped preview: true and
+   * the caller must write it outside the production manifests dir
+   * (run-ingest.ts --preview). The read path never serves a
+   * preview-marked manifest as production truth.
+   */
+  preview?: boolean;
 }
 
 function businessOrigin(pages: string[]): string {
@@ -196,6 +204,13 @@ export async function ingestSiteMedia(opts: IngestOptions): Promise<MediaManifes
     siteId: opts.siteId,
     generatedAt: now,
     generator: MEDIA_MODULE_VERSION,
+    // Production-truth provenance: the read path requires these. A
+    // preview run is marked AND written outside the production manifests
+    // dir (run-ingest.ts): two independent reasons the read path can
+    // never serve it as production truth.
+    ingestRunId: randomUUID(),
+    pipelineVersion: MEDIA_MODULE_VERSION,
+    preview: opts.preview === true,
     observations,
     media,
   };

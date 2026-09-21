@@ -7,9 +7,20 @@
  * Discovers images on the business site(s), fetches them through the SSRF
  * gate, digests, dedupes, generates derivatives into public/fyd-media/,
  * and writes src/fyd/media/manifests/<siteId>.json.
+ *
+ * Preview/experimental runs:
+ *
+ *   npx tsx src/fyd/media/run-ingest.ts happy-place --preview
+ *
+ * write to src/fyd/media/manifests/preview/<siteId>.<runId>.json and are
+ * stamped preview: true. The production read path (bundle-media.ts)
+ * never scans that directory and rejects preview-marked manifests even
+ * if one were copied into the production dir: a preview artifact is
+ * structurally incapable of becoming production truth.
  */
 
 import { join } from "node:path";
+import { randomUUID } from "node:crypto";
 import { ingestSiteMedia } from "./ingest";
 
 const SITES: Record<string, { pages: string[]; businessSlug: string }> = {
@@ -25,25 +36,54 @@ const SITES: Record<string, { pages: string[]; businessSlug: string }> = {
 
 async function main() {
   const siteId = process.argv[2];
+  const preview = process.argv.includes("--preview");
   const def = siteId ? SITES[siteId] : undefined;
   if (!def) {
-    console.error("usage: tsx src/fyd/media/run-ingest.ts <siteId>");
+    console.error("usage: tsx src/fyd/media/run-ingest.ts <siteId> [--preview]");
     console.error("known: " + Object.keys(SITES).join(", "));
     process.exit(2);
   }
+  const manifestPath = preview
+    ? join(
+        process.cwd(),
+        "src",
+        "fyd",
+        "media",
+        "manifests",
+        "preview",
+        siteId + "." + randomUUID() + ".json",
+      )
+    : join(
+        process.cwd(),
+        "src",
+        "fyd",
+        "media",
+        "manifests",
+        siteId + ".json",
+      );
   const manifest = await ingestSiteMedia({
     siteId,
     businessSlug: def.businessSlug,
     pages: def.pages,
     publicDir: join(process.cwd(), "public", "fyd-media"),
-    manifestPath: join(process.cwd(), "src", "fyd", "media", "manifests", siteId + ".json"),
+    manifestPath,
+    preview,
   });
   const ok = manifest.observations.filter((o) => o.outcome === "ingested").length;
   const failed = manifest.observations.filter((o) => o.outcome === "failed").length;
   const rejected = manifest.observations.filter((o) => o.outcome === "rejected").length;
   const dupes = manifest.observations.filter((o) => o.outcome === "duplicate").length;
   console.log(
-    JSON.stringify({ siteId, ingested: ok, failed, rejected, duplicates: dupes, mediaObjects: manifest.media.length }),
+    JSON.stringify({
+      siteId,
+      preview,
+      manifestPath,
+      ingested: ok,
+      failed,
+      rejected,
+      duplicates: dupes,
+      mediaObjects: manifest.media.length,
+    }),
   );
   for (const o of manifest.observations) {
     if (o.outcome !== "ingested") console.log(" -", o.outcome, o.sourceUrl, o.reason ?? "");

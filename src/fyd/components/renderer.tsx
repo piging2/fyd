@@ -15,6 +15,7 @@ import type { OwnerFieldCorrection, PingObject } from "@/lib/ping/types";
 import type { ReactNode } from "react";
 import { getComponentDef } from "./registry";
 import { AskFydWidget } from "./ask-fyd-widget";
+import { WhyThis, type EvidenceStep } from "../ui/why-this";
 import { resolveBoundField } from "../sitespec/graph";
 import type { BindingClassification } from "../sitespec/graph";
 import {
@@ -320,6 +321,52 @@ function SectionShell({
   );
 }
 
+/**
+ * Contextual provenance for the hero photo: the generic WhyThis
+ * drill-down fed ONLY with the media's own provenance fields. No
+ * invented copy; the affordance shows what the pipeline recorded and
+ * nothing else. Steps with empty values are omitted, and WhyThis renders
+ * nothing at all when the lineage is empty.
+ */
+function HeroMediaWhyThis({ media }: { media: DisplayMedia }) {
+  const steps: EvidenceStep[] = [];
+  if (media.sourceUrl) {
+    steps.push({
+      step: "Photo source",
+      detail: media.sourceUrl,
+      state: "observed",
+    });
+  }
+  if (media.rightsBasis) {
+    steps.push({
+      step: "Rights basis",
+      detail: media.rightsBasis,
+      state: "observed",
+    });
+  }
+  if (media.observedAt) {
+    steps.push({
+      step: "Observed",
+      detail: media.observedAt,
+      state: "observed",
+    });
+  }
+  if (media.digest) {
+    steps.push({
+      step: "Content digest",
+      detail: media.digest.slice(0, 16) + "...",
+      state: "inferred",
+    });
+  }
+  return (
+    <WhyThis
+      claim={media.alt || "Hero photo"}
+      steps={steps}
+      className="[&_summary]:text-white"
+    />
+  );
+}
+
 function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
@@ -352,6 +399,9 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
             loading="eager"
             className="absolute inset-0 h-full w-full object-cover"
           />
+          <div className="absolute bottom-2 right-2 rounded bg-black/55 px-2 py-1">
+            <HeroMediaWhyThis media={hero} />
+          </div>
         </div>
       ) : null}
       <div className="px-4 py-16 sm:px-6 sm:py-24">

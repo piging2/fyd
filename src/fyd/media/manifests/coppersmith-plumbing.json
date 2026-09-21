@@ -1,12 +1,15 @@
 {
   "siteId": "coppersmith-plumbing",
-  "generatedAt": "2026-09-21T20:52:17.101Z",
+  "generatedAt": "2026-09-21T22:25:44.400Z",
   "generator": "fyd-media@2",
+  "ingestRunId": "69bd9569-22dd-48f9-8e9f-c55ea70418e3",
+  "pipelineVersion": "fyd-media@2",
+  "preview": false,
   "observations": [
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2024/04/coppersmith-logo-black-n-copper.png",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:17.985Z",
+      "observedAt": "2026-09-21T22:25:45.006Z",
       "outcome": "ingested",
       "digest": "36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668",
       "redirectChain": []
@@ -14,7 +17,7 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/hvac-heat.jpg",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.069Z",
+      "observedAt": "2026-09-21T22:25:45.291Z",
       "outcome": "ingested",
       "digest": "db347abf5ab76b99822dd3d1f133c3ce683dc8499a0e719e39f10b08c9827b8b",
       "redirectChain": []
@@ -22,7 +25,7 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/RInnai_edited.webp",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.195Z",
+      "observedAt": "2026-09-21T22:25:45.656Z",
       "outcome": "ingested",
       "digest": "b3beba4b81105a97e9299766451a8fce972beef61d6de5353556bf97f847f2ec",
       "redirectChain": []
@@ -30,7 +33,7 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Rheem_edited.webp",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.251Z",
+      "observedAt": "2026-09-21T22:25:45.782Z",
       "outcome": "ingested",
       "digest": "b49b3a3300637f10b24a8380a1cef2a024e2cb5320638e10cd9f86b466352df8",
       "redirectChain": []
@@ -38,14 +41,14 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/IBC-Logo-for-Gallery.webp",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.293Z",
+      "observedAt": "2026-09-21T22:25:46.071Z",
       "outcome": "rejected",
       "reason": "Rights gate (unclear-reference-only): Logo-like image that does not match the business name; treated as a third-party brand mark. Referenced, never claimed or republished."
     },
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Burnham_edited.webp",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.293Z",
+      "observedAt": "2026-09-21T22:25:46.071Z",
       "outcome": "ingested",
       "digest": "e5b72e531e63a0270112d1f8948c3ea0ea36d6257d0f66bed618db6f4e675105",
       "redirectChain": []
@@ -53,7 +56,7 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Breezair_edited.webp",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.345Z",
+      "observedAt": "2026-09-21T22:25:46.206Z",
       "outcome": "ingested",
       "digest": "2d8d7c11188b3b9ea30d382a274ada0aa0db3621ecf3fc6390adfb241b2bf942",
       "redirectChain": []
@@ -61,7 +64,7 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/AOSmith_edited.webp",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.406Z",
+      "observedAt": "2026-09-21T22:25:46.319Z",
       "outcome": "ingested",
       "digest": "9791fe166463007223562f5830c35bf3928ef4811481080d027f64dffd1495ea",
       "redirectChain": []
@@ -69,7 +72,7 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Kohler-Tournant.jpg",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.460Z",
+      "observedAt": "2026-09-21T22:25:46.418Z",
       "outcome": "ingested",
       "digest": "6d27edae022c3868b67867dbf071efc6d4b27371a1d9686830e807bee5ef9572",
       "redirectChain": []
@@ -77,7 +80,7 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Trinsic-9159TV-DST-B1.png",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.566Z",
+      "observedAt": "2026-09-21T22:25:46.708Z",
       "outcome": "ingested",
       "digest": "3bf9466d3e1be98c5013ce7d3f46ff84259dfe9db7ffa0b5839fa5de99693bb5",
       "redirectChain": []
@@ -85,7 +88,7 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Trinsic-9659T-DST-B1.png",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.651Z",
+      "observedAt": "2026-09-21T22:25:46.850Z",
       "outcome": "ingested",
       "digest": "992d1fa19a675f01b6863c69035cc48120e325f1a6e9d41fc96d36ea42c72913",
       "redirectChain": []
@@ -93,7 +96,7 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2024/04/coppersmith-new-logo-white.png",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.726Z",
+      "observedAt": "2026-09-21T22:25:47.102Z",
       "outcome": "ingested",
       "digest": "381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb",
       "redirectChain": []
@@ -101,7 +104,7 @@
     {
       "sourceUrl": "https://www.coppersmithplumbing.com/#logo",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.796Z",
+      "observedAt": "2026-09-21T22:25:47.387Z",
       "outcome": "rejected",
       "reason": "Content-type not allowed: text/html",
       "redirectChain": []
@@ -109,7 +112,7 @@
     {
       "sourceUrl": "https://secure.gravatar.com/avatar/e0b42142790639c2c128929cf06e707038eacaf467f6ded4095ff919bf6be119?s=96&d=mm&r=g",
       "sourcePage": "https://www.coppersmithplumbing.com/",
-      "observedAt": "2026-09-21T20:52:18.852Z",
+      "observedAt": "2026-09-21T22:25:47.457Z",
       "outcome": "rejected",
       "reason": "Rights gate (unclear-reference-only): Hosted off-site (secure.gravatar.com); authorization unclear. Retained as a reference only; not acquired, derived, or served as FYD media."
     }
@@ -129,7 +132,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2024/04/coppersmith-logo-black-n-copper.png",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:17.985Z"
+        "observedAt": "2026-09-21T22:25:45.006Z"
       },
       "digest": "36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668",
       "originalFormat": "png",
@@ -177,7 +180,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/hvac-heat.jpg",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:18.069Z"
+        "observedAt": "2026-09-21T22:25:45.291Z"
       },
       "digest": "db347abf5ab76b99822dd3d1f133c3ce683dc8499a0e719e39f10b08c9827b8b",
       "originalFormat": "jpeg",
@@ -234,7 +237,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/RInnai_edited.webp",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:18.195Z"
+        "observedAt": "2026-09-21T22:25:45.656Z"
       },
       "digest": "b3beba4b81105a97e9299766451a8fce972beef61d6de5353556bf97f847f2ec",
       "originalFormat": "webp",
@@ -281,7 +284,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Rheem_edited.webp",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:18.251Z"
+        "observedAt": "2026-09-21T22:25:45.782Z"
       },
       "digest": "b49b3a3300637f10b24a8380a1cef2a024e2cb5320638e10cd9f86b466352df8",
       "originalFormat": "webp",
@@ -328,7 +331,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Burnham_edited.webp",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:18.293Z"
+        "observedAt": "2026-09-21T22:25:46.071Z"
       },
       "digest": "e5b72e531e63a0270112d1f8948c3ea0ea36d6257d0f66bed618db6f4e675105",
       "originalFormat": "webp",
@@ -375,7 +378,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Breezair_edited.webp",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:18.345Z"
+        "observedAt": "2026-09-21T22:25:46.206Z"
       },
       "digest": "2d8d7c11188b3b9ea30d382a274ada0aa0db3621ecf3fc6390adfb241b2bf942",
       "originalFormat": "webp",
@@ -422,7 +425,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/AOSmith_edited.webp",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:18.406Z"
+        "observedAt": "2026-09-21T22:25:46.319Z"
       },
       "digest": "9791fe166463007223562f5830c35bf3928ef4811481080d027f64dffd1495ea",
       "originalFormat": "webp",
@@ -469,7 +472,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Kohler-Tournant.jpg",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:18.460Z"
+        "observedAt": "2026-09-21T22:25:46.418Z"
       },
       "digest": "6d27edae022c3868b67867dbf071efc6d4b27371a1d9686830e807bee5ef9572",
       "originalFormat": "jpeg",
@@ -526,7 +529,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Trinsic-9159TV-DST-B1.png",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:18.566Z"
+        "observedAt": "2026-09-21T22:25:46.708Z"
       },
       "digest": "3bf9466d3e1be98c5013ce7d3f46ff84259dfe9db7ffa0b5839fa5de99693bb5",
       "originalFormat": "png",
@@ -573,7 +576,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Trinsic-9659T-DST-B1.png",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:18.651Z"
+        "observedAt": "2026-09-21T22:25:46.850Z"
       },
       "digest": "992d1fa19a675f01b6863c69035cc48120e325f1a6e9d41fc96d36ea42c72913",
       "originalFormat": "png",
@@ -620,7 +623,7 @@
       "provenance": {
         "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2024/04/coppersmith-new-logo-white.png",
         "sourcePage": "https://www.coppersmithplumbing.com/",
-        "observedAt": "2026-09-21T20:52:18.726Z"
+        "observedAt": "2026-09-21T22:25:47.102Z"
       },
       "digest": "381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb",
       "originalFormat": "png",

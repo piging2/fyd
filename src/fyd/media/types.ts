@@ -161,6 +161,24 @@ export interface MediaManifest {
   siteId: string;
   generatedAt: string;
   generator: string;
+  /**
+   * Production-truth provenance (media-hero-defects lane, fyd-media@2).
+   *
+   * The read path (bundle-media.ts validatePipelineManifest) REQUIRES
+   * these: a manifest that does not carry them is not served, so a stale
+   * or preview-origin file can never silently masquerade as pipeline
+   * truth.
+   *
+   * ingestRunId: the pipeline run that minted this manifest (uuid).
+   * pipelineVersion: the fyd-media module version that wrote it; must
+   *   equal MEDIA_MODULE_VERSION. A version bump retires old manifests
+   *   until a fresh ingest rewrites them: stale truth fails closed.
+   * preview: when true, this manifest is an experimental/preview
+   *   artifact and is never production truth, wherever the file sits.
+   */
+  ingestRunId: string;
+  pipelineVersion: string;
+  preview?: boolean;
   observations: MediaObservation[];
   media: FydMediaObject[];
 }
