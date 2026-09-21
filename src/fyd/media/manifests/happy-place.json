@@ -1,0 +1,15 @@
+{
+  "siteId": "happy-place",
+  "generatedAt": "2026-09-21T20:51:39.764Z",
+  "generator": "fyd-media@2",
+  "observations": [
+    {
+      "sourceUrl": "https://ssl.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_74x24dp.png",
+      "sourcePage": "https://accounts.google.com/v3/signin/identifier?continue=https://mail.google.com/mail/u/0/&emr=1&followup=https://mail.google.com/mail/u/0/&osid=1&passive=1209600&service=mail&flowName=WebLiteSignIn&flowEntry=ServiceLogin&dsh=S487042852:1790023900797106",
+      "observedAt": "2026-09-21T20:51:40.973Z",
+      "outcome": "rejected",
+      "reason": "Rights gate (unclear-reference-only): Hosted off-site (ssl.gstatic.com); authorization unclear. Retained as a reference only; not acquired, derived, or served as FYD media."
+    }
+  ],
+  "media": []
+}

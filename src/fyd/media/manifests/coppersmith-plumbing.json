@@ -1,0 +1,657 @@
+{
+  "siteId": "coppersmith-plumbing",
+  "generatedAt": "2026-09-21T20:52:17.101Z",
+  "generator": "fyd-media@2",
+  "observations": [
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2024/04/coppersmith-logo-black-n-copper.png",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:17.985Z",
+      "outcome": "ingested",
+      "digest": "36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/hvac-heat.jpg",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.069Z",
+      "outcome": "ingested",
+      "digest": "db347abf5ab76b99822dd3d1f133c3ce683dc8499a0e719e39f10b08c9827b8b",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/RInnai_edited.webp",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.195Z",
+      "outcome": "ingested",
+      "digest": "b3beba4b81105a97e9299766451a8fce972beef61d6de5353556bf97f847f2ec",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Rheem_edited.webp",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.251Z",
+      "outcome": "ingested",
+      "digest": "b49b3a3300637f10b24a8380a1cef2a024e2cb5320638e10cd9f86b466352df8",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/IBC-Logo-for-Gallery.webp",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.293Z",
+      "outcome": "rejected",
+      "reason": "Rights gate (unclear-reference-only): Logo-like image that does not match the business name; treated as a third-party brand mark. Referenced, never claimed or republished."
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Burnham_edited.webp",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.293Z",
+      "outcome": "ingested",
+      "digest": "e5b72e531e63a0270112d1f8948c3ea0ea36d6257d0f66bed618db6f4e675105",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Breezair_edited.webp",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.345Z",
+      "outcome": "ingested",
+      "digest": "2d8d7c11188b3b9ea30d382a274ada0aa0db3621ecf3fc6390adfb241b2bf942",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/AOSmith_edited.webp",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.406Z",
+      "outcome": "ingested",
+      "digest": "9791fe166463007223562f5830c35bf3928ef4811481080d027f64dffd1495ea",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Kohler-Tournant.jpg",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.460Z",
+      "outcome": "ingested",
+      "digest": "6d27edae022c3868b67867dbf071efc6d4b27371a1d9686830e807bee5ef9572",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Trinsic-9159TV-DST-B1.png",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.566Z",
+      "outcome": "ingested",
+      "digest": "3bf9466d3e1be98c5013ce7d3f46ff84259dfe9db7ffa0b5839fa5de99693bb5",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Trinsic-9659T-DST-B1.png",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.651Z",
+      "outcome": "ingested",
+      "digest": "992d1fa19a675f01b6863c69035cc48120e325f1a6e9d41fc96d36ea42c72913",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2024/04/coppersmith-new-logo-white.png",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.726Z",
+      "outcome": "ingested",
+      "digest": "381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/#logo",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.796Z",
+      "outcome": "rejected",
+      "reason": "Content-type not allowed: text/html",
+      "redirectChain": []
+    },
+    {
+      "sourceUrl": "https://secure.gravatar.com/avatar/e0b42142790639c2c128929cf06e707038eacaf467f6ded4095ff919bf6be119?s=96&d=mm&r=g",
+      "sourcePage": "https://www.coppersmithplumbing.com/",
+      "observedAt": "2026-09-21T20:52:18.852Z",
+      "outcome": "rejected",
+      "reason": "Rights gate (unclear-reference-only): Hosted off-site (secure.gravatar.com); authorization unclear. Retained as a reference only; not acquired, derived, or served as FYD media."
+    }
+  ],
+  "media": [
+    {
+      "id": "fyd-media-36e4ff5cab1bafa8",
+      "schema": "ping.social.media@1",
+      "title": "coppersmith logo black n copper",
+      "mediaType": "image",
+      "roles": [
+        "logo"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2024/04/coppersmith-logo-black-n-copper.png",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:17.985Z"
+      },
+      "digest": "36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668",
+      "originalFormat": "png",
+      "width": 400,
+      "height": 262,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 400,
+          "height": 262,
+          "format": "webp",
+          "url": "/fyd-media/36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668/thumbnail-400w.webp",
+          "bytes": 16220,
+          "digest": "2bb32b12126ddab6bbcc030890e3ea143de31fe20da930d3ead31547ca657519",
+          "derivedFrom": "36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 7,
+          "format": "webp",
+          "url": "/fyd-media/36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668/blur-10w.webp",
+          "bytes": 174,
+          "digest": "b97db6dc73b017db8b6b996f293666d38cffca79fe61828438ee5b4471f853f7",
+          "derivedFrom": "36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-db347abf5ab76b99",
+      "schema": "ping.social.media@1",
+      "title": "hvac heat",
+      "mediaType": "image",
+      "roles": [
+        "hero",
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/hvac-heat.jpg",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:18.069Z"
+      },
+      "digest": "db347abf5ab76b99822dd3d1f133c3ce683dc8499a0e719e39f10b08c9827b8b",
+      "originalFormat": "jpeg",
+      "width": 1000,
+      "height": 563,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 480,
+          "height": 270,
+          "format": "webp",
+          "url": "/fyd-media/db347abf5ab76b99822dd3d1f133c3ce683dc8499a0e719e39f10b08c9827b8b/thumbnail-480w.webp",
+          "bytes": 41344,
+          "digest": "2cabcbc3f83695c0345f4e3ea1a1c0951e37d0a30c10f06d86a0a3ce28fd076f",
+          "derivedFrom": "db347abf5ab76b99822dd3d1f133c3ce683dc8499a0e719e39f10b08c9827b8b"
+        },
+        {
+          "name": "card",
+          "width": 768,
+          "height": 432,
+          "format": "webp",
+          "url": "/fyd-media/db347abf5ab76b99822dd3d1f133c3ce683dc8499a0e719e39f10b08c9827b8b/card-768w.webp",
+          "bytes": 88530,
+          "digest": "30e6c88d7f443b36504a22671934f8a20672c1e3ae5b0f2ef7608da6ad47152a",
+          "derivedFrom": "db347abf5ab76b99822dd3d1f133c3ce683dc8499a0e719e39f10b08c9827b8b"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 6,
+          "format": "webp",
+          "url": "/fyd-media/db347abf5ab76b99822dd3d1f133c3ce683dc8499a0e719e39f10b08c9827b8b/blur-10w.webp",
+          "bytes": 80,
+          "digest": "59f521f7348c624185c990ec86da812ef382abf3f353cc4122e00774dae74217",
+          "derivedFrom": "db347abf5ab76b99822dd3d1f133c3ce683dc8499a0e719e39f10b08c9827b8b"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-b3beba4b81105a97",
+      "schema": "ping.social.media@1",
+      "title": "RInnai edited",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/RInnai_edited.webp",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:18.195Z"
+      },
+      "digest": "b3beba4b81105a97e9299766451a8fce972beef61d6de5353556bf97f847f2ec",
+      "originalFormat": "webp",
+      "width": 118,
+      "height": 20,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 118,
+          "height": 20,
+          "format": "webp",
+          "url": "/fyd-media/b3beba4b81105a97e9299766451a8fce972beef61d6de5353556bf97f847f2ec/thumbnail-118w.webp",
+          "bytes": 1900,
+          "digest": "61984894a76419f20fe64649eb0c71754952cdcf21fa15b403a2400a89cb56b5",
+          "derivedFrom": "b3beba4b81105a97e9299766451a8fce972beef61d6de5353556bf97f847f2ec"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 2,
+          "format": "webp",
+          "url": "/fyd-media/b3beba4b81105a97e9299766451a8fce972beef61d6de5353556bf97f847f2ec/blur-10w.webp",
+          "bytes": 108,
+          "digest": "595303a89e3278863f3af283934b438c19ef42826e39d8c2ea2114af6c95b452",
+          "derivedFrom": "b3beba4b81105a97e9299766451a8fce972beef61d6de5353556bf97f847f2ec"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-b49b3a3300637f10",
+      "schema": "ping.social.media@1",
+      "title": "Rheem edited",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Rheem_edited.webp",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:18.251Z"
+      },
+      "digest": "b49b3a3300637f10b24a8380a1cef2a024e2cb5320638e10cd9f86b466352df8",
+      "originalFormat": "webp",
+      "width": 124,
+      "height": 123,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 124,
+          "height": 123,
+          "format": "webp",
+          "url": "/fyd-media/b49b3a3300637f10b24a8380a1cef2a024e2cb5320638e10cd9f86b466352df8/thumbnail-124w.webp",
+          "bytes": 7304,
+          "digest": "6e67b62775311921b610a75d171de196fbac0b3e41b819fe899abea960847540",
+          "derivedFrom": "b49b3a3300637f10b24a8380a1cef2a024e2cb5320638e10cd9f86b466352df8"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 10,
+          "format": "webp",
+          "url": "/fyd-media/b49b3a3300637f10b24a8380a1cef2a024e2cb5320638e10cd9f86b466352df8/blur-10w.webp",
+          "bytes": 182,
+          "digest": "e03908651f37c98f4a805ba20eae3198fbf7c239e694c69700fee6c4ff171774",
+          "derivedFrom": "b49b3a3300637f10b24a8380a1cef2a024e2cb5320638e10cd9f86b466352df8"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-e5b72e531e63a027",
+      "schema": "ping.social.media@1",
+      "title": "Burnham edited",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Burnham_edited.webp",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:18.293Z"
+      },
+      "digest": "e5b72e531e63a0270112d1f8948c3ea0ea36d6257d0f66bed618db6f4e675105",
+      "originalFormat": "webp",
+      "width": 183,
+      "height": 45,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 183,
+          "height": 45,
+          "format": "webp",
+          "url": "/fyd-media/e5b72e531e63a0270112d1f8948c3ea0ea36d6257d0f66bed618db6f4e675105/thumbnail-183w.webp",
+          "bytes": 5764,
+          "digest": "37475ab1180be9d3bc0ebeabdd5d28199eeb2f7b542057aa21f3c635328ad2ee",
+          "derivedFrom": "e5b72e531e63a0270112d1f8948c3ea0ea36d6257d0f66bed618db6f4e675105"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 2,
+          "format": "webp",
+          "url": "/fyd-media/e5b72e531e63a0270112d1f8948c3ea0ea36d6257d0f66bed618db6f4e675105/blur-10w.webp",
+          "bytes": 112,
+          "digest": "69fd793bf879581c37301bd95efae09bf2b897031f7ba8b06b154e1873679c7e",
+          "derivedFrom": "e5b72e531e63a0270112d1f8948c3ea0ea36d6257d0f66bed618db6f4e675105"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-2d8d7c11188b3b9e",
+      "schema": "ping.social.media@1",
+      "title": "Breezair edited",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Breezair_edited.webp",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:18.345Z"
+      },
+      "digest": "2d8d7c11188b3b9ea30d382a274ada0aa0db3621ecf3fc6390adfb241b2bf942",
+      "originalFormat": "webp",
+      "width": 200,
+      "height": 40,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 200,
+          "height": 40,
+          "format": "webp",
+          "url": "/fyd-media/2d8d7c11188b3b9ea30d382a274ada0aa0db3621ecf3fc6390adfb241b2bf942/thumbnail-200w.webp",
+          "bytes": 4218,
+          "digest": "7ca496fec071b67ab4fa03d1584f745e947d641f3201534a199003927d3eb3c2",
+          "derivedFrom": "2d8d7c11188b3b9ea30d382a274ada0aa0db3621ecf3fc6390adfb241b2bf942"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 2,
+          "format": "webp",
+          "url": "/fyd-media/2d8d7c11188b3b9ea30d382a274ada0aa0db3621ecf3fc6390adfb241b2bf942/blur-10w.webp",
+          "bytes": 104,
+          "digest": "4ac458c180d8c13d358172da64574e10be17133254897e6c019823fe92979cfb",
+          "derivedFrom": "2d8d7c11188b3b9ea30d382a274ada0aa0db3621ecf3fc6390adfb241b2bf942"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-9791fe1664630072",
+      "schema": "ping.social.media@1",
+      "title": "AOSmith edited",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/AOSmith_edited.webp",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:18.406Z"
+      },
+      "digest": "9791fe166463007223562f5830c35bf3928ef4811481080d027f64dffd1495ea",
+      "originalFormat": "webp",
+      "width": 187,
+      "height": 58,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 187,
+          "height": 58,
+          "format": "webp",
+          "url": "/fyd-media/9791fe166463007223562f5830c35bf3928ef4811481080d027f64dffd1495ea/thumbnail-187w.webp",
+          "bytes": 5422,
+          "digest": "c0339e4fec8da05a82cd6c3cc58b1f8127024508407abaaa8b4a647e6d1ff770",
+          "derivedFrom": "9791fe166463007223562f5830c35bf3928ef4811481080d027f64dffd1495ea"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 3,
+          "format": "webp",
+          "url": "/fyd-media/9791fe166463007223562f5830c35bf3928ef4811481080d027f64dffd1495ea/blur-10w.webp",
+          "bytes": 120,
+          "digest": "4afcfea5d51aa337ed46b2be6b92b24c01b0f412a4ca4dd27d87031ce0aef2cf",
+          "derivedFrom": "9791fe166463007223562f5830c35bf3928ef4811481080d027f64dffd1495ea"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-6d27edae022c3868",
+      "schema": "ping.social.media@1",
+      "title": "Kohler Tournant",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Kohler-Tournant.jpg",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:18.460Z"
+      },
+      "digest": "6d27edae022c3868b67867dbf071efc6d4b27371a1d9686830e807bee5ef9572",
+      "originalFormat": "jpeg",
+      "width": 999,
+      "height": 999,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 480,
+          "height": 480,
+          "format": "webp",
+          "url": "/fyd-media/6d27edae022c3868b67867dbf071efc6d4b27371a1d9686830e807bee5ef9572/thumbnail-480w.webp",
+          "bytes": 6884,
+          "digest": "875358e9d62b8f02f02212aa876374f3c6c66c3345313d9cdcaac8a43c9f05f7",
+          "derivedFrom": "6d27edae022c3868b67867dbf071efc6d4b27371a1d9686830e807bee5ef9572"
+        },
+        {
+          "name": "card",
+          "width": 768,
+          "height": 768,
+          "format": "webp",
+          "url": "/fyd-media/6d27edae022c3868b67867dbf071efc6d4b27371a1d9686830e807bee5ef9572/card-768w.webp",
+          "bytes": 12714,
+          "digest": "9c94791a66952320bebf01ad31baf6cb4e4321c27298ad7364e070cbda7b160c",
+          "derivedFrom": "6d27edae022c3868b67867dbf071efc6d4b27371a1d9686830e807bee5ef9572"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 10,
+          "format": "webp",
+          "url": "/fyd-media/6d27edae022c3868b67867dbf071efc6d4b27371a1d9686830e807bee5ef9572/blur-10w.webp",
+          "bytes": 76,
+          "digest": "8100f1e8cc3bd6a261207b7724694f496fa72a27ee4490a313dd041f49e75fca",
+          "derivedFrom": "6d27edae022c3868b67867dbf071efc6d4b27371a1d9686830e807bee5ef9572"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-3bf9466d3e1be98c",
+      "schema": "ping.social.media@1",
+      "title": "Trinsic 9159TV DST B1",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Trinsic-9159TV-DST-B1.png",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:18.566Z"
+      },
+      "digest": "3bf9466d3e1be98c5013ce7d3f46ff84259dfe9db7ffa0b5839fa5de99693bb5",
+      "originalFormat": "png",
+      "width": 600,
+      "height": 600,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 480,
+          "height": 480,
+          "format": "webp",
+          "url": "/fyd-media/3bf9466d3e1be98c5013ce7d3f46ff84259dfe9db7ffa0b5839fa5de99693bb5/thumbnail-480w.webp",
+          "bytes": 14974,
+          "digest": "52a45c56e0ee39f45e5446951eb4e2dea542207bde48feed0a046c366703312d",
+          "derivedFrom": "3bf9466d3e1be98c5013ce7d3f46ff84259dfe9db7ffa0b5839fa5de99693bb5"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 10,
+          "format": "webp",
+          "url": "/fyd-media/3bf9466d3e1be98c5013ce7d3f46ff84259dfe9db7ffa0b5839fa5de99693bb5/blur-10w.webp",
+          "bytes": 208,
+          "digest": "d7acabb8a3ca44623993cf0eaab1421fb776760f7daeedbb2da6ad30f6e93422",
+          "derivedFrom": "3bf9466d3e1be98c5013ce7d3f46ff84259dfe9db7ffa0b5839fa5de99693bb5"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-992d1fa19a675f01",
+      "schema": "ping.social.media@1",
+      "title": "Trinsic 9659T DST B1",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2023/05/Trinsic-9659T-DST-B1.png",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:18.651Z"
+      },
+      "digest": "992d1fa19a675f01b6863c69035cc48120e325f1a6e9d41fc96d36ea42c72913",
+      "originalFormat": "png",
+      "width": 600,
+      "height": 600,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 480,
+          "height": 480,
+          "format": "webp",
+          "url": "/fyd-media/992d1fa19a675f01b6863c69035cc48120e325f1a6e9d41fc96d36ea42c72913/thumbnail-480w.webp",
+          "bytes": 17028,
+          "digest": "f050842d88e2b461ab78c93a75f3cc80c62a5c6892758716ab0ed06275cff410",
+          "derivedFrom": "992d1fa19a675f01b6863c69035cc48120e325f1a6e9d41fc96d36ea42c72913"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 10,
+          "format": "webp",
+          "url": "/fyd-media/992d1fa19a675f01b6863c69035cc48120e325f1a6e9d41fc96d36ea42c72913/blur-10w.webp",
+          "bytes": 222,
+          "digest": "5011d262fc221571f702347ac081b8a0d22ee790b0fcbe81184ffb6c05cd56e3",
+          "derivedFrom": "992d1fa19a675f01b6863c69035cc48120e325f1a6e9d41fc96d36ea42c72913"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-381a361fbdbd5713",
+      "schema": "ping.social.media@1",
+      "title": "coppersmith new logo white",
+      "mediaType": "image",
+      "roles": [
+        "logo"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Public marketing imagery on the business site; authorized for acquisition and derivative generation for this demo. FYD claims no copyright: caching or deriving this asset does not transfer rights; the business (or its site licensor) retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2024/04/coppersmith-new-logo-white.png",
+        "sourcePage": "https://www.coppersmithplumbing.com/",
+        "observedAt": "2026-09-21T20:52:18.726Z"
+      },
+      "digest": "381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb",
+      "originalFormat": "png",
+      "width": 400,
+      "height": 262,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 400,
+          "height": 262,
+          "format": "webp",
+          "url": "/fyd-media/381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb/thumbnail-400w.webp",
+          "bytes": 16414,
+          "digest": "8c4ec5c62c2e16e3ba2d3ea9ee3642a065f599674b2f89b661489647c63ab7c0",
+          "derivedFrom": "381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 7,
+          "format": "webp",
+          "url": "/fyd-media/381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb/blur-10w.webp",
+          "bytes": 176,
+          "digest": "ba21b45f64fd2535547451a9e0e7750e07c08f5ce82b7d6bb0ab37bbd8d8a6e6",
+          "derivedFrom": "381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    }
+  ]
+}
