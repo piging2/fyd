@@ -28,7 +28,7 @@ function makeObject(over: Partial<PingObject> = {}): PingObject {
     fields: {},
     createdAt: "2026-09-20T10:00:00.000Z",
     updatedAt: "2026-09-20T10:00:00.000Z",
-    provenance: { kind: "canonical-journal", ref: "evt:1" },
+    provenance: { kind: "canonical-journal", ref: "evt:1", derivedAt: "2026-09-20T10:00:00.000Z" },
     ...over,
   };
 }
@@ -231,7 +231,7 @@ describe("ask composer", () => {
       schema: body.schema,
       changes: body.changes,
       digest: proposalDigest(body),
-      digestAlgorithm: "sha256",
+      digestAlgorithm: "sha256-canonical-json-v1",
       note: "draft",
     };
     expect(verifyProposalDigest(proposal)).toBe(true);

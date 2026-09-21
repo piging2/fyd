@@ -23,7 +23,15 @@ export async function generateMetadata({ params }: NodePageProps): Promise<Metad
 }
 
 export default async function NodePage({ params }: NodePageProps) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  // Next may hand the dynamic segment to us still percent-encoded when the
+  // object id contains reserved characters (e.g. web: ids). Decode once.
+  let id = rawId;
+  try {
+    id = decodeURIComponent(rawId);
+  } catch {
+    id = rawId;
+  }
   const viewerId = await getPracticeIdentityId();
   try {
     const node = await getPingObjectReader().getNode(id, viewerId);
