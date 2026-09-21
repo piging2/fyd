@@ -25,6 +25,7 @@ import * as React from "react";
 import { PortalCircle } from "@/fyd/ui/portal-circle";
 import type { PortalProjection } from "@/fyd/preview/types";
 import { chooseRailSide, type RailSide } from "@/fyd/placement/rail-rule";
+import { reconcileEngagementOnModeChange } from "@/fyd/placement/engagement-reconcile";
 import { installRailMetrics, type RailMetrics } from "./metrics";
 import {
   FixtureContent,
@@ -103,6 +104,27 @@ export function RailClient({ portal, business, side, mode }: RailClientProps) {
     window.addEventListener("resize", resolve);
     return () => window.removeEventListener("resize", resolve);
   }, [side]);
+
+  // Engagement/placement reconciliation: placement is derived continuously
+  // from available safe geometry, so a viewport resize can move the
+  // derived mode (e.g. rail -> collapsed). When the mode changes while the
+  // Circle is engaged, release engagement: the Circle collapses back to
+  // launcher state and no stale or invisible interactive surface survives
+  // the transition. A resize that keeps the same mode never kills
+  // engagement by itself.
+  const prevPlacementRef = React.useRef<{
+    engagedId: string;
+    mode: RailSide;
+  } | null>(null);
+  React.useEffect(() => {
+    const next = engagedId ? { engagedId, mode: resolvedSide } : null;
+    const decision = reconcileEngagementOnModeChange(prevPlacementRef.current, next);
+    prevPlacementRef.current = next;
+    if (decision.releaseEngagedId) {
+      setEngagedId(null);
+      setAwareId(null);
+    }
+  }, [resolvedSide, engagedId]);
 
   // Live measurement into window.__railMetrics + the on-screen readout.
   React.useEffect(() => {

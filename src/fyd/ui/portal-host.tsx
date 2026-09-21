@@ -28,6 +28,7 @@ import {
 } from "@/fyd/spatial/semantic-targets";
 import { rankCandidates } from "@/fyd/rank/object-ranker";
 import { AttentionController } from "@/fyd/attention/controller";
+import { reconcileEngagementOnModeChange } from "@/fyd/placement/engagement-reconcile";
 import { PortalCircle } from "./portal-circle";
 import type { PortalProjection } from "@/fyd/preview/types";
 
@@ -162,6 +163,29 @@ export function PortalHost({ portals }: { portals: PortalProjection[] }) {
     controllerRef.current?.clearAware(id);
     setAwareId((cur) => (cur === id ? null : cur));
   }, []);
+
+  // Engagement/placement reconciliation (adaptive plane): the engaged
+  // portal's placement mode is its peripheral slot id, or "none" when it
+  // holds no safe slot. Docked portals render null per the no-bottom-portal
+  // directive, so when the mode changes while engaged (slot lost or moved),
+  // release engagement: the Circle collapses back to launcher state
+  // instead of leaving a stale or invisible surface behind. Engagement
+  // moving between Circles is a user action, not a geometry event, and is
+  // never released here.
+  const engagedSlotMode = engagedId
+    ? (slotted.find((a) => a.portal.circle.id === engagedId)?.slot?.id ?? "none")
+    : null;
+  const prevPlacementRef = React.useRef<{
+    engagedId: string;
+    mode: string;
+  } | null>(null);
+  React.useEffect(() => {
+    const next =
+      engagedId && engagedSlotMode ? { engagedId, mode: engagedSlotMode } : null;
+    const decision = reconcileEngagementOnModeChange(prevPlacementRef.current, next);
+    prevPlacementRef.current = next;
+    if (decision.releaseEngagedId) handleRelease(decision.releaseEngagedId);
+  }, [engagedId, engagedSlotMode, handleRelease]);
 
   if (!mounted) return null;
 
