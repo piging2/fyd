@@ -1,5 +1,5 @@
 /**
- * Happy Place Automation Platform - Infrastructure Controller
+ * PING Infrastructure - Infrastructure Controller
  * 
  * Central service for managing all business infrastructure.
  * One interface, one authentication system, one audit, one repair system.

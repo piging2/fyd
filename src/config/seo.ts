@@ -17,7 +17,7 @@ export const seo: {
   // Referencing a missing file produces 404s on social scrapers.
 } = {
   siteName: tenant.siteName,
-  title: `${tenant.siteName} — ${tenant.tagline}`,
+  title: `${tenant.siteName} - ${tenant.tagline}`,
   description: tenant.description,
   keywords: ["PING", "AI agents", "continuity", "business automation", "agent infrastructure", "PING Social", "TenantOS"],
 };

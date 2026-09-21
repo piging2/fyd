@@ -40,6 +40,12 @@ export function SiteFooter() {
               </li>
             ))}
             <li>
+              <Link href="/#architecture" className="text-text-on-dark hover:text-honey">Architecture</Link>
+            </li>
+            <li>
+              <Link href="/#roadmap" className="text-text-on-dark hover:text-honey">Roadmap</Link>
+            </li>
+            <li>
               <Link href="/newsletter" className="text-text-on-dark hover:text-honey">Newsletter</Link>
             </li>
             <li>

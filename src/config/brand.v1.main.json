@@ -4,7 +4,7 @@
   "homepageHero": {
     "id": "brand-hero-001",
     "mediaId": "brand-hero",
-    "alt": "Happy Place Carpentry - Building decks, fences, and custom carpentry across Oregon's Mid-Willamette Valley",
+    "alt": "PING - Building decks, fences, and custom carpentry across Oregon's Mid-Willamette Valley",
     "fallback": {
       "gradient": true,
       "overlay": true
@@ -13,19 +13,21 @@
   "ownerPortrait": {
     "id": "brand-owner-001",
     "mediaId": "brand-portrait",
-    "alt": "Taylor & Lanie of Happy Place Carpentry",
-    "names": ["Taylor", "Lanie"]
+    "alt": "Nolan Geske, PING founder",
+    "names": [
+      "Nolan Geske"
+    ]
   },
   "logo": {
     "id": "brand-logo-001",
     "mediaId": null,
-    "alt": "Happy Place Carpentry Logo"
+    "alt": "PING logo"
   },
   "team": [],
   "office": {
     "id": "brand-office-001",
     "mediaId": null,
-    "alt": "Happy Place Carpentry Office"
+    "alt": "PING workspace"
   },
   "marketingAssets": []
 }

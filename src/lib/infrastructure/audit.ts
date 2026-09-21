@@ -1,5 +1,5 @@
 /**
- * Happy Place Automation Platform - Infrastructure Audit System
+ * PING Infrastructure - Infrastructure Audit System
  * 
  * This module provides comprehensive auditing of all business infrastructure
  * components including Google Workspace, Vercel, GitHub, and custom integrations.

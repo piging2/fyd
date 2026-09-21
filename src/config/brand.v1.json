@@ -13,22 +13,21 @@
   "ownerPortrait": {
     "id": "brand-owner-001",
     "mediaId": "brand-portrait",
-    "alt": "Taylor & Lanie of Happy Place Carpentry",
+    "alt": "Nolan Geske, PING founder",
     "names": [
-      "Taylor",
-      "Lanie"
+      "Nolan Geske"
     ]
   },
   "logo": {
     "id": "brand-logo-001",
     "mediaId": null,
-    "alt": "Happy Place Carpentry Logo"
+    "alt": "PING logo"
   },
   "team": [],
   "office": {
     "id": "brand-office-001",
     "mediaId": null,
-    "alt": "Happy Place Carpentry Office"
+    "alt": "PING workspace"
   },
   "marketingAssets": []
 }

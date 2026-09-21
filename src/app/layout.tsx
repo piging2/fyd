@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Playfair_Display } from "next/font/google";
 import "./globals.css";
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
   icons: { icon: "/brand/favicon.svg", apple: "/brand/favicon.svg" },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -55,6 +56,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       name: tenant.operator.name,
     },
   };
+
+  // Object routes (/o/*) belong visually to the object, not to PING: they
+  // render without the PING marketing header, footer, and org JSON-LD.
+  // The pathname arrives via the x-pathname header set in middleware.
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  const chromeless = pathname === "/o" || pathname.startsWith("/o/");
 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`} style={{ colorScheme: 'dark light' }}>
@@ -73,10 +80,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             `,
           }}
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
-        />
+        {!chromeless && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+          />
+        )}
       </head>
       <body className="min-h-full flex flex-col bg-background">
         <ThemeProvider defaultTheme="light" storageKey="ping-theme">
@@ -90,9 +99,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               Skip to main content
             </a>
             <ScrollToTop />
-            <SiteHeader />
+            {!chromeless && <SiteHeader />}
             <main id="main-content" className="flex-1">{children}</main>
-            <SiteFooter />
+            {!chromeless && <SiteFooter />}
             </LenisProvider>
           </MotionProvider>
         </ThemeProvider>

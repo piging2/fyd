@@ -1,5 +1,5 @@
 /**
- * Happy Place Automation Platform - Secure Authentication Manager
+ * PING Infrastructure - Secure Authentication Manager
  * 
  * This module manages authentication flows for all external services
  * following strict security rules:

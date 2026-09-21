@@ -60,10 +60,10 @@ export function NewsletterSignup() {
   return (
     <div className="rounded-lg bg-deep border border-honey/20 p-6">
       <h3 className="mb-2 text-2xl font-bold text-text-on-dark">
-        Stay Ahead of Home Maintenance
+        Follow the Build
       </h3>
       <p className="mb-6 text-text-on-dark/80">
-        Get practical homeowner tips, seasonal maintenance reminders, remodeling ideas, project showcases, and exclusive offers delivered to your inbox.
+        Notes on continuity, agents, business systems, and building PING. One email when there is something worth saying.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">

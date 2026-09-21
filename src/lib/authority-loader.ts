@@ -68,7 +68,6 @@ export function loadAuthority<T>({
   try {
     // Map path aliases to actual file paths for static imports
     const pathMap: Record<string, any> = {
-      "@/config/company.v1.json": require("../config/company.v1.json"),
       "@/config/services.v1.json": require("../config/services.v1.json"),
       "@/config/projects.v1.json": require("../config/projects.v1.json"),
       "@/config/media.v1.json": require("../config/media.v1.json"),

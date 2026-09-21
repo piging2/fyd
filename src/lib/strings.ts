@@ -81,7 +81,7 @@ export const REVIEWS = {
   title: "What people say once the work's done",
   empty: "We are building our review portfolio. In the meantime, ask us for references in your neighborhood.",
   readAll: "Read all reviews",
-  helpingNeighbors: "Helping neighbors find their happy place",
+  helpingNeighbors: "Building systems that remember",
   leaveReview: "Leave a Review",
 } as const;
 
@@ -133,8 +133,8 @@ export const WORKBENCH = {
 
 // Newsletter (newsletter.*)
 export const NEWSLETTER = {
-  title: "Stay Ahead of Home Maintenance",
-  description: "Get practical homeowner tips, seasonal maintenance reminders, remodeling ideas, project showcases, and exclusive offers delivered to your inbox.",
+  title: "Follow the Build",
+  description: "Notes on continuity, agents, business systems, and building PING. One email when there is something worth saying.",
   emailPlaceholder: "Email address",
   firstNamePlaceholder: "First name (optional)",
   subscribe: "Subscribe",

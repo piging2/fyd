@@ -13,3 +13,7 @@ npm-debug.log*
 .DS_Store
 # Vercel
 .vercel
+
+# FYD local runtime state
+tsconfig.tsbuildinfo
+data/
