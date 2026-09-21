@@ -21,7 +21,9 @@
  *
  * Evidence contract: never invent business facts. When the composed answer
  * cites no evidence, the outcome is a refusal (ok: true, refusal: true) with
- * visitor-facing wording, not a guess.
+ * visitor-facing wording, not a guess. A projection that cannot be loaded or
+ * verified is the same honest unknown (projection_unavailable), never an
+ * exception-shaped hole.
  */
 import { createHash } from "node:crypto";
 import { getSiteBundle } from "../media/site-bundle";
@@ -75,7 +77,12 @@ export interface AskFydSuccess {
   citations: AskFydCitation[];
 }
 
-export type AskFydErrorKind = "unknown_site" | "bad_question" | "bad_mode" | "bundle_invalid";
+export type AskFydErrorKind =
+  | "unknown_site"
+  | "bad_question"
+  | "bad_mode"
+  | "bundle_invalid"
+  | "projection_unavailable";
 
 export interface AskFydFailure {
   ok: false;
@@ -255,7 +262,26 @@ export function answerAskFyd(
       error: { kind: "bad_mode", message: "mode must be 'visitor' or 'owner'." },
     };
   }
-  const bundle = deps.loadBundle(siteId);
+  let bundle: SiteBundle | null;
+  try {
+    bundle = deps.loadBundle(siteId);
+  } catch (err) {
+    // The projection is missing, malformed, or failed verification: the read
+    // model is unavailable. That is an honest unknown, never an answer, and
+    // never an exception-shaped hole. Internal detail stays server-side.
+    console.error(
+      "answerAskFyd: projection load failed for site \"" + siteId + "\":",
+      err instanceof Error ? err.message : err,
+    );
+    return {
+      ok: false,
+      error: {
+        kind: "projection_unavailable",
+        message:
+          "I could not load this site's data, so I cannot answer your question. The answer is unknown.",
+      },
+    };
+  }
   if (!bundle) {
     return { ok: false, error: { kind: "unknown_site", message: "Unknown site." } };
   }

@@ -1,76 +1,104 @@
-/**
- * BFF: Ask FYD. Server-side bounded context builder (object graph plus
- * SiteSpec summary plus evidence plus capabilities) feeding the
- * deterministic site-patch proposal composer.
- *
- * POST { question, targetObjectId?, siteId? } -> AskFydAnswer.
- * The agent never mutates anything here: site-change intents come back as
- * digest-bound site_patch drafts for human approval.
- */
-
 import { NextRequest, NextResponse } from "next/server";
-import { BadRequestError, getPingObjectReader } from "@/lib/ping/ping-object-reader";
-import { readerErrorResponse } from "@/lib/ping/api-errors";
-import { getPracticeIdentityId } from "@/lib/ping/session";
-import { buildAskFydContext } from "@/fyd/ask/context-builder";
-import { composeAskFyd } from "@/fyd/ask/answer";
-import { grantsForViewer, isSiteCapableSchema } from "@/lib/ping/grants";
-import { getSiteSpecProvider } from "@/fyd/ask/site-spec";
+import {
+  answerAskFyd,
+  type AskFydMode,
+  type AskFydOutcome,
+} from "@/fyd/ask/visitor-answer";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function POST(request: NextRequest) {
+const VALID_MODES: AskFydMode[] = ["visitor", "owner"];
+
+/**
+ * POST /api/fyd/ask
+ *
+ * Visitor Ask FYD: evidence-bounded Q&A over a site's PUBLIC objects only.
+ *
+ * Body: { siteId: string, question: string, mode?: "visitor" | "owner" }
+ *
+ * - mode "visitor" (default): anonymous, public objects only, no grants.
+ * - mode "owner": accepted for a future authenticated lane; until that lane
+ *   exists it is treated as visitor-safe and grants nothing.
+ *
+ * Response: { ok: true, answer: string, refusal: boolean, citations: [...] }
+ *   refusal is true when the pipeline had no supporting evidence to cite.
+ * Errors: 404 unknown site, 400 bad question or mode, 503 projection
+ * unavailable (the site's data cannot be loaded or verified), 500 bundle
+ * invalid or unexpected internal failure. Every failure is structured JSON
+ * naming the failure kind; the answer is unknown in every failure case
+ * (answerUnknown: true), never an empty body.
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  let body: unknown = null;
   try {
-    const viewerId = await getPracticeIdentityId();
-    const body: unknown = await request.json().catch(() => null);
-    const rec = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
-    const question = typeof rec.question === "string" ? rec.question : "";
-    if (!question.trim()) throw new BadRequestError("question is required.");
-    if (question.length > 2000) throw new BadRequestError("question is too long (max 2000 chars).");
-    const targetObjectId = typeof rec.targetObjectId === "string" ? rec.targetObjectId : null;
-    const siteId = typeof rec.siteId === "string" ? rec.siteId : targetObjectId;
-
-    const reader = getPingObjectReader();
-    const identities = await reader.listIdentities(viewerId).catch(() => []);
-    const viewer = {
-      id: viewerId,
-      displayName: identities.find((i) => i.id === viewerId)?.displayName ?? null,
-    };
-
-    if (targetObjectId) {
-      const node = await reader.getNode(targetObjectId, viewerId);
-      const grants = grantsForViewer({
-        viewerId,
-        controllerId: node.object.controllerId,
-        isSite: isSiteCapableSchema(node.object.schema),
-      });
-      const siteSpec = siteId ? await getSiteSpecProvider().getSummary(siteId).catch(() => null) : null;
-      const ctx = buildAskFydContext({
-        viewer,
-        target: node.object,
-        relatedObjects: node.related,
-        relationships: node.relationships,
-        plan: node.plan,
-        grants,
-        siteSpec,
-        question: question.trim(),
-      });
-      return NextResponse.json(composeAskFyd(ctx, question.trim()));
-    }
-
-    const ctx = buildAskFydContext({
-      viewer,
-      target: null,
-      relatedObjects: [],
-      relationships: [],
-      plan: null,
-      grants: grantsForViewer({ viewerId, controllerId: "", isSite: false }),
-      siteSpec: null,
-      question: question.trim(),
-    });
-    return NextResponse.json(composeAskFyd(ctx, question.trim()));
-  } catch (err) {
-    return readerErrorResponse(err);
+    body = await request.json();
+  } catch {
+    body = null;
   }
+  const record = (
+    typeof body === "object" && body !== null ? body : {}
+  ) as Record<string, unknown>;
+  const siteId = typeof record.siteId === "string" ? record.siteId.trim() : "";
+  const question = typeof record.question === "string" ? record.question : "";
+  const mode = record.mode === undefined ? "visitor" : record.mode;
+
+  if (!siteId) {
+    return NextResponse.json({ ok: false, error: "Unknown site." }, { status: 404 });
+  }
+  if (!VALID_MODES.includes(mode as AskFydMode)) {
+    return NextResponse.json(
+      { ok: false, error: "mode must be 'visitor' or 'owner'." },
+      { status: 400 },
+    );
+  }
+
+  let outcome: AskFydOutcome;
+  try {
+    outcome = answerAskFyd({ siteId, question, mode: mode as AskFydMode });
+  } catch {
+    // The pipeline never throws by contract, but a route handler must never
+    // leak an empty 500 if anything ever does: fail honestly and structurally.
+    return NextResponse.json(
+      {
+        ok: false,
+        kind: "internal_error",
+        error: "Ask FYD hit an unexpected problem. The answer is unknown.",
+        answerUnknown: true,
+      },
+      { status: 500 },
+    );
+  }
+  if (!outcome.ok) {
+    switch (outcome.error.kind) {
+      case "unknown_site":
+        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 404 });
+      case "bad_question":
+        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 400 });
+      case "bad_mode":
+        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 400 });
+      case "projection_unavailable":
+        return NextResponse.json(
+          {
+            ok: false,
+            kind: outcome.error.kind,
+            error: outcome.error.message,
+            attempted: "load the site's verified data projection",
+            answerUnknown: true,
+          },
+          { status: 503 },
+        );
+      default:
+        return NextResponse.json(
+          { ok: false, error: "This site is not available right now." },
+          { status: 500 },
+        );
+    }
+  }
+  return NextResponse.json({
+    ok: true,
+    answer: outcome.answer,
+    refusal: outcome.refusal,
+    citations: outcome.citations,
+  });
 }

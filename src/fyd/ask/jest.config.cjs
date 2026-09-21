@@ -1,12 +1,16 @@
 /**
  * Jest config for the Ask FYD lane (fyd/ask-capabilities). Scoped to this
- * lane's tests only; sibling lanes own their own test scope. Run with:
+ * lane's tests plus the /api/fyd/ask route tests (same lane); sibling lanes
+ * own their own test scope. Run with:
  * npx jest --config src/fyd/ask/jest.config.cjs
  */
 module.exports = {
   testEnvironment: "node",
   rootDir: "../../..",
-  testMatch: ["<rootDir>/src/fyd/ask/__tests__/*.test.ts"],
+  testMatch: [
+    "<rootDir>/src/fyd/ask/__tests__/*.test.ts",
+    "<rootDir>/src/app/api/fyd/ask/__tests__/*.test.ts",
+  ],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
