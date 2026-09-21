@@ -1,29 +1,39 @@
 /**
- * FYD site bundle: the read-only seam between the generated site fixtures
- * and the server-side Ask FYD visitor API.
+ * FYD site bundle: the read-only seam between the PING-backed site
+ * projections and the server-side Ask FYD visitor API.
  *
- * A SiteBundle joins one demo business's object graph with the SiteSpec the
- * generator produces from it, exactly as the public /sites pages render it
- * (same fixture, same generator inputs), plus the validator findings and a
+ * A SiteBundle joins one demo business's object graph (the canonical
+ * projection written by the PING-side dump) with the SiteSpec the generator
+ * produces from it, exactly as the public /sites pages render it (same
+ * projection, same generator inputs), plus the validator findings and a
  * renderability verdict.
  *
+ * No customer fact is hardcoded here: the graph, the spec compile pins, and
+ * the business name all come from the PING-backed projection. This keeps
+ * Ask FYD answers and the rendered pages on the same facts: both read the
+ * same projection.
+ *
  * This module owns this contract. The visitor route codes against it; the
- * media lane owns the contents of mediaManifest (null until it ships).
+ * media lane owns the contents of mediaManifest (the rights-gated set of
+ * FYD-served, provenance-backed media items for the site).
  */
-import { HAPPY_PLACE_GRAPH } from "../proceduralize/__fixtures__/happy-place-graph";
-import { COPPERSMITH_GRAPH } from "../proceduralize/__fixtures__/coppersmith-graph";
+import {
+  getPingObjectGraphSync,
+  listPingSiteIdsSync,
+} from "../data/ping-object-source";
+import { getMediaManifest } from "./bundle-media";
 import { generateSiteSpec } from "../proceduralize/generator";
 import { isRenderable, validateSiteSpec } from "../sitespec/validator";
 import type { FYDFinding, FYDSiteSpec, ObjectGraph } from "../sitespec/types";
 
-/** One media item in the bundle manifest. Minimal until the media lane ships. */
+/** One media item in the bundle manifest: rights-gated, provenance-backed. */
 export interface SiteBundleMediaItem {
   id: string;
   sourceUrl: string;
   digest: string | null;
 }
 
-/** Media manifest for a site. Null until the media lane produces manifests. */
+/** Media manifest for a site. The rights-gated set of FYD-served items. */
 export interface MediaManifest {
   siteId: string;
   items: SiteBundleMediaItem[];
@@ -39,28 +49,6 @@ export interface SiteBundle {
   mediaManifest: MediaManifest | null;
 }
 
-interface BundleDef {
-  graph: ObjectGraph;
-  generatedAt: string;
-  eventSequences?: [number, number];
-}
-
-// The generatedAt values match the public /sites pages exactly, so the
-// bundle's SiteSpec is identical to the spec the page renders.
-const BUNDLE_DEFS: Record<string, BundleDef> = {
-  "happy-place": {
-    graph: HAPPY_PLACE_GRAPH,
-    generatedAt: "2026-09-21T12:00:00.000Z",
-    eventSequences: [65, 83],
-  },
-  "coppersmith-plumbing": {
-    graph: COPPERSMITH_GRAPH,
-    generatedAt: "2026-09-21T12:01:10.844Z",
-  },
-};
-
-const bundleCache = new Map<string, SiteBundle>();
-
 function businessNameFor(graph: ObjectGraph, spec: FYDSiteSpec, siteId: string): string {
   const owner = graph.objects.find((o) => o.id === spec.ownerObjectId);
   if (owner && owner.title.trim().length > 0) return owner.title;
@@ -71,37 +59,40 @@ function businessNameFor(graph: ObjectGraph, spec: FYDSiteSpec, siteId: string):
   return siteId;
 }
 
-function buildBundle(siteId: string, def: BundleDef): SiteBundle {
-  const spec = generateSiteSpec(def.graph, {
-    generatedAt: def.generatedAt,
-    eventSequences: def.eventSequences,
+function buildBundle(siteId: string): SiteBundle {
+  const { graph, meta } = getPingObjectGraphSync(siteId);
+  const spec = generateSiteSpec(graph, {
+    generatedAt: meta.generatedAt,
+    eventSequences: meta.eventSequences ?? undefined,
   });
-  const findings = validateSiteSpec(spec, new Set(def.graph.objects.map((o) => o.schema)));
+  const findings = validateSiteSpec(spec, new Set(graph.objects.map((o) => o.schema)));
   return {
     siteId,
-    businessName: businessNameFor(def.graph, spec, siteId),
-    graph: def.graph,
+    businessName: businessNameFor(graph, spec, siteId),
+    graph,
     spec,
     findings,
     renderable: isRenderable(findings),
-    // The media lane owns this value; until it ships, the bundle carries null.
-    mediaManifest: null,
+    // The media lane owns this value: the rights-gated, provenance-backed
+    // manifest of FYD-served media for the site (null when the site has no
+    // pipeline manifest). Ask FYD cites these items, never hotlinks.
+    mediaManifest: getMediaManifest(siteId),
   };
 }
 
-/** Return the bundle for a known site id, or null for unknown ids. */
+/**
+ * Return the bundle for a known site id, or null for unknown ids.
+ *
+ * Deliberately uncached: the bundle is rebuilt from the current projection
+ * on every call, so a PING-side regen is visible to Ask FYD immediately.
+ * The graphs are tiny; freshness outranks the memo.
+ */
 export function getSiteBundle(siteId: string): SiteBundle | null {
-  const def = BUNDLE_DEFS[siteId];
-  if (!def) return null;
-  let bundle = bundleCache.get(siteId);
-  if (!bundle) {
-    bundle = buildBundle(siteId, def);
-    bundleCache.set(siteId, bundle);
-  }
-  return bundle;
+  if (!listPingSiteIdsSync().includes(siteId)) return null;
+  return buildBundle(siteId);
 }
 
-/** Site ids this bundle module can serve. */
+/** Site ids this bundle module can serve: the PING projections on disk. */
 export function listSiteIds(): string[] {
-  return Object.keys(BUNDLE_DEFS);
+  return listPingSiteIdsSync();
 }

@@ -24,8 +24,6 @@
  * The UI renders this projection. It never renders business-specific code.
  */
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import {
   getPingObjectGraphSync,
   listPingSiteIdsSync,
@@ -35,6 +33,7 @@ import type { ObjectGraph } from "../sitespec/types";
 import type { PingObject } from "../../lib/ping/types";
 import { readOverrides } from "./owner-store";
 import { resolveCircleBackground } from "../media/circle-background";
+import { listObjectMedia } from "../media/select";
 import type {
   CircleProjection,
   ObjectCapability,
@@ -55,63 +54,6 @@ const SERVICE_PREDICATES = ["provides", "offers"];
 /** Site ids this loader can serve: the PING-backed projections on disk. */
 export function listObjectIds(): string[] {
   return listPingSiteIdsSync();
-}
-
-interface MediaVariant {
-  name: string;
-  width: number;
-  height: number;
-  format: string;
-  url: string;
-  bytes: number;
-}
-
-interface ManifestMedia {
-  id: string;
-  title: string;
-  roles: string[];
-  rights: string;
-  provenance: { sourceUrl: string; sourcePage: string; observedAt: string };
-  digest: string;
-  variants: MediaVariant[];
-}
-
-function readManifest(objectId: string): ManifestMedia[] {
-  try {
-    const raw = readFileSync(
-      join(process.cwd(), "src", "fyd", "media", "manifests", objectId + ".json"),
-      "utf8",
-    );
-    const parsed = JSON.parse(raw) as { media?: ManifestMedia[] };
-    return Array.isArray(parsed.media) ? parsed.media : [];
-  } catch {
-    return [];
-  }
-}
-
-/** Pick the widest non-blur local derivative for display. */
-function pickVariant(variants: MediaVariant[]): MediaVariant | null {
-  const real = variants.filter((v) => !v.name.startsWith("blur"));
-  if (real.length === 0) return null;
-  return real.reduce((a, b) => (b.width > a.width ? b : a));
-}
-
-function toMediaView(m: ManifestMedia): ObjectMediaView | null {
-  // Only rights-authorized media is displayed. External references are
-  // someone else's media; showing them as the business's own would lie.
-  if (m.rights !== "authorized") return null;
-  const v = pickVariant(m.variants ?? []);
-  if (!v) return null;
-  return {
-    id: m.id,
-    role: m.roles?.[0] ?? "gallery",
-    src: v.url,
-    alt: m.title || "Business photo",
-    rights: "authorized",
-    sourceUrl: m.provenance?.sourceUrl ?? "",
-    digest: m.digest ?? "",
-    observedAt: m.provenance?.observedAt ?? "",
-  };
 }
 
 function field(obj: PingObject, key: string): string | null {
@@ -261,14 +203,23 @@ export function loadObjectView(slug: string): ObjectView | null {
     slug,
   );
 
-  const media: ObjectMediaView[] = [];
-  for (const m of readManifest(slug)) {
-    const v = toMediaView(m);
-    if (v) media.push(v);
-  }
-  // Logos first, then heroes, then gallery: stable, content-driven order.
-  const roleRank = (r: string) => (r === "logo" ? 0 : r === "hero" ? 1 : 2);
-  media.sort((a, b) => roleRank(a.role) - roleRank(b.role));
+  // Media via the semantic attachment: the manifest is joined to the
+  // graph (Business represented_by Media) and the selector walks those
+  // relationships from the business. One truth for Page, Circle, and
+  // ObjectView; reference-only assets can never surface here.
+  const media: ObjectMediaView[] = listObjectMedia(slug, graph, business.id).map(
+    (d) => ({
+      id: d.id,
+      role: d.role,
+      src: d.src,
+      alt: d.alt,
+      rightsSource: d.rightsSource,
+      rightsBasis: d.rightsBasis,
+      sourceUrl: d.sourceUrl,
+      digest: d.digest,
+      observedAt: d.observedAt,
+    }),
+  );
 
   const contact: ObjectContactView = {
     phone,

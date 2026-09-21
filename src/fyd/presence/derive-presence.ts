@@ -30,6 +30,8 @@ import type {
   MediaManifest,
   MediaVariant,
 } from "../media/types";
+import { isAcquirable } from "../media/types";
+import { attachMediaToGraph, mediaForObject } from "../media/attach";
 
 /** FNV-1a 32-bit. Deterministic across platforms; not cryptographic. */
 function fnv1a(input: string): number {
@@ -94,8 +96,8 @@ export interface PresenceDerivation {
   accentIndex: number;
   heroKind: "image" | "typographic";
   radius: "md" | "full";
-  authorizedCount: number;
-  externalReferenceCount: number;
+  acquiredCount: number;
+  referenceOnlyCount: number;
   manifestGeneratedAt: string | null;
 }
 
@@ -158,17 +160,28 @@ export function derivePresence(
   const businessName = owner?.title?.trim() || siteId;
   const tagline = owner?.description?.trim() || "";
 
-  const authorized = (manifest?.media ?? []).filter(
-    (m) => m.rights === "authorized",
-  );
-  const externalReferenceCount = (manifest?.media ?? []).filter(
-    (m) => m.rights !== "authorized",
+  // Semantic selection: the manifest is attached to the graph (Business
+  // represented_by Media) and the selector walks those relationships
+  // from the owner. The SET of media is the attachment's truth, never a
+  // manifest scan; the rights gate still excludes reference-only assets.
+  const manifestMedia = manifest?.media ?? [];
+  const mediaGraph = manifest ? attachMediaToGraph(graph, manifest) : graph;
+  const mediaById = new Map(manifestMedia.map((m) => [m.id, m]));
+  const acquired = owner
+    ? mediaForObject(mediaGraph, owner.id)
+        .map((o) => mediaById.get(o.id))
+        .filter(
+          (m): m is FydMediaObject => !!m && isAcquirable(m.rightsSource),
+        )
+    : [];
+  const referenceOnlyCount = manifestMedia.filter(
+    (m) => !isAcquirable(m.rightsSource),
   ).length;
 
   const byId = (a: FydMediaObject, b: FydMediaObject) =>
     a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   const withRole = (role: string) =>
-    authorized
+    acquired
       .filter((m) => m.roles.includes(role as FydMediaObject["roles"][number]))
       .sort(byId);
 
@@ -205,8 +218,8 @@ export function derivePresence(
       accentIndex,
       heroKind: heroMedia ? "image" : "typographic",
       radius,
-      authorizedCount: authorized.length,
-      externalReferenceCount,
+      acquiredCount: acquired.length,
+      referenceOnlyCount,
       manifestGeneratedAt: manifest?.generatedAt ?? null,
     },
   };

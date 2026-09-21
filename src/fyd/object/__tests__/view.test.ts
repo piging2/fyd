@@ -92,12 +92,12 @@ describe("loadObjectView", () => {
     expect(kinds).toContain("follow");
     // "view" is demoted: the full customer page is no longer a capability.
     expect(kinds).not.toContain("view");
-    // Happy Place's manifest carries one authorized logo (H3 media lane);
-    // external references would be excluded, but this one displays.
-    expect(view!.media).toHaveLength(1);
-    expect(view!.media[0].role).toBe("logo");
-    expect(view!.media[0].rights).toBe("authorized");
-    expect(view!.media[0].src.startsWith("/fyd-media/")).toBe(true);
+    // Happy Place's homepage exposes no acquirable business imagery
+    // (fyd-media@2 ingest: the only observed image is an off-origin Google
+    // logo, classified unclear-reference-only). The read model shows no
+    // media rather than inventing any: missing data is honest, never
+    // plausible demo content.
+    expect(view!.media).toEqual([]);
     expect(view!.provenance.label).toContain("happyplacecarpentry.com");
   });
 
@@ -151,9 +151,10 @@ describe("loadObjectView", () => {
     expect(view!.name).not.toBe("Happy Place Carpentry LLC");
     // No service objects in the projection: no services, agreeing with the pages.
     expect(view!.services).toEqual([]);
-    // Coppersmith has authorized media; HPP has none. Graphs differ, views differ.
+    // Coppersmith has acquired media; every displayed item carries the
+    // rights/source classification, and none is a hotlink.
     expect(view!.media.length).toBeGreaterThan(0);
-    expect(view!.media.every((m) => m.rights === "authorized")).toBe(true);
+    expect(view!.media.every((m) => m.rightsSource === "public-demo-source")).toBe(true);
     expect(view!.media[0].src.startsWith("/fyd-media/")).toBe(true);
   });
 
