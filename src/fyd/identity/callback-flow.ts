@@ -38,7 +38,7 @@ import {
   type SessionConfig,
 } from "./session";
 import { appendAuthAudit } from "./audit";
-import { isAllowedRedirectUri, type AuthConfig } from "./config";
+import { isAllowedRedirectUri, notConfiguredMessage, type AuthConfig } from "./config";
 
 export class AuthFlowError extends Error {
   readonly code: string;
@@ -127,23 +127,20 @@ export async function completeGoogleCallback(
   deps: CallbackDeps,
   params: { code: string | null; state: string | null; stateCookie: string | null | undefined }
 ): Promise<CallbackResult> {
-  const fail = (code: string, message: string, status: number): never => {
-    throw new AuthFlowError(code, message, status);
-  };
   requireReady(deps.config);
   const { google, session } = deps.config;
   const fetchImpl = deps.fetchImpl ?? fetch;
   const nowIso = deps.nowIso ?? new Date().toISOString();
 
   const oauthState = readOAuthStateValue(params.stateCookie, session.secret);
-  if (!oauthState) fail("BAD_STATE", "OAuth state missing, expired, or tampered", 400);
+  if (!oauthState) throw new AuthFlowError("BAD_STATE", "OAuth state missing, expired, or tampered", 400);
   if (!params.state || params.state !== oauthState.state) {
-    fail("STATE_MISMATCH", "OAuth state mismatch", 400);
+    throw new AuthFlowError("STATE_MISMATCH", "OAuth state mismatch", 400);
   }
   if (!isAllowedRedirectUri(google, oauthState.redirectUri)) {
-    fail("REDIRECT_NOT_ALLOWED", "Redirect URI is not allowlisted", 400);
+    throw new AuthFlowError("REDIRECT_NOT_ALLOWED", "Redirect URI is not allowlisted", 400);
   }
-  if (!params.code) fail("MISSING_CODE", "Authorization code missing", 400);
+  if (!params.code) throw new AuthFlowError("MISSING_CODE", "Authorization code missing", 400);
 
   let tokens;
   try {
@@ -216,7 +213,4 @@ export async function completeGoogleCallback(
   };
 }
 
-/** Human-readable one-line status for the not-configured response. */
-export function notConfiguredMessage(config: AuthConfig): string {
-  return "Google sign-in is not configured: " + config.problems.join("; ");
-}
+export { notConfiguredMessage };

@@ -39,3 +39,8 @@ export function loadAuthConfig(env: NodeJS.ProcessEnv = process.env): AuthConfig
 export function isAllowedRedirectUri(config: GoogleOidcConfig, redirectUri: string): boolean {
   return config.configured && redirectUri === config.redirectUri;
 }
+
+/** Human-readable one-line status for the not-configured response. */
+export function notConfiguredMessage(config: AuthConfig): string {
+  return "Google sign-in is not configured: " + config.problems.join("; ");
+}
