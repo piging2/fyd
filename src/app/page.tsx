@@ -324,14 +324,14 @@ export default function HomePage() {
             <div className="mt-6 text-center">
               <MaturityLabel status="Built" />
               <span className="ml-3">
-                <Link href="/technology/tenantos" className="font-medium text-honey hover:underline">
+                <Link href="/technology/tenantos" className="inline-block min-h-[44px] py-2 font-medium text-honey hover:underline">
                   Read the TenantOS architecture →
                 </Link>
               </span>
             </div>
           </div>
           <div className="mt-8 text-center">
-            <Link href="/technology/agents" className="font-medium text-honey hover:underline">
+            <Link href="/technology/agents" className="inline-block min-h-[44px] py-2 font-medium text-honey hover:underline">
               Read the agent infrastructure →
             </Link>
           </div>
@@ -411,7 +411,7 @@ export default function HomePage() {
             <ReplayEvidence />
           </div>
           <div className="mt-8 text-center">
-            <Link href="/technology/replay" className="font-medium text-honey hover:underline">
+            <Link href="/technology/replay" className="inline-block min-h-[44px] py-2 font-medium text-honey hover:underline">
               Read about replay →
             </Link>
           </div>
@@ -529,7 +529,7 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="mt-8 text-center">
-              <Link href="/blog" className="font-medium text-honey hover:underline">
+              <Link href="/blog" className="inline-block min-h-[44px] py-2 font-medium text-honey hover:underline">
                 Read the build log →
               </Link>
             </div>
@@ -552,7 +552,7 @@ export default function HomePage() {
             {STATUS_STRIP.map((row) => (
               <ScrollReveal key={row.label}>
                 <div className="flex h-full items-start justify-between gap-4 rounded-lg border border-border-soft bg-surface p-5">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <h3 className="text-sm font-bold uppercase tracking-wide text-text">{row.label}</h3>
                     <p className="mt-1 text-sm text-text-muted">{row.detail}</p>
                   </div>

@@ -72,7 +72,7 @@ export function ScrollReveal({
       viewport={{ once: true, margin: "-50px" }}
       variants={variants[direction]}
       transition={{ delay }}
-      className={cn(className)}
+      className={cn("min-w-0", className)}
       onAnimationStart={() => console.log('[SCROLL-REVEAL_DIAGNOSTIC] ANIMATION_START', { timestamp: performance.now() })}
       onAnimationComplete={() => console.log('[SCROLL-REVEAL_DIAGNOSTIC] ANIMATION_COMPLETE', { timestamp: performance.now() })}
     >

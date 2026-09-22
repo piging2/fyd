@@ -25,7 +25,7 @@ export function SiteFooter() {
           <ul className="mt-3 space-y-2 text-sm">
             {navigation.filter((n) => !n.secondary).map((n) => (
               <li key={n.href}>
-                <Link href={n.href} className="text-text-on-dark hover:text-honey">{n.label}</Link>
+                <Link href={n.href} className="inline-block min-h-[44px] py-2 text-text-on-dark hover:text-honey">{n.label}</Link>
               </li>
             ))}
           </ul>
@@ -36,20 +36,20 @@ export function SiteFooter() {
           <ul className="mt-3 space-y-2 text-sm">
             {navigation.filter((n) => n.secondary).map((n) => (
               <li key={n.href}>
-                <Link href={n.href} className="text-text-on-dark hover:text-honey">{n.label}</Link>
+                <Link href={n.href} className="inline-block min-h-[44px] py-2 text-text-on-dark hover:text-honey">{n.label}</Link>
               </li>
             ))}
             <li>
-              <Link href="/#architecture" className="text-text-on-dark hover:text-honey">Architecture</Link>
+              <Link href="/#architecture" className="inline-block min-h-[44px] py-2 text-text-on-dark hover:text-honey">Architecture</Link>
             </li>
             <li>
-              <Link href="/#roadmap" className="text-text-on-dark hover:text-honey">Roadmap</Link>
+              <Link href="/#roadmap" className="inline-block min-h-[44px] py-2 text-text-on-dark hover:text-honey">Roadmap</Link>
             </li>
             <li>
-              <Link href="/newsletter" className="text-text-on-dark hover:text-honey">Newsletter</Link>
+              <Link href="/newsletter" className="inline-block min-h-[44px] py-2 text-text-on-dark hover:text-honey">Newsletter</Link>
             </li>
             <li>
-              <Link href="/privacy" className="text-text-on-dark hover:text-honey">Privacy</Link>
+              <Link href="/privacy" className="inline-block min-h-[44px] py-2 text-text-on-dark hover:text-honey">Privacy</Link>
             </li>
           </ul>
         </div>
@@ -59,7 +59,7 @@ export function SiteFooter() {
           <ul className="mt-3 space-y-3 text-sm">
             {tenant.contact.facebook && (
               <li>
-                <a href={tenant.contact.facebook} target="_blank" rel="noopener noreferrer" className="text-text-on-dark hover:text-honey">
+                <a href={tenant.contact.facebook} target="_blank" rel="noopener noreferrer" className="inline-block min-h-[44px] py-2 text-text-on-dark hover:text-honey">
                   PING Social on Facebook
                 </a>
               </li>
