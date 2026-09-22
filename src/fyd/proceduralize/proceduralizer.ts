@@ -31,6 +31,11 @@ import {
   type StructuredExtraction,
   type StructuredRelation,
 } from "./structured-data";
+import {
+  extractServiceCards,
+  SERVICE_CARD_ENTITY_PREFIX,
+  SERVICE_CARD_FACT_NAMES,
+} from "./service-cards";
 
 /** A source the proceduralizer may acquire. */
 export interface SourceRecord {
@@ -90,6 +95,9 @@ export interface ParsedFact {
   property?: string;
   /** Entity key (node @id or blank-node key), when from JSON-LD. */
   entityId?: string;
+  /** Extractor name and version, e.g. "service-cards@2026-09-22".
+   *  Set by lanes that tag their observations; absent otherwise. */
+  extractor?: string;
 }
 
 /** One extracted field with full provenance. factClass and visibility are
@@ -109,6 +117,10 @@ export interface ExtractedField {
   visibility: Visibility;
   /** Source grading for the claim; see ClaimKind. */
   claimKind: ClaimKind;
+  /** Optional evidence locator from the observation (selector, byte span). */
+  evidenceDetail?: string;
+  /** Extractor name and version, when the observation tagged one. */
+  extractor?: string;
   property?: string;
   entityId?: string;
 }
@@ -248,6 +260,37 @@ export async function parseRich(acquired: AcquiredSource): Promise<ParsedResult>
     }
     const title = extractTitle(acquired.raw);
     if (title) push("title", title, "html-meta");
+    // Service lane v2 (2026-09-22): deterministic HTML service-card
+    // extraction. Cards become direct html observations with stable
+    // synthetic entity ids (service-card:<pattern>:<key>); project()
+    // compiles them into Service objects with offers edges. Only
+    // unambiguous cards (titled, described, linked into an explicit
+    // services context) are extracted here; ambiguous service mentions
+    // stay out of the deterministic lane.
+    for (const card of extractServiceCards(acquired.raw, acquired.url)) {
+      const entityId =
+        SERVICE_CARD_ENTITY_PREFIX + card.pattern + ":" + card.key;
+      const cardFact = (
+        name: string,
+        value: string,
+      ): ParsedFact => ({
+        name,
+        value,
+        sourceType: "html",
+        inferred: false,
+        factClass: "DIRECT_FACT",
+        visibility: "public",
+        evidenceDetail: card.evidenceDetail,
+        extractor: "service-cards@2026-09-22",
+        entityId,
+        property: "service_card",
+      });
+      facts.push(
+        cardFact(SERVICE_CARD_FACT_NAMES.name, card.name),
+        cardFact(SERVICE_CARD_FACT_NAMES.description, card.description),
+        cardFact(SERVICE_CARD_FACT_NAMES.href, card.href),
+      );
+    }
   }
   // sitemap: parse() extracts nothing (RUN-NOTES #9: the fetch is pure
   // cost until a sitemap handler exists; recorded, not silently dropped).
@@ -395,6 +438,8 @@ export function provenance(
     claimKind: f.claimKind ?? "website_statement",
     property: f.property,
     entityId: f.entityId,
+    evidenceDetail: f.evidenceDetail,
+    extractor: f.extractor,
   }));
 }
 
@@ -932,6 +977,68 @@ export function project(
     );
   }
 
+  // -- Service cards: deterministic HTML service-card lane (2026-09-22).
+  //    parseRich emits service_card_* facts with stable synthetic entity
+  //    ids (service-card:<pattern>:<key>); this lane compiles each titled
+  //    card into a ping.social.service@1 object with an offers edge from
+  //    the business. Every claim is a website_statement DIRECT_FACT; the
+  //    edge evidenceRef names the detector and card, and the per-observation
+  //    records bind each field to its source bytes, selector, and text.
+  const cardGroups = new Map<
+    string,
+    { pattern: string; key: string; fields: Map<string, ExtractedField> }
+  >();
+  for (const [entityKey, eFields] of entityFields ?? []) {
+    if (!entityKey.startsWith(SERVICE_CARD_ENTITY_PREFIX)) continue;
+    const rest = entityKey.slice(SERVICE_CARD_ENTITY_PREFIX.length);
+    const sep = rest.indexOf(":");
+    const pattern = sep >= 0 ? rest.slice(0, sep) : "unknown";
+    const key = sep >= 0 ? rest.slice(sep + 1) : rest;
+    let group = cardGroups.get(entityKey);
+    if (!group) {
+      group = { pattern, key, fields: new Map() };
+      cardGroups.set(entityKey, group);
+    }
+    for (const f of eFields) group.fields.set(f.name, f);
+  }
+  for (const [entityKey, card] of [...cardGroups.entries()].sort((a, b) =>
+    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0,
+  )) {
+    const nameField = card.fields.get(SERVICE_CARD_FACT_NAMES.name);
+    const name = nameField ? asString(nameField.value).trim() : "";
+    if (!name) continue;
+    const descField = card.fields.get(SERVICE_CARD_FACT_NAMES.description);
+    const hrefField = card.fields.get(SERVICE_CARD_FACT_NAMES.href);
+    const objId = `${businessId}-service-${sha256Hex(entityKey).slice(0, 12)}`;
+    objectIdByEntityKey.set(entityKey, objId);
+    const cFields: Record<string, string | string[]> = { name };
+    const cClasses: Record<string, FactClass> = { name: "DIRECT_FACT" };
+    const desc = descField ? asString(descField.value).trim() : "";
+    if (desc) {
+      cFields["description"] = desc;
+      cClasses["description"] = "DIRECT_FACT";
+    }
+    const href = hrefField ? asString(hrefField.value).trim() : "";
+    if (href) {
+      cFields["service_href"] = href;
+      cClasses["service_href"] = "DIRECT_FACT";
+    }
+    mkObject(
+      objId,
+      "ping.social.service@1",
+      name,
+      desc,
+      { ...cFields, claimKind: "website_statement" },
+      { ...cClasses, claimKind: "DIRECT_FACT" },
+    );
+    mkRel(
+      businessId,
+      "offers",
+      objId,
+      `proceduralizer:project:service-card:${card.pattern}:${card.key}`,
+    );
+  }
+
   // -- Structured @id-reference relationships (subject/object mapped
   //    through the entity->object map; unmapped endpoints are dropped and
   //    counted, never half-emitted).
@@ -1015,6 +1122,10 @@ export interface PipelineReport {
 export interface PipelineOutput {
   graph: ProjectedGraph;
   report: PipelineReport;
+  /** Per-observation ParsedFact records (post-provenance), so
+   *   evidence (selector, byte span, source text) survives the run and
+   *   can be persisted beside the report. */
+  fields: ExtractedField[];
 }
 
 function mergeStructuredExtractions(
@@ -1130,6 +1241,7 @@ export async function runExtractionPipeline(
 
   return {
     graph,
+    fields,
     report: {
       sourceUrl: opts.sourceUrl,
       factsDiscovered: fields.length,
