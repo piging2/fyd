@@ -12,7 +12,12 @@
 
 import * as React from "react";
 import { renderToString } from "react-dom/server";
-import { FydCircle, circleActionsFor } from "../fyd-circle";
+import {
+  FydCircle,
+  FydCircleNodeLink,
+  circleActionsFor,
+  nodeControlFor,
+} from "../fyd-circle";
 import type { CircleProjection, ObjectCapability } from "@/fyd/object/types";
 
 const baseProjection: CircleProjection = {
@@ -119,5 +124,41 @@ describe("image backgrounds", () => {
     };
     const html = renderToString(<FydCircle projection={withImage} />);
     expect(html).toContain("https://example.com/hero.jpg");
+  });
+});
+
+describe("FydCircleNodeLink (Phase 2: optional Open Node control)", () => {
+  test("renders a circular link to the node href, never a button or card", () => {
+    const html = renderToString(
+      <FydCircleNodeLink href="/node/obj-1" name="Happy Place" />,
+    );
+    expect(html).toContain('href="/node/obj-1"');
+    // Circularity comes from the shared fydc-act control class (the same
+    // circular control the other actions use), not inline style.
+    expect(html).toContain("fydc-act");
+    expect(html).toContain("fydc-node");
+    expect(html).toContain("<a");
+    expect(html).toContain("Open node view of Happy Place");
+    expect(html).not.toContain("<button");
+    expect(html).not.toContain("card");
+  });
+
+  test("node control exists exactly when nodeHref is set (pure helper)", () => {
+    // The action row is expanded-state-only (client state); nodeControlFor
+    // is exactly what renderExpanded maps over, so testing the helper
+    // tests the render rule, mirroring circleActionsFor above.
+    expect(nodeControlFor(undefined, "Happy Place")).toBeNull();
+    expect(nodeControlFor("", "Happy Place")).toBeNull();
+    const el = nodeControlFor("/node/obj-1", "Happy Place");
+    expect(el).not.toBeNull();
+    const html = renderToString(el!);
+    expect(html).toContain('href="/node/obj-1"');
+    expect(html).toContain("fydc-node");
+  });
+
+  test("circle without nodeHref renders no node control", () => {
+    const html = renderToString(<FydCircle projection={baseProjection} />);
+    expect(html).not.toContain("fydc-node");
+    expect(html).not.toContain("Open node view of");
   });
 });

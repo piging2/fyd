@@ -19,6 +19,12 @@ import type { NextRequest } from "next/server";
 
 const DEPS: AnswerAskFydDeps = { loadBundle: getSiteBundle };
 
+/** POST a JSON body to the legacy flat ask route. The route only ever calls request.json(). */
+async function postAsk(body: unknown) {
+  const req = { json: async () => body } as unknown as NextRequest;
+  return POST(req);
+}
+
 describe("answerAskFyd", () => {
   test("unknown site id fails closed", () => {
     const out = answerAskFyd(
@@ -223,12 +229,6 @@ describe("corrupt projection (FL: Ask FYD error mapping)", () => {
     return JSON.stringify(real);
   }
 
-  function postAsk(body: unknown) {
-    // The route only ever calls request.json().
-    const req = { json: async () => body } as unknown as NextRequest;
-    return POST(req);
-  }
-
   let savedDir: string | undefined;
   beforeEach(() => {
     savedDir = process.env.FYD_PROJECTION_DIR;
@@ -308,5 +308,38 @@ describe("corrupt projection (FL: Ask FYD error mapping)", () => {
     expect(body.ok).toBe(true);
     expect(body.refusal).toBe(false);
     expect(body.answer as string).toContain("+15412865190");
+  });
+});
+
+describe("200 response carries the honest ask fields (FL: unknowns / actions / proposal)", () => {
+  test("unknowns, suggestedActions, and proposal are present and never invented", async () => {
+    const resp = await postAsk({
+      siteId: "happy-place",
+      question: "Does this business offer financing?",
+      mode: "visitor",
+    });
+    expect(resp.status).toBe(200);
+    const body = (await resp.json()) as Record<string, unknown>;
+    expect(body.ok).toBe(true);
+    // A refused question carries the unknowns array (possibly empty),
+    // reports refusal honestly, and invents no actions or proposals.
+    expect(Array.isArray(body.unknowns)).toBe(true);
+    expect(body.refusal).toBe(true);
+    expect(body.suggestedActions).toEqual([]);
+    expect(body.proposal).toBeNull();
+  });
+
+  test("answered question carries the same fields with empty unknowns", async () => {
+    const resp = await postAsk({
+      siteId: "happy-place",
+      question: "What is the phone number?",
+      mode: "visitor",
+    });
+    expect(resp.status).toBe(200);
+    const body = (await resp.json()) as Record<string, unknown>;
+    expect(body.ok).toBe(true);
+    expect(body.unknowns).toEqual([]);
+    expect(Array.isArray(body.suggestedActions)).toBe(true);
+    expect(body.proposal === null || typeof body.proposal === "object").toBe(true);
   });
 });

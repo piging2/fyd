@@ -255,10 +255,24 @@ describe("ask fyd services question", () => {
     expect(answer.unknowns).toEqual([]);
     expect(answer.sourceUrls).toEqual(["https://example.test/"]);
 
-    // Exactly the claims the answer states: the 3 named services.
-    expect(answer.claimClassifications.length).toBe(3);
+    // 3 named services + 4 provenance sentences: the intentional
+    // asksProvenance branch (src/lib/ping/ask-composer.ts) answers the
+    // "how do you know?" half of this combined question with 4 provenance
+    // claims (record identity, stated source, derived date, epistemic
+    // basis), each carrying a claim classification.
+    expect(answer.claimClassifications.length).toBe(7);
+    // The 3 service claims are recorded facts in the site data; the 4
+    // provenance claims restate the website-derived record, so they are
+    // honestly classified website_statement, never inflated to fact.
+    const classes = answer.claimClassifications.map((c) => c.classification);
+    expect(classes.slice(0, 3)).toEqual(["DIRECT_FACT", "DIRECT_FACT", "DIRECT_FACT"]);
+    expect(classes.slice(3)).toEqual([
+      "website_statement",
+      "website_statement",
+      "website_statement",
+      "website_statement",
+    ]);
     for (const c of answer.claimClassifications) {
-      expect(c.classification).toBe("DIRECT_FACT");
       expect(c.evidenceRefIds.length).toBeGreaterThanOrEqual(1);
     }
     expect(answer.evidenceRefs.length).toBeGreaterThanOrEqual(5);

@@ -40,10 +40,13 @@ import { composeAskFyd } from "./answer";
 import { canonicalize } from "../../lib/ping/ask-composer";
 import { applyFieldVisibility } from "../sitespec/field-visibility";
 import { resolveQuery } from "../components/renderer";
+import { selectRelatedCircles } from "../object/related";
 import type { SiteSpecSummary } from "./site-spec";
 import type {
   AskClaimClassification,
+  AskProposal,
   AskEvidenceRef,
+  PlannedAction,
   PingObject,
   PingRelationship,
 } from "../../lib/ping/types";
@@ -84,6 +87,17 @@ export function claimClassFor(classification: string | undefined): AskClaimClass
 
 export interface AnswerAskFydInput {
   siteId: string;
+  /**
+   * Optional object-scoped ask: the PING object id the question is about.
+   * The tenant is still selected by siteId alone (never crossed); the
+   * object is resolved inside this tenant's public graph with the same
+   * honesty gates as loadObjectViewById (unknown id or non-public object
+   * -> unknown_object). Context is the 1-hop related graph around the
+   * object (selectRelatedCircles restricted to directly incident edges);
+   * related objects' evidence is cited as their own, never merged into
+   * the target's record.
+   */
+  objectId?: string;
   question: string;
   mode: AskFydMode;
 }
@@ -115,6 +129,12 @@ export interface AskFydSuccess {
   answer: string;
   refusal: boolean;
   citations: AskFydCitation[];
+  /** What the question asked about that has no supporting evidence. */
+  unknowns: string[];
+  /** Internal name for the available actions the viewer may take. */
+  suggestedActions: PlannedAction[];
+  /** Draft only; null when the answer proposes nothing. */
+  proposal: AskProposal | null;
 }
 
 export type AskFydErrorKind =
@@ -122,7 +142,8 @@ export type AskFydErrorKind =
   | "bad_question"
   | "bad_mode"
   | "bundle_invalid"
-  | "projection_unavailable";
+  | "projection_unavailable"
+  | "unknown_object";
 
 export interface AskFydFailure {
   ok: false;
@@ -295,6 +316,33 @@ function buildCitations(
 }
 
 /**
+ * The 1-hop related graph around one object: selectRelatedCircles walks
+ * the tenant's relationships from the target, restricted here to objects
+ * joined by a directly incident active edge. Ranking (predicate priority,
+ * then object id) is the selector's deterministic order. Only public
+ * objects can appear (the selector skips non-public targets).
+ */
+function oneHopRelatedObjects(
+  publicGraph: ObjectGraph,
+  targetId: string,
+): PingObject[] {
+  const oneHopIds = new Set<string>();
+  for (const r of publicGraph.relationships) {
+    if (r.status !== "active") continue;
+    if (r.subject === targetId && r.object !== targetId) oneHopIds.add(r.object);
+    else if (r.object === targetId && r.subject !== targetId) oneHopIds.add(r.subject);
+  }
+  const byId = new Map(publicGraph.objects.map((o) => [o.id, o]));
+  const out: PingObject[] = [];
+  for (const c of selectRelatedCircles(publicGraph, targetId)) {
+    if (!oneHopIds.has(c.objectId)) continue;
+    const obj = byId.get(c.objectId);
+    if (obj) out.push(obj);
+  }
+  return out;
+}
+
+/**
  * Answer a visitor question about a site. Pure function of its inputs;
  * the only effect is reading the (deterministic, cached) site bundle.
  */
@@ -347,16 +395,35 @@ export function answerAskFyd(
   }
 
   const publicGraph = publicGraphOf(bundle.graph);
-  const target = publicGraph.objects.find((o) => o.id === bundle.spec.ownerObjectId) ?? null;
+  const requestedObjectId =
+    typeof input.objectId === "string" ? input.objectId.trim() : "";
+  // Object-scoped ask: the target is one object in THIS tenant's public
+  // graph. Unknown ids fail closed as unknown_object; non-public objects
+  // never enter the public graph, so they fail closed the same way.
+  // Cross-tenant leakage is impossible by construction: the lookup is
+  // scoped to this tenant's graph (the loadObjectViewById honesty
+  // contract, enforced against the bundle being answered from).
+  // (const, not let: the filter closure below keeps narrowing only on an
+  // immutable binding.)
+  const target =
+    (requestedObjectId.length > 0
+      ? publicGraph.objects.find((o) => o.id === requestedObjectId)
+      : publicGraph.objects.find((o) => o.id === bundle.spec.ownerObjectId)) ?? null;
   if (!target) {
-    // The bundle has no public business object to answer from: a server
-    // problem, never something to paper over with a guess.
     return {
       ok: false,
-      error: { kind: "bundle_invalid", message: "This site is not available right now." },
+      error:
+        requestedObjectId.length > 0
+          ? { kind: "unknown_object", message: "Unknown object for this site." }
+          // The bundle has no public business object to answer from: a
+          // server problem, never something to paper over with a guess.
+          : { kind: "bundle_invalid", message: "This site is not available right now." },
     };
   }
-  const relatedObjects = publicGraph.objects.filter((o) => o.id !== target.id);
+  const relatedObjects =
+    requestedObjectId.length > 0
+      ? oneHopRelatedObjects(publicGraph, target.id)
+      : publicGraph.objects.filter((o) => o.id !== target.id);
 
   const ctx = buildAskFydContext({
     viewer: { id: null, displayName: null },
@@ -381,5 +448,16 @@ export function answerAskFyd(
   // A refusal is an answer with no cited evidence: the pipeline had nothing
   // to stand on, so it says so instead of guessing.
   const refusal = ans.partial && citations.length === 0;
-  return { ok: true, answer, refusal, citations };
+  // The composer already computed unknowns, suggestedActions, and proposal
+  // on the internal AskAnswer: surface them honestly, empty/null when
+  // absent, never invented.
+  return {
+    ok: true,
+    answer,
+    refusal,
+    citations,
+    unknowns: ans.unknowns,
+    suggestedActions: ans.suggestedActions,
+    proposal: ans.proposal,
+  };
 }

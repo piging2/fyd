@@ -249,6 +249,19 @@ function cite(text: string, cites: number[]): string {
   return `${text} ${tags}`;
 }
 
+/**
+ * Plain-language epistemic basis for a provenance kind, used by the
+ * provenance ("how do you know?") branch. The citation layer carries the
+ * formal classification; this is the sentence-level wording.
+ */
+function provenanceBasisLabel(kind: string): string {
+  if (kind === "canonical-journal") return "a recorded fact in the site data";
+  if (kind === "website-derived" || kind === "website-ingestion")
+    return "the site's own words (website statement, not independently verified)";
+  if (kind === "owner") return "owner-authored content";
+  return "the site record";
+}
+
 function fieldOf(obj: PingObject, ...names: string[]): string | null {
   for (const n of names) {
     const v = obj.fields[n];
@@ -550,6 +563,10 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
     // People questions are answerable only from Person objects. A
     // description dump names nobody, so when the site data has no person
     // records the honest answer says so explicitly instead of guessing.
+    // People and association questions are answered from person records
+    // and from the active relationships incident to the target. A related
+    // object's evidence informs the answer but is cited as THAT object's
+    // evidence, never merged into the target's record.
     if (
       hasWord(
         q,
@@ -565,12 +582,71 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
         "employees",
         "member",
         "members",
+        "associated",
+        "associate",
+        "associates",
+        "association",
+        "affiliated",
+        "affiliate",
+        "affiliation",
+        "connected",
+        "linked",
       )
     ) {
+      const seenIds = new Set<string>();
       const persons = [target, ...ctx.relatedObjects].filter((o) =>
         o.schema.toLowerCase().includes("person"),
       );
-      if (persons.length === 0) {
+      for (const p of persons) {
+        seenIds.add(p.id);
+        const i = ctx.evidenceRefs.findIndex((e) => e.id === p.id);
+        pushClaim(
+          `Person on record: ${p.title || p.id}.`,
+          i >= 0 ? [i] : [],
+          `${p.title || p.id} is associated with ${title}`,
+          p,
+          "name",
+        );
+      }
+      const incident = ctx.relationships
+        .filter(
+          (r) =>
+            r.status === "active" &&
+            (r.subject === target.id || r.object === target.id),
+        )
+        .map((r) => ({
+          predicate: r.predicate,
+          otherId: r.subject === target.id ? r.object : r.subject,
+        }))
+        .filter((x) => x.otherId !== target.id)
+        .sort((a, b) =>
+          a.predicate < b.predicate
+            ? -1
+            : a.predicate > b.predicate
+              ? 1
+              : a.otherId < b.otherId
+                ? -1
+                : 1,
+        );
+      let associations = 0;
+      for (const { predicate, otherId } of incident) {
+        if (seenIds.has(otherId)) continue;
+        const other = ctx.relatedObjects.find((o) => o.id === otherId);
+        if (!other) continue;
+        const i = ctx.evidenceRefs.findIndex((e) => e.id === other.id);
+        if (i < 0) continue; // every factual sentence stays cited
+        seenIds.add(otherId);
+        associations += 1;
+        pushClaim(
+          `Associated with ${title} (${predicate.replace(/_/g, " ")}): ${other.title || other.id}.`,
+          [i],
+          `${other.title || other.id} is associated with ${title} via ${predicate}`,
+          other,
+          "name",
+          "relationship_fact",
+        );
+      }
+      if (persons.length === 0 && associations === 0) {
         return {
           ...base,
           unknowns: ["people associated with this business"],
@@ -581,16 +657,6 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
           proposal: null,
           partial: true,
         };
-      }
-      for (const p of persons) {
-        const i = ctx.evidenceRefs.findIndex((e) => e.id === p.id);
-        pushClaim(
-          `Person on record: ${p.title || p.id}.`,
-          i >= 0 ? [i] : [],
-          `${p.title || p.id} is associated with ${title}`,
-          p,
-          "name",
-        );
       }
     }
 
@@ -607,6 +673,15 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       hasWord(q, "business", "company", "shop", "store", "firm", "contractor") ||
       titleWords.some((w) => hasWord(q, w));
     // Note: hasWord is an OR over its words, so "what"+"is" needs an
+    // Provenance questions ("how do you know?") are identified early:
+    // the services branch below must not claim them via its broad "do"
+    // trigger. A provenance question is never a services question; a
+    // combined question ("what services ... and how do you know?") still
+    // reaches the services branch through an explicit services word.
+    const asksProvenance =
+      hasWord(q, "source", "sources", "sourcing", "provenance") ||
+      (hasWord(q, "how") && hasWord(q, "know")) ||
+      (hasWord(q, "where") && hasWord(q, "come") && hasWord(q, "from"));
     // explicit AND here: either word alone ("what services...") is not a
     // profile question.
     const asksWhatIs = hasWord(q, "what") && hasWord(q, "is");
@@ -633,7 +708,14 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
         pushClaim(`Category on record: ${cat}.`, [0], `${title} category`, target, "category");
     }
 
-    if (hasWord(q, "service", "services", "offer", "offers", "provide", "do")) {
+    // A profile question about a service object ("tell me about this
+    // service") is answered from the service's own record by the profile
+    // branch above, not from a service listing.
+    const targetIsService = target.schema.toLowerCase().includes("service");
+    const asksServices =
+      hasWord(q, "service", "services", "offer", "offers", "provide") ||
+      (hasWord(q, "do") && !asksProvenance);
+    if (asksServices && !(targetIsService && profileIntent)) {
       const services = fieldOf(target, "services");
       const relatedServices = ctx.relatedObjects.filter((o) =>
         ["ping.social.service@1", "ping.social.product@1", "ping.social.offer@1"].includes(o.schema),
@@ -736,23 +818,71 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
     }
 
     if (hasWord(q, "where", "location", "address", "based")) {
-      const loc = fieldOf(target, "location", "address", "city");
-      if (loc)
-        pushClaim(
-          `${title} is listed at: ${loc}.`,
-          [0],
-          `${title} location`,
-          target,
-          "location",
-        );
-      else
-        pushClaim(
-          `No public location is on record for ${title}.`,
-          [0],
-          `${title} has no public location on record`,
-          target,
-          "location",
-        );
+      // located_at direction: the subject is the located thing, the object
+      // is the location. From the target's perspective the location object
+      // is either a related object (target is the subject) or the target
+      // itself (target is the object). The claim cites the location
+      // object's own evidence, never the target's.
+      let locationObj: PingObject | null = null;
+      let locationName: string | null = null;
+      let locationSelf = false;
+      for (const r of ctx.relationships) {
+        if (r.status !== "active" || r.predicate !== "located_at") continue;
+        if (r.subject === target.id && r.object !== target.id) {
+          const o = ctx.relatedObjects.find((x) => x.id === r.object);
+          if (o) {
+            locationObj = o;
+            locationName = o.title || fieldOf(o, "locality");
+            break;
+          }
+        } else if (r.object === target.id && r.subject !== target.id) {
+          locationObj = target;
+          locationName = target.title || fieldOf(target, "locality");
+          locationSelf = true;
+          break;
+        }
+      }
+      const locationRefIdx = locationObj
+        ? ctx.evidenceRefs.findIndex((e) => e.id === locationObj!.id)
+        : -1;
+      if (locationObj && locationName && locationRefIdx >= 0) {
+        if (locationSelf)
+          pushClaim(
+            `${title} is the location on record.`,
+            [locationRefIdx],
+            `${title} is a recorded location`,
+            locationObj,
+            "location",
+            "relationship_fact",
+          );
+        else
+          pushClaim(
+            `${title} is listed at: ${locationName}.`,
+            [locationRefIdx],
+            `${title} location`,
+            locationObj,
+            "location",
+            "relationship_fact",
+          );
+      } else {
+        const loc = fieldOf(target, "location", "address", "city", "locality");
+        if (loc)
+          pushClaim(
+            `${title} is listed at: ${loc}.`,
+            [0],
+            `${title} location`,
+            target,
+            "location",
+          );
+        else
+          pushClaim(
+            `No public location is on record for ${title}.`,
+            [0],
+            `${title} has no public location on record`,
+            target,
+            "location",
+          );
+      }
     }
 
     if (hasWord(q, "review", "rating", "trust", "proof", "evidence", "verif")) {
@@ -787,6 +917,48 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       } else {
         sentences.push({ text: "Following is not available for this object.", cites: [] });
       }
+    }
+
+    // Provenance questions ("how do you know?") are answered from the
+    // target's own record: identity, stated source, derived date, and
+    // epistemic basis. Every sentence cites the target's evidence. Placed
+    // after the attribute branches: a question that names an attribute
+    // ("what services ... and how do you know?") is governed by that
+    // attribute's evidence rules first.
+    if (asksProvenance) {
+      const prov = target.provenance;
+      const url = ctx.sourceUrls[0] ?? null;
+      const when = (prov.derivedAt || target.updatedAt || "").slice(0, 10);
+      pushClaim(
+        `I answer from the site record for ${title} (${ctx.schemaLabel}).`,
+        [0],
+        `${title} record identity`,
+        target,
+        "provenance",
+      );
+      if (url)
+        pushClaim(
+          `The record's stated source is ${url}.`,
+          [0],
+          `${title} record source`,
+          target,
+          "provenance",
+        );
+      if (when)
+        pushClaim(
+          `The record was derived on ${when}.`,
+          [0],
+          `${title} record date`,
+          target,
+          "provenance",
+        );
+      pushClaim(
+        `Basis: ${provenanceBasisLabel(prov.kind)}.`,
+        [0],
+        `${title} record basis`,
+        target,
+        "provenance",
+      );
     }
 
     if (sentences.length > 0) {

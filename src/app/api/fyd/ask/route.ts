@@ -9,7 +9,7 @@ export const runtime = "nodejs";
  *
  * Visitor Ask FYD: evidence-bounded Q&A over a site's PUBLIC objects only.
  *
- * Body: { siteId: string, question: string, mode?: "visitor" | "owner" }
+ * Body: { siteId: string, objectId?: string, question: string, mode?: "visitor" | "owner" }
  *
  * - mode "visitor" (default): anonymous, public objects only, no grants.
  * - mode "owner": accepted for a future authenticated lane; until that lane
@@ -21,7 +21,10 @@ export const runtime = "nodejs";
  * POST /api/fyd/ask/[siteId], where the tenant comes from the route path
  * and any body-supplied tenant identity is refused on mismatch.
  *
- * Response: { ok: true, answer, answerClass, refusal, citations, tenantId }
+ * Response: { ok: true, answer, answerClass, refusal, citations,
+ *   unknowns, suggestedActions, proposal, tenantId }
+ *   unknowns is string[]; suggestedActions is the available-actions list
+ *   ([] when none); proposal is a draft AskProposal or null.
  *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
  *   Every citation carries claimClass ("supported" | "derived").
  * Errors: 404 unknown site, 400 bad question or mode, 400 tenant_mismatch /

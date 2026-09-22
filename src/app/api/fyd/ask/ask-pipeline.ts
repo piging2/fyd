@@ -12,16 +12,26 @@
  * body-claimed tenant.
  *
  * The legacy flat POST /api/fyd/ask keeps its body contract ({ siteId,
- * question, mode }) but now constructs the TenantContext server-side from
+ * objectId?, question, mode }) but now constructs the TenantContext
+ * server-side from
  * the validated body siteId (previously: no tenant context at all). The
  * nested route is the trusted-path surface; prefer it for new callers.
  *
  * 3-class response contract: every 200 response carries
- * answerClass ("supported" | "derived" | "unknown") and every citation
- * carries claimClass ("supported" | "derived"). A refusal (no cited
- * evidence) is answerClass "unknown". DERIVED_FACT / INFERENCE /
+ * answerClass ("supported" | "derived" | "unknown"), every citation
+ * carries claimClass ("supported" | "derived"), and the 200 body also
+ * carries unknowns (string[]), suggestedActions (available actions,
+ * [] when none), and proposal (draft AskProposal or null).
+ * A refusal (no cited evidence) is answerClass "unknown". DERIVED_FACT / INFERENCE /
  * GENERATED_COPY claims make the answer "derived" and are explicitly
  * labeled in the citation basis.
+ *
+ * Object-scoped ask: the optional body objectId selects the target
+ * object INSIDE the route tenant's public graph; the tenant is still
+ * chosen by the route path (or the validated body siteId on the legacy
+ * flat route), never by objectId. Unknown ids -> 404 unknown_object;
+ * non-public objects never enter the public graph, so they fail closed
+ * the same way. objectId is object identity only, never a tenant key.
  *
  * Visitor vs owner scope: mode "visitor" (default) answers from PUBLIC
  * facts only. mode "owner" is accepted for a future authenticated lane but
@@ -181,6 +191,7 @@ export async function handleAskRequest(
   }
 
   const question = typeof record.question === "string" ? record.question : "";
+  const rawObjectId = typeof record.objectId === "string" ? record.objectId.trim() : "";
   const mode = record.mode === undefined ? "visitor" : record.mode;
   if (!VALID_MODES.includes(mode as AskFydMode)) {
     return NextResponse.json(
@@ -191,7 +202,15 @@ export async function handleAskRequest(
 
   let outcome: AskFydOutcome;
   try {
-    outcome = answerAskFyd({ siteId, question, mode: mode as AskFydMode }, ASK_DEPS);
+    outcome = answerAskFyd(
+      {
+        siteId,
+        objectId: rawObjectId.length > 0 ? rawObjectId : undefined,
+        question,
+        mode: mode as AskFydMode,
+      },
+      ASK_DEPS,
+    );
   } catch {
     // The pipeline never throws by contract, but a route handler must never
     // leak an empty 500 if anything ever does: fail honestly and structurally.
@@ -213,6 +232,8 @@ export async function handleAskRequest(
         return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 400 });
       case "bad_mode":
         return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 400 });
+      case "unknown_object":
+        return NextResponse.json({ ok: false, error: outcome.error.message }, { status: 404 });
       case "projection_unavailable":
         return NextResponse.json(
           {
@@ -237,6 +258,12 @@ export async function handleAskRequest(
     answerClass: answerClassFor(outcome.refusal, outcome.citations),
     refusal: outcome.refusal,
     citations: outcome.citations,
+    // Carried from the internal AskAnswer: unknowns and suggestedActions
+    // are [] when the composer found none; proposal is null unless the
+    // answer drafted one. Nothing here is ever invented.
+    unknowns: outcome.unknowns,
+    suggestedActions: outcome.suggestedActions,
+    proposal: outcome.proposal,
     tenantId: siteId,
   });
 }

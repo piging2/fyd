@@ -179,6 +179,49 @@ const IconSend = () => (
   </Icon>
 );
 
+const IconExpand = () => (
+  <Icon>
+    <path d="M15 3h6v6M10 14 21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
+  </Icon>
+);
+
+/**
+ * The circular "Open Node" control: a circular link (fydc-act), never a
+ * rectangular button. Rendered in the expanded circle's action row when
+ * the nodeHref prop is present. Exported for tests.
+ */
+export function FydCircleNodeLink({
+  href,
+  name,
+}: {
+  href: string;
+  name: string;
+}): React.ReactElement {
+  return (
+    <a
+      className="fydc-act fydc-node"
+      href={href}
+      aria-label={"Open node view of " + name}
+      title="Open node"
+    >
+      <IconExpand />
+    </a>
+  );
+}
+
+/**
+ * Pure helper: the node control element, or null when no nodeHref is set.
+ * renderExpanded maps over this; testing the helper tests the render rule
+ * (the expanded action row is client-state-only, so SSR cannot reach it).
+ */
+export function nodeControlFor(
+  nodeHref: string | undefined,
+  name: string,
+): React.ReactElement | null {
+  if (!nodeHref) return null;
+  return <FydCircleNodeLink href={nodeHref} name={name} />;
+}
+
 /* ---------------- capability -> action mapping (pure) ----------------
  * The action row renders ONLY from projection.capabilities. kind "view" is
  * ignored: there is no full page anymore. Tested directly in __tests__.
@@ -209,12 +252,24 @@ export function circleActionsFor(
 
 export interface FydCircleProps {
   projection: CircleProjection;
+  /**
+   * Optional deep link to the object's rich Node view. When present, the
+   * expanded circle shows a circular "Open Node" control linking to it.
+   * The literal-circle contract holds: the control is circular, never a
+   * rectangular button or card.
+   */
+  nodeHref?: string;
+  /**
+   * Tenant the circle belongs to, used for the ask request. Defaults to
+   * projection.id (the legacy behavior) when not provided.
+   */
+  siteId?: string;
 }
 
 type FollowState = "unknown" | "on" | "off" | "unavailable";
 type AskStatus = "idle" | "asking" | "answered" | "empty";
 
-export function FydCircle({ projection }: FydCircleProps): React.ReactElement {
+export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): React.ReactElement {
   const [machine, dispatch] = React.useReducer(circleReducer, INITIAL_CIRCLE_STATE);
   const open = isCircleOpen(machine);
 
@@ -380,7 +435,12 @@ export function FydCircle({ projection }: FydCircleProps): React.ReactElement {
       const res = await fetch("/api/fyd/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ siteId: projection.id, question: query, mode: "visitor" }),
+        body: JSON.stringify({
+          siteId: siteId ?? projection.id,
+          objectId: projection.id,
+          question: query,
+          mode: "visitor",
+        }),
       });
       const data = await res.json();
       if (!data || data.ok !== true || data.refusal) {
@@ -509,8 +569,11 @@ export function FydCircle({ projection }: FydCircleProps): React.ReactElement {
           ))}
         </div>
       ) : null}
-      {actions.length > 0 ? (
-        <div className="fydc-actions">{actions.map(renderAction)}</div>
+      {actions.length > 0 || nodeHref ? (
+        <div className="fydc-actions">
+          {nodeControlFor(nodeHref, name)}
+          {actions.map(renderAction)}
+        </div>
       ) : null}
       <button
         type="button"

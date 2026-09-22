@@ -12,7 +12,9 @@ export const runtime = "nodejs";
  * body or URL query: a TenantContext is constructed server-side via
  * requireTenantContext (which also enforces the DNS-safe slug pattern).
  *
- * Body: { question: string, mode?: "visitor" | "owner" }
+ * Body: { question: string, objectId?: string, mode?: "visitor" | "owner" }
+ *   objectId selects the target object inside the route tenant public graph
+ *   (unknown ids fail closed as 404 unknown_object).
  *
  * Any body-supplied tenant identity (siteId / tenantId / tenant keys) that
  * disagrees with the route tenant is REFUSED with 400 tenant_mismatch: the
@@ -23,7 +25,10 @@ export const runtime = "nodejs";
  * - mode "owner": accepted for a future authenticated lane; until that lane
  *   exists it is treated as visitor-safe and grants nothing.
  *
- * Response: { ok: true, answer, answerClass, refusal, citations, tenantId }
+ * Response: { ok: true, answer, answerClass, refusal, citations,
+ *   unknowns, suggestedActions, proposal, tenantId }
+ *   unknowns is string[]; suggestedActions is the available-actions list
+ *   ([] when none); proposal is a draft AskProposal or null.
  *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
  *   Every citation carries claimClass ("supported" | "derived").
  */
