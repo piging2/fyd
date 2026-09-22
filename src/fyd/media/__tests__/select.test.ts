@@ -152,12 +152,12 @@ describe("Hero render wiring (generic component contract)", () => {
     expect(html).not.toContain("fyd-media");
     expect(html).not.toContain("data-hero-media");
     // The identity block still renders.
-    expect(html).toContain("Website statement");
+    expect(html).toContain("Site record");
   });
 
   test("Hero with media keeps the identity block", () => {
     const html = renderHero(media);
-    expect(html).toContain("Website statement");
+    expect(html).toContain("Site record");
     expect(html).toContain("Ask FYD");
   });
 });
