@@ -29,10 +29,41 @@ describe("verifyObjectGraph", () => {
     expect(v.attestation.builderVersion).toBe("fyd-object-builder@1");
     expect(v.attestation.schemaCatalogVersion).toBe("fyd-schema-catalog@1");
     expect(v.attestation.objectCount).toBe(7);
-    expect(v.attestation.relationshipCount).toBe(6);
+    expect(v.attestation.relationshipCount).toBe(7); // 6 source + 1 derived inverse
     expect(v.attestation.digest).toMatch(/^[0-9a-f]{64}$/);
     expect(v.attestation.checks).toContain("tenant-attestation");
+    expect(v.attestation.checks).toContain("inverse-normalization");
     expect(v.graph).toBeDefined();
+  });
+
+  test("works_for derives an evidence-preserving employs inverse", () => {
+    const v = verifyObjectGraph(CTX, proj(tradeGraph(), "trade-tenant"));
+    expect(v.attestation.derivations).toEqual([
+      { from: "rel-4", to: "rel-4::inverse-employs", rule: "works_for-inverse-employs" },
+    ]);
+    const derived = v.graph.relationships.find((r) => r.id === "rel-4::inverse-employs");
+    expect(derived).toBeDefined();
+    expect(derived!.subject).toBe("biz-trade");
+    expect(derived!.predicate).toBe("employs");
+    expect(derived!.object).toBe("person-jo");
+    // Same evidence, no new claims: the derived edge reuses the source ref.
+    expect(derived!.evidenceRef).toBe(
+      v.graph.relationships.find((r) => r.id === "rel-4")!.evidenceRef,
+    );
+  });
+
+  test("an explicit forward edge wins over the derived inverse", () => {
+    const g = tradeGraph();
+    const both = {
+      ...g,
+      relationships: [
+        ...g.relationships,
+        makeRelationship("rel-7", "biz-trade", "employs", "person-jo"),
+      ],
+    };
+    const v = verifyObjectGraph(CTX, proj(both, "trade-tenant"));
+    expect(v.attestation.derivations).toEqual([]);
+    expect(v.attestation.relationshipCount).toBe(7);
   });
 
   test("attestation digest is deterministic", () => {

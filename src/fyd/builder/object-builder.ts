@@ -105,6 +105,12 @@ export interface GraphAttestation {
   digest: string;
   /** Check names that passed, in canonical order. */
   checks: string[];
+  /**
+   * Evidence-preserving derivations applied during verification. The
+   * attested graph may contain derived edges; each one names the source
+   * edge and the rule, so the WHY THIS chain never invents evidence.
+   */
+  derivations: Array<{ from: string; to: string; rule: string }>;
 }
 
 export interface VerifiedGraph {
@@ -279,18 +285,67 @@ export function verifyObjectGraph(
   }
   checks.push("visibility");
 
-  const digest = createHash("sha256").update(canonicalize(graph), "utf8").digest("hex");
+  // Inverse normalization (evidence-preserving): the generator and the
+  // runtime traverse team membership forward (business -> person). A
+  // person -> business "works_for" or "member_of" edge carries the same
+  // fact in the inverse direction; the builder derives the forward edge
+  // deterministically so planners and renderers see one traversal
+  // direction. The derived edge reuses the source edge's evidenceRef
+  // (same evidence, no new claims) and is recorded in
+  // attestation.derivations. An explicit forward edge always wins over a
+  // derived one. Deterministic: single pass in input order.
+  const derivations: Array<{ from: string; to: string; rule: string }> = [];
+  const INVERSE_RULES: Record<string, string> = {
+    works_for: "employs",
+    member_of: "has_member",
+  };
+  const seenIds = new Set(graph.relationships.map((r) => r.id));
+  const forwardCovered = new Set(
+    graph.relationships
+      .filter((r) => r.status === "active")
+      .map((r) => r.subject + "|" + r.predicate + "|" + r.object),
+  );
+  const derived: PingRelationship[] = [];
+  for (const r of graph.relationships) {
+    const fwd = INVERSE_RULES[r.predicate];
+    if (!fwd || r.status !== "active") continue;
+    const key = r.object + "|" + fwd + "|" + r.subject;
+    if (forwardCovered.has(key)) continue;
+    const id = r.id + "::inverse-" + fwd;
+    if (seenIds.has(id)) continue; // pathological collision: skip, never overwrite
+    const d: PingRelationship = {
+      id,
+      subject: r.object,
+      predicate: fwd,
+      object: r.subject,
+      status: "active",
+      createdAt: r.createdAt,
+      evidenceRef: r.evidenceRef,
+    };
+    derived.push(d);
+    seenIds.add(id);
+    forwardCovered.add(key);
+    derivations.push({ from: r.id, to: id, rule: r.predicate + "-inverse-" + fwd });
+  }
+  checks.push("inverse-normalization");
+
+  const attestedGraph: ObjectGraph = {
+    objects: graph.objects,
+    relationships: [...graph.relationships, ...derived],
+  };
+  const digest = createHash("sha256").update(canonicalize(attestedGraph), "utf8").digest("hex");
 
   return {
-    graph,
+    graph: attestedGraph,
     attestation: {
       builderVersion: OBJECT_BUILDER_VERSION,
       schemaCatalogVersion: SCHEMA_CATALOG_VERSION,
       tenantId,
-      objectCount: graph.objects.length,
-      relationshipCount: graph.relationships.length,
+      objectCount: attestedGraph.objects.length,
+      relationshipCount: attestedGraph.relationships.length,
       digest,
       checks,
+      derivations,
     },
   };
 }
