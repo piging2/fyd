@@ -2,14 +2,13 @@
  * Dependency index tests: changing one object invalidates only its sections,
  * never the whole site; merge lets the SiteSpec generator own the registry.
  */
-import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   DependencyIndex,
   happyPlaceSeedIndex,
   pagesForSections,
-} from "../dependency-index.ts";
-import type { ChangeRecord } from "../types.ts";
+} from "../dependency-index";
+import type { ChangeRecord } from "../types";
 
 test("changing one service invalidates only its sections", () => {
   const index = DependencyIndex.fromSeed(happyPlaceSeedIndex());

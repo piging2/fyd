@@ -1,5 +1,5 @@
 /**
- * Entity-resolution spike tests (spike-1). node:test, deterministic.
+ * Entity-resolution spike tests (spike-1). jest, deterministic.
  *
  * Real-data provenance: the EXACT/AMBIGUOUS/UNMATCHED cases below use
  * verbatim rows from the PING Social outreach pipeline
@@ -8,9 +8,8 @@
  * labeled as such, because the real corpus contains no street addresses.
  */
 
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { ResolveEntity } from "../types.ts";
+import type { ResolveEntity } from "../types";
 import {
   normalizeAddress,
   normalizeCity,
@@ -18,10 +17,10 @@ import {
   normalizePhone,
   normalizeUrl,
   urlHost,
-} from "../normalize.ts";
-import { exactPhone, exactUrl, pairScore } from "../matchers.ts";
-import { buildIndex, resolveAll, tierCounts } from "../resolve.ts";
-import { COPPERSMITH_GRAPH } from "../../../proceduralize/__fixtures__/coppersmith-graph.ts";
+} from "../normalize";
+import { exactPhone, exactUrl, pairScore } from "../matchers";
+import { buildIndex, resolveAll, tierCounts } from "../resolve";
+import { COPPERSMITH_GRAPH } from "../../../proceduralize/__fixtures__/coppersmith-graph";
 
 const AT = "2026-09-21T00:00:00.000Z";
 
@@ -104,7 +103,8 @@ test("normalizeCity is case- and punctuation-insensitive", () => {
 
 test("EXACT: fixture Coppersmith matches round-53 row via exact-url despite different names", () => {
   const fixture = fixtureCoppersmith();
-  assert.equal(fixture.name, "Coppersmith Plumbing");
+  // Fixture reads the live title from COPPERSMITH_GRAPH; the business renamed.
+  assert.equal(fixture.name, "Coppersmith Plumbing - HVAC - Mechanical");
   assert.equal(exactUrl(fixture, COPPERSMITH_ROUND53), "coppersmithplumbing.com");
   const decisions = resolveAll([fixture], [COPPERSMITH_ROUND53], {
     corpusRef: "test-corpus@1",

@@ -2,12 +2,11 @@
  * Conflict detection tests: disagreements across sources are recorded with
  * both claims kept; identical values and single sources produce nothing.
  */
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { Claim } from "../types.ts";
-import { detectConflicts, resolveConflict } from "../conflict.ts";
-import { syntheticFacebookObservation } from "../facebook-source.ts";
-import { extractWebsiteClaims } from "../website-observe.ts";
+import type { Claim } from "../types";
+import { detectConflicts, resolveConflict } from "../conflict";
+import { syntheticFacebookObservation } from "../facebook-source";
+import { extractWebsiteClaims } from "../website-observe";
 
 const ENTITY = "fyd:business:happy-place-carpentry";
 const T = "2026-09-21T11:23:35.000Z";

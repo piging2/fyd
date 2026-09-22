@@ -2,11 +2,10 @@
  * Temporal diff tests: identical snapshots produce an empty diff; changed,
  * added, and removed claims produce typed records with before/after.
  */
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { Snapshot } from "../types.ts";
-import { diffSnapshots, changeSummaryText } from "../diff.ts";
-import { extractWebsiteClaims } from "../website-observe.ts";
+import type { Snapshot } from "../types";
+import { diffSnapshots, changeSummaryText } from "../diff";
+import { extractWebsiteClaims } from "../website-observe";
 
 const ENTITY = "fyd:business:happy-place-carpentry";
 const URL = "https://happy-place-platform.vercel.app/";

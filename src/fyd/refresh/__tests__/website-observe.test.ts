@@ -2,9 +2,8 @@
  * Website observation tests: the extractor finds the real facts in page
  * HTML and labels every claim website_statement with full provenance.
  */
-import { test } from "node:test";
 import assert from "node:assert/strict";
-import { extractWebsiteClaims, extractRawFacts } from "../website-observe.ts";
+import { extractWebsiteClaims, extractRawFacts } from "../website-observe";
 
 const ENTITY = "fyd:business:happy-place-carpentry";
 const META = {

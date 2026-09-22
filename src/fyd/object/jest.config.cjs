@@ -8,9 +8,10 @@
 module.exports = {
   testEnvironment: "node",
   rootDir: "../../..",
-  testMatch: ["<rootDir>/src/fyd/object/__tests__/*.test.ts"],
+  testMatch: ["<rootDir>/src/fyd/object/__tests__/*.test.{ts,tsx}"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "\.module\.css$": "<rootDir>/src/fyd/object/__tests__/css-stub.ts",
   },
   transform: {
     "^.+\\.tsx?$": [
