@@ -16,6 +16,8 @@
  *  - posts + articles > 0         -> Posts / RecentObjects / ObjectFeed ("recent") eligible
  *  - owner has phone/email/website -> Contact eligible
  *  - owner present                -> Hero / BusinessSummary / AskFYD / CTA eligible
+ *  - related services/products/people/posts/articles > 0 -> ObjectRail
+ *    (featured-object doorway) eligible
  *
  * Role membership mirrors the generator's ROLE_PREDICATES
  * (src/fyd/proceduralize/generator.ts): service/product via
@@ -51,6 +53,8 @@ export interface EligibilityCounts {
   connected: number;
   posts: number;
   articles: number;
+  /** Related objects the inline ObjectRail doorway can feature. */
+  featureable: number;
   ownerPresent: boolean;
 }
 
@@ -104,6 +108,7 @@ export function deriveEligibility(graph: ObjectGraph): EligibilityReport {
     connected: 0,
     posts: 0,
     articles: 0,
+    featureable: 0,
     ownerPresent: owner !== null,
   };
   const eligible: Record<string, boolean> = {};
@@ -117,7 +122,7 @@ export function deriveEligibility(graph: ObjectGraph): EligibilityReport {
     for (const c of [
       "Hero", "BusinessSummary", "Services", "Products", "Locations",
       "People", "Posts", "RecentObjects", "ObjectFeed", "Contact", "Links",
-      "AskFYD", "CTA", "SocialProof",
+      "AskFYD", "CTA", "SocialProof", "ObjectRail",
     ]) {
       set(c, false, "no public business object: no owner, no site");
     }
@@ -131,6 +136,15 @@ export function deriveEligibility(graph: ObjectGraph): EligibilityReport {
   const published = [...relatedFrom(graph, ownerId, "post"), ...relatedFrom(graph, ownerId, "article")];
   counts.posts = published.filter((o) => SCHEMA_ROLES.post.includes(o.schema)).length;
   counts.articles = published.filter((o) => SCHEMA_ROLES.article.includes(o.schema)).length;
+  // Featureable: the related objects the inline ObjectRail doorway can
+  // feature (services, products, people, posts, articles). Forward
+  // traversal mirrors the generator's group() exactly, so the planner
+  // never filters a generator-emitted ObjectRail section.
+  counts.featureable =
+    relatedFrom(graph, ownerId, "service").length +
+    relatedFrom(graph, ownerId, "product").length +
+    relatedFrom(graph, ownerId, "person").length +
+    published.length;
 
   // Team: a person object joined to the owner by works_for in EITHER
   // direction (person works_for business, or business employs person).
@@ -191,6 +205,11 @@ export function deriveEligibility(graph: ObjectGraph): EligibilityReport {
   set("Links", counts.connected > 0, "connected count " + counts.connected + " > 0");
   set("AskFYD", true, "site capability, always eligible with an owner");
   set("CTA", true, "site capability, always eligible with an owner");
+  set(
+    "ObjectRail",
+    counts.featureable > 0,
+    "featureable related objects " + counts.featureable + " > 0",
+  );
   // The generator emits no SocialProof section today; eligibility stays
   // false so the planner can never invent one.
   set("SocialProof", false, "generator emits no SocialProof section: never invented");

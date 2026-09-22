@@ -92,8 +92,26 @@ const BASE_COMPONENT_ORDER = [
   "Links",
   "CTA",
   "AskFYD",
+  "ObjectRail",
   "GenericObjectCard",
 ];
+
+/**
+ * Must-win components: the density cap may drop optional sections, never
+ * these. Graph-backed essentials (what the business is, what it offers,
+ * how to reach it) plus the site capabilities (CTA, AskFYD) plus the
+ * featured-object doorway (ObjectRail). Fully generic: no tenant logic.
+ */
+const MUST_WIN_COMPONENTS = new Set([
+  "Hero",
+  "BusinessSummary",
+  "Services",
+  "Products",
+  "Contact",
+  "CTA",
+  "AskFYD",
+  "ObjectRail",
+]);
 
 export interface SitePlannerInput {
   ctx: TenantContext;
@@ -276,8 +294,16 @@ export function planSite(input: SitePlannerInput): PlannedSite {
       if (ra !== rb) return ra - rb;
       return a.i - b.i;
     });
-    sections = indexed
-      .map((x) => x.s)
+    sections = indexed.map((x) => x.s);
+    // Must-win preservation: the density cap may drop optional sections,
+    // never must-wins. Must-win sections keep their composed order and
+    // fill first; remaining capacity fills with optional sections in
+    // composed order. Deterministic: both classes keep the sort above.
+    const mustWins = sections.filter((s) => MUST_WIN_COMPONENTS.has(s.component));
+    const optionals = sections.filter(
+      (s) => !MUST_WIN_COMPONENTS.has(s.component),
+    );
+    sections = [...mustWins, ...optionals]
       .slice(0, policy.maxSectionsPerPage)
       .map((s, i) => ({
         ...s,

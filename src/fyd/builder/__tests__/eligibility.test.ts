@@ -16,6 +16,12 @@ describe("eligibility", () => {
     for (const c of ["Services", "Locations", "People", "Links", "Posts", "RecentObjects", "Contact", "Hero", "AskFYD"]) {
       expect(e.eligible[c]).toBe(true);
     }
+    // 2 services + 1 post are featureable: the inline ObjectRail doorway
+    // is eligible. (The fixture's person is linked works_for-only, which
+    // neither the generator nor eligibility count as a forward feature.)
+    expect(e.counts.featureable).toBe(3);
+    expect(e.eligible["ObjectRail"]).toBe(true);
+    expect(e.reasons["ObjectRail"]).toMatch(/featureable related objects 3 > 0/);
     // The generator emits no SocialProof: never invented.
     expect(e.eligible["SocialProof"]).toBe(false);
   });
@@ -53,6 +59,36 @@ describe("eligibility", () => {
     expect(e.counts.ownerPresent).toBe(false);
     expect(e.eligible["Hero"]).toBe(false);
     expect(e.eligible["Services"]).toBe(false);
+    expect(e.eligible["ObjectRail"]).toBe(false);
+    expect(e.eligible["CTA"]).toBe(false);
+  });
+
+  test("ObjectRail ineligible when nothing is featureable", () => {
+    const g = tradeGraph();
+    const bare: ObjectGraph = {
+      objects: g.objects.filter(
+        (o) =>
+          ![
+            "ping.social.service@1",
+            "ping.social.person@1",
+            "ping.social.post@1",
+            "ping.social.article@1",
+            "ping.social.product@1",
+          ].includes(o.schema),
+      ),
+      relationships: g.relationships.filter(
+        (r) =>
+          !["provides", "offers", "works_for", "employs", "publishes"].includes(
+            r.predicate,
+          ),
+      ),
+    };
+    const e = deriveEligibility(bare);
+    expect(e.counts.ownerPresent).toBe(true);
+    expect(e.counts.featureable).toBe(0);
+    expect(e.eligible["ObjectRail"]).toBe(false);
+    // CTA is a site capability: still eligible with an owner.
+    expect(e.eligible["CTA"]).toBe(true);
   });
 
   test("person without works_for is not team", () => {

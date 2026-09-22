@@ -255,12 +255,12 @@ const SCHEMA_COMPONENTS: Record<string, string[]> = {
     "ObjectGrid",
     "ObjectFeed",
   ],
-  "ping.social.service@1": ["Services", "ObjectGrid", "ObjectFeed", "CTA"],
-  "ping.social.post@1": ["Posts", "ObjectGrid", "ObjectFeed", "RecentObjects"],
-  "ping.social.product@1": ["Products", "ObjectGrid", "ObjectFeed"],
+  "ping.social.service@1": ["Services", "ObjectGrid", "ObjectFeed", "CTA", "ObjectRail"],
+  "ping.social.post@1": ["Posts", "ObjectGrid", "ObjectFeed", "RecentObjects", "ObjectRail"],
+  "ping.social.product@1": ["Products", "ObjectGrid", "ObjectFeed", "ObjectRail"],
   "ping.social.location@1": ["Locations", "ObjectGrid", "ObjectFeed"],
-  "ping.social.person@1": ["People", "ObjectGrid", "ObjectFeed"],
-  "ping.social.article@1": ["Posts", "ObjectGrid", "ObjectFeed", "RecentObjects"],
+  "ping.social.person@1": ["People", "ObjectGrid", "ObjectFeed", "ObjectRail"],
+  "ping.social.article@1": ["Posts", "ObjectGrid", "ObjectFeed", "RecentObjects", "ObjectRail"],
   // Knowledge vocabulary: the website object is a public object like any
   // other; the generic list components may render it. Role-projected
   // schemas (business/service/location/person/post/article) resolve through

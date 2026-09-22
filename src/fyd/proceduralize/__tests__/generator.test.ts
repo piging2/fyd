@@ -81,7 +81,9 @@ describe("generateSiteSpec determinism", () => {
     const home = spec.pages.find((p) => p.slug === "home")!;
     // No products, no posts/articles: Products and RecentObjects are absent.
     // Contact survives on the business phone; Links survives on the website
-    // object linked by has_website.
+    // object linked by has_website. CTA is the visitor action block on every
+    // home page; ObjectRail appears because the owner has 4 services + 2
+    // people to feature through the inline circle doorway.
     expect(home.sections.map((s) => s.component)).toEqual([
       "Hero",
       "BusinessSummary",
@@ -90,7 +92,9 @@ describe("generateSiteSpec determinism", () => {
       "People",
       "Contact",
       "Links",
+      "CTA",
       "AskFYD",
+      "ObjectRail",
     ]);
   });
 

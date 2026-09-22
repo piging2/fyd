@@ -47,6 +47,43 @@ describe("planSite", () => {
     expect(components).toContain("Hero");
   });
 
+  test("CTA and ObjectRail are planned on the trade-graph home page", () => {
+    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR });
+    const home = planned.spec.pages.find((p) => p.slug === "home")!;
+    const components = home.sections.map((s) => s.component);
+    // CTA is a site capability: on every generated home page.
+    expect(components).toContain("CTA");
+    expect(planned.eligibility.eligible["CTA"]).toBe(true);
+    // ObjectRail: the trade graph has featureable services/people/posts,
+    // so the inline circle doorway is planned and eligible.
+    expect(components).toContain("ObjectRail");
+    expect(planned.eligibility.eligible["ObjectRail"]).toBe(true);
+    const rail = home.sections.find((s) => s.component === "ObjectRail")!;
+    // The doorway resolves its objects from the live graph: a deterministic
+    // related query over the eligible predicates/schemas, never invented ids.
+    expect(rail.query.kind).toBe("related");
+    if (rail.query.kind === "related") {
+      expect(rail.query.from).toBe("biz-trade");
+      // Deterministic predicate set in canonical role order
+      // (service, product, person, post, article vocabularies).
+      expect(rail.query.predicates).toEqual([
+        "provides",
+        "offers",
+        "employs",
+        "has_member",
+        "publishes",
+      ]);
+      expect(rail.query.schemas).toEqual(
+        expect.arrayContaining(["ping.social.service@1"]),
+      );
+      expect(rail.query.limit).toBe(6);
+    }
+    // ObjectRail keeps its registered order: after AskFYD.
+    expect(components.indexOf("ObjectRail")).toBeGreaterThan(
+      components.indexOf("AskFYD"),
+    );
+  });
+
   test("planned spec validates against the SiteSpec schema", () => {
     const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR });
     expect(() => validateSiteSpec(planned.spec)).not.toThrow();

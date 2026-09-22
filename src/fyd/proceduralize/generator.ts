@@ -156,7 +156,7 @@ function roleQuery(from: string, role: FYDSchemaRole, limit?: number): FYDQuery 
   };
 }
 
-/** HOME: Hero, BusinessSummary, Services, Products, Locations, People, RecentObjects, Contact, Links, AskFYD. */
+/** HOME: Hero, BusinessSummary, Services, Products, Locations, People, RecentObjects, Contact, Links, CTA, AskFYD, ObjectRail. */
 function homePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
   if (!g.owner) return null;
   const ownerId = g.owner.id;
@@ -190,8 +190,30 @@ function homePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
   if (hasSocials(graph, g.owner)) {
     add("Links", { kind: "owner" });
   }
+  // CTA is a site capability, present on every generated home page: the
+  // visitor's primary action block (visit website / ask FYD). The registry,
+  // the renderer, the eligibility report, and the dimension-vector policy
+  // (CTA boosted by urgency) all already account for it; the generator
+  // simply never emitted it.
+  add("CTA", { kind: "owner" });
   // AskFYD is a site capability, present on every generated home page.
   add("AskFYD", { kind: "static" });
+  // ObjectRail: the primary-circle doorway, inline. Features the richest
+  // related object (service, product, person, post, article) through the
+  // existing ObjectCircle doorway. Emitted only when the owner has related
+  // objects to feature; the planner's density policy still caps sections.
+  const featureable =
+    g.services.length +
+    g.products.length +
+    g.people.length +
+    g.articles.length +
+    g.posts.length;
+  if (featureable > 0) {
+    add(
+      "ObjectRail",
+      roleQueryUnion(ownerId, ["service", "product", "person", "post", "article"], 6),
+    );
+  }
 
   return { slug: "home", title: g.owner.title, navLabel: "Home", sections };
 }
