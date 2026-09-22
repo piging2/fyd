@@ -3,7 +3,7 @@
  *
  * Script: /home/nolan/fyd-proof-run/regen.ts
  * Timestamp pin: 2026-09-21T13:50:00Z
- * Pipeline git commit: 556c56f9bb67cb88bdac1aeb2dea6139763b5f10
+ * Pipeline git commit: 3e30503b3b819d820c276d4dc379048baba7c27e
  * Source: https://www.coppersmithplumbing.com/
  * Source digest (sha256 over pinned raw bytes, file order: index.html, rss.xml, sitemap.xml): 5e9f1433566b21e864a74f8e36950207465a67265a945f449fe72342c005a70e
  * Source files:
@@ -109,9 +109,102 @@ export const COPPERSMITH_GRAPH: ObjectGraph = {
         "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
         "derivedAt": "2026-09-21T13:50:00Z"
       }
+    },
+    {
+      "id": "website-business-2f1327c09d622175-service-139408827c27",
+      "schema": "ping.social.service@1",
+      "controllerId": "identity_fyd_compiler_test",
+      "visibility": "public",
+      "title": "Plumbing",
+      "description": "Are you working on new construction for residential homes or commercial buildings?",
+      "fields": {
+        "name": "Plumbing",
+        "description": "Are you working on new construction for residential homes or commercial buildings?",
+        "service_href": "https://coppersmithplumbing.com/services/plumbing/",
+        "claimKind": "website_statement"
+      },
+      "createdAt": "2026-09-21T13:50:00Z",
+      "updatedAt": "2026-09-21T13:50:00Z",
+      "provenance": {
+        "kind": "website-derived",
+        "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+        "derivedAt": "2026-09-21T13:50:00Z"
+      }
+    },
+    {
+      "id": "website-business-2f1327c09d622175-service-2dbc12c16f83",
+      "schema": "ping.social.service@1",
+      "controllerId": "identity_fyd_compiler_test",
+      "visibility": "public",
+      "title": "Heating & Cooling",
+      "description": "We maintain or repair furnaces, air conditioning units, heat pumps, mini split systems and more.",
+      "fields": {
+        "name": "Heating & Cooling",
+        "description": "We maintain or repair furnaces, air conditioning units, heat pumps, mini split systems and more.",
+        "service_href": "https://coppersmithplumbing.com/services/hvac/cooling/",
+        "claimKind": "website_statement"
+      },
+      "createdAt": "2026-09-21T13:50:00Z",
+      "updatedAt": "2026-09-21T13:50:00Z",
+      "provenance": {
+        "kind": "website-derived",
+        "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+        "derivedAt": "2026-09-21T13:50:00Z"
+      }
+    },
+    {
+      "id": "website-business-2f1327c09d622175-service-78962f315c55",
+      "schema": "ping.social.service@1",
+      "controllerId": "identity_fyd_compiler_test",
+      "visibility": "public",
+      "title": "HVAC",
+      "description": "We set up complete heating, cooling, and ventilation systems. Get your HVAC needs done.",
+      "fields": {
+        "name": "HVAC",
+        "description": "We set up complete heating, cooling, and ventilation systems. Get your HVAC needs done.",
+        "service_href": "https://coppersmithplumbing.com/services/hvac/",
+        "claimKind": "website_statement"
+      },
+      "createdAt": "2026-09-21T13:50:00Z",
+      "updatedAt": "2026-09-21T13:50:00Z",
+      "provenance": {
+        "kind": "website-derived",
+        "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+        "derivedAt": "2026-09-21T13:50:00Z"
+      }
+    },
+    {
+      "id": "website-business-2f1327c09d622175-service-a2008c93fb04",
+      "schema": "ping.social.service@1",
+      "controllerId": "identity_fyd_compiler_test",
+      "visibility": "public",
+      "title": "Ventilation",
+      "description": "Building a new office complex or need the current system assessed? Our specialists can help.",
+      "fields": {
+        "name": "Ventilation",
+        "description": "Building a new office complex or need the current system assessed? Our specialists can help.",
+        "service_href": "https://coppersmithplumbing.com/services/hvac/ventilation/",
+        "claimKind": "website_statement"
+      },
+      "createdAt": "2026-09-21T13:50:00Z",
+      "updatedAt": "2026-09-21T13:50:00Z",
+      "provenance": {
+        "kind": "website-derived",
+        "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+        "derivedAt": "2026-09-21T13:50:00Z"
+      }
     }
   ],
   "relationships": [
+    {
+      "id": "rel-095378b4d4a047a4",
+      "subject": "website-business-2f1327c09d622175",
+      "predicate": "offers",
+      "object": "website-business-2f1327c09d622175-service-2dbc12c16f83",
+      "status": "active",
+      "createdAt": "2026-09-21T13:50:00Z",
+      "evidenceRef": "proceduralizer:project:service-card:elementor-cta-services:cooling"
+    },
     {
       "id": "rel-8627fe1497c235f5",
       "subject": "website-business-2f1327c09d622175-person-377048d67856",
@@ -131,6 +224,15 @@ export const COPPERSMITH_GRAPH: ObjectGraph = {
       "evidenceRef": "proceduralizer:project:sameAs:https://www.coppersmithplumbing.com/author/coppersmithplm/"
     },
     {
+      "id": "rel-bbe63e103139111b",
+      "subject": "website-business-2f1327c09d622175",
+      "predicate": "offers",
+      "object": "website-business-2f1327c09d622175-service-a2008c93fb04",
+      "status": "active",
+      "createdAt": "2026-09-21T13:50:00Z",
+      "evidenceRef": "proceduralizer:project:service-card:elementor-cta-services:ventilation"
+    },
+    {
       "id": "rel-d0a40ed4fc7eb0ab",
       "subject": "website-business-2f1327c09d622175",
       "predicate": "located_at",
@@ -138,6 +240,24 @@ export const COPPERSMITH_GRAPH: ObjectGraph = {
       "status": "active",
       "createdAt": "2026-09-21T13:50:00Z",
       "evidenceRef": "proceduralizer:project:postal-address"
+    },
+    {
+      "id": "rel-de5dba2de5173fc0",
+      "subject": "website-business-2f1327c09d622175",
+      "predicate": "offers",
+      "object": "website-business-2f1327c09d622175-service-78962f315c55",
+      "status": "active",
+      "createdAt": "2026-09-21T13:50:00Z",
+      "evidenceRef": "proceduralizer:project:service-card:elementor-cta-services:hvac"
+    },
+    {
+      "id": "rel-f450fdb901a6baa3",
+      "subject": "website-business-2f1327c09d622175",
+      "predicate": "offers",
+      "object": "website-business-2f1327c09d622175-service-139408827c27",
+      "status": "active",
+      "createdAt": "2026-09-21T13:50:00Z",
+      "evidenceRef": "proceduralizer:project:service-card:elementor-cta-services:plumbing"
     }
   ]
 };
