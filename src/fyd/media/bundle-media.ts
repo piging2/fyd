@@ -94,6 +94,22 @@ export function validatePipelineManifest(
       return null;
     if (typeof o.digest !== "string" || o.digest.length === 0) return null;
     if (!Array.isArray(o.variants) || o.variants.length === 0) return null;
+    // Pipeline invariant (Phase 4): every published asset must answer
+    // where it came from (sourceUrl) and when it was observed
+    // (observedAt). A provenance-less item means the file did not come
+    // through the pipeline; reject the whole manifest, never the item.
+    const prov = (o as { provenance?: unknown }).provenance as
+      | { sourceUrl?: unknown; observedAt?: unknown }
+      | null
+      | undefined;
+    if (
+      !prov ||
+      typeof prov.sourceUrl !== "string" ||
+      prov.sourceUrl.length === 0 ||
+      typeof prov.observedAt !== "string" ||
+      prov.observedAt.length === 0
+    )
+      return null;
   }
   return m as PipelineMediaManifest;
 }
