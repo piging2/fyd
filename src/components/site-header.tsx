@@ -106,7 +106,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden shrink-0 md:flex items-center gap-2">
+        <div className="hidden shrink-0 lg:flex items-center gap-2">
           <ThemeToggle />
           {contact && (
             <Link
