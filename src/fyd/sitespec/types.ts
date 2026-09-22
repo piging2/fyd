@@ -82,7 +82,82 @@ export interface FYDNavItem {
 /**
  * Basic design tokens. Structured values only, no drag and drop.
  * Tokens re-skin the whole generated site without touching the spec.
+ *
+ * v1 fields (accent, accentForeground, surface, ink, radius, fontDisplay,
+ * fontBody) are frozen. The builder composition lane (fyd/builder-composition)
+ * extends the set additively; every new group is optional so specs written
+ * before this change validate and render unchanged.
  */
+export interface FYDTypeScale {
+  /** Base font size in px. */
+  base: number;
+  /** Modular ratio between type steps. */
+  ratio: number;
+}
+
+/** Spacing scale in px, named steps. */
+export interface FYDSpacingScale {
+  xs: number;
+  sm: number;
+  md: number;
+  lg: number;
+  xl: number;
+}
+
+/** Extended color roles beyond the v1 accent/surface/ink triple. */
+export interface FYDColorSystem {
+  muted?: string;
+  border?: string;
+  success?: string;
+  warning?: string;
+  danger?: string;
+}
+
+/** Surface variants for cards, sheets, overlays. */
+export interface FYDSurfaces {
+  card?: string;
+  overlay?: string;
+  sheet?: string;
+}
+
+/** Shadow tokens. */
+export interface FYDShadows {
+  sm?: string;
+  md?: string;
+  lg?: string;
+}
+
+/** Layout tokens: content measure and rail width. */
+export interface FYDLayoutTokens {
+  /** Max content width in px. */
+  contentMaxWidth?: number;
+  /** Rail width in px on wide viewports. */
+  railWidth?: number;
+}
+
+/**
+ * Named viewport breakpoints in px. Placement geometry reads these through
+ * resolveCollapseBreakpoint; no placement logic hardcodes px.
+ */
+export interface FYDBreakpoints {
+  sm: number;
+  md: number;
+  lg: number;
+  xl: number;
+}
+
+/** Media treatment tokens. */
+export interface FYDMediaTokens {
+  treatment?: "documentary" | "polished" | "schematic";
+  aspectRatio?: string;
+}
+
+/** Motion tokens: durations in ms; reduced-motion disables animation. */
+export interface FYDMotionTokens {
+  durationMs?: number;
+  easing?: string;
+}
+
 export interface FYDThemeTokens {
   accent: string;
   accentForeground: string;
@@ -91,6 +166,15 @@ export interface FYDThemeTokens {
   radius: "none" | "sm" | "md" | "lg" | "full";
   fontDisplay: string;
   fontBody: string;
+  typography?: FYDTypeScale;
+  spacing?: FYDSpacingScale;
+  colors?: FYDColorSystem;
+  surfaces?: FYDSurfaces;
+  shadows?: FYDShadows;
+  layout?: FYDLayoutTokens;
+  breakpoints?: FYDBreakpoints;
+  media?: FYDMediaTokens;
+  motion?: FYDMotionTokens;
 }
 
 export const DEFAULT_FYD_THEME: FYDThemeTokens = {
@@ -126,6 +210,16 @@ export interface FYDSiteSpec {
   navigation: FYDNavItem[];
   pages: FYDPage[];
   provenance: FYDSpecProvenance;
+  /**
+   * Builder composition extensions (all optional, backward compatible):
+   * status/revision: draft-vs-published lifecycle with bounded revision
+   * history; archetype: which composition profile composed this spec;
+   * objectPresence: the generic margin/rail layout capability.
+   */
+  status?: FYDSpecStatus;
+  revision?: number;
+  archetype?: FYDSiteArchetype;
+  objectPresence?: ObjectPresence;
 }
 
 /** A typed validation finding. Shape harvested from src/lib/findings.ts. */
@@ -135,4 +229,63 @@ export interface FYDFinding {
   resourceId: string;
   path: string;
   message: string;
+}
+
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Builder composition extensions (fyd/builder-composition, 2026-09-21).
+// Additive and optional: pre-existing specs validate and render unchanged.
+// ---------------------------------------------------------------------------
+
+/** Lifecycle of a generated spec: operator-authored draft vs published. */
+export type FYDSpecStatus = "draft" | "published";
+
+/** Which composition profile composed this spec. */
+export type FYDSiteArchetype = "KNOWLEDGE" | "TRADES" | "TECHNICAL_ENTERPRISE";
+
+/** ObjectPresence mode: explicit placement or geometry-decided. */
+export type ObjectPresenceMode = "auto" | "rail" | "drawer" | "hidden";
+
+/**
+ * ObjectPresence: the generic margin/rail layout capability.
+ *
+ * Placement law: center = canonical customer content, untouched. Margins =
+ * contextual intelligence when safe space exists. Narrow viewports collapse
+ * the rail to a drawer/sheet, never displacing content. In "auto" mode the
+ * rail-vs-drawer decision comes from geometry: the collapseBelow breakpoint
+ * key is resolved through the spec theme tokens via resolveCollapseBreakpoint.
+ */
+export interface ObjectPresence {
+  mode: ObjectPresenceMode;
+  /** Contextual object ids eligible for the margin/rail, deterministic order. */
+  objects: string[];
+  rules: {
+    /** Breakpoint key (see FYDBreakpoints); the rail collapses to a drawer below it. */
+    collapseBelow: string;
+  };
+}
+
+/** Default breakpoint table when a spec theme tokens carry none. */
+export const DEFAULT_FYD_BREAKPOINTS: FYDBreakpoints = {
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+};
+
+/**
+ * Resolve a collapseBelow breakpoint key to px. Unknown keys fail closed to
+ * the "lg" default (1024): the rail still collapses, at standard geometry.
+ * Never throws.
+ */
+export function resolveCollapseBreakpoint(theme: FYDThemeTokens, key: string): number {
+  const table = theme.breakpoints ?? DEFAULT_FYD_BREAKPOINTS;
+  const v: number | undefined =
+    key === "sm" ? table.sm
+    : key === "md" ? table.md
+    : key === "lg" ? table.lg
+    : key === "xl" ? table.xl
+    : undefined;
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : DEFAULT_FYD_BREAKPOINTS.lg;
 }

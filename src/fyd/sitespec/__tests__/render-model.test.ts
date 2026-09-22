@@ -32,6 +32,7 @@ const FIXED_GENERATED_AT = "2026-09-21T13:50:00Z";
 const REPO_ROOT = path.resolve(__dirname, "..", "..", "..", "..");
 const PROBE = path.join(__dirname, "determinism-probe.ts");
 const TSX_BIN = path.join(REPO_ROOT, "node_modules", ".bin", "tsx");
+const CSS_REGISTER = path.join(__dirname, "css-register.cjs");
 
 function buildProbeInput(): {
   spec: FYDSiteSpec;
@@ -54,7 +55,7 @@ function runProbeOnce(input: unknown): string {
   const inFile = path.join(dir, "input.json");
   const outFile = path.join(dir, "output.txt");
   writeFileSync(inFile, JSON.stringify(input), "utf8");
-  execFileSync(TSX_BIN, [PROBE, inFile, outFile], {
+  execFileSync(TSX_BIN, ["--import", CSS_REGISTER, PROBE, inFile, outFile], {
     stdio: ["ignore", "ignore", "pipe"],
     timeout: 120000,
   });

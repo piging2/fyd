@@ -1,16 +1,12 @@
 /**
- * Jest config for the FYD proceduralize lane (site generator + patch +
- * proceduralizer). Scoped to this lane's tests only; sibling lanes own
- * their own test scope. Run with:
- * npx jest --config src/fyd/proceduralize/jest.config.cjs
- *
- * Shape harvested from src/fyd/ask/jest.config.cjs (same preset, same
- * ts-jest inline tsconfig); only rootDir-relative testMatch differs.
+ * Jest config for the FYD builder sitespec lane. Scoped to this lane's
+ * tests only. Run with: npx jest --config src/fyd/sitespec/jest.config.cjs
+ * Shape harvested from src/fyd/proceduralize/jest.config.cjs.
  */
 module.exports = {
   testEnvironment: "node",
   rootDir: "../../..",
-  testMatch: ["<rootDir>/src/fyd/proceduralize/__tests__/*.test.ts"],
+  testMatch: ["<rootDir>/src/fyd/sitespec/__tests__/*.test.ts"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "\.css$": "<rootDir>/src/fyd/components/__tests__/css-stub.js",

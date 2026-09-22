@@ -15,6 +15,9 @@ import type { OwnerFieldCorrection, PingObject } from "@/lib/ping/types";
 import type { ReactNode } from "react";
 import { getComponentDef } from "./registry";
 import { AskFydWidget } from "./ask-fyd-widget";
+import { ObjectRail, pingObjectToView, richestObject } from "./object-rail";
+import { ObjectCard } from "../object/card";
+import { ObjectCircle } from "../ui/object-circle";
 import { WhyThis, type EvidenceStep } from "../ui/why-this";
 import { resolveBoundField } from "../sitespec/graph";
 import type { BindingClassification } from "../sitespec/graph";
@@ -34,6 +37,7 @@ import type {
   FYDSiteSpec,
   FYDThemeTokens,
   ObjectGraph,
+  ObjectPresence,
   ViewerContext,
 } from "../sitespec/types";
 
@@ -911,6 +915,46 @@ function boundOwnerTitle(ctx: RenderContext): string {
   return boundTitle(ctx, owner) ?? "this business";
 }
 
+/**
+ * ObjectRail section: the generic margin capability as an inline section.
+ * Features the richest public non-owner object through the existing
+ * ObjectCircle doorway over the honest pingObjectToView adapter; presence
+ * mode auto lets geometry decide rail vs drawer from the theme token.
+ */
+function ObjectRailSection({ objects, presentation, theme, ctx }: SectionProps) {
+  const featured = richestObject(objects, ctx.spec.ownerObjectId);
+  if (!featured) return null;
+  const featuredView = pingObjectToView(featured);
+  const presence: ObjectPresence = {
+    mode: "auto",
+    objects: [featured.id],
+    rules: { collapseBelow: "lg" },
+  };
+  const cards = (
+    <div className="space-y-3">
+      <ObjectCircle view={featuredView} />
+      {featured.description?.trim() ? (
+        <p className="text-sm leading-relaxed" style={{ color: theme.ink }}>
+          {featured.description.trim()}
+        </p>
+      ) : null}
+      <p className="text-xs" style={{ color: theme.ink, opacity: 0.6 }}>
+        {featuredView.provenance.label}
+      </p>
+    </div>
+  );
+  return (
+    <section className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
+      <ObjectRail
+        cards={cards}
+        presence={presence}
+        theme={theme}
+        heading={presentation.heading ?? "Featured object"}
+      />
+    </section>
+  );
+}
+
 function GenericObjectCardSection({ objects, presentation, theme, ctx }: SectionProps) {
   if (objects.length === 0) return null;
   return (
@@ -966,6 +1010,8 @@ export function renderSection(section: FYDSection, ctx: RenderContext): ReactNod
       return <IdentityCardSection key={section.id} {...props} />;
     case "AskFYD":
       return <AskFYDSection key={section.id} {...props} />;
+    case "ObjectRail":
+      return <ObjectRailSection key={section.id} {...props} />;
     case "GenericObjectCard":
     default:
       return <GenericObjectCardSection key={section.id} {...props} />;

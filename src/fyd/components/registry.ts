@@ -1,5 +1,5 @@
 /**
- * Component registry: the sixteen section components plus GenericObjectCard.
+ * Component registry: the seventeen section components plus GenericObjectCard.
  *
  * Contract (harvest T5): each entry names the component, the schemas it
  * accepts, and whether it needs the owner. Adding a component means adding
@@ -29,6 +29,21 @@ export interface FYDComponentDef {
   ownerBound: boolean;
   /** True when the section renders nothing without resolved objects. */
   requiresData: boolean;
+  /**
+   * Optional structured metadata for the composer and owner tooling.
+   * Every field is optional so existing entries stay unchanged; new
+   * entries declare data, capabilities, responsive constraints, and
+   * editable properties for composition reasoning.
+   */
+  requiredData?: string[];
+  capabilities?: string[];
+  responsive?: {
+    behavior: "rail-to-drawer" | "stack" | "fixed";
+    collapseBelow?: string;
+    touchTargetMinPx?: number;
+  };
+  editableProperties?: string[];
+  variants?: string[];
 }
 
 const KNOWLEDGE_WEBSITE = "ping.knowledge.website@1";
@@ -51,6 +66,19 @@ const DEFINITIONS: FYDComponentDef[] = [
   { name: "CTA", label: "Call to action", description: "Primary action block: visit website or start a conversation.", acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.service], ownerBound: true, requiresData: false },
   { name: "AskFYD", label: "Ask FYD", description: "Question box: ask anything about this business.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: false },
   { name: "GenericObjectCard", label: "Generic object card", description: "Fallback renderer for schemas with no dedicated component.", acceptsSchemas: [], ownerBound: false, requiresData: true },
+  {
+    name: "ObjectRail",
+    label: "Object rail",
+    description: "Margin rail featuring one evidence-backed object through the ObjectCircle doorway (inline reference, hover preview, dialog); collapses to a drawer below the collapseBelow breakpoint. Geometry decides placement; center content is untouched.",
+    acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.service, ...SCHEMA_ROLES.product, ...SCHEMA_ROLES.location, ...SCHEMA_ROLES.person, ...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, KNOWLEDGE_WEBSITE],
+    ownerBound: false,
+    requiresData: true,
+    requiredData: ["objectPresence.objects", "themeTokens.breakpoints"],
+    capabilities: ["preview"],
+    responsive: { behavior: "rail-to-drawer", collapseBelow: "lg", touchTargetMinPx: 44 },
+    editableProperties: ["heading", "objectPresence.mode", "objectPresence.rules.collapseBelow"],
+    variants: ["rail", "drawer", "auto"],
+  },
 ];
 
 const BY_NAME = new Map(DEFINITIONS.map((d) => [d.name, d]));
