@@ -44,7 +44,27 @@ export interface FYDComponentDef {
   };
   editableProperties?: string[];
   variants?: string[];
+  /**
+   * Optional operational evidence for the future self-evaluating
+   * registry (FUTURE CONTRACT, not evaluated yet): observed usage,
+   * failure counts, LCP impact, and the graph shapes this component
+   * serves well or poorly. Every field is optional and every entry
+   * leaves them unpopulated until the evaluation machinery exists.
+   */
+  operationalEvidence?: {
+    usage?: number;
+    failureCount?: number;
+    lcpImpactMs?: number;
+    bestGraphShapes?: string[];
+    poorGraphShapes?: string[];
+  };
 }
+
+/**
+ * Registry version, stamped on every dependency-manifest binding so a
+ * component change can be traced to the specs it affected.
+ */
+export const COMPONENT_REGISTRY_VERSION = "fyd-component-registry@1";
 
 const KNOWLEDGE_WEBSITE = "ping.knowledge.website@1";
 

@@ -2,8 +2,9 @@
  * FYD golden customer route: /build/[siteId].
  *
  * The dynamic composition route. Same pipeline as the /sites/* demos
- * (PING-backed object graph -> generateSiteSpec -> owner presentation
- * intent -> hero media -> validate -> render), but the chrome is the
+ * (PING-backed object graph -> object-builder verification -> site
+ * planner -> owner presentation intent -> hero media -> validate ->
+ * render), but the chrome is the
  * customer own: no PING marketing header/footer (the root layout treats
  * /build/* as chromeless) and no FYD demo framing. The page renders the
  * generic BuildClient composition shell: page content in the center,
@@ -16,7 +17,9 @@
 
 import { notFound } from "next/navigation";
 import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
-import { generateSiteSpec } from "@/fyd/proceduralize/generator";
+import { verifyObjectGraph } from "@/fyd/builder/object-builder";
+import { planSite } from "@/fyd/builder/planner";
+import { vectorForSite } from "@/fyd/builder/site-vectors";
 import { isRenderable, validateSiteSpec } from "@/fyd/sitespec/validator";
 import { applyPresentationIntent } from "@/fyd/customize/apply-layer";
 import { heroMediaFor } from "@/fyd/media/select";
@@ -60,10 +63,24 @@ export default async function BuildSitePage({
   const projection = await getPingObjectGraph(siteId).catch(() => null);
   if (!projection) notFound();
   const { graph, meta, presentationIntent } = projection;
-  const base = generateSiteSpec(graph, {
+  // OBJECT BUILDER boundary: the graph is verified and attested before
+  // the website builder plans anything from it. The tenant context is the
+  // site id, so a cross-tenant graph cannot reach the planner.
+  const verified = verifyObjectGraph({ tenantId: siteId }, projection);
+  // WEBSITE BUILDER: deterministic planning from the verified graph with
+  // this tenant composition operating point. The planner never
+  // manufactures business facts: every section comes from the data-driven
+  // generator, and every generated copy slot is evidence-bound and
+  // verified before the spec is returned.
+  const planned = planSite({
+    ctx: { tenantId: siteId },
+    graph: verified.graph,
+    vector: vectorForSite(siteId),
     generatedAt: meta.generatedAt,
     eventSequences: meta.eventSequences ?? undefined,
+    attestation: verified.attestation,
   });
+  const base = planned.spec;
   // PRESENTATION INTENT layer: approved owner directives applied OVER the
   // compiled spec. Facts (graph) and design system (theme) are untouched.
   const spec = applyPresentationIntent(base, presentationIntent, graph).spec;
