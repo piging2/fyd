@@ -14,6 +14,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  buildCapabilities,
   buildObjectView,
   knownServices,
   listObjectIds,
@@ -166,5 +167,54 @@ describe("loadObjectView", () => {
     expect(buildObjectView("happy-place")?.services.map((s) => s.name)).toEqual([
       "Pergola Design Consultations",
     ]);
+  });
+});
+
+describe("buildCapabilities ask gating (Phase 2)", () => {
+  const emptyContact = {
+    phone: null,
+    email: null,
+    website: null,
+    locality: null,
+    addressVisibility: "hidden",
+  } as const;
+
+  test("no evidence -> no ask capability (follow/like remain)", () => {
+    const caps = buildCapabilities(emptyContact, { summary: "", services: [] });
+    expect(caps.some((c) => c.kind === "ask")).toBe(false);
+    expect(caps.some((c) => c.kind === "follow")).toBe(true);
+    expect(caps.some((c) => c.kind === "like")).toBe(true);
+  });
+
+  test("summary text gates ask on", () => {
+    const caps = buildCapabilities(emptyContact, {
+      summary: "A real business.",
+      services: [],
+    });
+    expect(caps.some((c) => c.kind === "ask")).toBe(true);
+  });
+
+  test("a visible service gates ask on", () => {
+    const caps = buildCapabilities(emptyContact, {
+      summary: "",
+      services: [
+        {
+          id: "s1",
+          name: "Consult",
+          basis: "structured",
+          basisLabel: "From the site data",
+          visible: true,
+        },
+      ],
+    });
+    expect(caps.some((c) => c.kind === "ask")).toBe(true);
+  });
+
+  test("contact evidence gates ask on", () => {
+    const caps = buildCapabilities(
+      { ...emptyContact, phone: "+15551234567" },
+      { summary: "", services: [] },
+    );
+    expect(caps.some((c) => c.kind === "ask")).toBe(true);
   });
 });

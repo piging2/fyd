@@ -166,12 +166,27 @@ function buildServices(
   };
 }
 
-function buildCapabilities(contact: ObjectContactView): ObjectCapability[] {
+export function buildCapabilities(
+  contact: ObjectContactView,
+  evidence: { summary: string; services: ObjectServiceView[] },
+): ObjectCapability[] {
   // "view" is demoted: the full customer page is no longer a capability
   // (the type variant stays for compatibility, but it is never emitted).
   // "follow" is a PING relationship, always available for a business object.
   // call/email/website appear only when the underlying value exists.
-  const caps: ObjectCapability[] = [{ kind: "ask" }, { kind: "follow" }, { kind: "like" }];
+  // "ask" is evidence-gated: the ask pipeline answers from the object's
+  // own record (summary, services, contact), so a circle offers ask only
+  // when the object carries something to answer from. No ask evidence ->
+  // no ask action, never a dead question box.
+  const caps: ObjectCapability[] = [{ kind: "follow" }, { kind: "like" }];
+  const hasAskEvidence =
+    evidence.summary.trim().length > 0 ||
+    evidence.services.some((s) => s.visible) ||
+    contact.phone !== null ||
+    contact.email !== null ||
+    contact.website !== null ||
+    contact.locality !== null;
+  if (hasAskEvidence) caps.unshift({ kind: "ask" });
   if (contact.phone) caps.push({ kind: "call", href: "tel:" + contact.phone.replace(/\s/g, ""), label: "Call" });
   if (contact.email) caps.push({ kind: "email", href: "mailto:" + contact.email, label: "Email" });
   if (contact.website) caps.push({ kind: "website", href: contact.website, label: "Website" });
@@ -264,7 +279,7 @@ export function composeObjectView(
     services,
     serviceArea: parseServiceArea(field(obj, "area_served")),
     contact,
-    capabilities: buildCapabilities(contact),
+    capabilities: buildCapabilities(contact, { summary: description, services }),
     provenance: {
       kind: obj.provenance?.kind ?? "unknown",
       ref: obj.provenance?.ref ?? "",
