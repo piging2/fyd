@@ -719,7 +719,7 @@ function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
       <ul className="flex flex-col gap-2 text-base">
         {showPhone && phoneLink.kind === "safe" ? (
           <li>
-            <a href={phoneLink.href} className="underline" style={{ color: theme.ink }}>
+            <a href={phoneLink.href} className="underline inline-block min-h-[44px] py-2" style={{ color: theme.ink }}>
               {phone}
             </a>
             {phoneCorrection ? <CorrectionNote correction={phoneCorrection} theme={theme} /> : null}
@@ -727,7 +727,7 @@ function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
         ) : null}
         {showEmail && emailLink.kind === "safe" ? (
           <li>
-            <a href={emailLink.href} className="underline" style={{ color: theme.ink }}>
+            <a href={emailLink.href} className="underline inline-block min-h-[44px] py-2" style={{ color: theme.ink }}>
               {email}
             </a>
             {emailCorrection ? <CorrectionNote correction={emailCorrection} theme={theme} /> : null}
@@ -735,7 +735,7 @@ function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
         ) : null}
         {showWebsite && website.kind === "safe" ? (
           <li>
-            <a href={website.href} className="underline" style={{ color: theme.ink }}>
+            <a href={website.href} className="underline inline-block min-h-[44px] py-2" style={{ color: theme.ink }}>
               {website.href}
             </a>
           </li>

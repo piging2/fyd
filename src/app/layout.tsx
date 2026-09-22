@@ -57,11 +57,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     },
   };
 
-  // Object routes (/o/*) belong visually to the object, not to PING: they
-  // render without the PING marketing header, footer, and org JSON-LD.
-  // The pathname arrives via the x-pathname header set in middleware.
+  // Object routes (/o/*) belong visually to the object, not to PING, and
+  // generated site routes (/sites/*) belong visually to the customer
+  // business, never to PING engineering: both render without the PING
+  // marketing header, footer, and org JSON-LD. Generated routes carry
+  // their own demo framing instead. The pathname arrives via the
+  // x-pathname header set in middleware.
   const pathname = (await headers()).get("x-pathname") ?? "";
-  const chromeless = pathname === "/o" || pathname.startsWith("/o/");
+  const chromeless =
+    pathname === "/o" ||
+    pathname.startsWith("/o/") ||
+    pathname.startsWith("/sites/");
 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`} style={{ colorScheme: 'dark light' }}>
