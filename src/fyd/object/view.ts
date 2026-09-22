@@ -22,6 +22,11 @@
  * label.
  *
  * The UI renders this projection. It never renders business-specific code.
+ *
+ * Phase 1 (per-object path): composeObjectView is the shared composition
+ * core. loadObjectView keeps the legacy slug-keyed business behavior;
+ * loadObjectViewById (./by-id) resolves ANY object id in the tenant graph
+ * through the same core.
  */
 
 import {
@@ -174,41 +179,47 @@ function buildCapabilities(contact: ObjectContactView): ObjectCapability[] {
 }
 
 /**
- * Load the public ObjectView for a site slug from the PING-backed
- * projection. This is the canonical read-model loader; Card/Node lanes
- * should reuse it. Returns null for unknown slugs (the route turns this
- * into a 404). Throws only on programmer error, never on missing data.
+ * Shared composition core: build the ObjectView for ONE object in a
+ * tenant graph.
+ *
+ * - siteId selects the tenant (media manifests, never cross-tenant).
+ * - obj is the object the view describes (any schema, any public object).
+ * - viewId is the public id carried on the view.
+ * - overridesKey keys the owner store.
+ *
+ * The slug-keyed business path passes the site slug for viewId and
+ * overridesKey (legacy behavior, unchanged). The per-object path
+ * (loadObjectViewById in ./by-id) passes the PING object id for both.
+ *
+ * Not a public loader on its own: use loadObjectView / loadObjectViewById,
+ * which enforce the tenant/object honesty gates (unknown tenant, unknown
+ * id, non-public object).
  */
-export function loadObjectView(slug: string): ObjectView | null {
-  let graph: ObjectGraph;
-  try {
-    graph = getPingObjectGraphSync(slug).graph;
-  } catch {
-    return null;
-  }
-  const business = graph.objects.find(
-    (o) => SCHEMA_ROLES.business.includes(o.schema) && o.visibility === "public",
-  );
-  if (!business) return null;
-
-  const overrides = readOverrides(slug);
-  const description = field(business, "description") ?? business.description ?? "";
-  const website = field(business, "website");
-  const phone = field(business, "phone");
-  const email = field(business, "email");
-  const locality = field(business, "locality");
-  const keywords = field(business, "keywords");
+export function composeObjectView(
+  graph: ObjectGraph,
+  siteId: string,
+  obj: PingObject,
+  viewId: string,
+  overridesKey: string,
+): ObjectView {
+  const overrides = readOverrides(overridesKey);
+  const description = field(obj, "description") ?? obj.description ?? "";
+  const website = field(obj, "website");
+  const phone = field(obj, "phone");
+  const email = field(obj, "email");
+  const locality = field(obj, "locality");
+  const keywords = field(obj, "keywords");
 
   const { services } = buildServices(
-    structuredServices(graph, business.id).map((s) => ({ id: s.id, name: s.title })),
-    slug,
+    structuredServices(graph, obj.id).map((s) => ({ id: s.id, name: s.title })),
+    overridesKey,
   );
 
   // Media via the semantic attachment: the manifest is joined to the
   // graph (Business represented_by Media) and the selector walks those
-  // relationships from the business. One truth for Page, Circle, and
+  // relationships from the object. One truth for Page, Circle, and
   // ObjectView; reference-only assets can never surface here.
-  const media: ObjectMediaView[] = listObjectMedia(slug, graph, business.id).map(
+  const media: ObjectMediaView[] = listObjectMedia(siteId, graph, obj.id).map(
     (d) => ({
       id: d.id,
       role: d.role,
@@ -239,25 +250,25 @@ export function loadObjectView(slug: string): ObjectView | null {
   // these records keep the SOURCE SAYS X / OWNER SAYS Y distinction and
   // the correction's own provenance for honest display.
   const fieldCorrections: FieldCorrectionView[] = (
-    business.ownerFieldCorrections ?? []
+    obj.ownerFieldCorrections ?? []
   ).map((c) => ({ ...c, sourceDrifted: c.sourceDrifted ?? false }));
 
   return {
-    id: slug,
-    schema: business.schema,
-    name: business.title,
+    id: viewId,
+    schema: obj.schema,
+    name: obj.title,
     category: categoryFor(keywords),
     locationLabel: locality,
     summary: description,
     media,
     services,
-    serviceArea: parseServiceArea(field(business, "area_served")),
+    serviceArea: parseServiceArea(field(obj, "area_served")),
     contact,
     capabilities: buildCapabilities(contact),
     provenance: {
-      kind: business.provenance?.kind ?? "unknown",
-      ref: business.provenance?.ref ?? "",
-      derivedAt: business.provenance?.derivedAt ?? business.updatedAt ?? "",
+      kind: obj.provenance?.kind ?? "unknown",
+      ref: obj.provenance?.ref ?? "",
+      derivedAt: obj.provenance?.derivedAt ?? obj.updatedAt ?? "",
       label: domain ? "Information observed on " + domain : "Information from the business website",
     },
     ownerUpdatedAt: overrides.history.length > 0 ? overrides.updatedAt : null,
@@ -268,6 +279,26 @@ export function loadObjectView(slug: string): ObjectView | null {
       "How can I get an estimate?",
     ],
   };
+}
+
+/**
+ * Load the public ObjectView for a site slug from the PING-backed
+ * projection. This is the canonical read-model loader; Card/Node lanes
+ * should reuse it. Returns null for unknown slugs (the route turns this
+ * into a 404). Throws only on programmer error, never on missing data.
+ */
+export function loadObjectView(slug: string): ObjectView | null {
+  let graph: ObjectGraph;
+  try {
+    graph = getPingObjectGraphSync(slug).graph;
+  } catch {
+    return null;
+  }
+  const business = graph.objects.find(
+    (o) => SCHEMA_ROLES.business.includes(o.schema) && o.visibility === "public",
+  );
+  if (!business) return null;
+  return composeObjectView(graph, slug, business, slug, slug);
 }
 
 /**
@@ -296,7 +327,7 @@ export function knownServices(objectId: string): { ids: string[]; names: Map<str
 }
 
 /** First maxChars of the summary, cut back to the last word boundary. */
-function trimTagline(summary: string, maxChars: number): string {
+export function trimTagline(summary: string, maxChars: number): string {
   const s = summary.trim();
   if (s.length <= maxChars) return s;
   const cut = s.slice(0, maxChars);

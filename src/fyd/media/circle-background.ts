@@ -23,7 +23,7 @@ import { getPipelineManifest } from "./bundle-media";
 import { isAcquirable, type FydMediaObject } from "./types";
 
 const IMAGE_BASIS = "Website photo, tiny optimized derivative";
-const GRADIENT_BASIS = "Deterministic fallback, no authorized site media";
+export const GRADIENT_BASIS = "Deterministic fallback, no authorized site media";
 
 // Warm artisan palette: hue 18 (burnt orange) through 42 (amber).
 const HUE_MIN = 18;
@@ -43,7 +43,7 @@ function pickSmallestVariant(
  * Deterministic warm gradient from sha256(objectId).
  * hue = 18 + (first digest byte mod 25), i.e. hues 18..42.
  */
-function gradientFor(objectId: string): { css: string; digest: string } {
+export function gradientFor(objectId: string): { css: string; digest: string } {
   const hash = createHash("sha256").update(objectId, "utf8").digest();
   const hue = HUE_MIN + hash[0] % HUE_SPAN;
   const css =
