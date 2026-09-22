@@ -14,6 +14,11 @@
  * "what services do they offer?", "where are they located?",
  * "who is associated?", "how do you know?".
  *
+ * FYD-001 (2026-09-22): both tenants now carry REAL service objects
+ * extracted from their homepages. The old demo-overlay synthetic service
+ * (website-service-51de038c1defe8bd) is deactivated (private) and must
+ * fail closed for visitors.
+ *
  * Run: npx jest --config src/fyd/ask/jest.config.cjs
  */
 import {
@@ -36,7 +41,21 @@ const HAPPY = "happy-place";
 const COPPER = "coppersmith-plumbing";
 const HAPPY_BIZ = "website-business-6fa5ebd99d72c4cb";
 const HAPPY_LOC = "website-business-6fa5ebd99d72c4cb-location";
-const HAPPY_SVC = "website-service-51de038c1defe8bd";
+const HAPPY_SVC = "website-business-6fa5ebd99d72c4cb-service-3263502c8175"; // Repairs (real)
+const HAPPY_SVC_SYNTHETIC = "website-service-51de038c1defe8bd"; // deactivated demo overlay, private
+const HAPPY_SERVICES = [
+  "website-business-6fa5ebd99d72c4cb-service-3263502c8175", // Repairs
+  "website-business-6fa5ebd99d72c4cb-service-340c39513223", // Fencing
+  "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab", // Painting
+  "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420", // Drywall
+  "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5", // Restoration
+];
+const COPPER_SERVICES = [
+  "website-business-2f1327c09d622175-service-139408827c27", // Plumbing
+  "website-business-2f1327c09d622175-service-2dbc12c16f83", // Heating & Cooling
+  "website-business-2f1327c09d622175-service-78962f315c55", // HVAC
+  "website-business-2f1327c09d622175-service-a2008c93fb04", // Ventilation
+];
 const COPPER_BIZ = "website-business-2f1327c09d622175";
 const COPPER_LOC = "website-business-2f1327c09d622175-location";
 const COPPER_PERSON = "website-business-2f1327c09d622175-person-377048d67856";
@@ -66,9 +85,12 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
   test("happy-place business: services answered from the service object", () => {
     const out = askOk(HAPPY, HAPPY_BIZ, "what services do they offer?");
     expect(out.refusal).toBe(false);
-    expect(out.answer).toContain("Pergola Design Consultations");
+    for (const name of ["Repairs", "Fencing", "Painting", "Drywall", "Restoration"]) {
+      expect(out.answer).toContain(name);
+    }
+    expect(out.answer).not.toContain("Pergola");
     expect(out.citations.length).toBeGreaterThan(0);
-    expect(out.citations.every((c) => c.id === HAPPY_SVC)).toBe(true);
+    expect(out.citations.every((c) => HAPPY_SERVICES.includes(c.id))).toBe(true);
     expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
   });
 
@@ -83,9 +105,9 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
   test("happy-place business: association answered from relationships", () => {
     const out = askOk(HAPPY, HAPPY_BIZ, "who is associated?");
     expect(out.refusal).toBe(false);
-    expect(out.answer).toContain("Pergola Design Consultations");
+    expect(out.answer).toContain("Adair Village");
     for (const c of out.citations) {
-      expect([HAPPY_BIZ, HAPPY_LOC, HAPPY_SVC]).toContain(c.id);
+      expect([HAPPY_BIZ, HAPPY_LOC, ...HAPPY_SERVICES]).toContain(c.id);
     }
     expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
   });
@@ -116,14 +138,17 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
     expect(answerClassFor(prov.refusal, prov.citations)).toBe("supported");
   });
 
-  test("coppersmith business: services honestly UNKNOWN, never invented", () => {
-    // No structured service objects exist for this tenant: the honest
-    // answer is UNKNOWN, not an invented service list.
+  test("coppersmith business: services answered from real service objects", () => {
+    // FYD-001: 4 real service cards extracted from the homepage. The honest
+    // answer names them from service objects, never invents.
     const out = askOk(COPPER, COPPER_BIZ, "what services do they offer?");
-    expect(out.refusal).toBe(true);
-    expect(out.citations).toEqual([]);
-    expect(out.answer).toMatch(/do not have evidence/i);
-    expect(answerClassFor(out.refusal, out.citations)).toBe("unknown");
+    expect(out.refusal).toBe(false);
+    for (const name of ["Plumbing", "Heating & Cooling", "HVAC", "Ventilation"]) {
+      expect(out.answer).toContain(name);
+    }
+    expect(out.citations.length).toBeGreaterThan(0);
+    expect(out.citations.every((c) => COPPER_SERVICES.includes(c.id))).toBe(true);
+    expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
   });
 });
 
@@ -131,9 +156,24 @@ describe("object-scoped ask: related objects", () => {
   test("service object answers about itself from its own evidence", () => {
     const out = askOk(HAPPY, HAPPY_SVC, "Tell me about this service.");
     expect(out.refusal).toBe(false);
-    expect(out.answer).toContain("Pergola");
+    expect(out.answer).toContain("Repairs");
     expect(out.citations.every((c) => c.id === HAPPY_SVC)).toBe(true);
     expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
+  });
+
+  test("deactivated synthetic service fails closed as unknown_object", () => {
+    // The old demo-overlay service is private: visitors must never see it.
+    const out = answerAskFyd(
+      {
+        siteId: HAPPY,
+        objectId: HAPPY_SVC_SYNTHETIC,
+        question: "Tell me about this service.",
+        mode: "visitor",
+      },
+      DEPS,
+    );
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.error.kind).toBe("unknown_object");
   });
 
   test("location object answers from its own record", () => {
@@ -178,7 +218,7 @@ describe("object-scoped ask: no cross-object leakage", () => {
 
   test("business service answer cites the service object, never the business", () => {
     const out = askOk(HAPPY, HAPPY_BIZ, "what services do they offer?");
-    expect(out.citations.every((c) => c.id === HAPPY_SVC)).toBe(true);
+    expect(out.citations.every((c) => HAPPY_SERVICES.includes(c.id))).toBe(true);
   });
 });
 
@@ -268,7 +308,8 @@ describe("object-scoped ask: tenant and visibility gates", () => {
   test("omitting objectId keeps the legacy site-scoped behavior", () => {
     const out = askOk(HAPPY, undefined, "what services do they offer?");
     expect(out.refusal).toBe(false);
-    expect(out.answer).toContain("Pergola Design Consultations");
+    expect(out.answer).toContain("Repairs");
+    expect(out.answer).not.toContain("Pergola");
   });
 });
 
@@ -315,7 +356,7 @@ describe("object-scoped ask: route wiring", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
-    expect(body.answer).toContain("Pergola");
+    expect(body.answer).toContain("Repairs");
     expect(body.tenantId).toBe(HAPPY);
   });
 
