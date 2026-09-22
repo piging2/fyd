@@ -14,7 +14,10 @@
  * object rail; on narrow viewports it collapses to the drawer sheet.
  * The rail never displaces content. The AskFYD mount is the spec's own
  * AskFYD section (the generator adds it to every home page), rendered by
- * the same machinery, not a second chat path.
+ * the same machinery, not a second chat path. The one owner control,
+ * [ Customize with FYD ], opens the conversational owner panel
+ * (propose -> preview -> approve -> apply -> revert) wired to the
+ * digest-bound overrides route.
  */
 
 import { useMemo } from "react";
@@ -31,6 +34,7 @@ import type {
 // Type-only: the hero media is serialized DisplayMedia resolved on the
 // server; the client never touches the media store.
 import type { DisplayMedia } from "@/fyd/media/select";
+import { OwnerPanel } from "./owner-panel";
 
 const VIEWER: ViewerContext = { viewerId: null, displayName: null };
 
@@ -135,6 +139,7 @@ export function BuildClient({
       {presence ? (
         <ObjectRail cards={cards} presence={presence} theme={theme} heading="Featured object" />
       ) : null}
+      {siteId ? <OwnerPanel siteId={siteId} /> : null}
     </div>
   );
 }
