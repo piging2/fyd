@@ -88,8 +88,17 @@ export function isKnownSchema(schema: string): schema is KnownObjectSchema {
 
 export type ObjectVisibility = "public" | "private";
 
+export type ObjectProvenanceKind =
+  | "canonical-journal"
+  | "website-derived"
+  | "overlay-authored";
+
 export interface ObjectProvenance {
-  kind: "canonical-journal" | "website-derived";
+  /** "overlay-authored" (2026-09-22): content added by a demo/overlay
+   *  operator into the site record. It is neither the website's own
+   *  words nor a recorded journal fact, and must never be
+   *  classified as either. */
+  kind: ObjectProvenanceKind;
   /** Canonical: creating event id. Website-derived: source content path. */
   ref: string;
   updatedRefs?: string[];

@@ -169,6 +169,13 @@ export function ObjectPreview({
             >
               Website
             </span>
+          ) : object.provenance.kind === "overlay-authored" ? (
+            <span
+              className="rounded-full bg-honey/15 px-2 py-0.5 text-xs font-medium text-accent/70"
+              title={`Demo content added by the site operator, event ${object.provenance.ref}`}
+            >
+              Demo
+            </span>
           ) : (
             <span
               className="rounded-full bg-forest/10 px-2 py-0.5 text-xs font-medium text-forest"
@@ -226,7 +233,11 @@ export function ObjectPreview({
       <footer className="mt-3 flex items-center justify-between text-xs text-accent/40">
         <span className="inline-flex items-center gap-1">
           <Briefcase className="h-3 w-3" aria-hidden="true" />
-          {object.provenance.kind === "website-derived" ? "Website projection" : "Canonical object"}
+          {object.provenance.kind === "website-derived"
+            ? "Website projection"
+            : object.provenance.kind === "overlay-authored"
+              ? "Demo addition"
+              : "Canonical object"}
         </span>
         {object.provenance.kind === "canonical-journal" && (
           <code className="rounded bg-surface-2 px-1" title={`Event ${object.provenance.ref}`}>

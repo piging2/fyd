@@ -138,11 +138,14 @@ function provenanceSourceUrls(objects: Array<PingObject | null>): string[] {
  * carries no explicit field class and the object has no claim kind of its
  * own. Website-derived material is the site's own words (never verified
  * fact); canonical-journal objects are recorded facts in the site data;
- * owner material is owner-authored. This keeps citations on a real
- * evidence class instead of degrading to the meaningless "unknown".
+ * owner material is owner-authored. Overlay-authored (demo) content
+ * is classified DEMO_SYNTHETIC, never a recorded fact. This keeps
+ * citations on a real evidence class instead of degrading to the
+ * meaningless "unknown".
  */
 function classificationFromProvenance(obj: PingObject): string {
   const kind = obj.provenance?.kind ?? "";
+  if (kind === "overlay-authored") return "DEMO_SYNTHETIC";
   if (kind === "canonical-journal") return "DIRECT_FACT";
   if (kind === "website-derived" || kind === "website-ingestion") return "website_statement";
   if (kind === "owner") return "owner_authorship";
@@ -255,6 +258,8 @@ function cite(text: string, cites: number[]): string {
  * formal classification; this is the sentence-level wording.
  */
 function provenanceBasisLabel(kind: string): string {
+  if (kind === "overlay-authored")
+    return "demo content added by the site operator (not the website's own words, not a recorded fact)";
   if (kind === "canonical-journal") return "a recorded fact in the site data";
   if (kind === "website-derived" || kind === "website-ingestion")
     return "the site's own words (website statement, not independently verified)";

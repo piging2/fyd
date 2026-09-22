@@ -80,6 +80,11 @@ export function claimClassFor(classification: string | undefined): AskClaimClass
     case "INFERENCE":
     case "GENERATED_COPY":
       return "derived";
+    case "DEMO_SYNTHETIC":
+      // Demo-operator content is evidence-backed (the journal event
+      // that added it) and its source is labeled in the citation:
+      // "supported" with honest attribution, never a recorded fact.
+      return "supported";
     default:
       return "supported";
   }
@@ -229,6 +234,8 @@ function basisForClassification(classification: string): string {
       return "Owner-set value";
     case "owner_authorship":
       return "Owner-authored content";
+    case "DEMO_SYNTHETIC":
+      return "Demo content added by the site operator (not the website's own words)";
     case "website_statement":
       return "The site's own words (website statement, not verified fact)";
     case "relationship_fact":
@@ -265,7 +272,12 @@ function citationFor(
       // A canonical-journal object is a recorded object in the site data,
       // not the site's own words: label it as such so the citation does
       // not blur the two epistemic sources.
-      source = prov.kind === "canonical-journal" ? "Site record (canonical journal)" : "Site record";
+      source =
+        prov.kind === "canonical-journal"
+          ? "Site record (canonical journal)"
+          : prov.kind === "overlay-authored"
+            ? "Site record (demo addition)"
+            : "Site record";
     }
     lastChecked = prov?.derivedAt ? prov.derivedAt.slice(0, 10) : null;
   } else if (ref.kind === "relationship") {

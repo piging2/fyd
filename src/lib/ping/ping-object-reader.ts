@@ -1215,7 +1215,7 @@ class GatewayPingObjectReader implements PingObjectReader {
         throw new BadRequestError("Only the controlling identity can update this object.");
       }
       if (obj.provenance.kind !== "canonical-journal") {
-        throw new BadRequestError("Website-derived objects are projections; they cannot be updated here.");
+        throw new BadRequestError("Only canonical-journal objects can be updated here.");
       }
       const eventId = await this.submitSignedEvent(viewerId, "OBJECT_UPDATED", {
         objectId: obj.id,

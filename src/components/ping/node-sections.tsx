@@ -269,7 +269,9 @@ function MetadataSection({ node }: { node: NodePayload }) {
           <dd className="mt-0.5 text-accent/90">
             {object.provenance.kind === "website-derived"
               ? `Website projection (${object.provenance.ref})`
-              : `Canonical journal (event ${object.provenance.ref.slice(0, 16)})`}
+              : object.provenance.kind === "overlay-authored"
+                ? `Demo addition (event ${object.provenance.ref.slice(0, 16)})`
+                : `Canonical journal (event ${object.provenance.ref.slice(0, 16)})`}
           </dd>
         </div>
         <div>

@@ -173,10 +173,32 @@ function friendlySchemaLabel(schema: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
-function ClaimBadge() {
+/**
+ * Claim badge (2026-09-22): the badge names the actual claim source for
+ * the objects it labels. Website-derived content is the site's own words;
+ * canonical journal content is a site record; overlay-authored content is
+ * a demo addition. A mixed section says "Mixed sources" rather than
+ * stamping one label on everything.
+ */
+export function claimBadgeLabel(objects: PingObject[]): string {
+  const labels = new Set(
+    objects.map((o) => {
+      if (o.provenance?.kind === "overlay-authored") return "Demo addition";
+      const claimKind =
+        typeof o.fields["claimKind"] === "string" ? o.fields["claimKind"] : "";
+      if (claimKind === "feed_item") return "Feed item";
+      if (claimKind === "website_statement") return "Website statement";
+      return "Site record";
+    }),
+  );
+  if (labels.size === 1) return [...labels][0];
+  return "Mixed sources";
+}
+
+function ClaimBadge({ objects }: { objects: PingObject[] }) {
   return (
     <span className="inline-block rounded-full border border-border-soft px-2 py-0.5 text-[11px] uppercase tracking-wide text-accent">
-      Website statement
+      {claimBadgeLabel(objects)}
     </span>
   );
 }
@@ -410,7 +432,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
       ) : null}
       <div className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-5xl">
-        <ClaimBadge />
+        <ClaimBadge objects={objects} />
         <h1
           className="mt-4 text-4xl font-bold text-background sm:text-6xl"
           style={{ fontFamily: theme.fontDisplay }}
@@ -458,7 +480,7 @@ function BusinessSummary({ objects, presentation, theme, ctx }: SectionProps) {
       heading={presentation.heading ?? (title ? "About " + title : undefined)}
       copy={presentation.copy ?? boundDescription(ctx, o)}
     >
-      <ClaimBadge />
+      <ClaimBadge objects={objects} />
     </SectionShell>
   );
 }
@@ -490,7 +512,7 @@ function CardGrid({
             ) : null}
             {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
             <div className="mt-3">
-              <ClaimBadge />
+              <ClaimBadge objects={[o]} />
             </div>
           </article>
         );
@@ -545,7 +567,7 @@ function LocationsSection({ objects, presentation, theme, ctx }: SectionProps) {
         })}
       </ul>
       <div className="mt-3">
-        <ClaimBadge />
+        <ClaimBadge objects={objects} />
       </div>
     </SectionShell>
   );
@@ -614,7 +636,7 @@ function PostsSection({ objects, presentation, theme, ctx }: SectionProps) {
               ) : null}
               {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
               <div className="mt-3">
-                <ClaimBadge />
+                <ClaimBadge objects={[o]} />
               </div>
             </article>
           );
@@ -664,7 +686,7 @@ function FeedList({
             </div>
             {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
             <div className="mt-3">
-              <ClaimBadge />
+              <ClaimBadge objects={[o]} />
             </div>
           </li>
         );
@@ -746,7 +768,7 @@ function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
         ) : null}
       </ul>
       <div className="mt-3">
-        <ClaimBadge />
+        <ClaimBadge objects={objects} />
       </div>
     </SectionShell>
   );
@@ -815,7 +837,7 @@ function SocialProofSection({ objects, presentation, theme, ctx }: SectionProps)
           >
             {t}
             <div className="mt-2 not-italic">
-              <ClaimBadge />
+              <ClaimBadge objects={objects} />
             </div>
           </blockquote>
         ))}
@@ -876,7 +898,7 @@ function IdentityCardSection({ objects, presentation, theme, ctx }: SectionProps
           ) : null}
           {description ? <p className="mt-1 text-sm text-accent">{description}</p> : null}
         </div>
-        <ClaimBadge />
+        <ClaimBadge objects={objects} />
       </div>
     </SectionShell>
   );

@@ -42,6 +42,9 @@ export function factConfidenceForObject(o: PingObject): { value: number; basis: 
   if (ref.startsWith("website-ingestion:")) {
     return { value: 0.8, basis: "website statement, unverified" };
   }
+  if (o.provenance?.kind === "overlay-authored") {
+    return { value: 0.4, basis: "demo-operator-authored content" };
+  }
   if (ref.startsWith("canonical-journal:") || o.provenance?.kind === "canonical-journal") {
     return { value: 0.95, basis: "canonical journal event" };
   }
