@@ -24,6 +24,13 @@
  * visitor-facing wording, not a guess. A projection that cannot be loaded or
  * verified is the same honest unknown (projection_unavailable), never an
  * exception-shaped hole.
+ *
+ * 3-class contract (Ask FYD answer classes): every citation carries a
+ * claimClass ("supported" | "derived") and the route layer reduces the
+ * answer to "supported" | "derived" | "unknown" (unknown = refusal, no cited
+ * evidence). DERIVED_FACT, INFERENCE, and GENERATED_COPY claims are always
+ * labeled "derived": generated presentation must never introduce an
+ * unsupported factual predicate as a plain fact.
  */
 import { createHash } from "node:crypto";
 import { getSiteBundle } from "../media/site-bundle";
@@ -43,6 +50,37 @@ import type {
 import type { FYDSiteSpec, FYDPage, ObjectGraph } from "../sitespec/types";
 
 export type AskFydMode = "visitor" | "owner";
+
+/**
+ * Per-citation epistemic class for the Ask FYD 3-class contract.
+ * - "supported": the claim is backed by cited evidence from the site data:
+ *   a recorded fact, a recorded relationship, an owner-set value,
+ *   owner-authored content, or the site's own statement, each attributed
+ *   to its source in the citation.
+ * - "derived": the claim was derived, inferred, or generated from site
+ *   data (DERIVED_FACT, INFERENCE, GENERATED_COPY). Always labeled as
+ *   such; never presented as a verified fact.
+ */
+export type AskClaimClass = "supported" | "derived";
+
+/**
+ * Map an AskClaimClassification classification string onto the 3-class
+ * contract. Unrecognized or missing classifications land on "supported"
+ * because the citation still names real evidence (the basis text stays
+ * neutral, "Site record"); only derivation/inference/generation land on
+ * "derived".
+ */
+export function claimClassFor(classification: string | undefined): AskClaimClass {
+  switch (classification) {
+    case "DERIVED_FACT":
+    case "derived":
+    case "INFERENCE":
+    case "GENERATED_COPY":
+      return "derived";
+    default:
+      return "supported";
+  }
+}
 
 export interface AnswerAskFydInput {
   siteId: string;
@@ -68,6 +106,8 @@ export interface AskFydCitation {
   source: string;
   basis: string;
   lastChecked: string | null;
+  /** 3-class label: "supported" (cited evidence) or "derived" (derived / inferred / generated, explicitly labeled). */
+  claimClass: AskClaimClass;
 }
 
 export interface AskFydSuccess {
@@ -219,6 +259,7 @@ function citationFor(
     source,
     basis: classification ? basisForClassification(classification) : "Site record",
     lastChecked,
+    claimClass: claimClassFor(classification),
   };
 }
 
