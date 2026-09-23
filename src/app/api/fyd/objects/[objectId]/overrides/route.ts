@@ -26,12 +26,18 @@
  * disagrees with the route tenant is REFUSED with 400 tenant_mismatch.
  * A tenant mismatch never serves another tenant's object.
  *
- * DEMO/DEV ONLY: there is no production authentication on this route. It is
- * the seam where real owner auth will attach; until that lane exists, every
- * response is stamped through the OwnerContext seam with demoOwnerContext:
- * true plus the actor disclosure, and the Manage surface labels every
- * session DEV/DEMO. This route must not be treated as a production owner
- * API.
+ * DEMO OWNER MODE GATE: both stages (propose and approve) require
+ * DEV/DEMO OWNER MODE: NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 on a localhost or
+ * private-network host. Anything else gets a typed 403
+ * { ok:false, code:"demo_owner_mode_required" } before any object I/O, and
+ * nothing is written. Visitors may still read via the GET object routes
+ * and Ask FYD. This route is the seam where real owner auth will attach;
+ * until that lane exists, every response is stamped through the
+ * OwnerContext seam with demoOwnerContext: true plus the actor disclosure,
+ * and the Manage surface labels every session DEV/DEMO.
+ *
+ * DEMO OWNER MODE IS NOT PRODUCTION AUTHENTICATION. No identity is
+ * verified here. This route must not be treated as a production owner API.
  *
  * The approve stage enforces the owner-core chain:
  *   SESSION -> PING IDENTITY -> CONTROL RELATIONSHIP -> CAPABILITY
@@ -61,6 +67,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { isDemoOwnerModeEnabled, isPrivateHost } from "@/fyd/owner-mode/gate";
 import { loadObjectView, knownServices } from "@/fyd/object/view";
 import {
   commandConsequenceTier,
@@ -94,6 +101,39 @@ import {
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+const NOT_REAL_AUTH =
+  "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+  "this mode is for localhost/private-network demonstration only.";
+
+/**
+ * Demo-owner-mode gate (same contract as the customize approval API):
+ * refuse with a typed 403 unless the demo explicitly opts in via
+ * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 AND the request arrived on a
+ * localhost/private-network host. Default off; absent/false => fail closed
+ * with { ok:false, code:"demo_owner_mode_required" }, before any I/O.
+ */
+function demoDenied(request: NextRequest) {
+  const enabled = isDemoOwnerModeEnabled();
+  const host = request.headers.get("host") ?? "";
+  const privateNet = isPrivateHost(host);
+  if (!enabled || !privateNet) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "demo_owner_mode_required",
+        error:
+          "Owner overrides require DEV/DEMO OWNER MODE " +
+          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+          NOT_REAL_AUTH,
+        demoOwnerMode: enabled,
+        hostPrivate: privateNet,
+      },
+      { status: 403 },
+    );
+  }
+  return null;
+}
 
 /** Body keys that claim a tenant identity. Only the route path may do that. */
 const TENANT_CLAIM_KEYS = ["siteId", "tenantId", "tenant"] as const;
@@ -153,6 +193,14 @@ export async function POST(
     }
     throw err;
   }
+
+  // Demo-owner-mode gate: BOTH stages (propose and approve) require the
+  // demo env flag on a localhost/private-network host. Visitors fail closed
+  // with 403 demo_owner_mode_required before any object I/O; nothing is
+  // written. (Invalid-tenant refusal above stays first: it is pure, before
+  // any I/O, and never serves another tenant's object.)
+  const gate = demoDenied(request);
+  if (gate) return gate;
 
   if (!loadObjectView(objectId)) {
     return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Unknown object." }, { status: 404 });

@@ -16,6 +16,7 @@ module.exports = {
     "<rootDir>/src/fyd/net/__tests__/*.test.ts",
     "<rootDir>/src/fyd/claim/__tests__/*.test.ts",
     "<rootDir>/src/fyd/onboarding/__tests__/*.test.ts",
+    "<rootDir>/src/app/api/fyd/claims/[resourceId]/__tests__/*.test.ts",
   ],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",

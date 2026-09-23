@@ -20,6 +20,7 @@ import { mkdtempSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { NextRequest } from "next/server";
+import { isDemoOwnerModeEnabled } from "@/fyd/owner-mode/gate";
 import { POST } from "../route";
 
 jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: async () => null }));
@@ -40,21 +41,41 @@ interface ContactView {
   }[];
 }
 
-function req(body: unknown, objectId = "happy-place") {
+function req(body: unknown, objectId = "happy-place", host = "localhost:3000") {
   return {
-    req: { json: async () => body } as unknown as NextRequest,
+    req: {
+      json: async () => body,
+      headers: {
+        get: (name: string) => (name.toLowerCase() === "host" ? host : null),
+      },
+    } as unknown as NextRequest,
     params: Promise.resolve({ objectId }),
   };
 }
 
-async function call(body: unknown, objectId = "happy-place") {
-  const { req: r, params } = req(body, objectId);
+async function call(
+  body: unknown,
+  objectId = "happy-place",
+  host = "localhost:3000",
+) {
+  const { req: r, params } = req(body, objectId, host);
   const resp = await POST(r, { params });
   return { status: resp.status, body: (await resp.json()) as Record<string, unknown> };
 }
 
+const DEMO_ENV_VAR = "NEXT_PUBLIC_FYD_DEMO_OWNER_MODE";
+const OLD_DEMO_ENV = process.env[DEMO_ENV_VAR];
+
 beforeEach(() => {
   process.env.FYD_OWNER_DIR = mkdtempSync(join(tmpdir(), "fyd-owner-test-"));
+  // The route is gated behind demo-owner mode: mutation tests run with the
+  // demo explicitly opted in on a localhost host.
+  process.env[DEMO_ENV_VAR] = "1";
+});
+
+afterEach(() => {
+  if (OLD_DEMO_ENV === undefined) delete process.env[DEMO_ENV_VAR];
+  else process.env[DEMO_ENV_VAR] = OLD_DEMO_ENV;
 });
 
 describe("G4: tenant from the trusted route path", () => {
@@ -344,5 +365,101 @@ describe("propose -> approve digest binding", () => {
     // The basis text is the honest contract: owner attests, source unchanged.
     expect(corr?.basis).toContain("Owner correction");
     expect(corr?.basis).toContain("source record is unchanged");
+  });
+});
+
+describe("demo-owner-mode gate (both stages)", () => {
+  const PROPOSE = {
+    stage: "propose",
+    text: "Correct phone to +1 541 555 0123",
+  };
+
+  test("demo owner mode defaults OFF: env unset => isDemoOwnerModeEnabled() is false", () => {
+    delete process.env[DEMO_ENV_VAR];
+    expect(isDemoOwnerModeEnabled()).toBe(false);
+  });
+
+  test("visitor (env unset): propose denied with typed 403, nothing written", async () => {
+    delete process.env[DEMO_ENV_VAR];
+    const { status, body } = await call(PROPOSE);
+    expect(status).toBe(403);
+    expect(body.ok).toBe(false);
+    expect(body.code).toBe("demo_owner_mode_required");
+    expect(String(body.error)).toMatch(/DEMO OWNER MODE - not real authentication/);
+    expect(body.demoOwnerMode).toBe(false);
+    // The gate runs before any I/O: no owner state file exists.
+    expect(
+      existsSync(join(process.env.FYD_OWNER_DIR as string, "happy-place.json")),
+    ).toBe(false);
+  });
+
+  test("visitor (env unset): approve denied with typed 403, nothing written", async () => {
+    delete process.env[DEMO_ENV_VAR];
+    const { status, body } = await call({
+      stage: "approve",
+      command: PHONE_CMD,
+      baseStateDigest: "0".repeat(64),
+      baseViewDigest: "0".repeat(64),
+      patchDigest: "0".repeat(64),
+    });
+    expect(status).toBe(403);
+    expect(body.ok).toBe(false);
+    expect(body.code).toBe("demo_owner_mode_required");
+    expect(
+      existsSync(join(process.env.FYD_OWNER_DIR as string, "happy-place.json")),
+    ).toBe(false);
+  });
+
+  test("env on but public host: propose denied with typed 403, nothing written", async () => {
+    const { status, body } = await call(PROPOSE, "happy-place", "fyd.example.com");
+    expect(status).toBe(403);
+    expect(body.ok).toBe(false);
+    expect(body.code).toBe("demo_owner_mode_required");
+    expect(body.demoOwnerMode).toBe(true);
+    expect(body.hostPrivate).toBe(false);
+    expect(
+      existsSync(join(process.env.FYD_OWNER_DIR as string, "happy-place.json")),
+    ).toBe(false);
+  });
+
+  test("env on but public IPv4 host: approve denied", async () => {
+    const { status, body } = await call(
+      {
+        stage: "approve",
+        command: PHONE_CMD,
+        baseStateDigest: "0".repeat(64),
+        baseViewDigest: "0".repeat(64),
+        patchDigest: "0".repeat(64),
+      },
+      "happy-place",
+      "93.184.216.34:3000",
+    );
+    expect(status).toBe(403);
+    expect(body.code).toBe("demo_owner_mode_required");
+    expect(body.hostPrivate).toBe(false);
+  });
+
+  test("env on + localhost: propose -> approve applies (mutation allowed)", async () => {
+    const p = await call(PROPOSE);
+    expect(p.status).toBe(200);
+    expect(p.body.ok).toBe(true);
+    const digests = p.body.digests as Record<string, string>;
+    const { status, body } = await call({
+      stage: "approve",
+      command: (p.body.proposal as Record<string, unknown>).command,
+      baseStateDigest: digests.baseStateDigest,
+      baseViewDigest: digests.baseViewDigest,
+      patchDigest: digests.patchDigest,
+    });
+    expect(status).toBe(200);
+    expect(body.ok).toBe(true);
+    const view = body.view as { contact: { phone: string | null } };
+    expect(view.contact.phone).toBe("+1 541 555 0123");
+  });
+
+  test("env on + private-network host: propose allowed", async () => {
+    const { status, body } = await call(PROPOSE, "happy-place", "192.168.1.20:3000");
+    expect(status).toBe(200);
+    expect(body.ok).toBe(true);
   });
 });

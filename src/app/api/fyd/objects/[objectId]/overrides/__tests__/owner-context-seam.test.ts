@@ -30,21 +30,37 @@ import { projectOwnerState } from "@/fyd/object/owner-events";
 
 jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: async () => null }));
 
-function req(body: unknown, objectId = "happy-place") {
+function req(body: unknown, objectId = "happy-place", host = "localhost:3000") {
   return {
-    req: { json: async () => body } as unknown as NextRequest,
+    req: {
+      json: async () => body,
+      headers: {
+        get: (name: string) => (name.toLowerCase() === "host" ? host : null),
+      },
+    } as unknown as NextRequest,
     params: Promise.resolve({ objectId }),
   };
 }
 
-async function call(body: unknown, objectId = "happy-place") {
-  const { req: r, params } = req(body, objectId);
+async function call(body: unknown, objectId = "happy-place", host = "localhost:3000") {
+  const { req: r, params } = req(body, objectId, host);
   const resp = await POST(r, { params });
   return { status: resp.status, body: (await resp.json()) as Record<string, unknown> };
 }
 
+const DEMO_ENV_VAR = "NEXT_PUBLIC_FYD_DEMO_OWNER_MODE";
+const OLD_DEMO_ENV = process.env[DEMO_ENV_VAR];
+
 beforeEach(() => {
   process.env.FYD_OWNER_DIR = mkdtempSync(join(tmpdir(), "fyd-seam-test-"));
+  // The route is gated behind demo-owner mode: these tests exercise the
+  // mutation path with the demo explicitly opted in on a localhost host.
+  process.env[DEMO_ENV_VAR] = "1";
+});
+
+afterEach(() => {
+  if (OLD_DEMO_ENV === undefined) delete process.env[DEMO_ENV_VAR];
+  else process.env[DEMO_ENV_VAR] = OLD_DEMO_ENV;
 });
 
 /**
