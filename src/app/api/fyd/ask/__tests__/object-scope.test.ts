@@ -34,8 +34,37 @@ import { answerClassFor, handleAskRequest } from "../ask-pipeline";
 import { POST as postFlat } from "../route";
 import { POST as postNested } from "../[siteId]/route";
 import type { NextRequest } from "next/server";
+import { startStubJournal, type StubJournal } from "./stub-journal";
 
-const DEPS: AnswerAskFydDeps = { loadBundle: getSiteBundle };
+/**
+ * Every test in this file exercises the production authorized read path:
+ * the stub FYD journal gateway feeds PingObjectReader over HTTP. No disk
+ * projection JSON is ever read (see the sentinel test in
+ * src/fyd/ask/__tests__/graph-read-route.test.ts).
+ */
+let journal: StubJournal;
+/** Pre-resolved bundles; answerAskFyd's loader seam stays sync. */
+let HAPPY_BUNDLE: SiteBundle;
+let COPPER_BUNDLE: SiteBundle;
+let DEPS: AnswerAskFydDeps;
+
+beforeAll(async () => {
+  journal = await startStubJournal();
+  const happy = await getSiteBundle("happy-place");
+  const copper = await getSiteBundle("coppersmith-plumbing");
+  if (!happy || !copper) throw new Error("stub journal did not serve the tenants");
+  HAPPY_BUNDLE = happy;
+  COPPER_BUNDLE = copper;
+  const byId = new Map([
+    ["happy-place", HAPPY_BUNDLE],
+    ["coppersmith-plumbing", COPPER_BUNDLE],
+  ]);
+  DEPS = { loadBundle: (id) => byId.get(id) ?? null };
+});
+
+afterAll(async () => {
+  await journal.close();
+});
 
 const HAPPY = "happy-place";
 const COPPER = "coppersmith-plumbing";
@@ -280,7 +309,7 @@ describe("object-scoped ask: tenant and visibility gates", () => {
         derivedAt: "2026-09-20T00:00:00.000Z",
       },
     };
-    const real = getSiteBundle(HAPPY);
+    const real = HAPPY_BUNDLE;
     expect(real).not.toBeNull();
     const bundle: SiteBundle = {
       ...(real as SiteBundle),

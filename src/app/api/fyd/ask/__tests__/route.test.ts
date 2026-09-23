@@ -12,12 +12,38 @@ import { getSiteBundle, type SiteBundle } from "../../../../../fyd/media/site-bu
 import { AskFydWidget } from "../../../../../fyd/components/ask-fyd-widget";
 import type { PingObject } from "../../../../../lib/ping/types";
 import { POST } from "../route";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import type { NextRequest } from "next/server";
+import { startStubJournal, type StubJournal } from "./stub-journal";
 
-const DEPS: AnswerAskFydDeps = { loadBundle: getSiteBundle };
+/**
+ * Every test in this file exercises the production authorized read path:
+ * the stub FYD journal gateway feeds PingObjectReader over HTTP. No disk
+ * projection JSON is ever read (see the sentinel test in
+ * src/fyd/ask/__tests__/graph-read-route.test.ts).
+ */
+let journal: StubJournal;
+/** Pre-resolved bundles; answerAskFyd's loader seam stays sync. */
+let HAPPY_BUNDLE: SiteBundle;
+let COPPER_BUNDLE: SiteBundle;
+let DEPS: AnswerAskFydDeps;
+
+beforeAll(async () => {
+  journal = await startStubJournal();
+  const happy = await getSiteBundle("happy-place");
+  const copper = await getSiteBundle("coppersmith-plumbing");
+  if (!happy || !copper) throw new Error("stub journal did not serve the tenants");
+  HAPPY_BUNDLE = happy;
+  COPPER_BUNDLE = copper;
+  const byId = new Map([
+    ["happy-place", HAPPY_BUNDLE],
+    ["coppersmith-plumbing", COPPER_BUNDLE],
+  ]);
+  DEPS = { loadBundle: (id) => byId.get(id) ?? null };
+});
+
+afterAll(async () => {
+  await journal.close();
+});
 
 /** POST a JSON body to the legacy flat ask route. The route only ever calls request.json(). */
 async function postAsk(body: unknown) {
@@ -108,7 +134,7 @@ describe("answerAskFyd", () => {
         derivedAt: "2026-09-20T00:00:00.000Z",
       },
     };
-    const real = getSiteBundle("happy-place");
+    const real = HAPPY_BUNDLE;
     expect(real).not.toBeNull();
     const bundle: SiteBundle = {
       ...(real as SiteBundle),
@@ -151,7 +177,7 @@ describe("answerAskFyd", () => {
   });
 
   test("owner-corrected phone is cited as owner field evidence, not a website statement", () => {
-    const real = getSiteBundle("happy-place");
+    const real = HAPPY_BUNDLE;
     expect(real).not.toBeNull();
     const objects = (real as SiteBundle).graph.objects.map((o) =>
       o.schema === "ping.social.business@1"
@@ -203,47 +229,39 @@ describe("answerAskFyd", () => {
   });
 });
 
+describe("journal overlays compose through the HTTP read path", () => {
+  test("deactivated demo service exists but is private; set_field applied", () => {
+    // If the reader failed to parse the journal row shape, these overlays
+    // would be silently dropped and the pergola object would be absent.
+    const pergola = HAPPY_BUNDLE.graph.objects.find(
+      (o) => o.id === "website-service-51de038c1defe8bd",
+    );
+    expect(pergola).toBeDefined();
+    expect(pergola!.visibility).toBe("private");
+    expect(pergola!.provenance.kind).toBe("canonical-journal");
+    expect(pergola!.provenance.ref).toBe("ping-event:stub-ev-001");
+    const biz = HAPPY_BUNDLE.graph.objects.find(
+      (o) => o.id === "website-business-6fa5ebd99d72c4cb",
+    );
+    expect(biz!.fields.tagline).toBe("Built right. Built to last.");
+    expect(biz!.provenance.updatedRefs).toContain("ping-event:stub-ev-007");
+  });
+});
+
 describe("AskFydWidget", () => {
   test("widget module loads (strict compile check)", () => {
     expect(typeof AskFydWidget).toBe("function");
   });
 });
-describe("corrupt projection (FL: Ask FYD error mapping)", () => {
-  // The production projection dir; the suite already depends on these files
-  // (see the known-question tests above).
-  const realDir = "/home/nolan/ping/var/fyd-projections";
-
-  function tempDirWith(files: Record<string, string>): string {
-    const dir = mkdtempSync(join(tmpdir(), "fyd-ask-corrupt-"));
-    for (const [name, content] of Object.entries(files)) {
-      writeFileSync(join(dir, name), content, "utf8");
-    }
-    return dir;
-  }
-
-  function tamperedCopy(): string {
-    const real = JSON.parse(
-      readFileSync(join(realDir, "happy-place.json"), "utf8"),
-    ) as { meta: Record<string, unknown> };
-    real.meta.graphDigest = "0".repeat(64);
-    return JSON.stringify(real);
-  }
-
-  let savedDir: string | undefined;
-  beforeEach(() => {
-    savedDir = process.env.FYD_PROJECTION_DIR;
-  });
-  afterEach(() => {
-    if (savedDir === undefined) delete process.env.FYD_PROJECTION_DIR;
-    else process.env.FYD_PROJECTION_DIR = savedDir;
-  });
+describe("journal read failure (FL: Ask FYD error mapping)", () => {
+  // The suite's other tests prove the authorized journal read path works;
+  // these prove a failed read is the same honest unknown: never an answer,
+  // never a leak of internal detail.
 
   test("answerAskFyd maps a throwing loader to projection_unavailable, never throws", () => {
     const deps: AnswerAskFydDeps = {
       loadBundle: () => {
-        throw new Error(
-          'ping-object-source: site "happy-place": projection is not valid JSON',
-        );
+        throw new Error("simulated authorized-read failure");
       },
     };
     const out = answerAskFyd(
@@ -257,47 +275,34 @@ describe("corrupt projection (FL: Ask FYD error mapping)", () => {
     }
   });
 
-  test("POST returns structured 503 when the projection JSON is corrupt", async () => {
-    process.env.FYD_PROJECTION_DIR = tempDirWith({
-      "happy-place.json": "{ this is not valid json",
-    });
-    const resp = await postAsk({
-      siteId: "happy-place",
-      question: "What is the phone number?",
-      mode: "visitor",
-    });
-    expect(resp.status).toBe(503);
-    const body = (await resp.json()) as Record<string, unknown>;
-    expect(body.ok).toBe(false);
-    expect(body.kind).toBe("projection_unavailable");
-    expect(body.answerUnknown).toBe(true);
-    expect(typeof body.error).toBe("string");
-    expect(body.error as string).toMatch(/unknown/i);
-    expect(body.attempted).toMatch(/projection/i);
-    // Internal detail never leaks to the visitor.
-    expect(body.error as string).not.toContain("fyd-projections");
-    expect(body.error as string).not.toContain("/home/");
+  test("POST returns structured 503 when the journal read fails", async () => {
+    const saved = process.env.FYD_JOURNAL_GATEWAY_URL;
+    // Nothing listens here: the governed reader fails closed.
+    process.env.FYD_JOURNAL_GATEWAY_URL = "http://127.0.0.1:1";
+    try {
+      const resp = await postAsk({
+        siteId: "happy-place",
+        question: "What is the phone number?",
+        mode: "visitor",
+      });
+      expect(resp.status).toBe(503);
+      const body = (await resp.json()) as Record<string, unknown>;
+      expect(body.ok).toBe(false);
+      expect(body.kind).toBe("projection_unavailable");
+      expect(body.answerUnknown).toBe(true);
+      expect(typeof body.error).toBe("string");
+      expect(body.error as string).toMatch(/unknown/i);
+      expect(body.attempted).toMatch(/projection/i);
+      // Internal detail never leaks to the visitor.
+      expect(body.error as string).not.toContain("127.0.0.1");
+      expect(body.error as string).not.toContain("/home/");
+    } finally {
+      if (saved === undefined) delete process.env.FYD_JOURNAL_GATEWAY_URL;
+      else process.env.FYD_JOURNAL_GATEWAY_URL = saved;
+    }
   });
 
-  test("POST returns structured 503 when the projection digest is tampered", async () => {
-    process.env.FYD_PROJECTION_DIR = tempDirWith({
-      "happy-place.json": tamperedCopy(),
-    });
-    const resp = await postAsk({
-      siteId: "happy-place",
-      question: "What services do you offer?",
-      mode: "visitor",
-    });
-    expect(resp.status).toBe(503);
-    const body = (await resp.json()) as Record<string, unknown>;
-    expect(body.kind).toBe("projection_unavailable");
-    expect(body.answerUnknown).toBe(true);
-  });
-
-  test("recovery: POST answers normally again once the projection is restored", async () => {
-    process.env.FYD_PROJECTION_DIR = tempDirWith({
-      "happy-place.json": readFileSync(join(realDir, "happy-place.json"), "utf8"),
-    });
+  test("recovery: POST answers normally again once the journal is reachable", async () => {
     const resp = await postAsk({
       siteId: "happy-place",
       question: "What is the phone number?",

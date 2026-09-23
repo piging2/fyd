@@ -1,5 +1,14 @@
 import { NextRequest } from "next/server";
 import { POST } from "../route";
+import { startStubJournal, type StubJournal } from "./stub-journal";
+
+let journal: StubJournal;
+beforeAll(async () => {
+  journal = await startStubJournal();
+});
+afterAll(async () => {
+  await journal.close();
+});
 
 async function post(body: unknown): Promise<{ status: number; json: any }> {
   const req = new NextRequest("http://localhost/api/fyd/ask", {

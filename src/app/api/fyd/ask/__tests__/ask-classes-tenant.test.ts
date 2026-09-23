@@ -21,8 +21,37 @@ import type { NextRequest } from "next/server";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { startStubJournal, type StubJournal } from "./stub-journal";
 
-const DEPS: AnswerAskFydDeps = { loadBundle: getSiteBundle };
+/**
+ * Every test in this file exercises the production authorized read path:
+ * the stub FYD journal gateway feeds PingObjectReader over HTTP. No disk
+ * projection JSON is ever read (see the sentinel test in
+ * src/fyd/ask/__tests__/graph-read-route.test.ts).
+ */
+let journal: StubJournal;
+/** Pre-resolved bundles; answerAskFyd's loader seam stays sync. */
+let HAPPY_BUNDLE: SiteBundle;
+let COPPER_BUNDLE: SiteBundle;
+let DEPS: AnswerAskFydDeps;
+
+beforeAll(async () => {
+  journal = await startStubJournal();
+  const happy = await getSiteBundle("happy-place");
+  const copper = await getSiteBundle("coppersmith-plumbing");
+  if (!happy || !copper) throw new Error("stub journal did not serve the tenants");
+  HAPPY_BUNDLE = happy;
+  COPPER_BUNDLE = copper;
+  const byId = new Map([
+    ["happy-place", HAPPY_BUNDLE],
+    ["coppersmith-plumbing", COPPER_BUNDLE],
+  ]);
+  DEPS = { loadBundle: (id) => byId.get(id) ?? null };
+});
+
+afterAll(async () => {
+  await journal.close();
+});
 
 function flatReq(body: unknown) {
   return { json: async () => body } as unknown as NextRequest;
@@ -195,7 +224,7 @@ describe("3-class wiring on live answers", () => {
   });
 
   test("DERIVED: a DERIVED_FACT claim is explicitly labeled derived", () => {
-    const real = getSiteBundle("happy-place");
+    const real = HAPPY_BUNDLE;
     expect(real).not.toBeNull();
     const objects = (real as SiteBundle).graph.objects.map((o) =>
       o.schema === "ping.social.business@1"
@@ -244,7 +273,7 @@ describe("visitor vs owner scope", () => {
   };
 
   function depsWithSecret(): AnswerAskFydDeps {
-    const real = getSiteBundle("happy-place");
+    const real = HAPPY_BUNDLE;
     if (!real) throw new Error("happy-place bundle missing");
     const bundle: SiteBundle = {
       ...real,
