@@ -71,6 +71,12 @@ import type { GraphAttestation } from "./object-builder";
 import { canonicalizeSpec, semanticDigestOf } from "./canonical";
 import { COMPONENT_REGISTRY_VERSION } from "../components/registry";
 import type { BindingClassification } from "../sitespec/graph";
+import {
+  buildVerifiedRenderModel,
+  ownerAssertionsFromGraph,
+  type PresentationBinding,
+  type VerifiedRenderModel,
+} from "../sitespec/binding-verifier";
 
 export const SITE_PLANNER_VERSION = "fyd-site-planner@1";
 
@@ -140,6 +146,16 @@ export interface PlannedSite {
   semanticDigest: string;
   /** Canonical JSON of the spec (sorted keys, no volatile stamps). */
   canonicalSpecJson: string;
+  /**
+   * The BindingVerifier's output at the projection seam: every factual
+   * atom the emitted spec carries, classified per the content contract
+   * (OWNER_ASSERTED / DIRECT_EVIDENCE / DETERMINISTIC_DERIVATION /
+   * GENERATED_PRESENTATION) with its value and its evidence or owner
+   * assertion ref. Optional for backward compatibility with in-flight
+   * fixtures; always set by planSite. The renderer consumes only this
+   * model and performs no claim checking of its own.
+   */
+  verifiedRenderModel?: VerifiedRenderModel;
 }
 
 function baseRank(component: string): number {
@@ -155,7 +171,7 @@ function ownerOf(graph: ObjectGraph): PingObject | null {
 }
 
 /** Resolve a section query to its bound objects, in id order. Never throws. */
-function resolveQueryObjects(
+export function resolveQueryObjects(
   graph: ObjectGraph,
   query: FYDQuery,
   ownerId: string,
@@ -229,6 +245,31 @@ function fieldText(o: PingObject, field: string): string {
   if (field === "description") return o.description;
   const v = o.fields[field];
   return typeof v === "string" ? v : Array.isArray(v) ? v.join(", ") : "";
+}
+
+/**
+ * The emitted spec's factual binding set: every generated-copy slot
+ * binding as a PresentationBinding. The planner's slots bind object fields
+ * whose claimRef matched the object's provenance ref (checked by
+ * assertGeneratedPresentationVerified); the BindingVerifier re-checks the
+ * full seam (object field + evidence ref + owner assertions) so the
+ * renderer path cannot be handed an unverified spec.
+ */
+function slotBindingsForVerification(
+  gp: GeneratedPresentation,
+): PresentationBinding[] {
+  const out: PresentationBinding[] = [];
+  for (const slot of gp.slots) {
+    for (const b of slot.bindings) {
+      out.push({
+        objectId: b.objectId,
+        field: b.field,
+        classification: "direct",
+        evidenceRef: b.claimRef ?? undefined,
+      });
+    }
+  }
+  return out;
 }
 
 /**
@@ -344,6 +385,23 @@ export function planSite(input: SitePlannerInput): PlannedSite {
   }
   assertGeneratedPresentationVerified(generatedPresentation, graph, intent.prohibitedPositioning);
 
+  // BindingVerifier at the projection seam (EVIDENCE GRAPH ->
+  // BINDING VERIFIER -> VERIFIED RENDER MODEL -> SITE SPEC / RENDERER).
+  // The verifier emits the verified render model: every factual atom the
+  // emitted spec carries, classified per the content contract
+  // (OWNER_ASSERTED / DIRECT_EVIDENCE / DETERMINISTIC_DERIVATION /
+  // GENERATED_PRESENTATION) with its value and its evidence or owner
+  // assertion ref. Unsupported factual atoms fail closed here: the planner
+  // throws before any spec is produced, so no render path can be handed an
+  // unverified model. The renderer consumes only this model and performs
+  // no claim checking of its own.
+  const verifiedRenderModel = buildVerifiedRenderModel(
+    slotBindingsForVerification(generatedPresentation),
+    graph,
+    ownerAssertionsFromGraph(graph),
+    { rendererVersion: COMPONENT_REGISTRY_VERSION, viewerId: null },
+  );
+
   // Object presence: the margin/rail capability, owned by the spec.
   const presenceObjects = publicObjects(graph)
     .filter((o) => o.id !== ownerId)
@@ -453,5 +511,6 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     plannerVersion: SITE_PLANNER_VERSION,
     semanticDigest,
     canonicalSpecJson,
+    verifiedRenderModel,
   };
 }

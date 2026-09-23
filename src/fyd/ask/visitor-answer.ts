@@ -33,7 +33,6 @@
  * unsupported factual predicate as a plain fact.
  */
 import { createHash } from "node:crypto";
-import { getSiteBundle } from "../media/site-bundle";
 import type { SiteBundle } from "../media/site-bundle";
 import { buildAskFydContext } from "./context-builder";
 import { composeAskFyd } from "./answer";
@@ -157,7 +156,23 @@ export interface AskFydFailure {
 
 export type AskFydOutcome = AskFydSuccess | AskFydFailure;
 
-const DEFAULT_DEPS: AnswerAskFydDeps = { loadBundle: getSiteBundle };
+/**
+ * Default deps: there is no default bundle loader. Ask FYD answers from the
+ * graph ONLY through the injected loader, which the ask route resolves
+ * through the authorized application read seam
+ * (src/fyd/data/fyd-tenant-graph.ts via getSiteBundle, itself async). A
+ * synchronous default cannot perform that read, so calling answerAskFyd
+ * without an injected loader fails closed (projection_unavailable) instead
+ * of silently reading from an unauthorized source.
+ */
+const DEFAULT_DEPS: AnswerAskFydDeps = {
+  loadBundle: () => {
+    throw new Error(
+      "answerAskFyd: no bundle loader injected. The ask route must inject " +
+        "a loader resolved through the authorized graph read (getSiteBundle).",
+    );
+  },
+};
 const MAX_QUESTION_CHARS = 2000;
 
 /**

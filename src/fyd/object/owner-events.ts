@@ -157,9 +157,64 @@ export function reduceOwnerEvents(
     history.push({ at: e.at, text: e.note });
 
     switch (e.type) {
-      case "owner.confirmed-fact":
-        // Attestation only: no state change.
+      case "owner.confirmed-fact": {
+        // Attestation only by default: no state change. EXCEPTION: a
+        // confirm-contact-field assertion (newValue.confirmation === true
+        // on a contact target) IS projected into fieldConfirmations so the
+        // assertion survives regeneration and re-observation, and so the
+        // read model can surface sourceDrifted against the source value
+        // recorded at confirmation time. All other confirmed-fact events
+        // (migration log lines, no-op confirmations) stay no-ops.
+        const nv =
+          e.newValue !== null && typeof e.newValue === "object"
+            ? (e.newValue as {
+                confirmation?: unknown;
+                confirmedValue?: unknown;
+                sourceValue?: unknown;
+                actorLabel?: unknown;
+              })
+            : null;
+        if (
+          nv !== null &&
+          nv.confirmation === true &&
+          isContactFieldTarget(e.target)
+        ) {
+          const field = contactFieldOf(e.target);
+          const prior = o.fieldConfirmations[field] ?? null;
+          const confirmedValue =
+            typeof nv.confirmedValue === "string" ? nv.confirmedValue : null;
+          o.fieldConfirmations[field] = {
+            // Full OwnerAssertion contract (see types.ts): actor,
+            // subject/object, field/path, operation, value, visibility,
+            // timestamp, superseded assertion, source/evidence relationship.
+            subject: e.objectId,
+            path: e.target as
+              | "contact:phone"
+              | "contact:email"
+              | "contact:website",
+            operation: "confirm",
+            value: confirmedValue,
+            visibility: "unchanged",
+            actor: { kind: e.actor.kind, label: e.actor.label },
+            at: e.at,
+            supersedes: prior?.eventId ?? null,
+            evidence: {
+              kind: e.evidence.kind,
+              ref: e.evidence.ref,
+              detail: e.evidence.detail,
+            },
+            eventId: e.id,
+            // Confirmation specifics.
+            field,
+            confirmedValue,
+            sourceValue:
+              typeof nv.sourceValue === "string" ? nv.sourceValue : null,
+            confirmedAt: e.at,
+            actorLabel: e.actor.label,
+          };
+        }
         break;
+      }
       case "owner.corrected-fact": {
         if (e.target === SERVICE_ORDER_TARGET) {
           if (!Array.isArray(e.newValue)) {
@@ -196,6 +251,25 @@ export function reduceOwnerEvents(
       case "owner.hid-fact": {
         if (e.target === ADDRESS_TARGET) {
           o.addressVisibility = "hidden";
+          // Persistent HIDE assertion carrying the full OwnerAssertion
+          // contract: the pipeline never owns the presentation decision.
+          const priorHide = o.addressVisibilityAssertion;
+          o.addressVisibilityAssertion = {
+            subject: e.objectId,
+            path: ADDRESS_TARGET,
+            operation: "hide",
+            value: "hidden",
+            visibility: "hidden",
+            actor: { kind: e.actor.kind, label: e.actor.label },
+            at: e.at,
+            supersedes: priorHide?.eventId ?? null,
+            evidence: {
+              kind: e.evidence.kind,
+              ref: e.evidence.ref,
+              detail: e.evidence.detail,
+            },
+            eventId: e.id,
+          };
         } else if (e.target.startsWith("service:")) {
           const id = e.target.slice("service:".length);
           if (!o.hiddenServices.includes(id)) o.hiddenServices.push(id);
@@ -209,6 +283,25 @@ export function reduceOwnerEvents(
       case "owner.restored-fact": {
         if (e.target === ADDRESS_TARGET) {
           o.addressVisibility = "public";
+          // Persistent SHOW assertion carrying the full OwnerAssertion
+          // contract: the pipeline never owns the presentation decision.
+          const priorShow = o.addressVisibilityAssertion;
+          o.addressVisibilityAssertion = {
+            subject: e.objectId,
+            path: ADDRESS_TARGET,
+            operation: "show",
+            value: "public",
+            visibility: "public",
+            actor: { kind: e.actor.kind, label: e.actor.label },
+            at: e.at,
+            supersedes: priorShow?.eventId ?? null,
+            evidence: {
+              kind: e.evidence.kind,
+              ref: e.evidence.ref,
+              detail: e.evidence.detail,
+            },
+            eventId: e.id,
+          };
         } else if (e.target.startsWith("service:")) {
           const id = e.target.slice("service:".length);
           o.hiddenServices = o.hiddenServices.filter((x) => x !== id);

@@ -21,7 +21,11 @@
  * FYD_OWNER_DIR env override exists so tests can use a temp directory.
  */
 
-import type { OwnerCommand, OwnerOverrides } from "./types";
+import type {
+  FieldConfirmation,
+  OwnerCommand,
+  OwnerOverrides,
+} from "./types";
 import type { OwnerFieldCorrection } from "../../lib/ping/types";
 import {
   ADDRESS_TARGET,
@@ -104,6 +108,20 @@ function validateFieldValue(field: CorrectableField, value: string): void {
  */
 export function readOverrides(objectId: string): OwnerOverrides {
   return projectOwnerState(objectId);
+}
+
+/**
+ * Whether the source has drifted since the owner confirmed a field.
+ * Derived per read, never persisted (same semantics as the correction
+ * drift flag in owner-overlay.ts): the confirmed value still wins; drift
+ * only flags that the source moved under the confirmation. Seam-local
+ * primitive for the read pipeline to compose after digest verification.
+ */
+export function confirmationSourceDrifted(
+  confirmation: FieldConfirmation,
+  currentSourceValue: string | null,
+): boolean {
+  return currentSourceValue !== confirmation.sourceValue;
 }
 
 /**
@@ -444,6 +462,76 @@ export function applyOwnerCommand(
       };
       break;
     }
+    case "confirm-contact-field": {
+      // The owner asserts the current effective value is correct. Nothing
+      // is changed: the assertion is recorded as an owner.confirmed-fact
+      // event with the actor and timestamp, and the source's value at this
+      // moment is preserved so later drift can be detected (sourceDrifted).
+      // Fail closed when there is no recorded value to assert about.
+      if (!isCorrectableField(cmd.field))
+        throw new OwnerCommandError("Unknown contact field.");
+      const label = FIELD_LABELS[cmd.field];
+      const sourceValue = opts?.sourceValue ?? null;
+      const confirmedValue =
+        current.fieldCorrections[cmd.field]?.ownerValue ?? sourceValue;
+      if (confirmedValue === null) {
+        throw new OwnerCommandError(
+          "There is no recorded " + label.toLowerCase() + " to confirm.",
+        );
+      }
+      // The CONFIRM assertion, carrying the explicit owner-assertion
+      // contract (see types.ts OwnerAssertion): actor, subject/object,
+      // field/path, operation, value, visibility, timestamp, superseded
+      // assertion, source/evidence relationship. `eventId` is assigned by
+      // the log at append time, so the draft omits it; the reducer fills
+      // it from the event envelope when projecting fieldConfirmations.
+      const prior = current.fieldConfirmations[cmd.field] ?? null;
+      const target = CONTACT_FIELD_TARGETS[cmd.field];
+      const evidence = sourceSnapshotEvidence(sourceValue);
+      const confirmation: Omit<FieldConfirmation, "eventId"> = {
+        subject: objectId,
+        path: target,
+        operation: "confirm",
+        value: confirmedValue,
+        visibility: "unchanged",
+        actor: { kind: actor.kind, label: actor.label },
+        at,
+        supersedes: prior?.eventId ?? null,
+        evidence: {
+          kind: evidence.kind,
+          ref: evidence.ref,
+          detail: evidence.detail,
+        },
+        field: cmd.field,
+        confirmedValue,
+        sourceValue,
+        confirmedAt: at,
+        actorLabel: actor.label,
+      };
+      draft = {
+        at,
+        objectId,
+        type: "owner.confirmed-fact",
+        actor,
+        target,
+        previousBasis: {
+          priorConfirmation: prior,
+          sourceValue,
+          // Explicit supersede link to the superseded assertion event.
+          supersedesEventId: prior?.eventId ?? null,
+        },
+        newValue: { confirmation: true, ...confirmation },
+        evidence,
+        note:
+          "Confirmed " +
+          label +
+          ": the owner asserts '" +
+          confirmedValue +
+          "' is correct.",
+        generator: "fyd-owner@1",
+      };
+      break;
+    }
     case "revert-contact-field": {
       if (!isCorrectableField(cmd.field))
         throw new OwnerCommandError("Unknown contact field.");
@@ -540,6 +628,13 @@ export function parseOwnerCommand(body: unknown): OwnerCommand {
         );
       }
       return { type: "revert-contact-field", field: r.field };
+    case "confirm-contact-field":
+      if (!isCorrectableField(r.field)) {
+        throw new OwnerCommandError(
+          "confirm-contact-field needs { field: phone|email|website }.",
+        );
+      }
+      return { type: "confirm-contact-field", field: r.field };
     default:
       throw new OwnerCommandError("Unknown command type.");
   }

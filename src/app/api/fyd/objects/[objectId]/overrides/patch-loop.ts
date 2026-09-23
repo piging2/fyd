@@ -51,18 +51,30 @@ export function patchDigestOf(command: OwnerCommand): string {
 }
 
 /**
+ * The acting owner identity, future-neutral. The demo implementation
+ * (OwnerActorContext, below) pins demoOwnerContext: true; a future
+ * PING-backed implementation satisfies this base with a verified owner
+ * identity and no demo marker. Demo honesty is preserved structurally:
+ * every DEMO response and approval still carries the literal
+ * demoOwnerContext: true stamp, so demo authorization can never be
+ * mistaken for production authorization.
+ */
+export interface OwnerActor {
+  actorId: string;
+  label: string;
+  /** Human-readable statement of what this context is and is not. */
+  disclosure: string;
+}
+
+/**
  * The acting owner identity on this route. DEMO SCAFFOLDING: always the
  * seeded demo actor, never a verified owner. Authentication alone never
  * grants mutation; the capability verdict (resolved separately by the
  * demo chain) is the only gate to the apply step.
  */
-export interface OwnerActorContext {
-  actorId: string;
-  label: string;
+export interface OwnerActorContext extends OwnerActor {
   /** Always true on this route. Rendered on every demo-owner affordance. */
   demoOwnerContext: true;
-  /** Human-readable statement of what this context is and is not. */
-  disclosure: string;
 }
 
 export function demoActorContext(actorId: string, label: string): OwnerActorContext {
@@ -215,6 +227,26 @@ export function buildPatchPreview(
         capabilityImpact,
       };
     }
+    case "confirm-contact-field": {
+      const correction = overrides.fieldCorrections[command.field];
+      const effective = correction
+        ? correction.ownerValue
+        : sourceFieldValue(objectId, command.field);
+      if (effective === null) return null;
+      return {
+        before: command.field + ": " + effective,
+        after: command.field + ": " + effective + " (owner confirms correct)",
+        evidenceImpact:
+          "Appends one owner.confirmed-fact event (owner attestation) " +
+          "recording that the owner asserts the current " +
+          command.field +
+          " is correct, with actor and timestamp. Nothing is rewritten: the " +
+          "source record is unchanged, and the confirmation keeps the " +
+          "source's value at confirmation time so later source drift can be " +
+          "detected (sourceDrifted).",
+        capabilityImpact,
+      };
+    }
     default:
       return null;
   }
@@ -241,14 +273,19 @@ export function lastEventId(objectId: string): string | null {
  */
 export interface BoundApproval {
   tenantId: string;
-  actor: OwnerActorContext;
+  actor: OwnerActor;
   baseStateDigest: string;
   baseViewDigest: string;
   patchDigest: string;
   approvedAt: string;
   eventId: string | null;
   resultDigest: string;
-  demoOwnerContext: true;
+  /**
+   * Present (literal true) on demo-stamped approvals, absent on future
+   * production approvals. Optional so a PING-backed stamper can satisfy
+   * this record without claiming demo status.
+   */
+  demoOwnerContext?: true;
 }
 
 /**
@@ -261,9 +298,15 @@ export function buildViewDigest(objectId: string): string {
   return digestOf(view ?? { objectId, missing: true });
 }
 
+/**
+ * The DEMO approval stamper: always stamps demoOwnerContext: true, so a
+ * demo approval can never be mistaken for a production authorization. A
+ * future PING-backed implementation provides its own stamper (no demo
+ * marker) against the same BoundApproval record shape.
+ */
 export function buildBoundApproval(args: {
   tenantId: string;
-  actor: OwnerActorContext;
+  actor: OwnerActor;
   baseStateDigest: string;
   baseViewDigest: string;
   patchDigest: string;

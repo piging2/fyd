@@ -1,0 +1,67 @@
+[
+  {
+    "model": "llama3:latest",
+    "cases": {
+      "supported": {
+        "pass": true,
+        "seconds": 3.0,
+        "hygiene": {
+          "cited": [
+            1
+          ],
+          "out_of_range_cites": [],
+          "invented_url": false,
+          "invented_phone": false
+        },
+        "reasons": [],
+        "output": "According to evidence [1], the business website hours are Monday-Friday 8:00am-5:00pm."
+      },
+      "partially_supported": {
+        "pass": true,
+        "seconds": 17.7,
+        "hygiene": {
+          "cited": [
+            2,
+            4,
+            5
+          ],
+          "out_of_range_cites": [],
+          "invented_url": false,
+          "invented_phone": false
+        },
+        "reasons": [],
+        "output": "Based on the evidence provided, we can answer this question.\n\nThe business website listed services [2] do not mention snow removal as one of their services. However, there is a Google review by S. Parker [4] that mentions the business plowed their driveway last winter, which could be an indication that they offer snow removal. However, it's important to note that this is just a single review and may not be representative of the business's actual services.\n\nTo confirm whether the business offers snow removal, we can check their website FAQ [5], which states that they are closed on Sundays. This suggests that they may not offer snow removal services, as it would require them to be available on Sundays.\n\nTherefore, based on the evidence provided, we cannot definitively say that the business offers snow removal."
+      },
+      "unsupported": {
+        "pass": true,
+        "seconds": 3.2,
+        "hygiene": {
+          "cited": [],
+          "out_of_range_cites": [],
+          "invented_url": false,
+          "invented_phone": false
+        },
+        "reasons": [],
+        "output": "The evidence does not establish this. There is no information provided about the founding year of the business in the given EVIDENCE block."
+      },
+      "conflicting": {
+        "pass": false,
+        "seconds": 6.2,
+        "hygiene": {
+          "cited": [
+            5,
+            5
+          ],
+          "out_of_range_cites": [],
+          "invented_url": false,
+          "invented_phone": false
+        },
+        "reasons": [
+          "missing a side of the conflict (cited: [5, 5])",
+          "no conflict language; may have picked a side silently"
+        ],
+        "output": "According to evidence [5], the business website FAQ states that they are closed on Sundays. Therefore, based on this evidence, the answer is:\n\nNo, we are not open on Sundays.\n\nEvidence: [5] (ev-faq-sunday-closed)"
+      }
+    }
+  }
+]

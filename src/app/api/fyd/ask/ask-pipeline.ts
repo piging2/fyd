@@ -52,6 +52,7 @@ import {
   TenantContextError,
 } from "@/fyd/tenant/tenant-context";
 import { getSiteBundle, type SiteBundle } from "@/fyd/media/site-bundle";
+import type { FydOverlayReader } from "@/fyd/data/fyd-tenant-graph";
 import { applyOwnerFieldCorrections } from "@/fyd/object/owner-overlay";
 
 export const dynamic = "force-dynamic";
@@ -63,15 +64,23 @@ export type AskAnswerClass = "supported" | "derived" | "unknown";
 const VALID_MODES: AskFydMode[] = ["visitor", "owner"];
 
 /**
- * Bundle loader for Ask FYD: loads the static bundle and composes the
- * tenant's owner overlay (field corrections) over it. The read model is the
- * owner-event projection, so a correction the owner approved is reflected
- * in Ask FYD answers, cited as an owner override while the source's value
- * stays recorded as what the source says. Fail closed: on overlay failure
- * the raw bundle is served, never an invented value.
+ * Bundle loader for Ask FYD: loads the site bundle through the authorized
+ * application read seam (fixture base graph + journal overlays via the
+ * governed PingObjectReader, digest-verified) and composes the tenant's
+ * owner overlay (field corrections) over it, ABOVE the read seam. The read
+ * model is the authorized graph read, so a correction the owner approved is
+ * reflected in Ask FYD answers, cited as an owner override while the
+ * source's value stays recorded as what the source says. Fail closed: on
+ * overlay failure the raw bundle is served, never an invented value.
+ *
+ * The reader override exists for tests only; production always uses the
+ * governed reader.
  */
-function loadBundleWithOwnerOverlay(siteId: string): SiteBundle | null {
-  const bundle = getSiteBundle(siteId);
+export async function loadBundleWithOwnerOverlay(
+  siteId: string,
+  reader?: FydOverlayReader,
+): Promise<SiteBundle | null> {
+  const bundle = await getSiteBundle(siteId, reader ? { reader } : undefined);
   if (!bundle) return null;
   try {
     const overlaid = applyOwnerFieldCorrections(bundle.graph, siteId);
@@ -80,8 +89,6 @@ function loadBundleWithOwnerOverlay(siteId: string): SiteBundle | null {
     return bundle;
   }
 }
-
-const ASK_DEPS: AnswerAskFydDeps = { loadBundle: loadBundleWithOwnerOverlay };
 
 /** Body keys that claim a tenant identity. Only the route path may do that. */
 const TENANT_CLAIM_KEYS = ["siteId", "tenantId", "tenant"] as const;
@@ -200,6 +207,36 @@ export async function handleAskRequest(
     );
   }
 
+  // The bundle loads through the authorized graph read on every request
+  // (re-read on every serve). A load or verification failure is the same
+  // honest unknown as a missing projection: never an answer, never a leak.
+  let bundle: SiteBundle | null;
+  try {
+    bundle = await loadBundleWithOwnerOverlay(siteId);
+  } catch (err) {
+    console.error(
+      `answerAskFyd: projection load failed for site "${siteId}":`,
+      err instanceof Error ? err.message : err,
+    );
+    return NextResponse.json(
+      {
+        ok: false,
+        kind: "projection_unavailable",
+        error:
+          "I could not load this site's data, so I cannot answer your question. The answer is unknown.",
+        attempted: "load the site's verified data projection",
+        answerUnknown: true,
+      },
+      { status: 503 },
+    );
+  }
+
+  const deps: AnswerAskFydDeps = {
+    // Tenant-scoped: the answer engine can only ever load this request's
+    // tenant bundle, never another tenant's graph.
+    loadBundle: (id) => (id === siteId ? bundle : null),
+  };
+
   let outcome: AskFydOutcome;
   try {
     outcome = answerAskFyd(
@@ -209,7 +246,7 @@ export async function handleAskRequest(
         question,
         mode: mode as AskFydMode,
       },
-      ASK_DEPS,
+      deps,
     );
   } catch {
     // The pipeline never throws by contract, but a route handler must never

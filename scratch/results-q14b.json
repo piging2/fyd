@@ -1,0 +1,67 @@
+[
+  {
+    "model": "qwen2.5-coder:14b",
+    "cases": {
+      "supported": {
+        "pass": false,
+        "seconds": 54.1,
+        "hygiene": {
+          "cited": [
+            1,
+            5
+          ],
+          "out_of_range_cites": [],
+          "invented_url": false,
+          "invented_phone": false
+        },
+        "reasons": [
+          "hours value missing/incorrect"
+        ],
+        "output": "Our business hours are Monday-Friday from 8:00am to 5:00pm [1]. We are closed on Sundays [5]."
+      },
+      "partially_supported": {
+        "pass": false,
+        "seconds": 2.6,
+        "hygiene": {
+          "cited": [],
+          "out_of_range_cites": [],
+          "invented_url": false,
+          "invented_phone": false
+        },
+        "reasons": [
+          "missing citation [4] (the only supporting evidence)"
+        ],
+        "output": "The evidence does not establish this."
+      },
+      "unsupported": {
+        "pass": true,
+        "seconds": 2.5,
+        "hygiene": {
+          "cited": [],
+          "out_of_range_cites": [],
+          "invented_url": false,
+          "invented_phone": false
+        },
+        "reasons": [],
+        "output": "The evidence does not establish this."
+      },
+      "conflicting": {
+        "pass": false,
+        "seconds": 3.0,
+        "hygiene": {
+          "cited": [
+            5
+          ],
+          "out_of_range_cites": [],
+          "invented_url": false,
+          "invented_phone": false
+        },
+        "reasons": [
+          "missing a side of the conflict (cited: [5])",
+          "no conflict language; may have picked a side silently"
+        ],
+        "output": "No, we are closed Sundays. [5]"
+      }
+    }
+  }
+]

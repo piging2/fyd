@@ -1,26 +1,33 @@
 /**
- * FYD site bundle: the read-only seam between the PING-backed site
- * projections and the server-side Ask FYD visitor API.
+ * FYD site bundle: the read-only seam between the authorized tenant graph
+ * read and the server-side Ask FYD visitor API.
  *
- * A SiteBundle joins one demo business's object graph (the canonical
- * projection written by the PING-side dump) with the SiteSpec the generator
- * produces from it, exactly as the public /sites pages render it (same
- * projection, same generator inputs), plus the validator findings and a
- * renderability verdict.
+ * A SiteBundle joins one demo business's object graph (fixture base graph +
+ * journal overlays composed through the governed PingObjectReader read,
+ * digest-verified at both layers) with the SiteSpec the generator produces
+ * from it, exactly as the public /sites pages render it (same graph, same
+ * generator inputs), plus the validator findings and a renderability
+ * verdict.
+ *
+ * The graph read is the authorized application read
+ * (src/fyd/data/fyd-tenant-graph.ts). There is deliberately no other way to
+ * build a bundle: NO dump.py disk JSON, NO FYD_PROJECTION_DIR, NO direct
+ * Postgres reads, NO raw journal reads.
  *
  * No customer fact is hardcoded here: the graph, the spec compile pins, and
- * the business name all come from the PING-backed projection. This keeps
- * Ask FYD answers and the rendered pages on the same facts: both read the
- * same projection.
+ * the business name all come from the authorized read. This keeps Ask FYD
+ * answers and the rendered pages on the same facts: both read the same
+ * graph.
  *
  * This module owns this contract. The visitor route codes against it; the
  * media lane owns the contents of mediaManifest (the rights-gated set of
  * FYD-served, provenance-backed media items for the site).
  */
 import {
-  getPingObjectGraphSync,
-  listPingSiteIdsSync,
-} from "../data/ping-object-source";
+  getFydTenantGraph,
+  getFydTenantIds,
+  type FydOverlayReader,
+} from "../data/fyd-tenant-graph";
 import { getMediaManifest } from "./bundle-media";
 import { generateSiteSpec } from "../proceduralize/generator";
 import { isRenderable, validateSiteSpec } from "../sitespec/validator";
@@ -59,8 +66,12 @@ function businessNameFor(graph: ObjectGraph, spec: FYDSiteSpec, siteId: string):
   return siteId;
 }
 
-function buildBundle(siteId: string): SiteBundle {
-  const { graph, meta } = getPingObjectGraphSync(siteId);
+async function buildBundle(
+  siteId: string,
+  reader?: FydOverlayReader,
+): Promise<SiteBundle> {
+  const tenant = await getFydTenantGraph(siteId, reader ? { reader } : undefined);
+  const { graph, meta } = tenant;
   const spec = generateSiteSpec(graph, {
     generatedAt: meta.generatedAt,
     eventSequences: meta.eventSequences ?? undefined,
@@ -83,16 +94,23 @@ function buildBundle(siteId: string): SiteBundle {
 /**
  * Return the bundle for a known site id, or null for unknown ids.
  *
- * Deliberately uncached: the bundle is rebuilt from the current projection
- * on every call, so a PING-side regen is visible to Ask FYD immediately.
- * The graphs are tiny; freshness outranks the memo.
+ * Deliberately uncached and async: the bundle is rebuilt through the
+ * authorized graph read on every call, so a newly journaled overlay is
+ * visible to Ask FYD on the next request. The graphs are tiny; freshness
+ * outranks the memo.
  */
-export function getSiteBundle(siteId: string): SiteBundle | null {
-  if (!listPingSiteIdsSync().includes(siteId)) return null;
-  return buildBundle(siteId);
+export async function getSiteBundle(
+  siteId: string,
+  opts?: { reader?: FydOverlayReader },
+): Promise<SiteBundle | null> {
+  if (!getFydTenantIds().includes(siteId)) return null;
+  return buildBundle(siteId, opts?.reader);
 }
 
-/** Site ids this bundle module can serve: the PING projections on disk. */
+/**
+ * Site ids this bundle module can serve: the pinned authorized tenant
+ * registry (src/fyd/data/fyd-tenant-graph.ts).
+ */
 export function listSiteIds(): string[] {
-  return listPingSiteIdsSync();
+  return getFydTenantIds();
 }
