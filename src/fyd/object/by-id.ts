@@ -18,7 +18,7 @@
 import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
 import type { ObjectGraph } from "../sitespec/types";
 import type { CircleProjection, ObjectView } from "./types";
-import { composeObjectView } from "./view";
+import { composeObjectView, listObjectIds, loadObjectView } from "./view";
 import { objectViewToCircleProjection } from "./circle-adapter";
 
 /**
@@ -51,4 +51,24 @@ export function loadCircleProjectionById(
   const view = loadObjectViewById(siteId, objectId);
   if (!view) return null;
   return objectViewToCircleProjection(view);
+}
+
+/**
+ * Resolve a public ObjectView by site slug OR by any public PING object id
+ * in any tenant. The slug path runs first (legacy behavior for /o/<slug>
+ * and the Manage surface, which pass the site slug); then a by-id scan
+ * across every tenant's graph. Fail-closed: null when the id is unknown
+ * in every tenant. No object ever crosses tenants: the returned siteId is
+ * the tenant that actually holds the object.
+ */
+export function loadObjectViewBySlugOrId(
+  objectId: string,
+): { view: ObjectView; siteId: string } | null {
+  const slugView = loadObjectView(objectId);
+  if (slugView) return { view: slugView, siteId: objectId };
+  for (const siteId of listObjectIds()) {
+    const v = loadObjectViewById(siteId, objectId);
+    if (v) return { view: v, siteId };
+  }
+  return null;
 }

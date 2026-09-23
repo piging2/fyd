@@ -1,5 +1,5 @@
 /**
- * Component registry: the seventeen section components plus GenericObjectCard.
+ * Component registry: the eighteen section components plus GenericObjectCard.
  *
  * Contract (harvest T5): each entry names the component, the schemas it
  * accepts, and whether it needs the owner. Adding a component means adding
@@ -98,6 +98,19 @@ const DEFINITIONS: FYDComponentDef[] = [
     responsive: { behavior: "rail-to-drawer", collapseBelow: "lg", touchTargetMinPx: 44 },
     editableProperties: ["heading", "objectPresence.mode", "objectPresence.rules.collapseBelow"],
     variants: ["rail", "drawer", "auto"],
+  },
+  {
+    name: "Gallery",
+    label: "Gallery",
+    description: "Evidence-backed photo gallery from the site's acquired media (gallery/project/service/team/location roles). Renders only when gallery media exists; the section itself is the eligibility gate, so requiresData is false and the renderer returns null on empty media.",
+    acceptsSchemas: [],
+    ownerBound: true,
+    requiresData: false,
+    requiredData: ["renderContext.galleryMedia"],
+    capabilities: ["preview"],
+    responsive: { behavior: "stack", touchTargetMinPx: 44 },
+    editableProperties: ["heading"],
+    variants: ["grid"],
   },
 ];
 

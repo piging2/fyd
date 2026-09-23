@@ -1,3 +1,5 @@
+import type { MotionTokens } from "@/fyd/sitespec/types";
+
 /**
  * Motion Tokens
  * 
@@ -230,4 +232,74 @@ export function getMotionValues<T extends Record<string, any>>(
   reduced: Partial<T>
 ): T {
   return prefersReducedMotion() ? { ...normal, ...reduced } : normal;
+}
+
+/* ------------------------------------------------------------------ */
+/* MotionTokens intensity wiring (FYD grill, 2026-09-22).             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The MotionTokens union is the single source of truth (defined in
+ * @/fyd/sitespec/types); it is NOT duplicated here. This table resolves
+ * a motionIntensity into the concrete duration/easing/spring presets
+ * above, so every surface maps intensity -> real animation values
+ * through one function.
+ */
+export interface ResolvedIntensity {
+  /**
+   * Multiplier applied to decorative transition durations. 0 collapses
+   * motion (reduced-motion equivalent: the UI must work with no
+   * animation at all).
+   */
+  durationScale: number;
+  /** Spring preset key for open/expand motion, or null when motion is off. */
+  spring: keyof typeof spring | null;
+  /** Whether decorative/idle motion (sheen, breathing) may run. */
+  decorative: boolean;
+}
+
+export const MOTION_INTENSITY: Record<
+  MotionTokens["motionIntensity"],
+  ResolvedIntensity
+> = {
+  NONE: { durationScale: 0, spring: null, decorative: false },
+  SUBTLE: { durationScale: 0.6, spring: "gentle", decorative: true },
+  EXPRESSIVE: { durationScale: 1, spring: "snappy", decorative: true },
+} as const;
+
+/**
+ * Resolve a MotionTokens motionIntensity to concrete presets. Unknown
+ * values fail closed to NONE (no motion) rather than guessing.
+ */
+export function resolveMotionIntensity(
+  intensity: MotionTokens["motionIntensity"],
+): ResolvedIntensity {
+  return MOTION_INTENSITY[intensity] ?? MOTION_INTENSITY.NONE;
+}
+
+/**
+ * Stagger delay (seconds) for a MotionTokens stagger setting, reusing
+ * the duration tokens above.
+ */
+export function staggerDelayFor(stagger: MotionTokens["stagger"]): number {
+  switch (stagger) {
+    case "TIGHT":
+      return duration.staggerFast;
+    case "RELAXED":
+      return duration.staggerSlow;
+    case "NONE":
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Effective intensity for a surface: an explicit reduced-motion signal
+ * always wins and collapses to NONE, no matter what the profile says.
+ */
+export function effectiveIntensity(
+  intensity: MotionTokens["motionIntensity"],
+  reducedMotion: boolean,
+): MotionTokens["motionIntensity"] {
+  return reducedMotion ? "NONE" : intensity;
 }

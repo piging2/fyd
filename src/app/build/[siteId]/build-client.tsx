@@ -24,6 +24,8 @@ import { useMemo } from "react";
 import { SitePageView } from "@/fyd/components/renderer";
 import { ObjectRail, pingObjectToView, richestObject } from "@/fyd/components/object-rail";
 import { ObjectCircle } from "@/fyd/ui/object-circle";
+import { FydMotionFallback } from "@/fyd/components/fyd-motion-fallback";
+import { FydViewportProvider } from "@/fyd/components/viewport";
 import type {
   FYDFinding,
   FYDSiteSpec,
@@ -63,6 +65,8 @@ export function BuildClient({
   renderable,
   siteId,
   heroMedia = null,
+  galleryMedia = null,
+  objectMedia = {},
 }: {
   spec: FYDSiteSpec;
   graph: ObjectGraph;
@@ -70,10 +74,12 @@ export function BuildClient({
   renderable: boolean;
   siteId?: string;
   heroMedia?: DisplayMedia | null;
+  galleryMedia?: DisplayMedia[] | null;
+  objectMedia?: Record<string, DisplayMedia[]>;
 }) {
   const ctx = useMemo(
-    () => ({ spec, graph, viewer: VIEWER, siteId, heroMedia }),
-    [spec, graph, siteId, heroMedia],
+    () => ({ spec, graph, viewer: VIEWER, siteId, heroMedia, galleryMedia, objectMedia }),
+    [spec, graph, siteId, heroMedia, galleryMedia, objectMedia],
   );
   const page = spec.pages[0];
   const theme = spec.themeTokens;
@@ -133,9 +139,21 @@ export function BuildClient({
 
   return (
     <div className="mx-auto flex w-full max-w-7xl items-start gap-8 px-4 py-8 sm:px-6">
-      <div className="min-w-0 flex-1">
-        <SitePageView key={page.slug} page={page} ctx={ctx} />
-      </div>
+      {/* Scroll-entrance fallback: arms only when reduced motion is not
+          requested and CSS scroll timelines are unsupported. */}
+      <FydMotionFallback />
+      {/*
+        Viewport capabilities: resolves width class, pointer, hover, and
+        safe-area after mount; stamps data attributes for CSS-driven
+        layout projection (same object, different projection per device)
+        and exposes useViewport() for behavioral choices. SSR renders the
+        compact baseline, so there is no hydration mismatch.
+      */}
+      <FydViewportProvider>
+        <div className="min-w-0 flex-1">
+          <SitePageView key={page.slug} page={page} ctx={ctx} />
+        </div>
+      </FydViewportProvider>
       {presence ? (
         <ObjectRail cards={cards} presence={presence} theme={theme} heading="Featured object" />
       ) : null}

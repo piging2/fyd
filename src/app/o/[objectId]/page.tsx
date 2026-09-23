@@ -18,7 +18,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink, Mail, MapPin, MessageCircleQuestion, Phone } from "lucide-react";
-import { loadObjectView } from "@/fyd/object/view";
+import { loadObjectViewBySlugOrId } from "@/fyd/object/by-id";
 import { AskObjectPanel } from "@/fyd/ui/ask-object-panel";
 import { WhyThis } from "@/fyd/ui/why-this";
 import type { ObjectCapability, ObjectView } from "@/fyd/object/types";
@@ -38,7 +38,7 @@ export async function generateMetadata({
   params: Promise<{ objectId: string }>;
 }): Promise<Metadata> {
   const { objectId } = await params;
-  const view = loadObjectView(objectId);
+  const view = loadObjectViewBySlugOrId(objectId)?.view ?? null;
   if (!view) return { title: { absolute: "Object not found | FYD" }, robots: { index: false } };
   return {
     title: { absolute: view.name },
@@ -129,7 +129,7 @@ export default async function ObjectNodePage({
   params: Promise<{ objectId: string }>;
 }) {
   const { objectId } = await params;
-  const view = loadObjectView(objectId);
+  const view = loadObjectViewBySlugOrId(objectId)?.view ?? null;
   if (!view) notFound();
 
   const hero = view.media.find((m) => m.role === "hero" || m.role === "gallery");

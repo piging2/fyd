@@ -12,7 +12,7 @@
  */
 
 import type { OwnerFieldCorrection, PingObject } from "@/lib/ping/types";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { getComponentDef } from "./registry";
 import { AskFydWidget } from "./ask-fyd-widget";
 import { ObjectRail, pingObjectToView, richestObject } from "./object-rail";
@@ -26,6 +26,26 @@ import {
   type FieldVisibilityDecision,
 } from "../sitespec/field-visibility";
 import { resolveSafeLink, type SafeLinkResult } from "../sitespec/safe-link";
+import {
+  contactMethodFor,
+  type ClaimEvidence,
+  type ContactMethod,
+  type ContactMethodKind,
+} from "../object/object-projection";
+import { FydContactLink } from "./contact-link";
+import { schemaRole } from "../sitespec/schemas";
+import {
+  entranceDurationMs,
+  motionTokensForTheme,
+  objectViewTransitionName,
+  sectionViewTransitionName,
+  staggerDelayMs,
+} from "./compose-motion";
+import {
+  ObjectAffordance,
+  affordanceEligible,
+  affordanceEvidenceLine,
+} from "./object-affordance";
 // Type-only: erased at compile, so the client bundle never touches the
 // server-only media store. The selector runs at the server render seam.
 import type { DisplayMedia } from "../media/select";
@@ -36,6 +56,9 @@ import type {
   FYDSection,
   FYDSiteSpec,
   FYDThemeTokens,
+  FYDDesignIntent,
+  FYDLayoutCharacter,
+  MotionTokens,
   ObjectGraph,
   ObjectPresence,
   ViewerContext,
@@ -134,6 +157,21 @@ export interface RenderContext {
    * renders its honest typographic state, never an invented image.
    */
   heroMedia?: DisplayMedia | null;
+  /**
+   * Gallery media for the spec owner, resolved once at the server render
+   * seam via galleryMediaFor (same pattern as heroMedia). Serialized
+   * DisplayMedia. Null (or empty) means the Gallery section renders
+   * nothing: missing data means the section does not exist.
+   */
+  galleryMedia?: DisplayMedia[] | null;
+  /**
+   * Per-object media for objects on the rendered page, keyed by object
+   * id, resolved once at the server render seam via listObjectMedia.
+   * Serialized DisplayMedia. Lets cards, strips, and feeds go visual only
+   * where the graph actually has media: structural differentiation from
+   * the graph, never hand-built sections.
+   */
+  objectMedia?: Record<string, DisplayMedia[]>;
 }
 
 /**
@@ -165,6 +203,11 @@ interface SectionProps {
   presentation: FYDPresentation;
   theme: FYDThemeTokens;
   ctx: RenderContext;
+  /**
+   * Page-order index of the section (compose lane): drives restrained
+   * stagger on scroll entrance. Defaults to 0.
+   */
+  motionIndex?: number;
 }
 
 function friendlySchemaLabel(schema: string): string {
@@ -246,6 +289,396 @@ function fieldOf(o: PingObject, name: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Compose lane: presentation character, motion, object cards, gallery.
+//
+// layoutCharacter is a PRESENTATION hint chosen by the composing
+// strategy/archetype (SiteSpec.themeTokens), owner-overridable. It changes
+// presentation tokens only: type scale, rhythm, card elevation. Facts
+// never change with it. Motion semantics come from theme.motionTokens;
+// the renderer owns the implementation (native CSS + View Transitions
+// API, transform/opacity only, zero new dependencies).
+// ---------------------------------------------------------------------------
+
+/** Presentation-only readouts per layout character. Never facts. */
+const CHARACTER_PRESENTATION: Record<
+  FYDLayoutCharacter,
+  {
+    /** Section vertical rhythm in px (inline style: Tailwind-safe). */
+    sectionRhythmPx: number;
+    /** Heading letter-spacing. */
+    headingTracking: string;
+    /** Card elevation style. */
+    cardElevation: "flat" | "layered";
+    /** Hero heading scale multiplier. */
+    heroScale: number;
+    /** Design-system compiler seed: content density. */
+    density: "compact" | "comfortable";
+    /** Design-system compiler seed: center column width in px. */
+    contentWidthPx: number;
+    /** Design-system compiler seed: media treatment on small screens. */
+    mediaTreatment: "contained" | "edge-to-edge";
+    /** Design-system compiler seed: how hard objects push for attention. */
+    objectEmphasis: "quiet" | "balanced" | "prominent";
+  }
+> = {
+  EDITORIAL: { sectionRhythmPx: 56, headingTracking: "-0.015em", cardElevation: "flat", heroScale: 1.12, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "contained", objectEmphasis: "balanced" },
+  CRAFT: { sectionRhythmPx: 48, headingTracking: "0em", cardElevation: "layered", heroScale: 1.05, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "edge-to-edge", objectEmphasis: "balanced" },
+  TECHNICAL: { sectionRhythmPx: 40, headingTracking: "0.04em", cardElevation: "flat", heroScale: 1.0, density: "compact", contentWidthPx: 1152, mediaTreatment: "contained", objectEmphasis: "quiet" },
+  RETAIL: { sectionRhythmPx: 48, headingTracking: "0em", cardElevation: "layered", heroScale: 1.05, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "edge-to-edge", objectEmphasis: "prominent" },
+  PROFESSIONAL: { sectionRhythmPx: 48, headingTracking: "0.01em", cardElevation: "flat", heroScale: 1.05, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "contained", objectEmphasis: "balanced" },
+  CREATOR: { sectionRhythmPx: 56, headingTracking: "-0.01em", cardElevation: "layered", heroScale: 1.12, density: "comfortable", contentWidthPx: 1024, mediaTreatment: "edge-to-edge", objectEmphasis: "prominent" },
+};
+
+/**
+ * Design-system compiler (mobile architecture): deterministic map from
+ * semantic design intent to presentation tokens. The owner-approved
+ * theme.designIntent overrides win field-by-field; the layoutCharacter
+ * map is the default. The LLM/agent proposes INTENT patches (never CSS);
+ * the owner approves through the token-override path; this function
+ * compiles. No arbitrary CSS generation anywhere in the pipeline.
+ */
+export interface FYDCompiledIntent {
+  density: "compact" | "comfortable";
+  contentWidthPx: number;
+  mediaTreatment: "contained" | "edge-to-edge";
+  objectEmphasis: "quiet" | "balanced" | "prominent";
+}
+
+export function designIntentForTheme(theme: FYDThemeTokens): FYDCompiledIntent {
+  const c = CHARACTER_PRESENTATION[characterOf(theme)];
+  const d: FYDDesignIntent = theme.designIntent ?? {};
+  return {
+    density: d.density ?? c.density,
+    contentWidthPx: d.contentWidthPx ?? c.contentWidthPx,
+    mediaTreatment: d.mediaTreatment ?? c.mediaTreatment,
+    objectEmphasis: d.objectEmphasis ?? c.objectEmphasis,
+  };
+}
+
+function characterOf(theme: FYDThemeTokens): FYDLayoutCharacter {
+  return theme.layoutCharacter ?? "EDITORIAL";
+}
+
+/**
+ * Inline style carrying a view-transition name. React 18 does not know
+ * the camelCase viewTransitionName prop (React 19 does); the hyphenated
+ * key renders correctly into SSR markup (verified) with a dev-only
+ * warning, and the browser honors it.
+ */
+function vtNameStyle(name: string | undefined): CSSProperties {
+  return name ? ({ "view-transition-name": name } as unknown as CSSProperties) : {};
+}
+
+/**
+ * One <style> per page, emitted by SitePageView. Native CSS only:
+ *
+ * - View transitions: `@view-transition { navigation: auto }`, with the
+ *   element names stamped inline by the renderer from stable ids (MORPH
+ *   only; CROSSFADE stamps no names and the browser crossfades).
+ * - Scroll entrance, restrained: `animation-timeline: view()` where
+ *   supported, behind the double gate
+ *   (prefers-reduced-motion: no-preference + @supports). The
+ *   IntersectionObserver fallback (useFydScrollEntrance) arms the .fyd-io
+ *   path only when the native timeline is unsupported.
+ * - Card hover: transform + shadow only. Affordance preview pop.
+ * - @starting-style for DOM-insertion enters.
+ * - Soft tonal section alternation via color-mix, scoped to .fyd-section.
+ *
+ * Everything collapses under prefers-reduced-motion: reduce. NEVER
+ * hijacks scrolling: no scroll-linked layout shifts, no position
+ * changes, only opacity/transform entrances.
+ */
+function FydMotionStyles({ theme }: { theme: FYDThemeTokens }) {
+  const motion: MotionTokens = motionTokensForTheme(theme);
+  const character = characterOf(theme);
+  const dur = entranceDurationMs(motion);
+  const collapsed = motion.motionIntensity === "NONE" || dur === 0;
+  // Mobile composition CSS: NOT gated on reduced motion. One semantic
+  // SiteSpec, one DOM; the projection adapts per device. Breakpoints
+  // mirror the ViewportWidthClass cut points (xs <480, sm 480-767,
+  // md 768-1023, lg 1024-1439, xl 1440+).
+  const composition = [
+    // Object card: compact tile by default (mobile-first). At md+ the
+    // same DOM projects as a rich horizontal card. Same object,
+    // different projection; no squeezed desktop at 375px.
+    ".fyd-card { display: grid; grid-template-columns: 1fr; }",
+    ".fyd-card .fyd-card-media { margin-bottom: 0.9rem; }",
+    "@media (min-width: 768px) {",
+    // Rich horizontal card ONLY when the card actually carries media:
+    // the media anchors column 1 and spans the text rows, every other
+    // child flows in column 2. Media-less cards stay single-column so
+    // text never squeezes into a narrow rail (flat-DOM auto-placement
+    // put the description in column 2 by itself).
+    ".fyd-card.fyd-card-rich:has(.fyd-card-media) { grid-template-columns: minmax(0, 240px) minmax(0, 1fr); column-gap: 1.25rem; align-items: start; }",
+    ".fyd-card.fyd-card-rich:has(.fyd-card-media) .fyd-card-media { grid-column: 1; grid-row: 1 / span 8; margin-bottom: 0; height: 100%; }",
+    ".fyd-card.fyd-card-rich:has(.fyd-card-media) > :not(.fyd-card-media) { grid-column: 2; }",
+    "}",
+    // Compact tile density: lower information density on mobile.
+    // Description clamps to two lines (progressive disclosure via the
+    // detail link); microcopy and affordance stay fully visible.
+    ".fyd-card-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }",
+    "@media (min-width: 768px) { .fyd-card-desc { -webkit-line-clamp: unset; } }",
+    // Touch targets: 44px minimum on every interactive element.
+    // No hover-dependent interactions: affordance is tap-native
+    // (details/summary); on touch the quiet cues render fully visible.
+    ".fyd-card h3 a { display: inline-flex; align-items: center; min-height: 44px; }",
+    ".fyd-affordance summary { min-height: 44px; display: inline-flex; align-items: center; }",
+    "@media (hover: none) {",
+    ".fyd-card .fyd-reln { opacity: .9; }",
+    ".fyd-card .fyd-affordance-mark { opacity: .95; }",
+    ".fyd-card { transition: none; }",
+    "}",
+    // Safe-area insets: the page never tucks content under notches or
+    // home indicators.
+    ".fyd-safe-area { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); padding-bottom: env(safe-area-inset-bottom); }",
+    // Gallery: edge-to-edge media moments on xs when the design intent
+    // asks for them; calm grids above.
+    "@media (max-width: 479px) {",
+    ".fyd-gallery-grid[data-media-treatment='edge-to-edge'] { grid-template-columns: 1fr; margin-left: -1rem; margin-right: -1rem; }",
+    ".fyd-gallery-grid[data-media-treatment='edge-to-edge'] figure { margin: 0; }",
+    "}",
+    // People rail: gesture-friendly with scroll snap on touch.
+    ".fyd-people-rail { scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }",
+    ".fyd-people-rail > * { scroll-snap-align: start; }",
+  ].join("\n");
+  const motionCss = collapsed
+    ? "/* fyd-motion: intensity NONE, decorative motion collapsed */"
+    : [
+        "@media (prefers-reduced-motion: no-preference) {",
+        "@view-transition { navigation: auto; }",
+        ".fyd-hero-settle { animation: fyd-hero-settle 560ms cubic-bezier(.2,.7,.2,1) both; }",
+        "@keyframes fyd-hero-settle { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }",
+        "@supports (animation-timeline: view()) {",
+        "[data-motion='enter'] { animation: fyd-enter " +
+          dur +
+          "ms cubic-bezier(.2,.7,.2,1) both; animation-timeline: view(); animation-range: entry 0% cover 30%; }",
+        "@keyframes fyd-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }",
+        "}",
+        ".fyd-io [data-motion='enter'] { opacity: 0; transform: translateY(16px); transition: opacity 480ms ease, transform 480ms ease; }",
+        ".fyd-io [data-motion='enter'].fyd-inview { opacity: 1; transform: none; }",
+        "@media (hover: hover) {",
+        ".fyd-card { transition: transform 240ms ease, box-shadow 240ms ease; }",
+        ".fyd-card:hover { transform: translateY(-4px); }",
+        ".fyd-card .fyd-affordance-mark { opacity: .55; transition: opacity 160ms ease; }",
+        ".fyd-card:hover .fyd-affordance-mark, .fyd-card:focus-within .fyd-affordance-mark { opacity: 1; }",
+        ".fyd-card .fyd-reln { opacity: .45; transition: opacity 200ms ease; }",
+        ".fyd-card:hover .fyd-reln, .fyd-card:focus-within .fyd-reln { opacity: .9; }",
+        "}",
+        ".fyd-affordance-preview { animation: fyd-pop 180ms ease-out both; }",
+        "@keyframes fyd-pop { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }",
+        "@starting-style { .fyd-affordance-preview { opacity: 0; transform: translateY(-4px) scale(.98); } }",
+        ".fyd-section:nth-of-type(even) { background: color-mix(in srgb, var(--fyd-surface, #ffffff) 95%, var(--fyd-ink, #000000)); }",
+        "}",
+      ].join("\n");
+  const css = composition + "\n" + motionCss;
+  return <style data-fyd-motion={character}>{css}</style>;
+}
+
+/**
+ * First photographic DisplayMedia for an object: logos are brand
+ * identity, never card covers. Null when the object has no displayable
+ * photographic media.
+ */
+function photographicMedia(
+  list: DisplayMedia[] | undefined,
+): DisplayMedia | null {
+  if (!list) return null;
+  return list.find((m) => m.role !== "logo") ?? null;
+}
+
+// Relationship predicates for microcopy. Generic vocabulary, never
+// business-specific: the line names the connection the graph recorded.
+const PERSON_ORG_PREDICATES = [
+  "employs",
+  "member_of",
+  "works_for",
+  "founded_by",
+  "has_member",
+];
+const SERVICE_PLACE_PREDICATES = [
+  "located_at",
+  "serves",
+  "available_in",
+  "serves_area",
+];
+const MAKER_PREDICATES = ["published_by", "created_by", "authored_by", "provided_by"];
+
+/**
+ * Relationship microcopy for a card: one quiet line naming the
+ * connection, e.g. "Maya Alvarez -> Happy Place Carpentry" on a person
+ * card, or "Available in Grand Junction, Fruita" on a service card.
+ * No giant graph visualization. Titles go through the binding verifier;
+ * an unverified title kills the line instead of guessing. Hovering the
+ * card subtly reveals the connection (CSS on .fyd-reln).
+ */
+function relationshipLine(
+  ctx: RenderContext,
+  o: PingObject,
+): string | null {
+  const role = schemaRole(o.schema);
+  const graph = ctx.graph;
+  const byId = new Map(graph.objects.map((x) => [x.id, x]));
+  const active = graph.relationships.filter((r) => r.status === "active");
+  const titleOf = (id: string): string | undefined => {
+    const t = byId.get(id);
+    return t && t.visibility === "public" ? boundTitle(ctx, t) : undefined;
+  };
+  if (role === "person") {
+    const name = boundTitle(ctx, o);
+    if (!name) return null;
+    for (const r of active) {
+      if (r.object !== o.id) continue;
+      if (!PERSON_ORG_PREDICATES.includes(r.predicate)) continue;
+      const org = titleOf(r.subject);
+      if (org) return `${name} -> ${org}`;
+    }
+    return null;
+  }
+  if (role === "service" || role === "product") {
+    const places: string[] = [];
+    for (const r of active) {
+      if (r.subject !== o.id) continue;
+      if (!SERVICE_PLACE_PREDICATES.includes(r.predicate)) continue;
+      const t = titleOf(r.object);
+      if (t && !places.includes(t)) places.push(t);
+    }
+    if (places.length > 0)
+      return `Available in ${places.slice(0, 4).join(", ")}`;
+  }
+  for (const r of active) {
+    if (r.subject !== o.id) continue;
+    if (!MAKER_PREDICATES.includes(r.predicate)) continue;
+    const maker = titleOf(r.object);
+    if (maker) return `By ${maker}`;
+  }
+  for (const r of active) {
+    if (r.object !== o.id) continue;
+    if (!MAKER_PREDICATES.includes(r.predicate)) continue;
+    const maker = titleOf(r.subject);
+    if (maker) return `By ${maker}`;
+  }
+  return null;
+}
+
+/**
+ * The object card: renders from the object graph, never hand content.
+ *
+ * Hover/tap behavior: lift/depth change on hover (transform + shadow,
+ * CSS), identity persistence via the view-transition name on the title
+ * (card -> detail morphs the same object), tap opens the object detail
+ * through the title link. The FYD mark affordance (canonical types only)
+ * opens the preview. Objects with photographic media get a visual cover:
+ * structural differentiation from the graph. The relationship microcopy
+ * names the object's connection in one quiet line.
+ */
+function FydObjectCard({
+  o,
+  theme,
+  ctx,
+  index,
+  kicker,
+}: {
+  o: PingObject;
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+  index: number;
+  /** Optional kind line under the title (e.g. a person's role). Bound by the caller. */
+  kicker?: string | null;
+}) {
+  const title = boundTitle(ctx, o);
+  const description = boundDescription(ctx, o);
+  const motion = motionTokensForTheme(theme);
+  const character = characterOf(theme);
+  const char = CHARACTER_PRESENTATION[character];
+  const media = photographicMedia(ctx.objectMedia?.[o.id]);
+  const morph =
+    motion.objectTransition === "MORPH" && motion.motionIntensity !== "NONE";
+  const vtName = morph ? objectViewTransitionName(o.id) : undefined;
+  const delay = staggerDelayMs(index, motion);
+  const reln = relationshipLine(ctx, o);
+  const detailHref = `/o/${encodeURIComponent(o.id)}`;
+  const radius = theme.radius === "none" ? 0 : 8;
+  return (
+    <article
+      className="fyd-card fyd-card-rich border border-border-soft p-5"
+      data-motion="enter"
+      data-motion-index={index}
+      data-layout-character={character}
+      style={{
+        position: "relative",
+        background: theme.surface,
+        borderRadius: radius,
+        boxShadow:
+          char.cardElevation === "layered"
+            ? (theme.shadows?.sm ?? "0 1px 3px rgba(0,0,0,0.08)")
+            : "none",
+        animationDelay: delay ? `${delay}ms` : undefined,
+        transitionDelay: delay ? `${delay}ms` : undefined,
+      }}
+    >
+      {media ? (
+        <img
+          className="fyd-card-media"
+          src={media.src}
+          alt={media.alt}
+          width={media.width}
+          height={media.height}
+          loading="lazy"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          style={{
+            width: "100%",
+            height: "auto",
+            aspectRatio: "16 / 9",
+            objectFit: "cover",
+            borderRadius: radius,
+            display: "block",
+            marginBottom: "0.9rem",
+          }}
+        />
+      ) : null}
+      {title ? (
+        <h3
+          className="text-lg font-semibold"
+          style={{ color: theme.ink, ...vtNameStyle(vtName) }}
+        >
+          <a
+            href={detailHref}
+            style={{ color: "inherit", textDecoration: "none" }}
+          >
+            {title}
+          </a>
+        </h3>
+      ) : null}
+      {kicker ? (
+        <p className="text-sm font-medium" style={{ color: theme.accent }}>
+          {kicker}
+        </p>
+      ) : null}
+      {description ? (
+        <p className="fyd-card-desc mt-2 text-sm text-accent">{description}</p>
+      ) : null}
+      {reln ? (
+        <p className="fyd-reln mt-2 text-xs" style={{ color: theme.ink }}>
+          {reln}
+        </p>
+      ) : null}
+      <div className="mt-3">
+        <ClaimBadge objects={[o]} />
+      </div>
+      {affordanceEligible(o) ? (
+        <ObjectAffordance
+          objectId={o.id}
+          title={title ?? null}
+          kindLabel={friendlySchemaLabel(o.schema)}
+          evidenceLine={affordanceEvidenceLine(o)}
+          theme={theme}
+        />
+      ) : null}
+    </article>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Projection seam: binding verification + safe links.
 //
 // Every FACTUAL value rendered below is read through boundField /
@@ -320,23 +753,131 @@ function boundWebsite(ctx: RenderContext): string | undefined {
   return undefined;
 }
 
+/**
+ * ContactMethod projection for one contact field ("phone" | "email").
+ *
+ * Binding-verified through boundField (the same verifier as every factual
+ * value on this surface), then safety-gated through contactMethodFor: an
+ * unverifiable or unsafe number/email is not a contact method and the
+ * caller renders nothing. Evidence comes from the object's own provenance
+ * (the "direct" binding's evidence ref) or the owner's correction record
+ * (owner-attested state). Never invented.
+ */
+function contactMethod(
+  ctx: RenderContext,
+  o: PingObject,
+  kind: ContactMethodKind,
+  correction: OwnerFieldCorrection | null,
+): ContactMethod | null {
+  const value = boundField(ctx, o, kind, correction ? "owner_authored" : "direct");
+  if (value === undefined) return null;
+  return contactMethodFor(kind, value, contactEvidence(o, kind, correction));
+}
+
+/** Evidence basis for a rendered contact method. */
+function contactEvidence(
+  o: PingObject,
+  kind: ContactMethodKind,
+  correction: OwnerFieldCorrection | null,
+): ClaimEvidence {
+  if (correction) {
+    const steps: EvidenceStep[] = [
+      { step: "Owner decision", detail: correction.basis, state: "observed" },
+    ];
+    if (correction.sourceValue) {
+      steps.push({
+        step: "The site listed",
+        detail: correction.sourceValue,
+        state: "observed",
+      });
+    }
+    return {
+      state: "observed",
+      receipt: "the business owner",
+      asOf: correction.correctedAt.slice(0, 10),
+      steps,
+    };
+  }
+  const ref = o.provenance?.ref ?? "";
+  return {
+    state: "observed",
+    receipt: provenanceReceipt(ref),
+    asOf: (o.provenance?.derivedAt ?? "").slice(0, 10) || undefined,
+    steps: [
+      { step: "Object field", detail: kind, state: "observed" },
+      { step: "Source", detail: ref, state: "observed" },
+    ],
+  };
+}
+
+/**
+ * Quiet receipt for a provenance ref, e.g. "example.com" for
+ * "website-ingestion:https://example.com/". Deterministic.
+ */
+function provenanceReceipt(ref: string): string {
+  const m = /https?:\/\/([^/]+)/.exec(ref);
+  if (m) return m[1].replace(/^www\./, "");
+  const trimmed = ref.trim();
+  return trimmed === "" ? "the business website" : trimmed;
+}
+
 function SectionShell({
   heading,
   copy,
   children,
   theme,
+  sectionId,
+  motionIndex,
 }: {
   heading?: string;
   copy?: string;
   children: ReactNode;
   theme: FYDThemeTokens;
+  /** Registry section id, for the data-fyd-section hook. */
+  sectionId?: string;
+  /** Page-order index, for restrained stagger. */
+  motionIndex?: number;
 }) {
+  const motion = motionTokensForTheme(theme);
+  const character = characterOf(theme);
+  const char = CHARACTER_PRESENTATION[character];
+  const morph =
+    motion.objectTransition === "MORPH" && motion.motionIntensity !== "NONE";
+  const delay =
+    motionIndex !== undefined ? staggerDelayMs(motionIndex, motion) : 0;
   return (
-    <section className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
+    <section
+      className="fyd-section mx-auto w-full max-w-5xl px-4 sm:px-6"
+      data-fyd-section={sectionId}
+      // No data-motion="enter" on the section itself: sections are layout
+      // containers that may host lane-owned position:fixed UI (e.g. the
+      // object rail's trigger). A transform/opacity entrance animation on
+      // the section would reparent those fixed descendants to the section
+      // while the animation's fill is active. Motion belongs on content
+      // items (cards, figures), never on the container.
+      data-layout-character={character}
+      style={
+        {
+          ["--fyd-surface" as string]: theme.surface,
+          ["--fyd-ink" as string]: theme.ink,
+          paddingTop: char.sectionRhythmPx,
+          paddingBottom: char.sectionRhythmPx,
+          animationDelay: delay ? `${delay}ms` : undefined,
+          // Deterministic section identity: lets view transitions keep a
+          // section's identity across generated pages when MORPH is active.
+          ["view-transition-name" as string]:
+            sectionId && morph ? sectionViewTransitionName(sectionId) : undefined,
+        } as CSSProperties
+      }
+    >
       {heading && (
         <h2
           className="text-2xl font-semibold sm:text-3xl"
-          style={{ fontFamily: theme.fontDisplay, color: theme.ink }}
+          style={{
+            fontFamily: theme.fontDisplay,
+            color: theme.ink,
+            letterSpacing: char.headingTracking,
+          }}
         >
           {heading}
         </h2>
@@ -399,11 +940,29 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   const website = safeWebsite(ctx);
   const heading = presentation.heading ?? boundTitle(ctx, o);
   const copy = presentation.copy ?? boundDescription(ctx, o);
+  // Contact discoverability: a tenant with no website still gets a
+  // one-glance primary action. The phone is a ContactMethod projection:
+  // binding-verified (same verifier as the Contact section) and gated
+  // through the safe-link gate. The button opens the FYD contact flow
+  // (value + provenance + the real Call action inside) instead of a
+  // direct tel: link. An unverifiable or unsafe number renders no button.
+  const phoneMethod = contactMethod(ctx, o, "phone", correctionFor(o, "phone"));
   // Media is threaded through RenderContext from the server render seam;
   // the renderer never selects it. Null keeps the honest typographic hero.
   const hero = ctx.heroMedia ?? null;
+  const character = characterOf(theme);
+  // CONTACT-owned Hero heading below: the business-identity view-transition
+  // name (businessViewTransitionName(ctx.spec.ownerObjectId), stamped only
+  // when MORPH is active) belongs on the h1 in the CONTACT lane's merge
+  // so both lanes do not edit the same block. This lane's compose-motion.ts
+  // already provides the deterministic helper.
   return (
-    <section className="w-full" style={{ background: theme.ink }}>
+    <section
+      className="w-full"
+      data-motion="hero-settle"
+      data-layout-character={character}
+      style={{ background: theme.ink }}
+    >
       {hero ? (
         <div
           className="relative h-64 w-full overflow-hidden sm:h-80"
@@ -455,6 +1014,8 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
             >
               Visit website
             </a>
+          ) : phoneMethod ? (
+            <FydContactLink method={phoneMethod} theme={theme} variant="button" />
           ) : null}
           <a
             href="#ask"
@@ -470,7 +1031,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   );
 }
 
-function BusinessSummary({ objects, presentation, theme, ctx }: SectionProps) {
+function BusinessSummary({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
   const title = boundTitle(ctx, o);
@@ -485,6 +1046,12 @@ function BusinessSummary({ objects, presentation, theme, ctx }: SectionProps) {
   );
 }
 
+/**
+ * Card grid: every card renders from the object graph through
+ * FydObjectCard (hover lift, tap-to-detail, FYD mark affordance on
+ * canonical types, visual cover where the graph has media, relationship
+ * microcopy). Never hand content.
+ */
 function CardGrid({
   objects,
   theme,
@@ -496,55 +1063,37 @@ function CardGrid({
 }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {objects.map((o) => {
-        const title = boundTitle(ctx, o);
-        const description = boundDescription(ctx, o);
-        return (
-          <article
-            key={o.id}
-            className="border border-border-soft bg-background p-5"
-            style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
-          >
-            {title ? (
-              <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
-                {title}
-              </h3>
-            ) : null}
-            {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
-            <div className="mt-3">
-              <ClaimBadge objects={[o]} />
-            </div>
-          </article>
-        );
-      })}
+      {objects.map((o, i) => (
+        <FydObjectCard key={o.id} o={o} theme={theme} ctx={ctx} index={i} />
+      ))}
     </div>
   );
 }
 
 function ServicesSection(props: SectionProps) {
-  const { objects, presentation, theme, ctx } = props;
+  const { section, objects, presentation, theme, ctx, motionIndex } = props;
   const featured = presentation.featuredIds?.length
     ? objects.filter((o) => presentation.featuredIds!.includes(o.id))
     : objects;
   if (featured.length === 0) return null;
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "Services"} copy={presentation.copy}>
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Services"} copy={presentation.copy}>
       <CardGrid objects={featured} theme={theme} ctx={ctx} />
     </SectionShell>
   );
 }
 
 function ProductsSection(props: SectionProps) {
-  const { objects, presentation, theme, ctx } = props;
+  const { section, objects, presentation, theme, ctx, motionIndex } = props;
   if (objects.length === 0) return null;
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "Products"} copy={presentation.copy}>
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Products"} copy={presentation.copy}>
       <CardGrid objects={objects} theme={theme} ctx={ctx} />
     </SectionShell>
   );
 }
 
-function LocationsSection({ objects, presentation, theme, ctx }: SectionProps) {
+function LocationsSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   if (objects.length === 0) return null;
   return (
     <SectionShell
@@ -573,48 +1122,136 @@ function LocationsSection({ objects, presentation, theme, ctx }: SectionProps) {
   );
 }
 
-function PeopleSection({ objects, presentation, theme, ctx }: SectionProps) {
+function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   if (objects.length === 0) return null;
+  // Structural differentiation from the graph: when person objects have
+  // photographic media, they render as a people strip (portrait-led);
+  // otherwise the honest card grid. No hand-built sections either way.
+  const anyMedia = objects.some((o) => photographicMedia(ctx.objectMedia?.[o.id]));
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "The people"} copy={presentation.copy}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {objects.map((o) => {
-          const title = boundTitle(ctx, o);
-          const role = boundField(ctx, o, "role");
-          const description = boundDescription(ctx, o);
-          return (
-            <article
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "The people"} copy={presentation.copy}>
+      {anyMedia ? (
+        <div
+          className="fyd-people-strip fyd-people-rail flex gap-5 overflow-x-auto pb-3"
+          data-motion="enter"
+          style={{ scrollSnapType: "x mandatory" }}
+        >
+          {objects.map((o, i) => {
+            const title = boundTitle(ctx, o);
+            const role = boundField(ctx, o, "role");
+            const media = photographicMedia(ctx.objectMedia?.[o.id]);
+            const reln = relationshipLine(ctx, o);
+            const detailHref = `/o/${encodeURIComponent(o.id)}`;
+            const initials = (title ?? "?")
+              .trim()
+              .split(/\s+/)
+              .map((w) => w[0] ?? "")
+              .join("")
+              .slice(0, 2)
+              .toUpperCase();
+            return (
+              <article
+                key={o.id}
+                className="fyd-card w-44 shrink-0 text-center"
+                data-motion="enter"
+                data-motion-index={i}
+                style={{ position: "relative", scrollSnapAlign: "start" }}
+              >
+                {media ? (
+                  <img
+                    src={media.src}
+                    alt={media.alt}
+                    width={media.width}
+                    height={media.height}
+                    loading="lazy"
+                    sizes="176px"
+                    style={{
+                      width: "7rem",
+                      height: "7rem",
+                      objectFit: "cover",
+                      borderRadius: "9999px",
+                      display: "block",
+                      margin: "0 auto",
+                    }}
+                  />
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      width: "7rem",
+                      height: "7rem",
+                      borderRadius: "9999px",
+                      margin: "0 auto",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: theme.surface,
+                      border: `2px solid ${theme.accent}`,
+                      color: theme.ink,
+                      fontFamily: theme.fontDisplay,
+                      fontSize: "1.75rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {initials}
+                  </div>
+                )}
+                {title ? (
+                  <h3 className="mt-3 text-base font-semibold" style={{ color: theme.ink }}>
+                    <a href={detailHref} style={{ color: "inherit", textDecoration: "none" }}>
+                      {title}
+                    </a>
+                  </h3>
+                ) : null}
+                {role ? (
+                  <p className="mt-0.5 text-sm font-medium" style={{ color: theme.accent }}>
+                    {role}
+                  </p>
+                ) : null}
+                {reln ? (
+                  <p className="fyd-reln mt-1 text-xs" style={{ color: theme.ink }}>
+                    {reln}
+                  </p>
+                ) : null}
+                {affordanceEligible(o) ? (
+                  <ObjectAffordance
+                    objectId={o.id}
+                    title={title ?? null}
+                    kindLabel={friendlySchemaLabel(o.schema)}
+                    evidenceLine={affordanceEvidenceLine(o)}
+                    theme={theme}
+                  />
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {objects.map((o, i) => (
+            <FydObjectCard
               key={o.id}
-              className="border border-border-soft p-5"
-              style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
-            >
-              {title ? (
-                <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
-                  {title}
-                </h3>
-              ) : null}
-              {role ? (
-                <p className="text-sm font-medium" style={{ color: theme.accent }}>
-                  {role}
-                </p>
-              ) : null}
-              {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
-            </article>
-          );
-        })}
-      </div>
+              o={o}
+              theme={theme}
+              ctx={ctx}
+              index={i}
+              kicker={boundField(ctx, o, "role")}
+            />
+          ))}
+        </div>
+      )}
     </SectionShell>
   );
 }
 
-function PostsSection({ objects, presentation, theme, ctx }: SectionProps) {
+function PostsSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   if (objects.length === 0) return null;
   // Sorting uses the raw value (deterministic ordering input, never rendered).
   const sorted = objects.slice().sort((a, b) =>
     fieldOf(b, "date").localeCompare(fieldOf(a, "date")),
   );
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "Latest"} copy={presentation.copy}>
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Latest"} copy={presentation.copy}>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {sorted.map((o) => {
           const date = boundField(ctx, o, "date");
@@ -647,10 +1284,10 @@ function PostsSection({ objects, presentation, theme, ctx }: SectionProps) {
 }
 
 function ObjectGridSection(props: SectionProps) {
-  const { objects, presentation, theme, ctx } = props;
+  const { section, objects, presentation, theme, ctx, motionIndex } = props;
   if (objects.length === 0) return null;
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "Browse"} copy={presentation.copy}>
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Browse"} copy={presentation.copy}>
       <CardGrid objects={objects} theme={theme} ctx={ctx} />
     </SectionShell>
   );
@@ -667,26 +1304,51 @@ function FeedList({
 }) {
   return (
     <ol className="flex flex-col gap-4">
-      {objects.map((o) => {
+      {objects.map((o, i) => {
         const title = boundTitle(ctx, o);
         const description = boundDescription(ctx, o);
+        // Visual feed item only where the graph has media for the object.
+        const media = photographicMedia(ctx.objectMedia?.[o.id]);
         return (
           <li
             key={o.id}
             className="border border-border-soft p-5"
+            data-motion="enter"
+            data-motion-index={i}
             style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
           >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              {title ? (
-                <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
-                  {title}
-                </h3>
+            <div className="flex gap-4">
+              {media ? (
+                <img
+                  src={media.src}
+                  alt={media.alt}
+                  width={media.width}
+                  height={media.height}
+                  loading="lazy"
+                  sizes="112px"
+                  style={{
+                    width: "7rem",
+                    height: "7rem",
+                    objectFit: "cover",
+                    borderRadius: theme.radius === "none" ? 0 : 8,
+                    flexShrink: 0,
+                  }}
+                />
               ) : null}
-              <span className="text-xs uppercase tracking-wide text-accent">{friendlySchemaLabel(o.schema)}</span>
-            </div>
-            {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
-            <div className="mt-3">
-              <ClaimBadge objects={[o]} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  {title ? (
+                    <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
+                      {title}
+                    </h3>
+                  ) : null}
+                  <span className="text-xs uppercase tracking-wide text-accent">{friendlySchemaLabel(o.schema)}</span>
+                </div>
+                {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
+                <div className="mt-3">
+                  <ClaimBadge objects={[o]} />
+                </div>
+              </div>
             </div>
           </li>
         );
@@ -695,16 +1357,16 @@ function FeedList({
   );
 }
 
-function ObjectFeedSection({ objects, presentation, theme, ctx }: SectionProps) {
+function ObjectFeedSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   if (objects.length === 0) return null;
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "Explore"} copy={presentation.copy}>
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Explore"} copy={presentation.copy}>
       <FeedList objects={objects} theme={theme} ctx={ctx} />
     </SectionShell>
   );
 }
 
-function RecentObjectsSection({ objects, presentation, theme, ctx }: SectionProps) {
+function RecentObjectsSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   if (objects.length === 0) return null;
   const sorted = objects
     .slice()
@@ -716,7 +1378,7 @@ function RecentObjectsSection({ objects, presentation, theme, ctx }: SectionProp
           : 1,
     );
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "Recent"} copy={presentation.copy}>
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Recent"} copy={presentation.copy}>
       <FeedList objects={sorted} theme={theme} ctx={ctx} />
     </SectionShell>
   );
@@ -731,31 +1393,27 @@ function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
   // on the object so the section can name both values honestly.
   const phoneCorrection = correctionFor(o, "phone");
   const emailCorrection = correctionFor(o, "email");
-  const phone = boundField(ctx, o, "phone", phoneCorrection ? "owner_authored" : "direct");
-  const email = boundField(ctx, o, "email", emailCorrection ? "owner_authored" : "direct");
-  const phoneLink = resolveSafeLink(phone, "call");
-  const emailLink = resolveSafeLink(email, "email");
+  // ContactMethod projections: binding-verified, safety-gated. Each
+  // renders as the FYD contact affordance (value + provenance + the real
+  // tel:/mailto: action inside the flow), never as a top-level link.
+  // An unverifiable or unsafe number/email is not a method: no output.
+  const phoneMethod = contactMethod(ctx, o, "phone", phoneCorrection);
+  const emailMethod = contactMethod(ctx, o, "email", emailCorrection);
   const website = safeWebsite(ctx);
-  const showPhone = phone !== undefined && phoneLink.kind === "safe";
-  const showEmail = email !== undefined && emailLink.kind === "safe";
   const showWebsite = website.kind === "safe";
-  if (!showPhone && !showEmail && !showWebsite) return null;
+  if (!phoneMethod && !emailMethod && !showWebsite) return null;
   return (
     <SectionShell theme={theme} heading={presentation.heading ?? "Contact"} copy={presentation.copy}>
       <ul className="flex flex-col gap-2 text-base">
-        {showPhone && phoneLink.kind === "safe" ? (
+        {phoneMethod ? (
           <li>
-            <a href={phoneLink.href} className="underline inline-block min-h-[44px] py-2" style={{ color: theme.ink }}>
-              {phone}
-            </a>
+            <FydContactLink method={phoneMethod} theme={theme} variant="row" />
             {phoneCorrection ? <CorrectionNote correction={phoneCorrection} theme={theme} /> : null}
           </li>
         ) : null}
-        {showEmail && emailLink.kind === "safe" ? (
+        {emailMethod ? (
           <li>
-            <a href={emailLink.href} className="underline inline-block min-h-[44px] py-2" style={{ color: theme.ink }}>
-              {email}
-            </a>
+            <FydContactLink method={emailMethod} theme={theme} variant="row" />
             {emailCorrection ? <CorrectionNote correction={emailCorrection} theme={theme} /> : null}
           </li>
         ) : null}
@@ -774,7 +1432,7 @@ function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
   );
 }
 
-function LinksSection({ objects, presentation, theme, ctx }: SectionProps) {
+function LinksSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
   const raw = o.fields["socials"];
@@ -792,7 +1450,7 @@ function LinksSection({ objects, presentation, theme, ctx }: SectionProps) {
   }
   if (links.length === 0) return null;
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "Find us"} copy={presentation.copy}>
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Find us"} copy={presentation.copy}>
       <ul className="flex flex-wrap gap-3">
         {links.map((link) => (
           <li key={link.href}>
@@ -818,7 +1476,7 @@ function hostOf(url: string): string {
   }
 }
 
-function SocialProofSection({ objects, presentation, theme, ctx }: SectionProps) {
+function SocialProofSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
   const fieldName = o.fields["reviews"] !== undefined ? "reviews" : "testimonials";
@@ -827,7 +1485,7 @@ function SocialProofSection({ objects, presentation, theme, ctx }: SectionProps)
   // Fail closed: quotes only render when the field binding verifies.
   if (items.length === 0 || boundField(ctx, o, fieldName) === undefined) return null;
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "What people say"} copy={presentation.copy}>
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "What people say"} copy={presentation.copy}>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {items.map((t, i) => (
           <blockquote
@@ -846,7 +1504,7 @@ function SocialProofSection({ objects, presentation, theme, ctx }: SectionProps)
   );
 }
 
-function CTASection({ objects, presentation, theme, ctx }: SectionProps) {
+function CTASection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const o = objects[0];
   const website = o ? safeWebsite(ctx) : { kind: "non_navigable" as const };
   return (
@@ -879,13 +1537,13 @@ function CTASection({ objects, presentation, theme, ctx }: SectionProps) {
   );
 }
 
-function IdentityCardSection({ objects, presentation, theme, ctx }: SectionProps) {
+function IdentityCardSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
   const title = boundTitle(ctx, o);
   const description = boundDescription(ctx, o);
   return (
-    <SectionShell theme={theme} heading={presentation.heading} copy={presentation.copy}>
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading} copy={presentation.copy}>
       <div
         className="flex flex-col gap-2 border border-border-soft p-6 sm:flex-row sm:items-center sm:justify-between"
         style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 12 }}
@@ -916,7 +1574,7 @@ function AskFYDSection({ presentation, theme, ctx }: SectionProps) {
           {presentation.heading ?? "Ask FYD about " + ownerName}
         </h2>
         <p className="mt-2 text-background/70">
-          {presentation.copy ?? "Questions go to FYD Social. Answers cite website statements, never verified fact."}
+          {presentation.copy ?? "Questions go to Ask FYD. Answers come only from this site's published information, with sources shown."}
         </p>
         <div className="text-left">
           <AskFydWidget siteId={ctx.siteId} theme={theme} />
@@ -943,7 +1601,7 @@ function boundOwnerTitle(ctx: RenderContext): string {
  * ObjectCircle doorway over the honest pingObjectToView adapter; presence
  * mode auto lets geometry decide rail vs drawer from the theme token.
  */
-function ObjectRailSection({ objects, presentation, theme, ctx }: SectionProps) {
+function ObjectRailSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const featured = richestObject(objects, ctx.spec.ownerObjectId);
   if (!featured) return null;
   const featuredView = pingObjectToView(featured);
@@ -977,16 +1635,101 @@ function ObjectRailSection({ objects, presentation, theme, ctx }: SectionProps) 
   );
 }
 
-function GenericObjectCardSection({ objects, presentation, theme, ctx }: SectionProps) {
+function GenericObjectCardSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   if (objects.length === 0) return null;
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "More"} copy={presentation.copy}>
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "More"} copy={presentation.copy}>
       <CardGrid objects={objects} theme={theme} ctx={ctx} />
     </SectionShell>
   );
 }
 
-export function renderSection(section: FYDSection, ctx: RenderContext): ReactNode {
+/**
+ * Gallery eligibility: the section renders if and only if the render
+ * context carries gallery media. Missing data means the section does not
+ * exist. Exported for the generator lane and tests.
+ */
+export function galleryEligible(ctx: RenderContext): boolean {
+  return (ctx.galleryMedia?.length ?? 0) > 0;
+}
+
+/**
+ * Contextual provenance for a gallery photo: the generic WhyThis
+ * drill-down fed ONLY with the media's own provenance fields, mirroring
+ * the hero photo treatment. No invented copy.
+ */
+function GalleryMediaWhyThis({ media }: { media: DisplayMedia }) {
+  const steps: EvidenceStep[] = [];
+  if (media.sourceUrl) {
+    steps.push({ step: "Photo source", detail: media.sourceUrl, state: "observed" });
+  }
+  if (media.rightsBasis) {
+    steps.push({ step: "Rights basis", detail: media.rightsBasis, state: "observed" });
+  }
+  if (media.observedAt) {
+    steps.push({ step: "Observed", detail: media.observedAt, state: "observed" });
+  }
+  if (media.digest) {
+    steps.push({
+      step: "Content digest",
+      detail: media.digest.slice(0, 16) + "...",
+      state: "inferred",
+    });
+  }
+  return <WhyThis claim={media.alt || "Gallery photo"} steps={steps} />;
+}
+
+/**
+ * Gallery: the media-rich section, generated from evidence-backed media
+ * objects threaded through the render context (never hand-picked).
+ * Lazy-loads below-fold media with explicit width/height (no CLS) and
+ * responsive sizes. Renders nothing when the graph has no gallery media.
+ */
+function GallerySection({ section, presentation, theme, ctx, motionIndex }: SectionProps) {
+  const media = ctx.galleryMedia ?? [];
+  if (media.length === 0) return null;
+  const motion = motionTokensForTheme(theme);
+  const intent = designIntentForTheme(theme);
+  return (
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Gallery"} copy={presentation.copy}>
+      <div
+        className="fyd-gallery-grid grid grid-cols-2 gap-3 sm:grid-cols-3"
+        data-media-treatment={intent.mediaTreatment}
+      >
+        {media.map((m, i) => (
+          <figure
+            key={m.id}
+            data-motion="enter"
+            data-motion-index={i}
+            style={{ animationDelay: staggerDelayMs(i, motion) ? `${staggerDelayMs(i, motion)}ms` : undefined }}
+          >
+            <img
+              src={m.src}
+              alt={m.alt}
+              width={m.width}
+              height={m.height}
+              loading="lazy"
+              sizes="(max-width: 640px) 50vw, 33vw"
+              style={{
+                width: "100%",
+                height: "auto",
+                display: "block",
+                aspectRatio: "4 / 3",
+                objectFit: "cover",
+                borderRadius: theme.radius === "none" ? 0 : 8,
+              }}
+            />
+            <figcaption className="mt-1">
+              <GalleryMediaWhyThis media={m} />
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </SectionShell>
+  );
+}
+
+export function renderSection(section: FYDSection, ctx: RenderContext, motionIndex = 0): ReactNode {
   const def = getComponentDef(section.component);
   if (!def) return null;
   if (section.presentation.hidden) return null;
@@ -998,6 +1741,7 @@ export function renderSection(section: FYDSection, ctx: RenderContext): ReactNod
     presentation: section.presentation,
     theme: ctx.spec.themeTokens,
     ctx,
+    motionIndex,
   };
   switch (section.component) {
     case "Hero":
@@ -1034,6 +1778,8 @@ export function renderSection(section: FYDSection, ctx: RenderContext): ReactNod
       return <AskFYDSection key={section.id} {...props} />;
     case "ObjectRail":
       return <ObjectRailSection key={section.id} {...props} />;
+    case "Gallery":
+      return <GallerySection key={section.id} {...props} />;
     case "GenericObjectCard":
     default:
       return <GenericObjectCardSection key={section.id} {...props} />;
@@ -1043,7 +1789,8 @@ export function renderSection(section: FYDSection, ctx: RenderContext): ReactNod
 export function SitePageView({ page, ctx }: { page: FYDPage; ctx: RenderContext }) {
   return (
     <>
-      {page.sections.map((s) => renderSection(s, ctx))}
+      <FydMotionStyles theme={ctx.spec.themeTokens} />
+      {page.sections.map((s, i) => renderSection(s, ctx, i))}
     </>
   );
 }

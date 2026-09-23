@@ -149,3 +149,23 @@ export function heroMediaFor(
   const photographic = all.filter((d) => d.role !== "logo");
   return photographic.find((d) => d.role === "hero") ?? photographic[0] ?? null;
 }
+
+/**
+ * Gallery media for an object (2026-09-22 compose lane): the acquired
+ * photographic assets that belong on a gallery surface. Logos, heroes,
+ * and small card/thumbnail renditions are excluded: the hero has its own
+ * surface, a logo is brand identity, and thumbnails are derivatives, not
+ * gallery pieces. Stable content-driven order from select(). Empty
+ * (never null) when the object has no gallery media: the Gallery section
+ * renders nothing in that case.
+ */
+export function galleryMediaFor(
+  siteId: string,
+  graph: ObjectGraph,
+  objectId: string,
+): DisplayMedia[] {
+  const EXCLUDED_ROLES = new Set(["logo", "hero", "card", "thumbnail"]);
+  return select(siteId, graph, objectId, false).filter(
+    (d) => !EXCLUDED_ROLES.has(d.role),
+  );
+}

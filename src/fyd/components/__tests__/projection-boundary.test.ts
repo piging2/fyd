@@ -221,4 +221,70 @@ describe("projection boundary", () => {
     expect(projectedLoc!.fields["address"]).toBe("Grand Junction, CO");
     expect(projectedLoc!.fields["address"]).not.toBe(STREET_ADDRESS);
   });
+
+  test("contact opens the FYD flow: verified contact renders the FYD affordance, never a top-level tel:/mailto: link", () => {
+    const graph = sourceGraph({
+      phoneProvenanceRef: "website-ingestion:https://example.com/",
+      website: "https://example.com/",
+      email: "hello@example.com",
+    });
+    const html = renderAllPages(graph, []);
+
+    // The FYD affordances exist for phone and email.
+    expect(html).toContain('data-fyd-contact="phone"');
+    expect(html).toContain('data-fyd-contact="email"');
+    // The values are disclosure toggles, not anchors: never >VALUE</a>.
+    expect(html).not.toContain(">" + PHONE + "</a>");
+    // tel:/mailto: still exist, exactly once each per flow...
+    expect(html).toContain('href="tel:' + PHONE + '"');
+    expect(html).toContain('href="mailto:hello@example.com"');
+    // ...and every one lives INSIDE a contact flow, never top-level.
+    expect(hrefsOutsideContactFlow(html, "tel:")).toEqual([]);
+    expect(hrefsOutsideContactFlow(html, "mailto:")).toEqual([]);
+    // The flow carries the evidence: compact provenance line.
+    expect(html).toContain("Verified from example.com");
+  });
+
+  test("hero with no safe website renders the FYD phone affordance as the primary action", () => {
+    const graph = sourceGraph({
+      phoneProvenanceRef: "website-ingestion:https://example.com/",
+      website: "javascript:alert(1)",
+      email: "hello@example.com",
+    });
+    const html = renderAllPages(graph, []);
+    // No safe website: the hero falls back to the phone affordance.
+    expect(html).not.toContain("javascript:");
+    expect(html).toContain('data-fyd-contact="phone"');
+    expect(html).toContain("Call " + PHONE);
+    expect(html).toContain('href="tel:' + PHONE + '"');
+    expect(hrefsOutsideContactFlow(html, "tel:")).toEqual([]);
+  });
 });
+
+/**
+ * tel:/mailto: hrefs that do NOT sit inside a contact flow. Empty means
+ * every executable contact href on the generated surface lives inside
+ * the FYD contact flow: no direct top-level tel:/mailto: links.
+ *
+ * Nesting-aware: the flow contains a nested ProvenanceLine <details>,
+ * so the check balances <details> opens vs closes between the flow div
+ * and the href instead of comparing against the last close in the page.
+ */
+function hrefsOutsideContactFlow(html: string, scheme: "tel:" | "mailto:"): string[] {
+  const bad: string[] = [];
+  const re = new RegExp('href="' + scheme + '[^"]*"', "g");
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const before = html.slice(0, m.index);
+    const flowOpen = before.lastIndexOf("data-fyd-contact-flow");
+    if (flowOpen === -1) {
+      bad.push(m[0]);
+      continue;
+    }
+    const span = before.slice(flowOpen);
+    const opens = (span.match(/<details/g) || []).length;
+    const closes = (span.match(/<\/details>/g) || []).length;
+    if (closes > opens) bad.push(m[0]);
+  }
+  return bad;
+}

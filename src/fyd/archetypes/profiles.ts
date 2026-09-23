@@ -9,6 +9,12 @@
  * and survive regeneration.
  *
  * No customer-specific values: every profile is generic composition policy.
+ *
+ * layoutCharacter (2026-09-22 compose lane): each profile stamps the
+ * presentation character hint through tokenOverrides (KNOWLEDGE ->
+ * EDITORIAL, TRADES -> CRAFT, TECHNICAL_ENTERPRISE -> TECHNICAL). The
+ * renderer reads it as a presentation hint only; facts never change
+ * with it. Owner token overrides still win over the profile default.
  */
 
 import type { FYDThemeTokens, FYDSiteArchetype } from "../sitespec/types";
@@ -70,6 +76,7 @@ export const KNOWLEDGE_PROFILE: ArchetypeProfile = {
     radius: "md",
     typography: { base: 16, ratio: 1.2 },
     media: { treatment: "documentary" },
+    layoutCharacter: "EDITORIAL",
   },
 };
 
@@ -101,6 +108,7 @@ export const TRADES_PROFILE: ArchetypeProfile = {
     radius: "lg",
     typography: { base: 16, ratio: 1.25 },
     media: { treatment: "polished" },
+    layoutCharacter: "CRAFT",
   },
 };
 
@@ -131,6 +139,7 @@ export const TECHNICAL_ENTERPRISE_PROFILE: ArchetypeProfile = {
     radius: "sm",
     typography: { base: 15, ratio: 1.125 },
     media: { treatment: "schematic" },
+    layoutCharacter: "TECHNICAL",
   },
 };
 

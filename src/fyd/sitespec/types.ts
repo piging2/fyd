@@ -158,6 +158,102 @@ export interface FYDMotionTokens {
   easing?: string;
 }
 
+/**
+ * CANONICAL MOTION PROFILE (Nolan, 2026-09-22 FYD grill, BINDING).
+ *
+ * The one shared motion type the whole design system uses. The compose
+ * lane imports this definition; the shape below is the contract:
+ * - motionIntensity: NONE collapses decorative motion (the
+ *   reduced-motion equivalent: nothing depends on animation);
+ *   SUBTLE is the default product motion (quiet, quick, no theater);
+ *   EXPRESSIVE is reserved for hero/celebration moments.
+ * - entrance: how a surface first appears (FADE_RISE, REVEAL, SCALE).
+ * - objectTransition: how the Circle becomes the card and the card
+ *   becomes Ask FYD (MORPH = shared-identity transform; CROSSFADE =
+ *   the reduced-motion-safe swap).
+ * - stagger: sequencing of grouped children (action grids, suggestion
+ *   chips): NONE, TIGHT, RELAXED.
+ */
+export interface MotionTokens {
+  motionIntensity: "NONE" | "SUBTLE" | "EXPRESSIVE";
+  entrance: "FADE_RISE" | "REVEAL" | "SCALE";
+  objectTransition: "MORPH" | "CROSSFADE";
+  stagger: "NONE" | "TIGHT" | "RELAXED";
+}
+
+/**
+ * Layout character: a PRESENTATION hint, never business truth. Chosen by
+ * the composing strategy/archetype and stamped onto the spec's theme
+ * tokens (SiteSpec), owner-overridable through the normal token-override
+ * path. The same components read it; no fact ever changes with it.
+ */
+export type FYDLayoutCharacter =
+  | "EDITORIAL"
+  | "CRAFT"
+  | "TECHNICAL"
+  | "RETAIL"
+  | "PROFESSIONAL"
+  | "CREATOR";
+
+/**
+ * ViewportCapabilities: the device's composition-relevant capabilities.
+ *
+ * ONE SEMANTIC SITESPEC (mobile architecture, binding): the renderer never
+ * branches on a DesktopSiteSpec/MobileSiteSpec. Composition inputs are
+ * SiteSpec + ObjectGraph + ViewerContext + ViewportCapabilities, and the
+ * SAME object projects differently per device: a Service is a rich
+ * horizontal card on desktop, a compact object tile on mobile.
+ *
+ * SSR honesty: the server cannot know the viewport, so the server renders
+ * the compact (mobile-first) baseline and the client provider
+ * (fyd/components/viewport.tsx) resolves the real capabilities after
+ * mount. Layout projection is CSS-driven from the data-viewport /
+ * data-pointer attributes the provider stamps on <html> (no hydration
+ * mismatch: the DOM is identical, only the projection changes);
+ * ViewportCapabilities in JS is for BEHAVIORAL choices (touch-first
+ * interactions, rails vs grids, sticky actions).
+ *
+ * Width classes: xs <480, sm 480-767, md 768-1023, lg 1024-1439, xl 1440+.
+ * The CSS breakpoints in the renderer use the same cut points.
+ */
+export type ViewportWidthClass = "xs" | "sm" | "md" | "lg" | "xl";
+
+export interface ViewportCapabilities {
+  widthClass: ViewportWidthClass;
+  /** Coarse (touch) or fine (mouse/trackpad) primary pointer. */
+  pointer: "coarse" | "fine";
+  /** Whether the primary input can hover. Never gate functionality on it. */
+  hover: boolean;
+  /** Viewer asked for reduced motion (or intensity NONE was composed). */
+  reducedMotion: boolean;
+  /** CSS safe-area insets in px; zeros where unsupported/unknown. */
+  safeArea: { top: number; right: number; bottom: number; left: number };
+}
+
+/**
+ * DESIGN SYSTEM COMPILER (mobile architecture, binding): semantic design
+ * intent lives on the SiteSpec; a deterministic token map compiles it to
+ * presentation. The LLM/agent proposes INTENT patches (density, radius,
+ * type scale, spacing rhythm, surface depth, motion intensity, media
+ * treatment, content width, object emphasis); the owner approves; the
+ * compiler renders. No arbitrary CSS generation, ever.
+ *
+ * layoutCharacter is the seed of this compiler: strategy/archetype picks
+ * the character, tokenOverrides let the owner adjust, and
+ * CHARACTER_PRESENTATION (renderer) is the deterministic map. The fields
+ * below grow the seed toward full intent without changing the mechanism.
+ */
+export interface FYDDesignIntent {
+  /** Content density: compact tiles vs comfortable cards. */
+  density?: "compact" | "comfortable";
+  /** Max content width in px for the center column. */
+  contentWidthPx?: number;
+  /** Media treatment: contained cards vs edge-to-edge moments on mobile. */
+  mediaTreatment?: "contained" | "edge-to-edge";
+  /** How hard objects push for attention in the composition. */
+  objectEmphasis?: "quiet" | "balanced" | "prominent";
+}
+
 export interface FYDThemeTokens {
   accent: string;
   accentForeground: string;
@@ -175,6 +271,25 @@ export interface FYDThemeTokens {
   breakpoints?: FYDBreakpoints;
   media?: FYDMediaTokens;
   motion?: FYDMotionTokens;
+  /**
+   * Presentation character hint (strategy-chosen, owner-overridable).
+   * Changes presentation tokens only, never facts.
+   */
+  layoutCharacter?: FYDLayoutCharacter;
+  /**
+   * Motion semantics for the customer surface. SiteSpec chooses the
+   * semantics; the renderer owns the implementation. Absent: restrained
+   * defaults (SUBTLE / FADE_RISE / MORPH / TIGHT), always collapsed by
+   * prefers-reduced-motion.
+   */
+  motionTokens?: MotionTokens;
+  /**
+   * Semantic design intent for the design-system compiler (mobile
+   * architecture). Optional and additive: absent intent falls back to
+   * the layoutCharacter presentation map. Owner-overridable through the
+   * normal token-override path.
+   */
+  designIntent?: FYDDesignIntent;
 }
 
 export const DEFAULT_FYD_THEME: FYDThemeTokens = {
