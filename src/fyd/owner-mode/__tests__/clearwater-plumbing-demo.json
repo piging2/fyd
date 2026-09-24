@@ -1,0 +1,790 @@
+{
+ "meta": {
+  "siteId": "clearwater-plumbing-demo",
+  "dumpedAt": "2026-09-24T00:30:00Z",
+  "dumperVersion": "fyd-projection-dump@1.1.0",
+  "baseDigest": "synthetic",
+  "fixtureFileDigest": "synthetic",
+  "fixtureHeader": "Clearwater Plumbing Co. graph fixture: SYNTHETIC, hand-built, DEMO_SYNTHETIC. Fully redacted fictional business; not a real company. Identity fields are placeholders (555 phone, .example.com email, Example Street addresses).",
+  "overlayEventIds": [],
+  "graphDigest": "synthetic",
+  "generatedAt": "2026-09-24T00:30:00Z",
+  "eventSequences": null,
+  "conflictPair": {
+   "description": "Saturday closing time disagrees between sources; both preserved with provenance.",
+   "objectA": {
+    "id": "cw-biz-01",
+    "field": "hours",
+    "value": "Mon-Fri 7:00 AM - 6:00 PM; Sat 8:00 AM - 12:00 PM; Emergency service 24/7",
+    "provenanceRef": "website-ingestion:https://clearwater-plumbing.example.com/"
+   },
+   "objectB": {
+    "id": "cw-ext-gbp-01",
+    "field": "hours",
+    "value": "Mon-Fri 7:00 AM - 6:00 PM; Sat 8:00 AM - 2:00 PM; Emergency service 24/7",
+    "provenanceRef": "directory:google-business-profile"
+   }
+  }
+ },
+ "graph": {
+  "objects": [
+   {
+    "id": "cw-biz-01",
+    "schema": "ping.social.business@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Clearwater Plumbing Co.",
+    "description": "Clearwater Plumbing Co. is a family-run plumbing shop serving the Grand Junction area. Drain cleaning, water heaters, sewer lines, and 24/7 emergency service, with upfront flat-rate pricing agreed before work begins.",
+    "fields": {
+     "title": "Clearwater Plumbing Co.",
+     "description": "Family-run plumbing shop serving the Grand Junction area. Drain cleaning, water heaters, sewer lines, and 24/7 emergency service.",
+     "phone": "(970) 555-0142",
+     "email": "hello@clearwater-plumbing.example.com",
+     "website": "https://clearwater-plumbing.example.com/",
+     "hours": "Mon-Fri 7:00 AM - 6:00 PM; Sat 8:00 AM - 12:00 PM; Emergency service 24/7",
+     "area_served": "Grand Junction, Fruita, Palisade, Clifton, Loma, Mack, De Beque, Delta",
+     "locality": "Grand Junction, Colorado",
+     "licensed_insured": "Licensed and insured",
+     "warranty": "2-year workmanship warranty on labor",
+     "pricing": "Upfront flat-rate pricing agreed before work begins",
+     "response": "Same-day appointments when you call before noon",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-01",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Drain cleaning",
+    "description": "Clears slow and clogged sinks, tubs, showers, and main lines with professional augers and hydro-jetting. Camera inspection shows you the blockage before we clear it.",
+    "fields": {
+     "name": "Drain cleaning",
+     "description": "Clears slow and clogged sinks, tubs, showers, and main lines with professional augers and hydro-jetting. Camera inspection shows you the blockage before we clear it.",
+     "claimKind": "website_statement",
+     "price_hint": "Upfront flat-rate pricing"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-02",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Water heater installation and repair",
+    "description": "Repair and replacement of tank and tankless water heaters, sized to your household's hot-water demand. We haul the old unit away and register the new warranty.",
+    "fields": {
+     "name": "Water heater installation and repair",
+     "description": "Repair and replacement of tank and tankless water heaters, sized to your household's hot-water demand. We haul the old unit away and register the new warranty.",
+     "claimKind": "website_statement",
+     "price_hint": "Free replacement estimates"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-03",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Sewer line repair and replacement",
+    "description": "Camera inspection finds bellies, breaks, and root intrusion; we repair or replace the line with as little digging as the yard allows.",
+    "fields": {
+     "name": "Sewer line repair and replacement",
+     "description": "Camera inspection finds bellies, breaks, and root intrusion; we repair or replace the line with as little digging as the yard allows.",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-04",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Electronic leak detection",
+    "description": "Acoustic and thermal imaging pinpoints hidden leaks behind walls and under slabs, so repairs open the smallest possible area.",
+    "fields": {
+     "name": "Electronic leak detection",
+     "description": "Acoustic and thermal imaging pinpoints hidden leaks behind walls and under slabs, so repairs open the smallest possible area.",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-05",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Fixture installation",
+    "description": "Faucets, sinks, showers, and tubs installed to manufacturer spec, with supply lines and shutoffs checked while we are there.",
+    "fields": {
+     "name": "Fixture installation",
+     "description": "Faucets, sinks, showers, and tubs installed to manufacturer spec, with supply lines and shutoffs checked while we are there.",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-06",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Toilet repair and installation",
+    "description": "Running toilets, weak flushes, wax-ring leaks, and full replacements, including high-efficiency models that cut water use.",
+    "fields": {
+     "name": "Toilet repair and installation",
+     "description": "Running toilets, weak flushes, wax-ring leaks, and full replacements, including high-efficiency models that cut water use.",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-07",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Garbage disposal installation",
+    "description": "Replacement and first-time installation of continuous-feed disposals, wired and plumbed to code with a dedicated switch.",
+    "fields": {
+     "name": "Garbage disposal installation",
+     "description": "Replacement and first-time installation of continuous-feed disposals, wired and plumbed to code with a dedicated switch.",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-08",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Water softeners and filtration",
+    "description": "Whole-home softeners and point-of-use filtration for hard water, sediment, and taste. We test your water first and size the system to it.",
+    "fields": {
+     "name": "Water softeners and filtration",
+     "description": "Whole-home softeners and point-of-use filtration for hard water, sediment, and taste. We test your water first and size the system to it.",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-09",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Gas line installation and repair",
+    "description": "New gas runs for ranges, dryers, fire pits, and generators, plus leak investigation with pressure testing before the line goes live.",
+    "fields": {
+     "name": "Gas line installation and repair",
+     "description": "New gas runs for ranges, dryers, fire pits, and generators, plus leak investigation with pressure testing before the line goes live.",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-10",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Whole-home repiping",
+    "description": "Replaces aging galvanized or polybutylene pipe with PEX or copper, usually in two to three days, with drywall patches kept to a minimum.",
+    "fields": {
+     "name": "Whole-home repiping",
+     "description": "Replaces aging galvanized or polybutylene pipe with PEX or copper, usually in two to three days, with drywall patches kept to a minimum.",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-11",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Sump pump installation",
+    "description": "Primary and battery-backup sump systems for basements and crawl spaces, with discharge routed away from the foundation.",
+    "fields": {
+     "name": "Sump pump installation",
+     "description": "Primary and battery-backup sump systems for basements and crawl spaces, with discharge routed away from the foundation.",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-svc-12",
+    "schema": "ping.social.service@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "24/7 emergency plumbing",
+    "description": "Burst pipes, major leaks, sewer backups, and no-hot-water calls answered around the clock by our on-call technician. After-hours work is quoted before dispatch.",
+    "fields": {
+     "name": "24/7 emergency plumbing",
+     "description": "Burst pipes, major leaks, sewer backups, and no-hot-water calls answered around the clock by our on-call technician. After-hours work is quoted before dispatch.",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-person-01",
+    "schema": "ping.social.person@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Alex Morgan",
+    "description": "Founded Clearwater Plumbing Co. and still walks every job before the crew starts. Signs off on finished work personally.",
+    "fields": {
+     "name": "Alex Morgan",
+     "role": "Owner and lead plumber",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "owner-asserted",
+     "ref": "owner-interview:synthetic",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-person-02",
+    "schema": "ping.social.person@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Jordan Lee",
+    "description": "Handles drain cleaning, leak calls, and water heater swaps. Carries the camera rig on every diagnostic visit.",
+    "fields": {
+     "name": "Jordan Lee",
+     "role": "Service technician",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "owner-asserted",
+     "ref": "owner-interview:synthetic",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-person-03",
+    "schema": "ping.social.person@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Casey Brooks",
+    "description": "Answers the phones, builds the daily schedule, and follows up after every visit to make sure the work held.",
+    "fields": {
+     "name": "Casey Brooks",
+     "role": "Office manager and dispatcher",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "owner-asserted",
+     "ref": "owner-interview:synthetic",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-loc-01",
+    "schema": "ping.social.location@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Grand Junction shop",
+    "description": "Main shop and dispatch office. Placeholder address; synthetic fixture.",
+    "fields": {
+     "locality": "Grand Junction, Colorado",
+     "address": "1000 Example Street, Grand Junction, CO 81501",
+     "address_locality": "Grand Junction",
+     "address_region": "CO",
+     "address_country": "US",
+     "postal_code": "81501",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-loc-02",
+    "schema": "ping.social.location@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Fruita service depot",
+    "description": "Parts depot and second dispatch point for the west end of the valley. Placeholder address; synthetic fixture.",
+    "fields": {
+     "locality": "Fruita, Colorado",
+     "address": "2000 Sample Avenue, Fruita, CO 81521",
+     "address_locality": "Fruita",
+     "address_region": "CO",
+     "address_country": "US",
+     "postal_code": "81521",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-ext-gbp-01",
+    "schema": "ping.social.external_identity@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Clearwater Plumbing Co. on Google",
+    "description": "Google Business Profile listing. Note: Saturday hours here differ from the website; both are preserved.",
+    "fields": {
+     "platform": "google",
+     "url": "https://www.google.com/maps/search/?api=1&query=Clearwater+Plumbing+Co+Grand+Junction+CO",
+     "hours": "Mon-Fri 7:00 AM - 6:00 PM; Sat 8:00 AM - 2:00 PM; Emergency service 24/7",
+     "claimKind": "directory_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "directory-derived",
+     "ref": "directory:google-business-profile",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-ext-fb-01",
+    "schema": "ping.social.external_identity@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Clearwater Plumbing Co. on Facebook",
+    "description": "Facebook page linked from the website footer.",
+    "fields": {
+     "platform": "facebook",
+     "url": "https://www.facebook.com/clearwaterplumbingdemo",
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/contact/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-faq-01",
+    "schema": "ping.social.article@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Do you charge for estimates?",
+    "description": "Estimates for replacements and larger projects are free. Diagnostic visits carry a flat fee, which we credit toward the repair if you approve the work on the spot.",
+    "fields": {
+     "text": "Estimates for replacements and larger projects are free. Diagnostic visits carry a flat fee, which we credit toward the repair if you approve the work on the spot.",
+     "tags": [
+      "faq"
+     ],
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-faq-02",
+    "schema": "ping.social.article@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Do you really answer around the clock for emergencies?",
+    "description": "Yes. Burst pipes, major leaks, sewer backups, and no-hot-water calls go to our on-call technician 24/7. After-hours work is billed at the overtime rate, quoted before we dispatch.",
+    "fields": {
+     "text": "Yes. Burst pipes, major leaks, sewer backups, and no-hot-water calls go to our on-call technician 24/7. After-hours work is billed at the overtime rate, quoted before we dispatch.",
+     "tags": [
+      "faq"
+     ],
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-faq-03",
+    "schema": "ping.social.article@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "Which areas do you serve?",
+    "description": "Grand Junction, Fruita, Palisade, Clifton, Loma, Mack, De Beque, and Delta. Outside that ring, call us and we will tell you honestly whether we are the right shop for the job.",
+    "fields": {
+     "text": "Grand Junction, Fruita, Palisade, Clifton, Loma, Mack, De Beque, and Delta. Outside that ring, call us and we will tell you honestly whether we are the right shop for the job.",
+     "tags": [
+      "faq"
+     ],
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-faq-04",
+    "schema": "ping.social.article@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "What water heater brands do you install?",
+    "description": "We install the brands our local distributor stocks and warranties, and we name the exact model on your written quote so you can compare offers directly.",
+    "fields": {
+     "text": "We install the brands our local distributor stocks and warranties, and we name the exact model on your written quote so you can compare offers directly.",
+     "tags": [
+      "faq"
+     ],
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   },
+   {
+    "id": "cw-faq-05",
+    "schema": "ping.social.article@1",
+    "controllerId": "fixture_synthetic",
+    "visibility": "public",
+    "title": "How fast can you get a technician to me?",
+    "description": "Same-day appointments when you call before noon. Emergency calls jump the line. We give a two-hour arrival window and text when the technician is on the way.",
+    "fields": {
+     "text": "Same-day appointments when you call before noon. Emergency calls jump the line. We give a two-hour arrival window and text when the technician is on the way.",
+     "tags": [
+      "faq"
+     ],
+     "claimKind": "website_statement"
+    },
+    "createdAt": "2026-09-24T00:30:00Z",
+    "updatedAt": "2026-09-24T00:30:00Z",
+    "provenance": {
+     "kind": "website-derived",
+     "ref": "website-ingestion:https://clearwater-plumbing.example.com/",
+     "derivedAt": "2026-09-24T00:30:00Z"
+    }
+   }
+  ],
+  "relationships": [
+   {
+    "id": "rel-cw-001",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-01",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-002",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-02",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-003",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-03",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-004",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-04",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-005",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-05",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-006",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-06",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-007",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-07",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-008",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-08",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-009",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-09",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-010",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-10",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-011",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-11",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-012",
+    "subject": "cw-biz-01",
+    "predicate": "provides",
+    "object": "cw-svc-12",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:services-page"
+   },
+   {
+    "id": "rel-cw-p01",
+    "subject": "cw-biz-01",
+    "predicate": "employs",
+    "object": "cw-person-01",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:about-page"
+   },
+   {
+    "id": "rel-cw-p02",
+    "subject": "cw-biz-01",
+    "predicate": "employs",
+    "object": "cw-person-02",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:about-page"
+   },
+   {
+    "id": "rel-cw-p03",
+    "subject": "cw-biz-01",
+    "predicate": "employs",
+    "object": "cw-person-03",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:about-page"
+   },
+   {
+    "id": "rel-cw-l01",
+    "subject": "cw-biz-01",
+    "predicate": "located_at",
+    "object": "cw-loc-01",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:contact-page"
+   },
+   {
+    "id": "rel-cw-l02",
+    "subject": "cw-biz-01",
+    "predicate": "located_at",
+    "object": "cw-loc-02",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:contact-page"
+   },
+   {
+    "id": "rel-cw-e01",
+    "subject": "cw-biz-01",
+    "predicate": "links_to",
+    "object": "cw-ext-gbp-01",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:directory-listing"
+   },
+   {
+    "id": "rel-cw-e02",
+    "subject": "cw-biz-01",
+    "predicate": "links_to",
+    "object": "cw-ext-fb-01",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:website-footer"
+   },
+   {
+    "id": "rel-cw-f01",
+    "subject": "cw-biz-01",
+    "predicate": "publishes",
+    "object": "cw-faq-01",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:faq-page"
+   },
+   {
+    "id": "rel-cw-f02",
+    "subject": "cw-biz-01",
+    "predicate": "publishes",
+    "object": "cw-faq-02",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:faq-page"
+   },
+   {
+    "id": "rel-cw-f03",
+    "subject": "cw-biz-01",
+    "predicate": "publishes",
+    "object": "cw-faq-03",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:faq-page"
+   },
+   {
+    "id": "rel-cw-f04",
+    "subject": "cw-biz-01",
+    "predicate": "publishes",
+    "object": "cw-faq-04",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:faq-page"
+   },
+   {
+    "id": "rel-cw-f05",
+    "subject": "cw-biz-01",
+    "predicate": "publishes",
+    "object": "cw-faq-05",
+    "status": "active",
+    "createdAt": "2026-09-24T00:30:00Z",
+    "evidenceRef": "fixture:synthetic:faq-page"
+   }
+  ]
+ },
+ "presentationIntent": {
+  "directives": [],
+  "provenance": {
+   "kind": "owner-presentation-intent",
+   "note": "Owner-approved presentation intents (PRESENTATION INTENT layer). Not source facts; re-applied over the base graph on every dump. Journaled via FYD_SITE_OVERLAY events.",
+   "eventIds": []
+  }
+ }
+}

@@ -20,8 +20,12 @@ import { notFound } from "next/navigation";
 import { ExternalLink, Mail, MapPin, MessageCircleQuestion, Phone } from "lucide-react";
 import { loadObjectViewBySlugOrId } from "@/fyd/object/by-id";
 import { AskObjectPanel } from "@/fyd/ui/ask-object-panel";
+import { ReferenceButton } from "@/fyd/ui/reference-button";
+import { FollowButton } from "@/fyd/ui/follow-button";
+import { LikeButton } from "@/fyd/ui/like-button";
 import { WhyThis } from "@/fyd/ui/why-this";
 import type { ObjectCapability, ObjectView } from "@/fyd/object/types";
+import { resolveSafeLink } from "@/fyd/sitespec/safe-link";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +42,9 @@ export async function generateMetadata({
   params: Promise<{ objectId: string }>;
 }): Promise<Metadata> {
   const { objectId } = await params;
-  const view = loadObjectViewBySlugOrId(objectId)?.view ?? null;
+  const resolved = loadObjectViewBySlugOrId(objectId);
+  const view = resolved?.view ?? null;
+  const tenantId = resolved?.siteId ?? null;
   if (!view) return { title: { absolute: "Object not found | FYD" }, robots: { index: false } };
   return {
     title: { absolute: view.name },
@@ -95,6 +101,10 @@ function ActionButtons({ view }: { view: ObjectView }) {
             <ExternalLink className="h-5 w-5" aria-hidden="true" /> {cap.label}
           </a>
         );
+      case "follow":
+        return <FollowButton key={i} objectId={view.id} className={cls + " border border-stone-300 bg-white text-stone-800 hover:bg-stone-100"} />;
+      case "like":
+        return <LikeButton key={i} objectId={view.id} className={cls + " border border-stone-300 bg-white text-stone-800 hover:bg-stone-100"} />;
       case "ask":
         return (
           <a
@@ -105,6 +115,20 @@ function ActionButtons({ view }: { view: ObjectView }) {
             <MessageCircleQuestion className="h-5 w-5" aria-hidden="true" /> Ask
           </a>
         );
+      case "directions":
+        return (
+          <a
+            key={i}
+            href={cap.href}
+            target="_blank"
+            rel="noreferrer"
+            className={cls + " border border-stone-300 bg-white text-stone-800 hover:bg-stone-100"}
+          >
+            <MapPin className="h-5 w-5" aria-hidden="true" /> {cap.label}
+          </a>
+        );
+      case "reference":
+        return <ReferenceButton key={i} objectId={cap.objectId} className={cls + " border border-stone-300 bg-white text-stone-800 hover:bg-stone-100"} />;
       default:
         return null;
     }
@@ -129,7 +153,9 @@ export default async function ObjectNodePage({
   params: Promise<{ objectId: string }>;
 }) {
   const { objectId } = await params;
-  const view = loadObjectViewBySlugOrId(objectId)?.view ?? null;
+  const resolved = loadObjectViewBySlugOrId(objectId);
+  const view = resolved?.view ?? null;
+  const tenantId = resolved?.siteId ?? null;
   if (!view) notFound();
 
   const hero = view.media.find((m) => m.role === "hero" || m.role === "gallery");
@@ -142,6 +168,13 @@ export default async function ObjectNodePage({
   // (owner-winning) value; these records keep the distinction.
   const phoneCorrection =
     view.fieldCorrections.find((c) => c.field === "phone") ?? null;
+
+  // Contact hrefs are EXECUTABLE CAPABILITIES: each clears the single
+  // safe-link choke point. An unsafe value renders as inert text with no
+  // anchor (see the Contact section below).
+  const phoneLink = resolveSafeLink(view.contact.phone, "call");
+  const emailLink = resolveSafeLink(view.contact.email, "email");
+  const websiteLink = resolveSafeLink(view.contact.website, "navigate");
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
@@ -203,12 +236,17 @@ export default async function ObjectNodePage({
               {visibleServices.map((s) => (
                 <li
                   key={s.id}
-                  className="rounded-xl border border-stone-200 bg-white px-4 py-3.5"
+                  className="rounded-xl border border-stone-200 bg-white px-4 py-3.5 transition-colors hover:border-amber-300 hover:bg-amber-50/40"
                 >
-                  <span className="text-base font-semibold">{s.name}</span>
-                  <span className="mt-0.5 block text-xs text-stone-400" title={s.basisLabel}>
-                    {s.basis === "owner" ? "Added by the owner" : "From the site data"}
-                  </span>
+                  <Link
+                    href={"/o/" + encodeURIComponent(s.id)}
+                    className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700"
+                  >
+                    <span className="text-base font-semibold text-amber-900 underline-offset-2 hover:underline">{s.name}</span>
+                    <span className="mt-0.5 block text-xs text-stone-400" title={s.basisLabel}>
+                      {s.basis === "owner" ? "Added by the owner" : "From the site data"} · Open service
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -251,9 +289,13 @@ export default async function ObjectNodePage({
               <div className="flex items-center justify-between gap-4 px-4 py-3.5">
                 <dt className="text-sm font-medium text-stone-500">Phone</dt>
                 <dd className="text-right">
-                  <a href={"tel:" + view.contact.phone.replace(/\s/g, "")} className="text-base font-semibold text-amber-800 hover:underline">
-                    {view.contact.phone}
-                  </a>
+                  {phoneLink.kind === "safe" ? (
+                    <a href={phoneLink.href} className="text-base font-semibold text-amber-800 hover:underline">
+                      {view.contact.phone}
+                    </a>
+                  ) : (
+                    <span className="text-base font-semibold text-amber-800">{view.contact.phone}</span>
+                  )}
                   {phoneCorrection ? (
                     <p className="mt-0.5 text-xs text-stone-400">
                       Owner-corrected; the site lists {phoneCorrection.sourceValue ?? "no number"}.
@@ -266,9 +308,13 @@ export default async function ObjectNodePage({
               <div className="flex items-center justify-between gap-4 px-4 py-3.5">
                 <dt className="text-sm font-medium text-stone-500">Email</dt>
                 <dd>
-                  <a href={"mailto:" + view.contact.email} className="break-all text-base font-semibold text-amber-800 hover:underline">
-                    {view.contact.email}
-                  </a>
+                  {emailLink.kind === "safe" ? (
+                    <a href={emailLink.href} className="break-all text-base font-semibold text-amber-800 hover:underline">
+                      {view.contact.email}
+                    </a>
+                  ) : (
+                    <span className="break-all text-base font-semibold text-amber-800">{view.contact.email}</span>
+                  )}
                 </dd>
               </div>
             )}
@@ -276,9 +322,15 @@ export default async function ObjectNodePage({
               <div className="flex items-center justify-between gap-4 px-4 py-3.5">
                 <dt className="text-sm font-medium text-stone-500">Website</dt>
                 <dd>
-                  <a href={view.contact.website} target="_blank" rel="noreferrer" className="text-base font-semibold text-amber-800 hover:underline">
-                    {view.contact.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                  </a>
+                  {websiteLink.kind === "safe" ? (
+                    <a href={websiteLink.href} target="_blank" rel="noreferrer" className="text-base font-semibold text-amber-800 hover:underline">
+                      {view.contact.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                    </a>
+                  ) : (
+                    <span className="text-base font-semibold text-amber-800">
+                      {view.contact.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                    </span>
+                  )}
                 </dd>
               </div>
             )}
@@ -341,7 +393,8 @@ export default async function ObjectNodePage({
           </p>
           <div className="mt-4">
             <AskObjectPanel
-              siteId={view.id}
+              siteId={tenantId ?? view.id}
+              objectId={view.id}
               objectName={view.name}
               sampleQuestions={view.sampleQuestions}
             />

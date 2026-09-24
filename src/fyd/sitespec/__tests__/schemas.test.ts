@@ -83,7 +83,11 @@ describe("schema derivations", () => {
     expect(eligibleComponents("ping.knowledge.service@1")).toContain("Services");
     expect(eligibleComponents("ping.knowledge.location@1")).toContain("Locations");
     expect(eligibleComponents("ping.knowledge.person@1")).toContain("People");
-    expect(eligibleComponents("ping.knowledge.website@1")).toEqual(["ObjectGrid", "ObjectFeed"]);
+    expect(eligibleComponents("ping.knowledge.website@1")).toEqual([
+      "ObjectGrid",
+      "ObjectFeed",
+      "ObjectRail",
+    ]);
     expect(componentForSchema("ping.knowledge.service@1")).toBe("Services");
     expect(componentForSchema("ping.knowledge.business@1")).toBe("Hero");
     expect(componentForSchema("ping.knowledge.website@1")).toBe("ObjectGrid");
@@ -136,5 +140,57 @@ describe("schema derivations", () => {
     expect(componentForSchema("ping.knowledge.person@1")).toBe("People");
     expect(eligibleComponents("ping.knowledge.post@1")).toContain("RecentObjects");
     expect(eligibleComponents("ping.knowledge.article@1")).toContain("Posts");
+  });
+
+  test("schema<->component mapping has a single source (no drift)", () => {
+    // The registry DEFINITIONS table is the only hand-written mapping:
+    // eligibleComponents is its inversion, componentForSchema its head.
+    // If anyone re-adds a second hand table, these pins fail.
+    const probe = [
+      "ping.social.business@1",
+      "ping.social.service@1",
+      "ping.social.product@1",
+      "ping.social.location@1",
+      "ping.social.person@1",
+      "ping.social.post@1",
+      "ping.social.article@1",
+      "ping.knowledge.business@1",
+      "ping.knowledge.service@1",
+      "ping.knowledge.location@1",
+      "ping.knowledge.person@1",
+      "ping.knowledge.post@1",
+      "ping.knowledge.article@1",
+      "ping.knowledge.website@1",
+      "ping.social.mystery@9",
+    ];
+    for (const s of probe) {
+      const all = eligibleComponents(s);
+      expect(all.length).toBeGreaterThan(0);
+      const dedicated = all.filter((n) => n !== "GenericObjectCard");
+      expect(componentForSchema(s)).toBe(
+        dedicated.length > 0 ? dedicated[0] : "GenericObjectCard",
+      );
+    }
+    // Converged truth (2026-09-23): the registry's component-authored
+    // coverage wins over the deleted hand table's stale omissions.
+    // Note: ObjectFeed is deliberately absent for business (converged
+    // 2026-09-23): the registry's ObjectFeed accepts post/article/service/
+    // website only. The deleted hand table's business->ObjectFeed entry was
+    // the same class of stale drift as the four omissions fixed here.
+    expect(eligibleComponents("ping.social.business@1")).toEqual([
+      "Hero",
+      "IdentityCard",
+      "BusinessSummary",
+      "ObjectGrid",
+      "RecentObjects",
+      "Contact",
+      "Links",
+      "SocialProof",
+      "CTA",
+      "AskFYD",
+      "ObjectRail",
+    ]);
+    expect(eligibleComponents("ping.social.service@1")).toContain("RecentObjects");
+    expect(eligibleComponents("ping.social.location@1")).toContain("ObjectRail");
   });
 });

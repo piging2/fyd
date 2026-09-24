@@ -67,7 +67,9 @@ export type ObjectCapability =
   | { kind: "like" }
   | { kind: "call"; href: string; label: string }
   | { kind: "email"; href: string; label: string }
-  | { kind: "website"; href: string; label: string };
+  | { kind: "website"; href: string; label: string }
+  | { kind: "directions"; href: string; label: string }
+  | { kind: "reference"; objectId: string };
 
 export interface ObjectProvenanceView {
   kind: string;

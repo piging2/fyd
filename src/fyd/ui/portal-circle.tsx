@@ -3,7 +3,8 @@
 /**
  * PortalCircle: the PING circle as a portal-grade margin object.
  *
- * Phases (one physical object, no teleport):
+ * The ONE Circle primitive for the PING homepage (Circle-Only Product Reset,
+ * 2026-09-22). One physical object, no teleport:
  * - rest:    64px circle. The website preview (or logo/gradient) fills it.
  *            Almost static; PING chrome almost absent.
  * - aware:   hover/focus proximity. Rim wakes, spring to 112px, slight
@@ -11,11 +12,14 @@
  * - engaged: the circle expands spatially from its exact origin to
  *            SIZE = f(available safe rectangle), clamped 200..480px.
  *            The website preview becomes legible; perimeter controls
- *            (Follow, Like, Ask, Web) appear around the rim. The host page
- *            is never covered: the diameter is clamped to the largest
+ *            (Follow, Like, Ask FYD, Web) appear around the rim. The host
+ *            page is never covered: the diameter is clamped to the largest
  *            circle fitting inside the assigned peripheral slot.
- * - ask:     interior swaps to a compact conversational state, still
- *            inside the circle. Talk TO the object, not a chatbot.
+ *
+ * Ask FYD is NOT per-circle. The "Ask FYD" orbit control hands the circle's
+ * identity to the ONE global assistant (see ../ui/global-ask-dock.tsx) via
+ * the onAskRequest callback; it never opens an in-circle ask view. There is
+ * exactly one assistant for the entire experience; the Circle is discovery.
  *
  * Motion: transform + opacity only, framer-motion springs harvested from
  * src/motion/motionTokens.ts. prefers-reduced-motion: instant opacity
@@ -30,7 +34,6 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   Check,
-  ChevronLeft,
   ExternalLink,
   Heart,
   MessageCircleQuestion,
@@ -49,14 +52,10 @@ import {
   executeLike,
   hasCapability,
   openWebsite,
-  submitAsk as submitAskCapability,
 } from "@/fyd/capabilities/runtime";
 
 const COLLAPSED_D = 64;
 const AWARE_D = 112;
-const NO_EVIDENCE_COPY = "I do not have evidence for that yet.";
-
-type AskStatus = "idle" | "asking" | "answered" | "empty";
 
 interface PortalCircleProps {
   portal: PortalProjection;
@@ -69,6 +68,12 @@ interface PortalCircleProps {
   onUnaware: (id: string) => void;
   onEngageRequest: (id: string) => void;
   onRelease: (id: string) => void;
+  /**
+   * The circle's "Ask FYD" control calls this with the circle id instead of
+   * opening a per-circle ask view. The host routes it to the ONE global
+   * assistant, which adopts this circle as its context.
+   */
+  onAskRequest: (id: string) => void;
 }
 
 const rimRest =
@@ -83,13 +88,13 @@ export function PortalCircle(props: PortalCircleProps) {
   const buttonRef = React.useRef<HTMLButtonElement>(null);
   const [following, setFollowing] = React.useState<boolean | null>(null);
   const [liked, setLiked] = React.useState<boolean | null>(null);
-  const [askOpen, setAskOpen] = React.useState(false);
-  const [question, setQuestion] = React.useState("");
-  const [answer, setAnswer] = React.useState("");
-  const [askStatus, setAskStatus] = React.useState<AskStatus>("idle");
   const [showEvidence, setShowEvidence] = React.useState(false);
   const [center, setCenter] = React.useState<{ x: number; y: number } | null>(null);
   const [engagedD, setEngagedD] = React.useState(320);
+  // Mobile sheet: narrow viewports cannot honestly hold the circle+orbit
+  // footprint (320px), so tap opens a compact bottom sheet instead of the
+  // spatial expansion. Same identity, same actions, no forced geometry.
+  const [sheetOpen, setSheetOpen] = React.useState(false);
   const [engagedSide, setEngagedSide] = React.useState<EngagedSide>("dock");
   const [orbitPad, setOrbitPad] = React.useState(26);
   const [orbitBtn, setOrbitBtn] = React.useState(44);
@@ -146,6 +151,14 @@ export function PortalCircle(props: PortalCircleProps) {
   const beginEngage = React.useCallback(() => {
     const el = buttonRef.current;
     if (!el) return;
+    // Directive (Nolan, 2026-09-22): do not force desktop spatial behavior
+    // onto mobile. Below 640px the tap opens the bottom sheet; the
+    // circle+orbit expansion stays a desktop treatment.
+    if (window.innerWidth < 640) {
+      setSheetOpen(true);
+      props.onEngageRequest(id);
+      return;
+    }
     const r = el.getBoundingClientRect();
     // Full-footprint geometry: the orbit controls extend beyond the circle,
     // so the engaged size and center account for the whole footprint.
@@ -166,10 +179,8 @@ export function PortalCircle(props: PortalCircleProps) {
 
   // Scroll while engaged: the circles are fixed-positioned, so host
   // scrolling never moves them, but a host-page scroll means the reading
-  // context moved on, so release. (Scrolling inside the dialog's own
-  // answer pane does not scroll the window and does not trigger this.)
-  // Resize while engaged: the slot geometry changed, so release rather
-  // than sit on stale measurements.
+  // context moved on, so release. Resize while engaged: the slot geometry
+  // changed, so release rather than sit on stale measurements.
   React.useEffect(() => {
     if (!engaged) return;
     const onScroll = () => props.onRelease(id);
@@ -200,20 +211,6 @@ export function PortalCircle(props: PortalCircleProps) {
   const toggleLike = async () => {
     if (liked === null) return;
     setLiked(await executeLike(id, liked));
-  };
-
-  const submitAsk = async () => {
-    const q = question.trim();
-    if (!q) return;
-    setAskStatus("asking");
-    const result = await submitAskCapability(id, q);
-    if (!result.ok || result.refusal) {
-      setAskStatus("empty");
-      setAnswer("");
-    } else {
-      setAskStatus("answered");
-      setAnswer(result.answer ?? "");
-    }
   };
 
   const preview = portal.preview;
@@ -300,7 +297,37 @@ export function PortalCircle(props: PortalCircleProps) {
         )}
       </AnimatePresence>
 
-      {engaged && center && typeof document !== "undefined"
+      {typeof document !== "undefined"
+        ? createPortal(
+            <AnimatePresence>
+              {sheetOpen && (
+                <CompactSheet
+                  portal={portal}
+                  following={following}
+                  liked={liked}
+                  canFollow={canFollow}
+                  canLike={canLike}
+                  canAsk={canAsk}
+                  webHref={webHref}
+                  onToggleFollow={toggleFollow}
+                  onToggleLike={toggleLike}
+                  onAskRequest={(sid) => {
+                    setSheetOpen(false);
+                    props.onAskRequest(sid);
+                  }}
+                  onClose={() => {
+                    setSheetOpen(false);
+                    props.onRelease(id);
+                  }}
+                  reduceMotion={!!reduceMotion}
+                />
+              )}
+            </AnimatePresence>,
+            document.body,
+          )
+        : null}
+
+      {engaged && !sheetOpen && center && typeof document !== "undefined"
         ? createPortal(
             <EngagedPortal
               portal={portal}
@@ -315,22 +342,11 @@ export function PortalCircle(props: PortalCircleProps) {
               canLike={canLike}
               canAsk={canAsk}
               webHref={webHref}
-              askOpen={askOpen}
-              setAskOpen={setAskOpen}
-              question={question}
-              setQuestion={setQuestion}
-              answer={answer}
-              askStatus={askStatus}
-              submitAsk={submitAsk}
-              resetAsk={() => {
-                setQuestion("");
-                setAnswer("");
-                setAskStatus("idle");
-              }}
               showEvidence={showEvidence}
               setShowEvidence={setShowEvidence}
               onToggleFollow={toggleFollow}
               onToggleLike={toggleLike}
+              onAskRequest={props.onAskRequest}
               onClose={() => props.onRelease(id)}
               txGentle={txGentle}
               reduceMotion={!!reduceMotion}
@@ -355,18 +371,12 @@ interface EngagedProps {
   canLike: boolean;
   canAsk: boolean;
   webHref: string | null;
-  askOpen: boolean;
-  setAskOpen: (v: boolean) => void;
-  question: string;
-  setQuestion: (v: string) => void;
-  answer: string;
-  askStatus: AskStatus;
-  submitAsk: () => void;
-  resetAsk: () => void;
   showEvidence: boolean;
   setShowEvidence: (v: boolean) => void;
   onToggleFollow: () => void;
   onToggleLike: () => void;
+  /** Routes the circle's Ask FYD control to the ONE global assistant. */
+  onAskRequest: (id: string) => void;
   onClose: () => void;
   txGentle: { type: "spring"; stiffness: number; damping: number } | { duration: number };
   reduceMotion: boolean;
@@ -452,6 +462,173 @@ function orbitAngles(side: EngagedSide) {
   return { follow: -90, ask: 180, web: 0, like: 90, close: -45 };
 }
 
+/**
+ * CompactSheet: the mobile engaged treatment. A bottom sheet with the
+ * identity's highest-value information: image, name, descriptor,
+ * location, top facts, actions (Ask FYD, Follow, Like, Website), and
+ * evidence provenance. One tap opens, readable at 320px, close/Escape/
+ * outside-tap collapses. No orbit ring, no spatial footprint math.
+ */
+interface SheetProps {
+  portal: PortalProjection;
+  following: boolean | null;
+  liked: boolean | null;
+  canFollow: boolean;
+  canLike: boolean;
+  canAsk: boolean;
+  webHref: string | null;
+  onToggleFollow: () => void;
+  onToggleLike: () => void;
+  /** Routes to the ONE global assistant; the sheet closes so the dock is visible. */
+  onAskRequest: (id: string) => void;
+  onClose: () => void;
+  reduceMotion: boolean;
+}
+
+function CompactSheet(p: SheetProps) {
+  const { portal } = p;
+  const c = portal.circle;
+  const preview = portal.preview;
+  const sheetRef = React.useRef<HTMLDivElement>(null);
+  const closeRef = React.useRef<HTMLButtonElement>(null);
+
+  // Focus the close control on open; Escape closes; outside tap closes.
+  // The open tap is deferred past so it never instantly dismisses.
+  React.useEffect(() => {
+    closeRef.current?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") p.onClose();
+    };
+    const onDown = (e: PointerEvent) => {
+      if (sheetRef.current && !sheetRef.current.contains(e.target as Node)) p.onClose();
+    };
+    const t = setTimeout(() => document.addEventListener("pointerdown", onDown), 60);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [p]);
+
+  const facts = c.topFacts.slice(0, 4);
+  const sub = [c.category, c.locationLabel].filter(Boolean).join(" · ");
+
+  return (
+    <motion.div
+      ref={sheetRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={c.name}
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "100%" }}
+      transition={p.reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 38 }}
+      className="pointer-events-auto absolute inset-x-0 bottom-0 z-[95] max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-border-soft bg-surface shadow-[0_-18px_60px_rgba(0,0,0,0.45)]"
+    >
+      <div className="sticky top-0 flex items-center justify-between bg-surface px-4 pb-2 pt-3">
+        <span aria-hidden="true" className="mx-auto h-1 w-10 rounded-full bg-border-soft" />
+        <button
+          ref={closeRef}
+          type="button"
+          onClick={p.onClose}
+          aria-label={`Close ${c.name}`}
+          className="absolute right-3 top-3 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-accent/70 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey"
+        >
+          <X className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
+
+      {preview && (
+        <div className="px-4">
+          <img
+            src={preview.thumbSrc ?? preview.src}
+            srcSet={preview.srcSet}
+            sizes="(max-width: 640px) 100vw, 480px"
+            alt={`${c.name} website preview`}
+            decoding="async"
+            className="aspect-[16/9] w-full rounded-2xl object-cover"
+            style={{ objectPosition: focalToObjectPosition({ x: preview.focalX, y: preview.focalY }) }}
+          />
+        </div>
+      )}
+
+      <div className="px-5 pb-6 pt-4">
+        <h2 className="text-xl font-bold leading-tight text-accent">{c.name}</h2>
+        {sub ? <p className="mt-1 text-sm text-accent/70">{sub}</p> : null}
+        {c.tagline ? <p className="mt-2 text-sm leading-relaxed text-accent/85">{c.tagline}</p> : null}
+        {facts.length > 0 && (
+          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Top services">
+            {facts.map((f) => (
+              <li
+                key={f}
+                className="rounded-full border border-border-soft bg-surface-2 px-3 py-1.5 text-xs font-medium text-accent"
+              >
+                {f}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {p.canAsk && (
+            <button
+              type="button"
+              onClick={() => p.onAskRequest(c.id)}
+              className="flex min-h-[44px] items-center gap-2 rounded-full bg-honey px-5 text-sm font-semibold text-honey-foreground hover:bg-honey-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey"
+            >
+              <MessageCircleQuestion className="h-4 w-4" aria-hidden="true" />
+              Ask FYD
+            </button>
+          )}
+          {p.canFollow && (
+            <button
+              type="button"
+              onClick={p.onToggleFollow}
+              aria-pressed={!!p.following}
+              className="flex min-h-[44px] items-center gap-2 rounded-full border border-border-soft px-4 text-sm font-medium text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey"
+            >
+              {p.following ? (
+                <UserCheck className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <UserPlus className="h-4 w-4" aria-hidden="true" />
+              )}
+              {p.following ? "Following" : "Follow"}
+            </button>
+          )}
+          {p.canLike && (
+            <button
+              type="button"
+              onClick={p.onToggleLike}
+              aria-pressed={!!p.liked}
+              aria-label={p.liked ? "Liked" : "Like"}
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-border-soft text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey"
+            >
+              <Heart className="h-4 w-4" aria-hidden="true" fill={p.liked ? "currentColor" : "none"} />
+            </button>
+          )}
+          {p.webHref && (
+            <button
+              type="button"
+              onClick={() => openWebsite(p.webHref as string)}
+              className="flex min-h-[44px] items-center gap-2 rounded-full border border-border-soft px-4 text-sm font-medium text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey"
+            >
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              Website
+            </button>
+          )}
+        </div>
+
+        <p className="mt-4 border-t border-border-soft/60 pt-3 text-xs leading-relaxed text-accent/60">
+          <span className="font-semibold text-accent/75">Evidence: </span>
+          {c.provenanceLabel}
+          {c.provenanceDetail ? ` ${c.provenanceDetail}` : ""}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
 function EngagedPortal(p: EngagedProps) {
   const { portal, center, diameter } = p;
   const d = diameter;
@@ -528,107 +705,44 @@ function EngagedPortal(p: EngagedProps) {
         {/* Interior chrome: native object projection, quiet until asked.
             Text width is constrained to the circle's chord so long names
             wrap instead of clipping on the curve. */}
-        {!p.askOpen && (
-          <div className="absolute inset-x-0 top-0 p-[7%] text-center">
-            <div
-              className="absolute inset-x-0 top-0 h-[46%]"
-              style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.62), transparent)" }}
-            />
-            <p
-              className="relative mx-auto text-[clamp(13px,4.5%,18px)] font-bold leading-tight text-white"
-              style={{ maxWidth: d * 0.6 }}
-            >
-              {portal.circle.name}
+        <div className="absolute inset-x-0 top-0 p-[7%] text-center">
+          <div
+            className="absolute inset-x-0 top-0 h-[46%]"
+            style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.62), transparent)" }}
+          />
+          <p
+            className="relative mx-auto text-[clamp(13px,4.5%,18px)] font-bold leading-tight text-white"
+            style={{ maxWidth: d * 0.6 }}
+          >
+            {portal.circle.name}
+          </p>
+          <p
+            className="relative mx-auto mt-0.5 text-[clamp(10px,3.4%,13px)] text-white/75"
+            style={{ maxWidth: d * 0.62 }}
+          >
+            {[portal.circle.category, portal.circle.locationLabel].filter(Boolean).join(" · ")}
+          </p>
+          {facts.length > 0 && (
+            <p className="relative mt-1 text-[clamp(10px,3.2%,12px)] text-white/65">
+              {facts.join(" · ")}
             </p>
-            <p
-              className="relative mx-auto mt-0.5 text-[clamp(10px,3.4%,13px)] text-white/75"
-              style={{ maxWidth: d * 0.62 }}
-            >
-              {[portal.circle.category, portal.circle.locationLabel].filter(Boolean).join(" · ")}
-            </p>
-            {facts.length > 0 && (
-              <p className="relative mt-1 text-[clamp(10px,3.2%,12px)] text-white/65">
-                {facts.join(" · ")}
-              </p>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Evidence affordance: one subtle check, detail on demand. */}
-        {!p.askOpen && (
-          <button
-            type="button"
-            onClick={() => p.setShowEvidence(!p.showEvidence)}
-            aria-label={p.showEvidence ? "Hide verification" : "Why is this verified?"}
-            className="absolute bottom-[6%] left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-black/60 text-[13px] text-emerald-300 backdrop-blur"
-            style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.18)" }}
-          >
-            {p.showEvidence ? <X size={13} /> : <Check size={13} />}
-          </button>
-        )}
-        {p.showEvidence && !p.askOpen && (
+        <button
+          type="button"
+          onClick={() => p.setShowEvidence(!p.showEvidence)}
+          aria-label={p.showEvidence ? "Hide verification" : "Why is this verified?"}
+          className="absolute bottom-[6%] left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-black/60 text-[13px] text-emerald-300 backdrop-blur"
+          style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.18)" }}
+        >
+          {p.showEvidence ? <X size={13} /> : <Check size={13} />}
+        </button>
+        {p.showEvidence && (
           <div className="absolute inset-x-[10%] bottom-[14%] rounded-2xl bg-black/78 px-3 py-2 text-center backdrop-blur">
             <p className="text-[11px] leading-snug text-white/85">{portal.circle.provenanceLabel}</p>
             <p className="mt-0.5 text-[10px] leading-snug text-white/55">{portal.circle.provenanceDetail}</p>
-          </div>
-        )}
-
-        {/* Ask: talk TO the object, still inside the circle. */}
-        {p.askOpen && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/80 p-[10%] backdrop-blur-sm">
-            <p className="text-[13px] font-semibold text-white">Ask FYD about {portal.circle.name}</p>
-            {p.askStatus === "idle" || p.askStatus === "asking" ? (
-              <form
-                className="mt-2 flex w-full items-center gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  p.submitAsk();
-                }}
-              >
-                <input
-                  autoFocus
-                  value={p.question}
-                  onChange={(e) => p.setQuestion(e.target.value)}
-                  placeholder={portal.circle.sampleQuestions[0] ?? "Ask a question"}
-                  aria-label={`Ask about ${portal.circle.name}`}
-                  className="h-9 min-w-0 flex-1 rounded-full bg-white/12 px-3 text-[13px] text-white placeholder:text-white/45 focus:outline-none focus:ring-2 focus:ring-amber-300/70"
-                />
-                <button
-                  type="submit"
-                  disabled={p.askStatus === "asking"}
-                  className="h-9 shrink-0 rounded-full bg-amber-300 px-3 text-[13px] font-semibold text-black disabled:opacity-50"
-                >
-                  {p.askStatus === "asking" ? "…" : "Ask"}
-                </button>
-              </form>
-            ) : (
-              <div className="mt-2 max-h-[46%] w-full overflow-y-auto rounded-2xl bg-white/8 p-3">
-                <p className="text-[12.5px] leading-snug text-white/90">
-                  {p.askStatus === "answered" && p.answer ? p.answer : NO_EVIDENCE_COPY}
-                </p>
-                <p className="mt-1.5 text-[10.5px] text-emerald-300/90">
-                  {p.askStatus === "answered" && p.answer ? "✓ Answered from verified business evidence" : "✓ No evidence found, nothing invented"}
-                </p>
-              </div>
-            )}
-            <div className="mt-2 flex items-center gap-2">
-              {(p.askStatus === "answered" || p.askStatus === "empty") && (
-                <button
-                  type="button"
-                  onClick={() => p.resetAsk()}
-                  className="rounded-full bg-white/12 px-3 py-1.5 text-[12px] text-white"
-                >
-                  New question
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => p.setAskOpen(false)}
-                className="flex items-center gap-1 rounded-full bg-white/12 px-3 py-1.5 text-[12px] text-white"
-              >
-                <ChevronLeft size={13} /> Back
-              </button>
-            </div>
           </div>
         )}
       </motion.div>
@@ -654,7 +768,7 @@ function EngagedPortal(p: EngagedProps) {
       {p.canAsk && (
         <PerimeterButton
           label="Ask FYD"
-          onClick={() => p.setAskOpen(true)}
+          onClick={() => p.onAskRequest(portal.circle.id)}
           angleDeg={angles.ask}
           radius={orbitR}
           size={p.orbitBtn}

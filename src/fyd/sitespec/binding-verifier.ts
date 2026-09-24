@@ -190,6 +190,27 @@ export function verifyBinding(
   }
 }
 
+/**
+ * Render-seam field resolution through the STRONG verifier (LANE-CLAIM
+ * H4/R-H4 reconciliation). This is the publish-path counterpart of
+ * verifyBinding: the renderer's boundField/boundTitle/boundDescription
+ * resolve through here, so owner_authored bindings require a recorded
+ * owner assertion, exactly as the planner's emission seam enforces.
+ * Returns undefined when the binding does not verify; the caller must
+ * OMIT the value, never guess.
+ *
+ * graph.ts resolveBoundField remains the low-level resolution primitive
+ * (no publish-verdict authority); new publish paths must use this seam.
+ */
+export function resolveBoundFieldVerified(
+  graph: ObjectGraph,
+  binding: PresentationBinding,
+  ownerAssertions: readonly OwnerAssertion[] = [],
+): string | undefined {
+  const verdict = verifyBinding(binding, graph, ownerAssertions);
+  return verdict.status === "BOUND" ? verdict.value : undefined;
+}
+
 /** One verdict per input binding, in input order, plus the split. */
 export interface SpecBindingReport {
   verdicts: SpecBindingVerdict[];

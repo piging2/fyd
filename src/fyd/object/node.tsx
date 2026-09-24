@@ -205,6 +205,7 @@ function Margins({
           <CapabilityActions
             capabilities={projection.capabilities}
             nodeHref={nodeHref}
+            nodeObjectId={projection.id}
             className="mt-2"
           />
         </section>

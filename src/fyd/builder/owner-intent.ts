@@ -2,7 +2,7 @@
  * OwnerIntent: the owner's durable intent as planner input.
  *
  * The planner accepts OwnerIntent alongside the object graph; an empty
- * intent reproduces today's behavior exactly. Two fields are HONORED at
+ * intent reproduces today's behavior exactly. Three fields are HONORED at
  * minimum (hard requirements):
  *
  *  - prohibitedPositioning: claim predicates that must never appear in
@@ -11,12 +11,19 @@
  *  - operatingConstraints: operational realities that remove components
  *    (e.g. "no-online-booking"). Unknown constraint strings are recorded
  *    in the manifest notes, never silently applied and never fatal.
+ *  - strategy: the named site strategy override (KNOWLEDGE_WORKER,
+ *    TRADES, or TECHNOLOGY). The owner's word beats inference: when set
+ *    to a known strategy name, strategy resolution uses it ahead of the
+ *    tenant pin and the graph inference. An unknown value is dropped to
+ *    undefined (fail closed to no override), never applied.
  *
  * The remaining fields (goals, priorities, preferred/undesired customers,
  * brandDirection, conversionPriorities) are carried on the planned output
  * for the owner patch loop and Ask FYD wiring to consume; the planner
  * itself does not invent copy from them (no manufactured facts).
  */
+
+import { isSiteStrategyName, type SiteStrategyName } from "./strategies";
 
 /** Owner intent as planner input. All fields optional on the way in. */
 export interface OwnerIntent {
@@ -36,6 +43,11 @@ export interface OwnerIntent {
   conversionPriorities: string[];
   /** Operational realities, e.g. ["no-online-booking", "no-social-proof"]. */
   operatingConstraints: string[];
+  /**
+   * Named site strategy override. The owner's word beats inference;
+   * honored by strategyForSite as the highest-precedence input.
+   */
+  strategy?: SiteStrategyName;
 }
 
 export const EMPTY_OWNER_INTENT: OwnerIntent = {
@@ -47,6 +59,7 @@ export const EMPTY_OWNER_INTENT: OwnerIntent = {
   brandDirection: null,
   conversionPriorities: [],
   operatingConstraints: [],
+  strategy: undefined,
 };
 
 /** Normalize a partial intent: absent fields become empty, never undefined. */
@@ -61,6 +74,8 @@ export function normalizeOwnerIntent(partial?: Partial<OwnerIntent> | null): Own
     brandDirection: partial.brandDirection ?? null,
     conversionPriorities: [...(partial.conversionPriorities ?? [])],
     operatingConstraints: [...(partial.operatingConstraints ?? [])],
+    // Unknown strategy values are dropped: fail closed to no override.
+    strategy: isSiteStrategyName(partial.strategy) ? partial.strategy : undefined,
   };
 }
 

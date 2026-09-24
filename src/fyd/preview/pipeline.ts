@@ -135,6 +135,17 @@ export function buildPortalProjection(objectId: string): PortalProjection | null
   };
 }
 
+/**
+ * Staged rollout gate for homepage Circles (Nolan, 2026-09-22): HAPPY PLACE
+ * ONLY until Nolan personally approves the next identity. This is product
+ * configuration, not customer branching: every listed site id flows through
+ * the identical buildPortalProjection -> CircleProjection -> PortalCircle
+ * path with no per-customer behavior. Approving Circle #2 (Coppersmith)
+ * Circle #2 (Coppersmith) approved by Nolan 2026-09-22: "Margins Are the
+ * Object Layer" object proof.
+ */
+export const HOMEPAGE_CIRCLE_SITE_IDS: string[] = ["happy-place", "coppersmith-plumbing"];
+
 /** Object ids with portal projections available. Derived from the authoritative
  * object registry, never a hardcoded customer list. */
 export function listPortalIds(): string[] {

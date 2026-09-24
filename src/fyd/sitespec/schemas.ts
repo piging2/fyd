@@ -10,6 +10,7 @@
  */
 
 import type { FYDFinding } from "./types";
+import { componentsForSchema } from "../components/registry";
 
 export type FYDFieldType = "string" | "string[]" | "url";
 
@@ -112,47 +113,14 @@ export function getSchemaDef(schemaId: string): FYDSchemaDef | undefined {
 }
 
 // ---------------------------------------------------------------------------
-// Schema roles: the site compiler reasons over roles, not single schema ids.
-//
-// The ping.social.* vocabulary above is the proof vocabulary: three
-// definitions driving everything. The ping.knowledge.* vocabulary is the
-// constitutional website-ingestion vocabulary (knowledge adapter, no new
-// authority): knowledge objects project onto the same site-compiler roles.
-// This mapping is a projection, not a second set of definitions; nothing
-// here mints a schema, and the proof stays exactly Business, Service, Post.
+// Schema roles: re-exported from the leaf module ./schema-roles.
+// The component registry builds its mapping from these roles; the leaf
+// module keeps the sitespec -> components -> schema-roles import graph
+// acyclic. Existing importers keep importing from here unchanged.
 // ---------------------------------------------------------------------------
 
-export type FYDSchemaRole =
-  | "business"
-  | "service"
-  | "product"
-  | "location"
-  | "person"
-  | "post"
-  | "article";
-
-export const SCHEMA_ROLES: Record<FYDSchemaRole, string[]> = {
-  business: ["ping.social.business@1", "ping.knowledge.business@1"],
-  service: ["ping.social.service@1", "ping.knowledge.service@1"],
-  product: ["ping.social.product@1"],
-  location: ["ping.social.location@1", "ping.knowledge.location@1"],
-  person: ["ping.social.person@1", "ping.knowledge.person@1"],
-  // Content splits into short-form posts and long-form articles so the
-  // generator can tell them apart through the role map instead of
-  // hardcoded schema ids. The knowledge vocabulary projects onto both.
-  post: ["ping.social.post@1", "ping.knowledge.post@1"],
-  article: ["ping.social.article@1", "ping.knowledge.article@1"],
-};
-
-/** The site-compiler role a schema id plays, or null when it plays none. */
-export function schemaRole(schemaId: string): FYDSchemaRole | null {
-  const roles = Object.keys(SCHEMA_ROLES) as FYDSchemaRole[];
-  for (const role of roles) {
-    if (SCHEMA_ROLES[role].includes(schemaId)) return role;
-  }
-  return null;
-}
-
+export { SCHEMA_ROLES, schemaRole } from "./schema-roles";
+export type { FYDSchemaRole } from "./schema-roles";
 // ---------------------------------------------------------------------------
 // Derivation 1: VALIDATOR. Schema -> findings over a field record.
 // ---------------------------------------------------------------------------
@@ -237,51 +205,22 @@ export function validateAgainstSchema(
 
 // ---------------------------------------------------------------------------
 // Derivation 2: COMPONENT ELIGIBILITY. Schema -> component names.
-// (The registry itself owns the mapping; this is the schema-side view used
-// by the generator to ask "which components may render this schema?")
+// DERIVED: the component registry (components/registry.ts DEFINITIONS) is
+// the single hand-written schema<->component mapping; this is its
+// inversion. The old hand-written SCHEMA_COMPONENTS table was deleted
+// 2026-09-23 (lane E): it had drifted from the registry in four places
+// (business/service/location/knowledge-website vs RecentObjects/
+// ObjectRail). One mapping, two directions, zero drift.
 // ---------------------------------------------------------------------------
 
-/** Component names eligible for each schema. Unknown schemas get GenericObjectCard. */
-const SCHEMA_COMPONENTS: Record<string, string[]> = {
-  "ping.social.business@1": [
-    "Hero",
-    "IdentityCard",
-    "BusinessSummary",
-    "Contact",
-    "CTA",
-    "Links",
-    "SocialProof",
-    "AskFYD",
-    "ObjectGrid",
-    "ObjectFeed",
-  ],
-  "ping.social.service@1": ["Services", "ObjectGrid", "ObjectFeed", "CTA", "ObjectRail"],
-  "ping.social.post@1": ["Posts", "ObjectGrid", "ObjectFeed", "RecentObjects", "ObjectRail"],
-  "ping.social.product@1": ["Products", "ObjectGrid", "ObjectFeed", "ObjectRail"],
-  "ping.social.location@1": ["Locations", "ObjectGrid", "ObjectFeed"],
-  "ping.social.person@1": ["People", "ObjectGrid", "ObjectFeed", "ObjectRail"],
-  "ping.social.article@1": ["Posts", "ObjectGrid", "ObjectFeed", "RecentObjects", "ObjectRail"],
-  // Knowledge vocabulary: the website object is a public object like any
-  // other; the generic list components may render it. Role-projected
-  // schemas (business/service/location/person/post/article) resolve through
-  // schemaRole() in eligibleComponents below and need no entries here.
-  "ping.knowledge.website@1": ["ObjectGrid", "ObjectFeed"],
-};
-
+/**
+ * Component names eligible for a schema, in registry order. Unknown
+ * schemas get GenericObjectCard (unknown schemas render through the
+ * fallback, never fail).
+ */
 export function eligibleComponents(schemaId: string): string[] {
-  const direct = SCHEMA_COMPONENTS[schemaId];
-  if (direct) return direct;
-  // Knowledge vocabulary projects onto the proof vocabulary's roles, so a
-  // knowledge service is eligible for exactly the service components.
-  const role = schemaRole(schemaId);
-  if (role) {
-    const proofId = SCHEMA_ROLES[role][0];
-    const viaRole = SCHEMA_COMPONENTS[proofId];
-    if (viaRole) return viaRole;
-  }
-  return ["GenericObjectCard"];
+  return componentsForSchema(schemaId);
 }
-
 // ---------------------------------------------------------------------------
 // Derivation 3: RELATIONSHIP RULES. Schema -> allowed predicates.
 // ---------------------------------------------------------------------------

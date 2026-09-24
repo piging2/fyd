@@ -14,9 +14,14 @@
 
 import { SiteClient } from "../_shared/site-client";
 import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+import type { ObjectGraph } from "@/fyd/sitespec/types";
 import { generateSiteSpec } from "@/fyd/proceduralize/generator";
 import { isRenderable, validateSiteSpec } from "@/fyd/sitespec/validator";
 import { heroMediaFor } from "@/fyd/media/select";
+import {
+  auditSitesRenderClaims,
+  logSitesRenderAudit,
+} from "@/fyd/sitespec/sites-render-audit";
 
 const SITE_ID = "coppersmith-plumbing";
 
@@ -37,6 +42,25 @@ export async function generateMetadata() {
   };
 }
 
+
+/**
+ * Privacy boundary: the client payload must never contain private
+ * objects. The server keeps the full graph; the serialized prop carries
+ * only public objects and relationships between public objects.
+ */
+function publicGraph(graph: ObjectGraph): ObjectGraph {
+  const ids = new Set(
+    graph.objects.filter((o) => o.visibility === "public").map((o) => o.id),
+  );
+  return {
+    ...graph,
+    objects: graph.objects.filter((o) => ids.has(o.id)),
+    relationships: graph.relationships.filter(
+      (r) => ids.has(r.subject) && ids.has(r.object),
+    ),
+  };
+}
+
 export default async function CoppersmithDemoPage() {
   const { graph, meta } = await getPingObjectGraph(SITE_ID);
   const spec = generateSiteSpec(graph, {
@@ -50,11 +74,22 @@ export default async function CoppersmithDemoPage() {
   const findings = validateSiteSpec(spec, knownSchemas);
   const renderable = isRenderable(findings);
 
+  // Binding-verification observation tap (WIRE-SPEC; QA-TRUTH R-A,
+  // LANE-CLAIM R-MODEL): run this render's claims through the strong
+  // BindingVerifier and log the verdicts. Observation only: never throws,
+  // never mutates the spec, the findings, or the rendered output. The
+  // frozen golden route renders byte-identically with or without it.
+  try {
+    logSitesRenderAudit(auditSitesRenderClaims(spec, graph, SITE_ID));
+  } catch {
+    // The audit must never break the render path.
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <SiteClient
         spec={spec}
-        graph={graph}
+        graph={publicGraph(graph)}
         findings={findings}
         renderable={renderable}
         siteId={SITE_ID}

@@ -126,6 +126,7 @@ export function ObjectCard({
       <CapabilityActions
         capabilities={projection.capabilities}
         nodeHref={href}
+        nodeObjectId={projection.id}
         className="mt-4"
       />
 

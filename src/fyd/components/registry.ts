@@ -11,12 +11,12 @@
  * the renderer switches on it. One mapping, three consumers.
  *
  * acceptsSchemas lists are built from the central SCHEMA_ROLES table in
- * ../sitespec/schemas: no schema id is hardcoded here, so the
+ * ../sitespec/schema-roles (re-exported by ../sitespec/schemas): no schema id is hardcoded here, so the
  * ping.social.* proof vocabulary and the ping.knowledge.* ingestion
  * vocabulary are accepted through the same roles.
  */
 
-import { SCHEMA_ROLES, schemaRole } from "../sitespec/schemas";
+import { SCHEMA_ROLES } from "../sitespec/schema-roles";
 
 export interface FYDComponentDef {
   /** Registry name, used in FYDSection.component. */
@@ -116,6 +116,36 @@ const DEFINITIONS: FYDComponentDef[] = [
 
 const BY_NAME = new Map(DEFINITIONS.map((d) => [d.name, d]));
 
+/**
+ * DERIVED, single source of truth: invert the component -> schemas
+ * mapping above into schema -> components (registry order). The
+ * DEFINITIONS table is the only hand-written schema<->component
+ * mapping; eligibleComponents() (sitespec/schemas.ts) is this same
+ * inversion. The two directions cannot drift because only one of
+ * them is written by hand. Computed once at module load.
+ */
+const COMPONENTS_BY_SCHEMA: Map<string, string[]> = (() => {
+  const m = new Map<string, string[]>();
+  for (const d of DEFINITIONS) {
+    for (const s of d.acceptsSchemas) {
+      const list = m.get(s);
+      if (list) list.push(d.name);
+      else m.set(s, [d.name]);
+    }
+  }
+  return m;
+})();
+
+/**
+ * All components that can render an object of this schema, in registry
+ * order. Unknown schemas resolve to ["GenericObjectCard"]: unknown
+ * schemas render through the fallback, never fail. Never throws,
+ * never returns empty.
+ */
+export function componentsForSchema(schemaId: string): string[] {
+  return COMPONENTS_BY_SCHEMA.get(schemaId) ?? ["GenericObjectCard"];
+}
+
 export function getComponentDef(name: string): FYDComponentDef | undefined {
   return BY_NAME.get(name);
 }
@@ -125,24 +155,17 @@ export function listComponentDefs(): FYDComponentDef[] {
 }
 
 /**
- * Resolve the component for a schema. Dedicated component when one
- * exists, GenericObjectCard otherwise. Acceptance lists are built from
- * SCHEMA_ROLES, so a knowledge service matches Services directly; the
- * role fallback below stays for schemas listed nowhere. Never throws,
- * never returns empty.
+ * Resolve the component for a schema: the first eligible dedicated
+ * component in registry order, GenericObjectCard otherwise. This is the
+ * head of componentsForSchema() with the generic fallback filtered out,
+ * so it agrees with eligibleComponents() by construction. (The old
+ * schemaRole() fallback was redundant: acceptance lists already carry the
+ * knowledge-vocabulary ids through SCHEMA_ROLES.) Never throws, never
+ * returns empty.
  */
 export function componentForSchema(schemaId: string): string {
-  const dedicated = DEFINITIONS.find(
-    (d) => d.name !== "GenericObjectCard" && d.acceptsSchemas.includes(schemaId),
+  const dedicated = componentsForSchema(schemaId).find(
+    (n) => n !== "GenericObjectCard",
   );
-  if (dedicated) return dedicated.name;
-  const role = schemaRole(schemaId);
-  if (role) {
-    const proofId = SCHEMA_ROLES[role][0];
-    const viaRole = DEFINITIONS.find(
-      (d) => d.name !== "GenericObjectCard" && d.acceptsSchemas.includes(proofId),
-    );
-    if (viaRole) return viaRole.name;
-  }
-  return "GenericObjectCard";
+  return dedicated ?? "GenericObjectCard";
 }

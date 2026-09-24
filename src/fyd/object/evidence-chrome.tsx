@@ -14,7 +14,10 @@
  */
 
 import * as React from "react";
-import { ExternalLink, Mail, MessageCircleQuestion, Phone } from "lucide-react";
+import { ExternalLink, Mail, MessageCircleQuestion, Phone, MapPin } from "lucide-react";
+import { ReferenceButton } from "@/fyd/ui/reference-button";
+import { FollowButton } from "@/fyd/ui/follow-button";
+import { LikeButton } from "@/fyd/ui/like-button";
 import { cn } from "@/lib/utils";
 import { EvidenceStateLabel } from "../ui/evidence-state";
 import { WhyThis } from "../ui/why-this";
@@ -101,9 +104,11 @@ const QUIET_BTN = cn(BTN, "border border-stone-300 bg-white text-stone-800 hover
 function CapabilityAction({
   cap,
   nodeHref,
+  nodeObjectId,
 }: {
   cap: ObjectCapability;
   nodeHref: string;
+  nodeObjectId: string;
 }) {
   switch (cap.kind) {
     case "view":
@@ -140,9 +145,22 @@ function CapabilityAction({
           {cap.label}
         </a>
       );
+    case "directions":
+      return (
+        <a href={cap.href} target="_blank" rel="noreferrer" className={QUIET_BTN}>
+          <MapPin className="h-4 w-4" aria-hidden="true" />
+          {cap.label}
+        </a>
+      );
+    case "reference":
+      return (
+        <ReferenceButton objectId={cap.objectId} className={QUIET_BTN} compact />
+      );
+    case "follow":
+      return <FollowButton objectId={nodeObjectId} className={QUIET_BTN} />;
+    case "like":
+      return <LikeButton objectId={nodeObjectId} className={QUIET_BTN} />;
     default:
-      // follow/like: no static affordance on these surfaces, exactly as in
-      // the existing Circle primitive. Never a dead button.
       return null;
   }
 }
@@ -151,17 +169,24 @@ function CapabilityAction({
 export function CapabilityActions({
   capabilities,
   nodeHref,
+  nodeObjectId,
   className,
 }: {
   capabilities: ObjectCapability[];
   nodeHref: string;
+  nodeObjectId: string;
   className?: string;
 }) {
   if (capabilities.length === 0) return null;
   return (
     <div className={cn("flex flex-wrap gap-2", className)}>
       {capabilities.map((cap, i) => (
-        <CapabilityAction key={cap.kind + ":" + i} cap={cap} nodeHref={nodeHref} />
+        <CapabilityAction
+          key={cap.kind + ":" + i}
+          cap={cap}
+          nodeHref={nodeHref}
+          nodeObjectId={nodeObjectId}
+        />
       ))}
     </div>
   );

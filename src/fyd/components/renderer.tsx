@@ -19,7 +19,10 @@ import { ObjectRail, pingObjectToView, richestObject } from "./object-rail";
 import { ObjectCard } from "../object/card";
 import { ObjectCircle } from "../ui/object-circle";
 import { WhyThis, type EvidenceStep } from "../ui/why-this";
-import { resolveBoundField } from "../sitespec/graph";
+import {
+  ownerAssertionsFromGraph,
+  resolveBoundFieldVerified,
+} from "../sitespec/binding-verifier";
 import type { BindingClassification } from "../sitespec/graph";
 import {
   applyFieldVisibility,
@@ -238,9 +241,33 @@ export function claimBadgeLabel(objects: PingObject[]): string {
   return "Mixed sources";
 }
 
-function ClaimBadge({ objects }: { objects: PingObject[] }) {
+/**
+ * VQ-002: the badge defaults to the light-surface treatment
+ * (border-border-soft / text-accent). On the dark hero slab (theme.ink) those
+ * light-theme tokens are illegible, so the Hero passes tone="onDark": text in
+ * text-background (the same token as the hero h1, proven legible on ink)
+ * with a theme.accent border (the same treatment as the Ask FYD button border
+ * on the same slab). Theme tokens only; no invented colors, no literal
+ * RGB-complement math.
+ */
+function ClaimBadge({
+  objects,
+  theme,
+  tone,
+}: {
+  objects: PingObject[];
+  theme?: FYDThemeTokens;
+  tone?: "onDark";
+}) {
+  const dark = tone === "onDark" && theme != null;
   return (
-    <span className="inline-block rounded-full border border-border-soft px-2 py-0.5 text-[11px] uppercase tracking-wide text-accent">
+    <span
+      className={
+        "inline-block rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide" +
+        (dark ? " text-background" : " border-border-soft text-accent")
+      }
+      style={dark && theme ? { borderColor: theme.accent } : undefined}
+    >
       {claimBadgeLabel(objects)}
     </span>
   );
@@ -447,15 +474,25 @@ function FydMotionStyles({ theme }: { theme: FYDThemeTokens }) {
         "@media (prefers-reduced-motion: no-preference) {",
         "@view-transition { navigation: auto; }",
         ".fyd-hero-settle { animation: fyd-hero-settle 560ms cubic-bezier(.2,.7,.2,1) both; }",
-        "@keyframes fyd-hero-settle { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }",
+        "@keyframes fyd-hero-settle { from { transform: translateY(14px); } to { transform: none; } }",
         "@supports (animation-timeline: view()) {",
         "[data-motion='enter'] { animation: fyd-enter " +
           dur +
           "ms cubic-bezier(.2,.7,.2,1) both; animation-timeline: view(); animation-range: entry 0% cover 30%; }",
-        "@keyframes fyd-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }",
+        // VQ-001: motion never gates content. The native view() timeline can
+        // hold below-fold elements at progress 0 in full-page captures, print,
+        // crawlers, and no-scroll contexts, so entrances keep their slide but
+        // never touch opacity: content is always painted.
+        "@keyframes fyd-enter { from { transform: translateY(16px); } to { transform: none; } }",
         "}",
-        ".fyd-io [data-motion='enter'] { opacity: 0; transform: translateY(16px); transition: opacity 480ms ease, transform 480ms ease; }",
-        ".fyd-io [data-motion='enter'].fyd-inview { opacity: 1; transform: none; }",
+        // Base state is VISIBLE. JS adds .fyd-io-pending only to below-fold elements.
+        // VQ-001: the pending entrance is transform-only; opacity never gates content.
+        ".fyd-io [data-motion='enter'] { transition: transform 480ms ease; }",
+        ".fyd-io [data-motion='enter'].fyd-io-pending { transform: translateY(16px); }",
+        ".fyd-io [data-motion='enter'].fyd-inview, .fyd-io [data-motion='enter']:not(.fyd-io-pending) { opacity: 1; transform: none; }",
+        ".fyd-io [data-motion='enter'].fyd-force-visible { opacity: 1 !important; transform: none !important; animation: none !important; }",
+        // VQ-001: print and other non-interactive renderings show everything.
+        "@media print { [data-motion='enter'], .fyd-hero-settle { animation: none !important; opacity: 1 !important; transform: none !important; } }",
         "@media (hover: hover) {",
         ".fyd-card { transition: transform 240ms ease, box-shadow 240ms ease; }",
         ".fyd-card:hover { transform: translateY(-4px); }",
@@ -682,10 +719,13 @@ function FydObjectCard({
 // Projection seam: binding verification + safe links.
 //
 // Every FACTUAL value rendered below is read through boundField /
-// boundTitle / boundDescription, which resolve the value via the
-// presentation-binding verifier (resolveBoundField). A value whose binding
-// does not verify returns undefined, and the caller OMITS it: no binding,
-// no factual output. This is the verifier wired into the actual
+// boundTitle / boundDescription, which resolve the value via the STRONG
+// BindingVerifier (verifyBinding in sitespec/binding-verifier.ts, through
+// resolveBoundFieldVerified). A value whose binding does not verify
+// returns undefined, and the caller OMITS it: no binding, no factual
+// output. In particular, owner_authored bindings require a recorded owner
+// assertion, exactly as the planner's emission seam enforces (LANE-CLAIM
+// H4/R-H4 reconciliation). This is the verifier wired into the actual
 // projection path, not a sidecar.
 //
 // Labels, action text ("Visit website", "Ask FYD"), section headings that
@@ -701,7 +741,8 @@ function FydObjectCard({
 
 /**
  * Verified factual field read. Returns the value only when the binding
- * verifies; undefined means the caller must OMIT the value, never guess.
+ * verifies against the STRONG BindingVerifier (LANE-CLAIM H4/R-H4);
+ * undefined means the caller must OMIT the value, never guess.
  */
 function boundField(
   ctx: RenderContext,
@@ -709,7 +750,14 @@ function boundField(
   field: string,
   classification: BindingClassification = "direct",
 ): string | undefined {
-  return resolveBoundField(ctx.graph, { objectId: o.id, field, classification });
+  // Owner assertions ride on the render graph; the strong verifier
+  // requires a recorded assertion for owner_authored bindings. Pure and
+  // deterministic; trivial cost at demo graph sizes.
+  return resolveBoundFieldVerified(
+    ctx.graph,
+    { objectId: o.id, field, classification },
+    ownerAssertionsFromGraph(ctx.graph),
+  );
 }
 
 /** Verified title read (object-level factual identity). */
@@ -771,7 +819,58 @@ function contactMethod(
 ): ContactMethod | null {
   const value = boundField(ctx, o, kind, correction ? "owner_authored" : "direct");
   if (value === undefined) return null;
+  // Fail-closed dial gating (OBJECT-SHARD-2): an explicit field-conflict
+  // marker blocks the dial/mailto action. An explicit owner correction is a
+  // human resolution of the field and outranks preserved conflict markers.
+  if (!correction && contactFieldConflicted(ctx, o, kind)) return null;
   return contactMethodFor(kind, value, contactEvidence(o, kind, correction));
+}
+
+/**
+ * Explicit conflict marker for one contact kind ("phone" | "email") on a
+ * single object. Two marker shapes are honored, both explicit:
+ *   - a "<kind>_conflicts_with" field naming the disputed value, or
+ *   - a "conflicts" entry that names both the field kind and a conflict
+ *     (e.g. "PHONE CONFLICT: website lists X; directory lists Y").
+ * Free-text notes that do not name the kind are not markers.
+ */
+function fieldConflictMarker(o: PingObject, kind: ContactMethodKind): boolean {
+  const fields = o.fields as Record<string, unknown>;
+  const explicit = fields[`${kind}_conflicts_with`];
+  if (typeof explicit === "string" && explicit.trim().length > 0) return true;
+  const conflicts = fields["conflicts"];
+  if (Array.isArray(conflicts)) {
+    const needle = kind.toLowerCase();
+    for (const c of conflicts) {
+      if (typeof c !== "string") continue;
+      const lc = c.toLowerCase();
+      if (lc.includes("conflict") && lc.includes(needle)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Whether a dial/mailto action must be blocked for this contact field.
+ * Checks the object's own fields plus one-hop active public relationships
+ * (conflict evidence often lives on a linked external-identity object).
+ * The conflicting values stay in the graph (both claims preserved); only
+ * the action is blocked.
+ */
+function contactFieldConflicted(
+  ctx: RenderContext,
+  o: PingObject,
+  kind: ContactMethodKind,
+): boolean {
+  if (fieldConflictMarker(o, kind)) return true;
+  for (const r of ctx.graph.relationships) {
+    if (r.status !== "active") continue;
+    const otherId = r.subject === o.id ? r.object : r.object === o.id ? r.subject : null;
+    if (!otherId) continue;
+    const t = ctx.graph.objects.find((x) => x.id === otherId);
+    if (t && t.visibility === "public" && fieldConflictMarker(t, kind)) return true;
+  }
+  return false;
 }
 
 /** Evidence basis for a rendered contact method. */
@@ -849,6 +948,10 @@ function SectionShell({
     <section
       className="fyd-section mx-auto w-full max-w-5xl px-4 sm:px-6"
       data-fyd-section={sectionId}
+      // In-flow object anchor (2026-09-24 Phase 2): the section's
+      // document spot doubles as its objects' data-object-anchor.
+      // The mobile in-flow composition renders at this exact spot.
+      data-object-anchor={sectionId}
       // No data-motion="enter" on the section itself: sections are layout
       // containers that may host lane-owned position:fixed UI (e.g. the
       // object rail's trigger). A transform/opacity entrance animation on
@@ -908,7 +1011,9 @@ function HeroMediaWhyThis({ media }: { media: DisplayMedia }) {
     steps.push({
       step: "Rights basis",
       detail: media.rightsBasis,
-      state: "observed",
+      // Policy inference, not an observation: classifyRights is a URL
+      // heuristic with no authorization evidence (QA-TRUTH F-002).
+      state: "inferred",
     });
   }
   if (media.observedAt) {
@@ -961,7 +1066,23 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
       className="w-full"
       data-motion="hero-settle"
       data-layout-character={character}
-      style={{ background: theme.ink }}
+      data-hero-treatment={hero ? "photo" : "typographic"}
+      // VQ-004: designed no-media hero treatment. When the media stage has no
+      // acquired photo for this business (hookup: page.tsx heroMediaFor ->
+      // SiteClient prop -> ctx.heroMedia), the slab is not a flat empty panel:
+      // a deterministic token-derived accent wash. No images, no invented
+      // content; photo heroes are untouched.
+      style={{
+        background: hero
+          ? theme.ink
+          : "linear-gradient(160deg, " +
+            theme.ink +
+            " 55%, color-mix(in srgb, " +
+            theme.accent +
+            " 16%, " +
+            theme.ink +
+            "))",
+      }}
     >
       {hero ? (
         <div
@@ -991,7 +1112,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
       ) : null}
       <div className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-5xl">
-        <ClaimBadge objects={objects} />
+        <ClaimBadge objects={objects} theme={theme} tone="onDark" />
         <h1
           className="mt-4 text-4xl font-bold text-background sm:text-6xl"
           style={{ fontFamily: theme.fontDisplay }}
@@ -1002,6 +1123,16 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
           <p className="mt-4 max-w-2xl text-lg text-background/80">{copy}</p>
         ) : null}
         <div className="mt-8 flex flex-wrap gap-3">
+          {/* ISSUE-3: thumb-reachable dial action on mobile. phoneMethod is a
+              binding-verified ContactMethod; when the primary slot is taken by
+              Visit website, mobile also gets a Call button (md:hidden keeps
+              desktop untouched). It opens the FYD contact flow (value +
+              provenance + the real Call action), never a raw tel: link. */}
+          {website.kind === "safe" && phoneMethod ? (
+            <span className="md:hidden">
+              <FydContactLink method={phoneMethod} theme={theme} variant="button" />
+            </span>
+          ) : null}
           {website.kind === "safe" ? (
             <a
               href={website.href}
@@ -1038,10 +1169,20 @@ function BusinessSummary({ section, objects, presentation, theme, ctx, motionInd
   return (
     <SectionShell
       theme={theme}
+      sectionId={section.id}
       heading={presentation.heading ?? (title ? "About " + title : undefined)}
       copy={presentation.copy ?? boundDescription(ctx, o)}
     >
       <ClaimBadge objects={objects} />
+      {/* Mobile in-flow composition: the business object itself as a
+          tappable card in the page flow (<768px). Desktop keeps the
+          prose summary unchanged. */}
+      <MobileInFlowObjects
+        objects={objects}
+        theme={theme}
+        ctx={ctx}
+        testId="inflow-business"
+      />
     </SectionShell>
   );
 }
@@ -1066,6 +1207,67 @@ function CardGrid({
       {objects.map((o, i) => (
         <FydObjectCard key={o.id} o={o} theme={theme} ctx={ctx} index={i} />
       ))}
+    </div>
+  );
+}
+
+/**
+ * Mobile in-flow object composition (2026-09-24, Phase 2 of the
+ * BUILDER-BRUTAL-CEO-HARVEST directive).
+ *
+ * On viewports below the md breakpoint (<768px) the margin object layer
+ * is intentionally absent (2026-09-23 product direction, binding: no
+ * object bucket, no floating tab, no drawer on mobile). This component is
+ * its replacement: the section's own objects rendered as tappable
+ * FydObjectCards directly in the page flow, at the section's
+ * data-object-anchor spot.
+ *
+ * - Visually integrated: the same FydObjectCard the Services section
+ *   uses on every viewport; theme-driven, no floating chrome.
+ * - Tappable: each card title links to /o/<id>, which the site client
+ *   intercepts into the rich ObjectOverlay (scroll-preserving).
+ * - Document-anchored: plain in-flow DOM, so the cards scroll WITH the
+ *   page. Never position:fixed, never viewport-sticky.
+ * - Desktop untouched: md:hidden keeps >=768px pixel-identical.
+ * - The ?objectDebug=1 gate on MarginObjectLayer is NOT touched; this
+ *   is the replacement composition, not a gate removal.
+ *
+ * Generic: descriptors only. Zero customer-specific code.
+ */
+function MobileInFlowObjects({
+  objects,
+  theme,
+  ctx,
+  kickerFor,
+  testId,
+}: {
+  objects: PingObject[];
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+  /** Optional per-object kicker line under the title (e.g. a post date). */
+  kickerFor?: (o: PingObject) => string | undefined;
+  /** Test hook for the mobile composition block. */
+  testId: string;
+}) {
+  if (objects.length === 0) return null;
+  return (
+    <div
+      className="mt-6 md:hidden"
+      data-testid={testId}
+      data-inflow-composition="mobile"
+    >
+      <div className="grid grid-cols-1 gap-4">
+        {objects.map((o, i) => (
+          <FydObjectCard
+            key={o.id}
+            o={o}
+            theme={theme}
+            ctx={ctx}
+            index={i}
+            kicker={kickerFor ? kickerFor(o) : undefined}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -1098,19 +1300,23 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
   return (
     <SectionShell
       theme={theme}
+      sectionId={section.id}
       heading={presentation.heading ?? "Where we work"}
       copy={presentation.copy}
     >
-      <ul className="flex flex-wrap gap-2">
+      <ul className="hidden flex-wrap gap-2 md:flex">
         {objects.map((o) => {
           const title = boundTitle(ctx, o);
+          const detailHref = `/o/${encodeURIComponent(o.id)}`;
           return title ? (
-            <li
-              key={o.id}
-              className="rounded-full border border-border-soft px-4 py-2 text-sm"
-              style={{ color: theme.ink }}
-            >
-              {title}
+            <li key={o.id}>
+              <a
+                href={detailHref}
+                className="inline-block rounded-full border border-border-soft px-4 py-2 text-sm transition-colors hover:bg-stone-100"
+                style={{ color: theme.ink }}
+              >
+                {title}
+              </a>
             </li>
           ) : null;
         })}
@@ -1118,6 +1324,14 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
       <div className="mt-3">
         <ClaimBadge objects={objects} />
       </div>
+      {/* Mobile in-flow composition: Location object cards in the page
+          flow (<768px), replacing the pill list. Desktop unchanged. */}
+      <MobileInFlowObjects
+        objects={objects}
+        theme={theme}
+        ctx={ctx}
+        testId="inflow-locations"
+      />
     </SectionShell>
   );
 }
@@ -1252,7 +1466,7 @@ function PostsSection({ section, objects, presentation, theme, ctx, motionIndex 
   );
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Latest"} copy={presentation.copy}>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="hidden grid-cols-1 gap-4 md:grid md:grid-cols-2">
         {sorted.map((o) => {
           const date = boundField(ctx, o, "date");
           const title = boundTitle(ctx, o);
@@ -1279,6 +1493,16 @@ function PostsSection({ section, objects, presentation, theme, ctx, motionIndex 
           );
         })}
       </div>
+      {/* Mobile in-flow composition: post/project object cards in the
+          page flow (<768px), tappable into the object overlay. The post
+          date rides as the card kicker. Desktop keeps the prose grid. */}
+      <MobileInFlowObjects
+        objects={sorted}
+        theme={theme}
+        ctx={ctx}
+        kickerFor={(o) => boundField(ctx, o, "date")}
+        testId="inflow-posts"
+      />
     </SectionShell>
   );
 }
@@ -1600,11 +1824,20 @@ function boundOwnerTitle(ctx: RenderContext): string {
  * Features the richest public non-owner object through the existing
  * ObjectCircle doorway over the honest pingObjectToView adapter; presence
  * mode auto lets geometry decide rail vs drawer from the theme token.
+ *
+ * Binding gate: the featured identity is a factual claim, so candidates are
+ * restricted to objects whose title binding verifies (boundTitle resolves
+ * through the presentation-binding verifier). The view and the summary use
+ * the verified values, never the raw object fields. An unbound object never
+ * features: no binding, no factual output.
  */
 function ObjectRailSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
-  const featured = richestObject(objects, ctx.spec.ownerObjectId);
+  const bound = objects.filter((o) => boundTitle(ctx, o) !== undefined);
+  const featured = richestObject(bound, ctx.spec.ownerObjectId);
   if (!featured) return null;
-  const featuredView = pingObjectToView(featured);
+  const name = boundTitle(ctx, featured) as string;
+  const summary = boundDescription(ctx, featured);
+  const featuredView = pingObjectToView({ ...featured, title: name, description: summary ?? "" });
   const presence: ObjectPresence = {
     mode: "auto",
     objects: [featured.id],
@@ -1613,9 +1846,9 @@ function ObjectRailSection({ section, objects, presentation, theme, ctx, motionI
   const cards = (
     <div className="space-y-3">
       <ObjectCircle view={featuredView} />
-      {featured.description?.trim() ? (
+      {summary?.trim() ? (
         <p className="text-sm leading-relaxed" style={{ color: theme.ink }}>
-          {featured.description.trim()}
+          {summary.trim()}
         </p>
       ) : null}
       <p className="text-xs" style={{ color: theme.ink, opacity: 0.6 }}>
@@ -1664,7 +1897,9 @@ function GalleryMediaWhyThis({ media }: { media: DisplayMedia }) {
     steps.push({ step: "Photo source", detail: media.sourceUrl, state: "observed" });
   }
   if (media.rightsBasis) {
-    steps.push({ step: "Rights basis", detail: media.rightsBasis, state: "observed" });
+    // Policy inference, not an observation: classifyRights is a URL
+    // heuristic with no authorization evidence (QA-TRUTH F-002).
+    steps.push({ step: "Rights basis", detail: media.rightsBasis, state: "inferred" });
   }
   if (media.observedAt) {
     steps.push({ step: "Observed", detail: media.observedAt, state: "observed" });

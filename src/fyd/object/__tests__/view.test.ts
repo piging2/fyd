@@ -180,14 +180,14 @@ describe("buildCapabilities ask gating (Phase 2)", () => {
   } as const;
 
   test("no evidence -> no ask capability (follow/like remain)", () => {
-    const caps = buildCapabilities(emptyContact, { summary: "", services: [] });
+    const caps = buildCapabilities("ping.social.business@1", "b1", emptyContact, { summary: "", services: [] });
     expect(caps.some((c) => c.kind === "ask")).toBe(false);
     expect(caps.some((c) => c.kind === "follow")).toBe(true);
-    expect(caps.some((c) => c.kind === "like")).toBe(true);
+    expect(caps.some((c) => c.kind === "like")).toBe(false); // business: no like
   });
 
   test("summary text gates ask on", () => {
-    const caps = buildCapabilities(emptyContact, {
+    const caps = buildCapabilities("ping.social.business@1", "b1", emptyContact, {
       summary: "A real business.",
       services: [],
     });
@@ -195,7 +195,7 @@ describe("buildCapabilities ask gating (Phase 2)", () => {
   });
 
   test("a visible service gates ask on", () => {
-    const caps = buildCapabilities(emptyContact, {
+    const caps = buildCapabilities("ping.social.business@1", "b1", emptyContact, {
       summary: "",
       services: [
         {
@@ -210,8 +210,51 @@ describe("buildCapabilities ask gating (Phase 2)", () => {
     expect(caps.some((c) => c.kind === "ask")).toBe(true);
   });
 
+  test("service gets reference, not follow/like/contact", () => {
+    const caps = buildCapabilities("ping.social.service@1", "s7", emptyContact, {
+      summary: "Emergency plumbing.",
+      services: [],
+    });
+    expect(caps.some((c) => c.kind === "ask")).toBe(true);
+    expect(caps.some((c) => c.kind === "reference")).toBe(true);
+    expect(caps.some((c) => c.kind === "follow")).toBe(false);
+    expect(caps.some((c) => c.kind === "like")).toBe(false);
+    expect(caps.some((c) => c.kind === "call")).toBe(false);
+  });
+
+  test("location with locality gets directions", () => {
+    const caps = buildCapabilities(
+      "ping.social.location@1",
+      "l1",
+      { ...emptyContact, locality: "Grand Junction, CO" },
+      { summary: "", services: [] },
+    );
+    const dir = caps.find((c) => c.kind === "directions");
+    expect(dir).toBeDefined();
+    expect((dir as { href: string }).href).toContain("google.com/maps");
+    expect(caps.some((c) => c.kind === "follow")).toBe(false);
+  });
+
+  test("person gets follow, post gets like", () => {
+    const person = buildCapabilities("ping.social.person@1", "p1", emptyContact, {
+      summary: "A tech.",
+      services: [],
+    });
+    expect(person.some((c) => c.kind === "follow")).toBe(true);
+    expect(person.some((c) => c.kind === "like")).toBe(false);
+    const post = buildCapabilities("ping.social.post@1", "po1", emptyContact, {
+      summary: "Hello.",
+      services: [],
+    });
+    expect(post.some((c) => c.kind === "like")).toBe(true);
+    expect(post.some((c) => c.kind === "reference")).toBe(true);
+    expect(post.some((c) => c.kind === "follow")).toBe(false);
+  });
+
   test("contact evidence gates ask on", () => {
     const caps = buildCapabilities(
+      "ping.social.business@1",
+      "b1",
       { ...emptyContact, phone: "+15551234567" },
       { summary: "", services: [] },
     );

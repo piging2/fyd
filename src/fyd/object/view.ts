@@ -33,7 +33,8 @@ import {
   getPingObjectGraphSync,
   listPingSiteIdsSync,
 } from "@/fyd/data/ping-object-source";
-import { SCHEMA_ROLES } from "../sitespec/schemas";
+import { SCHEMA_ROLES, schemaRole } from "../sitespec/schemas";
+import { resolveSafeLink } from "../sitespec/safe-link";
 import type { ObjectGraph } from "../sitespec/types";
 import type { PingObject } from "../../lib/ping/types";
 import { readOverrides } from "./owner-store";
@@ -167,18 +168,32 @@ function buildServices(
 }
 
 export function buildCapabilities(
+  schemaId: string,
+  objectId: string,
   contact: ObjectContactView,
   evidence: { summary: string; services: ObjectServiceView[] },
 ): ObjectCapability[] {
+  // SCHEMA DECIDES THE ACTIONS (2026-09-23, binding). Every object role
+  // gets the action set its schema supports; no role inherits another's
+  // buttons, and no button renders without its underlying value.
+  //
+  //   business -> follow, ask, contact (call/email/website)
+  //   service  -> ask, reference (+ request quote when a quote backend exists)
+  //   product  -> ask, reference
+  //   location -> ask, directions, contact where supported
+  //   person   -> ask, follow
+  //   post     -> ask, like, reference (+ reply when a reply backend exists)
+  //   article  -> ask, reference
+  //
   // "view" is demoted: the full customer page is no longer a capability
   // (the type variant stays for compatibility, but it is never emitted).
-  // "follow" is a PING relationship, always available for a business object.
-  // call/email/website appear only when the underlying value exists.
   // "ask" is evidence-gated: the ask pipeline answers from the object's
-  // own record (summary, services, contact), so a circle offers ask only
-  // when the object carries something to answer from. No ask evidence ->
-  // no ask action, never a dead question box.
-  const caps: ObjectCapability[] = [{ kind: "follow" }, { kind: "like" }];
+  // own record, so ask appears only when the object carries something to
+  // answer from. No ask evidence -> no ask action, never a dead box.
+  // "quote" and "reply" are not emitted: no backend exists yet, and a
+  // button without a working action is a lie.
+  const role = schemaRole(schemaId);
+  const caps: ObjectCapability[] = [];
   const hasAskEvidence =
     evidence.summary.trim().length > 0 ||
     evidence.services.some((s) => s.visible) ||
@@ -186,10 +201,64 @@ export function buildCapabilities(
     contact.email !== null ||
     contact.website !== null ||
     contact.locality !== null;
-  if (hasAskEvidence) caps.unshift({ kind: "ask" });
-  if (contact.phone) caps.push({ kind: "call", href: "tel:" + contact.phone.replace(/\s/g, ""), label: "Call" });
-  if (contact.email) caps.push({ kind: "email", href: "mailto:" + contact.email, label: "Email" });
-  if (contact.website) caps.push({ kind: "website", href: contact.website, label: "Website" });
+  if (hasAskEvidence) caps.push({ kind: "ask" });
+
+  // Contact hrefs are EXECUTABLE CAPABILITIES: every one clears the single
+  // safe-link choke point (resolveSafeLink) before it becomes an href. An
+  // unsafe value emits NO capability (no fake buttons); the contact block
+  // still shows the value as inert text.
+  const contactActions = () => {
+    if (contact.phone) {
+      const link = resolveSafeLink(contact.phone, "call");
+      if (link.kind === "safe")
+        caps.push({ kind: "call", href: link.href, label: "Call" });
+    }
+    if (contact.email) {
+      const link = resolveSafeLink(contact.email, "email");
+      if (link.kind === "safe")
+        caps.push({ kind: "email", href: link.href, label: "Email" });
+    }
+    if (contact.website) {
+      const link = resolveSafeLink(contact.website, "navigate");
+      if (link.kind === "safe")
+        caps.push({ kind: "website", href: link.href, label: "Website" });
+    }
+  };
+
+  switch (role) {
+    case "business":
+      caps.push({ kind: "follow" });
+      contactActions();
+      break;
+    case "service":
+    case "product":
+      caps.push({ kind: "reference", objectId });
+      break;
+    case "location":
+      if (contact.locality)
+        caps.push({
+          kind: "directions",
+          href:
+            "https://www.google.com/maps/search/?api=1&query=" +
+            encodeURIComponent(contact.locality),
+          label: "Directions",
+        });
+      contactActions();
+      break;
+    case "person":
+      caps.push({ kind: "follow" });
+      break;
+    case "post":
+      caps.push({ kind: "like" });
+      caps.push({ kind: "reference", objectId });
+      break;
+    case "article":
+      caps.push({ kind: "reference", objectId });
+      break;
+    default:
+      // Unknown role: ask only (when evidence-gated above). Never guess.
+      break;
+  }
   return caps;
 }
 
@@ -279,7 +348,7 @@ export function composeObjectView(
     services,
     serviceArea: parseServiceArea(field(obj, "area_served")),
     contact,
-    capabilities: buildCapabilities(contact, { summary: description, services }),
+    capabilities: buildCapabilities(obj.schema, obj.id, contact, { summary: description, services }),
     provenance: {
       kind: obj.provenance?.kind ?? "unknown",
       ref: obj.provenance?.ref ?? "",
