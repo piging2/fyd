@@ -37,6 +37,7 @@ import {
   type ContactMethodKind,
 } from "../object/object-projection";
 import { FydContactLink } from "./contact-link";
+import { HeroSection } from "./hero-section";
 import { schemaRole, ownerRelationshipTarget } from "../sitespec/schemas";
 import {
   entranceDurationMs,
@@ -1031,53 +1032,6 @@ function SectionShell({
   );
 }
 
-/**
- * Contextual provenance for the hero photo: the generic WhyThis
- * drill-down fed ONLY with the media's own provenance fields. No
- * invented copy; the affordance shows what the pipeline recorded and
- * nothing else. Steps with empty values are omitted, and WhyThis renders
- * nothing at all when the lineage is empty.
- */
-function HeroMediaWhyThis({ media }: { media: DisplayMedia }) {
-  const steps: EvidenceStep[] = [];
-  if (media.sourceUrl) {
-    steps.push({
-      step: "Photo source",
-      detail: media.sourceUrl,
-      state: "observed",
-    });
-  }
-  if (media.rightsBasis) {
-    steps.push({
-      step: "Rights basis",
-      detail: media.rightsBasis,
-      // Policy inference, not an observation: classifyRights is a URL
-      // heuristic with no authorization evidence (QA-TRUTH F-002).
-      state: "inferred",
-    });
-  }
-  if (media.observedAt) {
-    steps.push({
-      step: "Observed",
-      detail: media.observedAt,
-      state: "observed",
-    });
-  }
-  if (media.digest) {
-    steps.push({
-      step: "Content digest",
-      detail: media.digest.slice(0, 16) + "...",
-      state: "inferred",
-    });
-  }
-  return (
-    <WhyThis
-      claim={media.alt || "Hero photo"}
-      steps={steps}
-      className="[&_summary]:text-white"
-    />
-  );
-}
 
 function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
@@ -1101,55 +1055,14 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   // when MORPH is active) belongs on the h1 in the CONTACT lane's merge
   // so both lanes do not edit the same block. This lane's compose-motion.ts
   // already provides the deterministic helper.
+
+  // The photographic block is a client boundary (HeroSection, "use client"):
+  // image load failures are browser-only events, and this module is imported
+  // by server-only routes, so the error latch cannot live here. The server
+  // resolves all hero data; HeroSection owns only the failure state, and the
+  // text/actions block below stays server-rendered children.
   return (
-    <section
-      className="w-full"
-      data-motion="hero-settle"
-      data-layout-character={character}
-      data-hero-treatment={hero ? "photo" : "typographic"}
-      // VQ-004: designed no-media hero treatment. When the media stage has no
-      // acquired photo for this business (hookup: page.tsx heroMediaFor ->
-      // SiteClient prop -> ctx.heroMedia), the slab is not a flat empty panel:
-      // a deterministic token-derived accent wash. No images, no invented
-      // content; photo heroes are untouched.
-      style={{
-        background: hero
-          ? theme.ink
-          : "linear-gradient(160deg, " +
-            theme.ink +
-            " 55%, color-mix(in srgb, " +
-            theme.accent +
-            " 16%, " +
-            theme.ink +
-            "))",
-      }}
-    >
-      {hero ? (
-        <div
-          className="relative h-64 w-full overflow-hidden sm:h-80"
-          data-hero-media={hero.id}
-        >
-          {hero.blurUrl ? (
-            <img
-              src={hero.blurUrl}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 h-full w-full scale-110 object-cover blur-md"
-            />
-          ) : null}
-          <img
-            src={hero.src}
-            alt={hero.alt}
-            width={hero.width}
-            height={hero.height}
-            loading="eager"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute bottom-2 right-2 rounded bg-black/55 px-2 py-1">
-            <HeroMediaWhyThis media={hero} />
-          </div>
-        </div>
-      ) : null}
+    <HeroSection hero={hero} theme={theme} character={character}>
       <div className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-5xl">
         <ClaimBadge objects={objects} theme={theme} tone="onDark" />
@@ -1197,11 +1110,9 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
           </a>
         </div>
       </div>
-      </div>
-    </section>
+      </div>    </HeroSection>
   );
 }
-
 function BusinessSummary({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
