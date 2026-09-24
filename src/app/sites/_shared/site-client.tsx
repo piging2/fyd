@@ -128,6 +128,7 @@ export function SiteClient({
         return (
           <ObjectOverlay
             object={obj}
+            graph={graph}
             siteId={siteId ?? ""}
             onClose={() => setOverlayObjectId(null)}
           />

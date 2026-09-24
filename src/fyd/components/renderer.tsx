@@ -803,6 +803,84 @@ function FydObjectCard({
   );
 }
 
+/**
+ * ObjectDoorway: the generic compact object tap-target.
+ *
+ * One honest line that opens the object in the rich ObjectOverlay (the
+ * site client intercepts the /o/<id> href; modifier-clicks still open the
+ * node route). Used wherever a section renders an object WITHOUT a full
+ * card (Hero, feed items): identity + kind label, nothing invented. The
+ * doorway is the anti-flattening primitive: every public object resolved
+ * by a section query carries at least one of these in the rendered HTML,
+ * on every viewport. Same objects, same graph; responsive projection
+ * decides placement, never whether the identity exists.
+ *
+ * - title is the binding-verified title: no binding, no doorway.
+ * - data-fyd-object-id is the stable hook the interaction layer keys on.
+ * - tone onDark suits dark surfaces (Hero); default suits light ones.
+ */
+export function ObjectDoorway({
+  o,
+  theme,
+  ctx,
+  tone = "default",
+  className,
+}: {
+  o: PingObject;
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+  tone?: "default" | "onDark";
+  className?: string;
+}) {
+  const title = boundTitle(ctx, o);
+  if (!title) return null;
+  const detailHref = `/o/${encodeURIComponent(o.id)}`;
+  const kindLabel = friendlySchemaLabel(o.schema);
+  const dark = tone === "onDark";
+  return (
+    <a
+      href={detailHref}
+      data-fyd-object-id={o.id}
+      className={"fyd-object-doorway " + (className ?? "")}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "0.5rem",
+        minHeight: "44px",
+        padding: "0.5rem 0.9rem",
+        borderRadius: 9999,
+        border: "1px solid",
+        borderColor: dark ? "rgba(255,255,255,0.35)" : theme.accent,
+        color: dark ? "#fff" : theme.ink,
+        background: dark ? "rgba(255,255,255,0.08)" : "transparent",
+        fontSize: "0.875rem",
+        fontWeight: 600,
+        textDecoration: "none",
+      }}
+      aria-label={`Open ${kindLabel} object: ${title}`}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          display: "inline-block",
+          width: "0.7rem",
+          height: "0.7rem",
+          borderRadius: "50%",
+          background: theme.accent,
+          boxShadow: "inset 0 0 0 2px " + (dark ? "rgba(0,0,0,0.35)" : theme.surface),
+          flexShrink: 0,
+        }}
+      />
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "16rem" }}>
+        {kindLabel}: {title}
+      </span>
+      <span aria-hidden="true" style={{ opacity: 0.7 }}>
+        {"->"}
+      </span>
+    </a>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Projection seam: binding verification + safe links.
 //
@@ -1157,6 +1235,16 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
           >
             Ask FYD
           </a>
+        </div>
+        {/* OBJECT IDENTITY (mobile-objects lane): the business is a real
+            object, not just copy. The doorway opens the compact object
+            experience (identity, fields, relationships, evidence, Ask FYD)
+            through the site client's /o/ interception. It renders on
+            EVERY viewport: desktop previously had no business doorway at
+            all, and the mobile projection must never be a static
+            projection while desktop owns the object model. */}
+        <div className="mt-6">
+          <ObjectDoorway o={o} theme={theme} ctx={ctx} tone="onDark" />
         </div>
       </div>
       </div>    </HeroSection>
@@ -1533,13 +1621,19 @@ function FeedList({
         const description = boundDescription(ctx, o);
         // Visual feed item only where the graph has media for the object.
         const media = photographicMedia(ctx.objectMedia?.[o.id]);
+        // ANTI-FLATTENING (mobile-objects lane): every feed item carries
+        // its object doorway. The title links to /o/<id> (intercepted into
+        // the ObjectOverlay by the site client) and canonical types get
+        // the FYD-mark affordance. FeedList previously rendered objects
+        // as static prose on every viewport: identity without interaction.
+        const detailHref = `/o/${encodeURIComponent(o.id)}`;
         return (
           <li
             key={o.id}
             className="border border-border-soft p-5"
             data-motion="enter"
             data-motion-index={i}
-            style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
+            style={{ position: "relative", background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
           >
             <div className="flex gap-4">
               {media ? (
@@ -1563,7 +1657,13 @@ function FeedList({
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   {title ? (
                     <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
-                      {title}
+                      <a
+                        href={detailHref}
+                        data-fyd-object-id={o.id}
+                        style={{ color: "inherit", textDecoration: "none" }}
+                      >
+                        {title}
+                      </a>
                     </h3>
                   ) : null}
                   <span className="text-xs uppercase tracking-wide text-accent">{friendlySchemaLabel(o.schema)}</span>
@@ -1574,6 +1674,15 @@ function FeedList({
                 </div>
               </div>
             </div>
+            {affordanceEligible(o) ? (
+              <ObjectAffordance
+                objectId={o.id}
+                title={title ?? null}
+                kindLabel={friendlySchemaLabel(o.schema)}
+                evidenceLine={affordanceEvidenceLine(o)}
+                theme={theme}
+              />
+            ) : null}
           </li>
         );
       })}
