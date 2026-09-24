@@ -129,5 +129,6 @@ export async function scopedEmitOverlayEvent(
   ops: PresentationIntentOverlayOp[],
 ): Promise<string> {
   assertTenantKey(ctx, siteId);
-  return emitOverlayEvent(siteId, ops);
+  const { eventId } = await emitOverlayEvent(siteId, ops);
+  return eventId;
 }
