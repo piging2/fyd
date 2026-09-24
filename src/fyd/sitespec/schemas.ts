@@ -119,7 +119,7 @@ export function getSchemaDef(schemaId: string): FYDSchemaDef | undefined {
 // acyclic. Existing importers keep importing from here unchanged.
 // ---------------------------------------------------------------------------
 
-export { SCHEMA_ROLES, schemaRole } from "./schema-roles";
+export { SCHEMA_ROLES, schemaRole, ROLE_PREDICATES, ownerRelationshipTarget } from "./schema-roles";
 export type { FYDSchemaRole } from "./schema-roles";
 // ---------------------------------------------------------------------------
 // Derivation 1: VALIDATOR. Schema -> findings over a field record.

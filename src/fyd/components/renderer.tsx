@@ -36,7 +36,7 @@ import {
   type ContactMethodKind,
 } from "../object/object-projection";
 import { FydContactLink } from "./contact-link";
-import { schemaRole } from "../sitespec/schemas";
+import { schemaRole, ownerRelationshipTarget } from "../sitespec/schemas";
 import {
   entranceDurationMs,
   motionTokensForTheme,
@@ -92,12 +92,19 @@ export function resolveQuery(
         .filter((o): o is PingObject => !!o && pub(o));
     }
     case "related": {
+      // Direction-agnostic: the bound object is whichever endpoint of the
+      // relationship is not the query anchor (usually the owner). Inverse
+      // predicates (works_for, provided_by, published_by) bind exactly
+      // like their forward twins. Deduped by id: a pair linked by both
+      // employs and member_of still renders one card.
+      const seen = new Set<string>();
       const out: PingObject[] = [];
       const predicates = query.predicates ?? [query.predicate];
       for (const r of graph.relationships) {
-        if (r.subject !== query.from || r.status !== "active") continue;
         if (!predicates.includes(r.predicate)) continue;
-        const target = objects.get(r.object);
+        const memberId = ownerRelationshipTarget(r, query.from);
+        if (memberId === null || seen.has(memberId)) continue;
+        const target = objects.get(memberId);
         const schemaOk =
           !query.schema && !query.schemas
             ? true
@@ -105,6 +112,7 @@ export function resolveQuery(
               ? target?.schema === query.schema
               : query.schemas?.includes(target?.schema ?? "");
         if (target && pub(target) && schemaOk) {
+          seen.add(memberId);
           out.push(target);
         }
       }

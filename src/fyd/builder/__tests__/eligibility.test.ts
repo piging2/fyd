@@ -16,12 +16,11 @@ describe("eligibility", () => {
     for (const c of ["Services", "Locations", "People", "Links", "Posts", "RecentObjects", "Contact", "Hero", "AskFYD"]) {
       expect(e.eligible[c]).toBe(true);
     }
-    // 2 services + 1 post are featureable: the inline ObjectRail doorway
-    // is eligible. (The fixture's person is linked works_for-only, which
-    // neither the generator nor eligibility count as a forward feature.)
-    expect(e.counts.featureable).toBe(3);
+    // 2 services + 1 person (works_for, direction-agnostic) + 1 post are
+    // featureable: the inline ObjectRail doorway is eligible.
+    expect(e.counts.featureable).toBe(4);
     expect(e.eligible["ObjectRail"]).toBe(true);
-    expect(e.reasons["ObjectRail"]).toMatch(/featureable related objects 3 > 0/);
+    expect(e.reasons["ObjectRail"]).toMatch(/featureable related objects 4 > 0/);
     // The generator emits no SocialProof: never invented.
     expect(e.eligible["SocialProof"]).toBe(false);
   });

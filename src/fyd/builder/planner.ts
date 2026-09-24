@@ -35,7 +35,7 @@ import {
   type ObjectGraph,
   type ObjectPresence,
 } from "../sitespec/types";
-import { SCHEMA_ROLES } from "../sitespec/schemas";
+import { SCHEMA_ROLES, ownerRelationshipTarget } from "../sitespec/schemas";
 import { requireTenantContext, type TenantContext } from "../tenant/tenant-context";
 import {
   nearestPresetName,
@@ -78,7 +78,7 @@ import {
   type VerifiedRenderModel,
 } from "../sitespec/binding-verifier";
 
-export const SITE_PLANNER_VERSION = "fyd-site-planner@1";
+export const SITE_PLANNER_VERSION = "fyd-site-planner@2";
 
 /** Canonical base order of components; the vector policy boosts against it. */
 const BASE_COMPONENT_ORDER = [
@@ -186,12 +186,21 @@ export function resolveQueryObjects(
     case "related": {
       const predicates = query.predicates ?? [query.predicate];
       const schemas = query.schemas ?? (query.schema ? [query.schema] : []);
+      // Direction-agnostic: the bound object is whichever endpoint of
+      // the relationship is not the query anchor (usually the owner).
+      // Inverse predicates (works_for, provided_by, published_by) bind
+      // exactly like their forward twins; edge direction never drops a
+      // member from composition. Deduped by id: a pair linked in both
+      // directions still binds once.
+      const seen = new Set<string>();
       const out: PingObject[] = [];
       for (const r of graph.relationships) {
-        if (r.subject !== query.from || r.status !== "active") continue;
         if (!predicates.includes(r.predicate)) continue;
-        const t = byId.get(r.object);
+        const memberId = ownerRelationshipTarget(r, query.from);
+        if (memberId === null || seen.has(memberId)) continue;
+        const t = byId.get(memberId);
         if (t && t.visibility === "public" && (schemas.length === 0 || schemas.includes(t.schema))) {
+          seen.add(memberId);
           out.push(t);
         }
       }

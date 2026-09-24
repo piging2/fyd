@@ -50,3 +50,42 @@ export function schemaRole(schemaId: string): FYDSchemaRole | null {
   }
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Relationship vocabulary: the predicates that populate each site-compiler
+// role, in canonical order. The vocabulary is direction-agnostic: a
+// predicate may describe the edge from the owner outward (provides,
+// offers, employs, located_at, publishes) or from a related object back to
+// the owner (provided_by, works_for, member_of, has_employee,
+// published_by). Composition matches EITHER endpoint against the owner
+// (see ownerRelationshipTarget), so the role predicate set is the whole
+// vocabulary and no consumer needs per-direction special cases. Forward
+// predicates stay first in each list so predicates[0] keeps its existing
+// meaning as the primary (canonical) predicate.
+// ---------------------------------------------------------------------------
+
+export const ROLE_PREDICATES: Record<FYDSchemaRole, string[]> = {
+  business: [],
+  service: ["provides", "offers", "provided_by"],
+  product: ["provides", "offers", "provided_by"],
+  location: ["located_at", "has_location"],
+  person: ["employs", "has_member", "has_employee", "works_for", "member_of"],
+  post: ["publishes", "published_by"],
+  article: ["publishes", "published_by"],
+};
+
+/**
+ * The id of the object on the other end of an owner-touching relationship,
+ * regardless of edge direction: the related member is whichever endpoint
+ * is not the owner. Returns null when the relationship is not active or
+ * the owner is not an endpoint. Deterministic and total: never throws.
+ */
+export function ownerRelationshipTarget(
+  rel: { subject: string; object: string; status: string },
+  ownerId: string,
+): string | null {
+  if (rel.status !== "active") return null;
+  if (rel.subject === ownerId) return rel.object;
+  if (rel.object === ownerId) return rel.subject;
+  return null;
+}

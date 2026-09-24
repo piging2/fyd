@@ -46,6 +46,7 @@ import {
 import type { PresentationBinding } from "./graph";
 import type { FYDQuery, FYDSiteSpec, ObjectGraph } from "./types";
 import type { PingObject } from "@/lib/ping/types";
+import { ownerRelationshipTarget } from "./schema-roles";
 
 /**
  * Resolve a section query to its public objects.
@@ -74,19 +75,25 @@ function resolveAuditObjects(
         .filter((o): o is PingObject => !!o && pub(o));
     }
     case "related": {
+      // Direction-agnostic, deduped: mirrors renderer.resolveQuery exactly.
       const predicates = query.predicates ?? [query.predicate];
+      const seen = new Set<string>();
       const out: PingObject[] = [];
       for (const r of graph.relationships) {
-        if (r.subject !== query.from || r.status !== "active") continue;
         if (!predicates.includes(r.predicate)) continue;
-        const target = byId.get(r.object);
+        const memberId = ownerRelationshipTarget(r, query.from);
+        if (memberId === null || seen.has(memberId)) continue;
+        const target = byId.get(memberId);
         const schemaOk =
           !query.schema && !query.schemas
             ? true
             : query.schema
               ? target?.schema === query.schema
               : query.schemas?.includes(target?.schema ?? "");
-        if (target && pub(target) && schemaOk) out.push(target);
+        if (target && pub(target) && schemaOk) {
+          seen.add(memberId);
+          out.push(target);
+        }
       }
       out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
       return query.limit ? out.slice(0, query.limit) : out;

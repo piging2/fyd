@@ -7,8 +7,9 @@
  *     vocabulary (ping.social.*, the proof vocabulary) and the knowledge
  *     vocabulary (ping.knowledge.*, the constitutional website-ingestion
  *     vocabulary) project onto the same roles. Services/products via
- *     provides/offers, locations via located_at/has_location, people via
- *     employs/has_member, posts/articles via publishes.
+ *     provides/offers/provided_by, locations via located_at/has_location,
+ *     people via employs/works_for (matched in either direction),
+ *     posts/articles via publishes/published_by.
  *  3. Emit pages in fixed order (home, about, services, explore), but a
  *     page exists only when its data exists. Missing data means the page
  *     or section does not exist; nothing is invented.
@@ -33,12 +34,18 @@ import {
   type FYDSiteSpec,
   type ObjectGraph,
 } from "../sitespec/types";
-import { SCHEMA_ROLES, eligibleComponents, type FYDSchemaRole } from "../sitespec/schemas";
+import {
+  SCHEMA_ROLES,
+  ROLE_PREDICATES,
+  ownerRelationshipTarget,
+  eligibleComponents,
+  type FYDSchemaRole,
+} from "../sitespec/schemas";
 import { resolveWebsiteUrl } from "../sitespec/graph";
 import { applyArchetype } from "../archetypes/apply";
 import type { ArchetypeProfile } from "../archetypes/profiles";
 
-export const GENERATOR_VERSION = "1.0.0";
+export const GENERATOR_VERSION = "1.1.0";
 
 export interface GeneratorOptions {
   generatedAt: string;
@@ -64,21 +71,6 @@ interface Grouped {
 
 const byId = (a: PingObject, b: PingObject) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
-/**
- * Predicates that populate each role, in canonical order. The social path
- * uses provides/located_at/employs; the knowledge path uses
- * offers/located_at/employs. Both are matched; the first is the primary.
- */
-const ROLE_PREDICATES: Record<FYDSchemaRole, string[]> = {
-  business: [],
-  service: ["provides", "offers"],
-  product: ["provides", "offers"],
-  location: ["located_at", "has_location"],
-  person: ["employs", "has_member"],
-  post: ["publishes"],
-  article: ["publishes"],
-};
-
 function group(graph: ObjectGraph): Grouped {
   const objects = new Map(graph.objects.map((o) => [o.id, o]));
   const businesses = graph.objects
@@ -86,15 +78,22 @@ function group(graph: ObjectGraph): Grouped {
     .sort(byId);
   const owner = businesses[0] ?? null;
 
+  // Direction-agnostic role membership: a member is whichever endpoint of
+  // an active relationship is not the owner, for any predicate in the
+  // role's vocabulary (employs or works_for, provides or provided_by,
+  // publishes or published_by). Website-ingested graphs record employment
+  // as person works_for business; matching only the owner-subject direction
+  // silently deleted the team from composition.
   const related = (role: FYDSchemaRole): PingObject[] => {
     if (!owner) return [];
     const out = new Map<string, PingObject>();
     const predicates = ROLE_PREDICATES[role];
     const schemas = SCHEMA_ROLES[role];
     for (const r of graph.relationships) {
-      if (r.subject !== owner.id || r.status !== "active") continue;
       if (!predicates.includes(r.predicate)) continue;
-      const target = objects.get(r.object);
+      const memberId = ownerRelationshipTarget(r, owner.id);
+      if (memberId === null) continue;
+      const target = objects.get(memberId);
       if (target && schemas.includes(target.schema) && target.visibility === "public") {
         out.set(target.id, target);
       }
