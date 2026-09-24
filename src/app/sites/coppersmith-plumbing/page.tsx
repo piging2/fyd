@@ -13,10 +13,12 @@
  */
 
 import { SiteClient } from "../_shared/site-client";
+import {
+  compileSiteSpecWithIntent,
+  publicGraph,
+} from "../_shared/spec-pipeline";
 import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
-import type { ObjectGraph } from "@/fyd/sitespec/types";
-import { generateSiteSpec } from "@/fyd/proceduralize/generator";
-import { isRenderable, validateSiteSpec } from "@/fyd/sitespec/validator";
+import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
 import { heroMediaFor } from "@/fyd/media/select";
 import {
   auditSitesRenderClaims,
@@ -42,37 +44,14 @@ export async function generateMetadata() {
   };
 }
 
-
-/**
- * Privacy boundary: the client payload must never contain private
- * objects. The server keeps the full graph; the serialized prop carries
- * only public objects and relationships between public objects.
- */
-function publicGraph(graph: ObjectGraph): ObjectGraph {
-  const ids = new Set(
-    graph.objects.filter((o) => o.visibility === "public").map((o) => o.id),
-  );
-  return {
-    ...graph,
-    objects: graph.objects.filter((o) => ids.has(o.id)),
-    relationships: graph.relationships.filter(
-      (r) => ids.has(r.subject) && ids.has(r.object),
-    ),
-  };
-}
-
 export default async function CoppersmithDemoPage() {
-  const { graph, meta } = await getPingObjectGraph(SITE_ID);
-  const spec = generateSiteSpec(graph, {
-    generatedAt: meta.generatedAt,
-    eventSequences: meta.eventSequences ?? undefined,
-  });
+  // Shared render pipeline: base spec compiled from the PING-backed graph
+  // with the approved presentation intent applied over it.
+  const { graph, spec, findings, renderable } =
+    await compileSiteSpecWithIntent(SITE_ID);
   // Hero media, resolved once per page load at the server render
   // seam. Null when the owner has no acquired media.
   const heroMedia = heroMediaFor(SITE_ID, graph, spec.ownerObjectId);
-  const knownSchemas = new Set(graph.objects.map((o) => o.schema));
-  const findings = validateSiteSpec(spec, knownSchemas);
-  const renderable = isRenderable(findings);
 
   // Binding-verification observation tap (WIRE-SPEC; QA-TRUTH R-A,
   // LANE-CLAIM R-MODEL): run this render's claims through the strong
@@ -95,6 +74,7 @@ export default async function CoppersmithDemoPage() {
         siteId={SITE_ID}
         heroMedia={heroMedia}
       />
+      <DemoOwnerMode siteId={SITE_ID} />
     </main>
   );
 }
