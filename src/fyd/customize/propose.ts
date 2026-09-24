@@ -110,10 +110,32 @@ function describeObjectOrder(
   };
 }
 
+function describeDeactivated(
+  spec: FYDSiteSpec,
+  intent: Extract<SiteIntent, { kind: "deactivate_object" }>,
+  graph: ObjectGraph | undefined,
+): { before: string[]; after: string[]; noOp: boolean } | null {
+  const sec = spec.pages
+    .find((p) => p.slug === intent.pageSlug)
+    ?.sections.find((s) => s.id === intent.sectionId);
+  if (!sec) return null;
+  const title =
+    graph?.objects.find((o) => o.id === intent.objectId)?.title ??
+    intent.objectId;
+  const cur = Array.isArray(sec.presentation.hiddenObjectIds)
+    ? sec.presentation.hiddenObjectIds
+    : [];
+  return {
+    before: ["Object \"" + title + "\" in " + sec.component + ": visible"],
+    after: ["Object \"" + title + "\" in " + sec.component + ": hidden"],
+    noOp: cur.includes(intent.objectId),
+  };
+}
+
 /**
  * Draft the digest-bound proposal for a resolved intent. Refuses honestly
  * on no-ops (already first, already hidden, already featured, already
- * ordered) instead of producing an empty proposal.
+ * ordered, already deactivated) instead of producing an empty proposal.
  *
  * graph is optional: when provided, review cards resolve object titles and
  * the current object order comes from the live query; without it the card
@@ -205,6 +227,22 @@ export function proposeFromSiteIntent(
     }
     card = {
       title: "Reorder objects within section",
+      before: t.before,
+      after: t.after,
+      operationCount: 1,
+    };
+  } else if (siteIntent.kind === "deactivate_object") {
+    const t = describeDeactivated(spec, siteIntent, graph);
+    if (!t) return { ok: false, error: "Section not found in this spec." };
+    if (t.noOp) {
+      return {
+        ok: false,
+        error:
+          "That object is already hidden, so there is nothing to change.",
+      };
+    }
+    card = {
+      title: "Hide object",
       before: t.before,
       after: t.after,
       operationCount: 1,

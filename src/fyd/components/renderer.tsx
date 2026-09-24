@@ -170,6 +170,22 @@ export function applyObjectOrder(
   return out;
 }
 
+/**
+ * Owner-approved object deactivation (PRESENTATION INTENT layer). Pure and
+ * deterministic: objects whose id is listed in hiddenObjectIds are removed;
+ * every other object keeps its relative order. Unknown ids are ignored,
+ * never rendered. Zero customer-specific conditionals: every section
+ * component shares this seam.
+ */
+export function applyHiddenObjects(
+  objects: PingObject[],
+  hiddenObjectIds: readonly string[] | undefined,
+): PingObject[] {
+  if (!hiddenObjectIds || hiddenObjectIds.length === 0) return objects;
+  const hidden = new Set(hiddenObjectIds);
+  return objects.filter((o) => !hidden.has(o.id));
+}
+
 // ---------------------------------------------------------------------------
 // Section rendering.
 // ---------------------------------------------------------------------------
@@ -2008,10 +2024,13 @@ export function renderSection(section: FYDSection, ctx: RenderContext, motionInd
   const def = getComponentDef(section.component);
   if (!def) return null;
   if (section.presentation.hidden) return null;
-  const objects = applyObjectOrder(
+  const ordered = applyObjectOrder(
     resolveQuery(section.query, ctx.graph, ctx.spec.ownerObjectId),
     section.presentation.objectOrder,
   );
+  // Owner-approved presentation intent: object deactivation after ordering.
+  // Pure and deterministic; unknown ids are ignored, never rendered.
+  const objects = applyHiddenObjects(ordered, section.presentation.hiddenObjectIds);
   if (def.requiresData && objects.length === 0) return null;
   const props: SectionProps = {
     section,

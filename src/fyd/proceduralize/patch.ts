@@ -2,7 +2,8 @@
  * Site customization: structured intents -> site_patch proposals.
  *
  * Lightweight customization only: reorder sections, hide/show sections,
- * featured-object selection, proposed presentation-copy edits, basic
+ * featured-object selection, within-section object reorder and object
+ * deactivation, proposed presentation-copy edits, basic
  * design tokens. Structured editor, never drag and drop.
  *
  * Every intent follows the proposal path (harvest B2): intent ->
@@ -28,6 +29,13 @@ export type SiteIntent =
       sectionId: string;
       /** Full desired display order of the section's objects (object ids). */
       objectIds: string[];
+    }
+  | {
+      kind: "deactivate_object";
+      pageSlug: string;
+      sectionId: string;
+      /** The single object to hide within the section. */
+      objectId: string;
     }
   | { kind: "edit_copy"; pageSlug: string; sectionId: string; heading?: string; copy?: string }
   | { kind: "set_theme_token"; token: keyof FYDThemeTokens; value: string };
@@ -164,6 +172,27 @@ export function proposeSitePatch(spec: FYDSiteSpec, intent: SiteIntent): PatchRe
         reason: "Reorder objects within section.",
       });
     }
+    case "deactivate_object": {
+      const sec = page!.sections.find((s) => s.id === intent.sectionId);
+      if (!sec) return { ok: false, error: "Section '" + intent.sectionId + "' not found." };
+      if (!intent.objectId) {
+        return { ok: false, error: "Object deactivation needs an object id." };
+      }
+      // The intent names one object; the proposal binds the exact resulting
+      // hidden set (existing hidden ids kept, the target moved first) so the
+      // digest covers the full display state.
+      const cur = Array.isArray(sec.presentation.hiddenObjectIds)
+        ? (sec.presentation.hiddenObjectIds as string[])
+        : [];
+      const ids = [intent.objectId, ...cur.filter((id) => id !== intent.objectId)];
+      return build({
+        targetPage: page!.slug,
+        targetSection: intent.sectionId,
+        component: sec.component,
+        propsDiff: { "presentation.hiddenObjectIds": ids },
+        reason: "Deactivate (hide) an object within section.",
+      });
+    }
     case "edit_copy": {
       const sec = page!.sections.find((s) => s.id === intent.sectionId);
       if (!sec) return { ok: false, error: "Section '" + intent.sectionId + "' not found." };
@@ -233,6 +262,9 @@ export function applySitePatch(spec: FYDSiteSpec, proposal: SitePatchBody): FYDS
   }
   if (Array.isArray(diff["presentation.objectOrder"])) {
     sec.presentation.objectOrder = diff["presentation.objectOrder"] as string[];
+  }
+  if (Array.isArray(diff["presentation.hiddenObjectIds"])) {
+    sec.presentation.hiddenObjectIds = diff["presentation.hiddenObjectIds"] as string[];
   }
   if (typeof diff["presentation.heading"] === "string") {
     sec.presentation.heading = diff["presentation.heading"] as string;
