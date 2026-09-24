@@ -1154,7 +1154,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
       <div className="mx-auto max-w-5xl">
         <ClaimBadge objects={objects} theme={theme} tone="onDark" />
         <h1
-          className="mt-4 text-4xl font-bold text-background sm:text-6xl"
+          className="mt-4 break-words text-4xl font-bold text-background sm:text-6xl"
           style={{ fontFamily: theme.fontDisplay }}
         >
           {heading}
