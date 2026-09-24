@@ -16,7 +16,7 @@ import {
   compileSiteSpecWithIntent,
   publicGraph,
 } from "../_shared/spec-pipeline";
-import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+import { generateSiteMetadata } from "../_shared/site-metadata";
 import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
 import { heroMediaFor } from "@/fyd/media/select";
 import {
@@ -26,21 +26,11 @@ import {
 
 const SITE_ID = "happy-place";
 
-function ownerName(graph: { objects: { schema: string; visibility: string; title: string }[] }): string {
-  const owner = graph.objects.find(
-    (o) => o.schema === "ping.social.business@1" && o.visibility === "public",
-  );
-  const name = owner?.title?.trim();
-  return name ? name : SITE_ID;
-}
-
 export async function generateMetadata() {
-  const { graph } = await getPingObjectGraph(SITE_ID);
-  const name = ownerName(graph);
-  return {
-    title: `${name} | FYD Social Generated Site`,
-    description: `A procedurally generated site for ${name}, compiled by FYD Social from its PING-backed object graph.`,
-  };
+  // Trust seam (2026-09-24): title, description, og/twitter tags, and
+  // canonical all derive from the site's own PING-backed projection at
+  // render time. Nothing hardcoded per site beyond the site id.
+  return generateSiteMetadata(SITE_ID);
 }
 
 export default async function HappyPlaceDemoPage() {
