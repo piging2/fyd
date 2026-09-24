@@ -31,7 +31,8 @@ export type ParsedIntent =
   | { kind: "promote_first"; target: string }
   | { kind: "feature_object"; target: string }
   | { kind: "hide_section"; target: string }
-  | { kind: "show_section"; target: string };
+  | { kind: "show_section"; target: string }
+  | { kind: "hide_object"; target: string };
 
 /**
  * Honest failure: the text is not a supported customization. The reason

@@ -14,7 +14,10 @@
  *   "move X to the top" / "lead with X"   -> promote_first (a section when X
  *   names one; the named object moved to the top of its section otherwise)
  *   "feature X" / "highlight X" / "spotlight X" -> feature_object
- *   "hide (the) X (section)" / "show (the) X (section)" -> hide/show_section
+ *   "hide (the) X section"                -> hide_section
+ *   "hide (the) X" / "deactivate (the) X" -> hide_object, unless X names a
+ *   section, in which case the section-level hide_section still wins
+ *   "show (the) X (section)"              -> show_section
  *
  * Resolution binds the named target to the spec. A target that names
  * nothing in the site's evidence resolves to UnresolvedIntent with the
@@ -33,7 +36,8 @@ import type {
 
 const SUPPORTED_SUMMARY =
   "This wave supports: making a named section the first thing on the page, " +
-  "featuring a named object, and hiding/showing a named section.";
+  "featuring a named object, hiding/showing a named section, and " +
+  "hiding (deactivating) a named object.";
 
 function normalizeText(text: string): string {
   return text
@@ -69,8 +73,16 @@ const MATCHERS: Matcher[] = [
   { re: /\bhighlight\b\s+(.+)/, build: (t) => ({ kind: "feature_object", target: t }) },
   { re: /\bspotlight\b\s+(.+)/, build: (t) => ({ kind: "feature_object", target: t }) },
   {
-    re: /\bhide\b\s+(?:the\s+)?(.+?)(?:\s+section)?$/,
+    re: /\bhide\b\s+(?:the\s+)?(.+?)\s+section$/,
     build: (t) => ({ kind: "hide_section", target: t }),
+  },
+  {
+    re: /\bdeactivate\b\s+(?:the\s+)?(.+)$/,
+    build: (t) => ({ kind: "hide_object", target: t }),
+  },
+  {
+    re: /\bhide\b\s+(?:the\s+)?(.+)$/,
+    build: (t) => ({ kind: "hide_object", target: t }),
   },
   {
     re: /\bshow\b\s+(?:the\s+)?(.+?)(?:\s+section)?$/,
@@ -327,6 +339,74 @@ export function resolveCustomizationIntent(
         },
         resolutionNote:
           "\"" + parsed.target + "\" names the " + sec.component + " section.",
+      };
+    }
+    case "hide_object": {
+      // Section-level hide wins: when the target names a section, the
+      // section-level path is taken, untouched.
+      const sec = findSection(spec, parsed.target);
+      if (sec) {
+        return {
+          resolved: true,
+          parsed,
+          siteIntent: {
+            kind: "toggle_section",
+            pageSlug: sec.pageSlug,
+            sectionId: sec.sectionId,
+            hidden: true,
+          },
+          resolutionNote:
+            "\"" + parsed.target + "\" names the " + sec.component +
+            " section; hiding the section.",
+        };
+      }
+      const obj = findObject(graph, parsed.target);
+      if (!obj) {
+        return {
+          resolved: false,
+          parsed,
+          reason:
+            "No object named \"" + parsed.target + "\" exists in this " +
+            "site's evidence, so there is nothing to hide.",
+        };
+      }
+      const objSec = sectionContaining(spec, graph, obj.id);
+      if (!objSec) {
+        return {
+          resolved: false,
+          parsed,
+          reason:
+            "\"" + obj.title + "\" exists but is not shown in any " +
+            "section of this site, so it cannot be hidden.",
+        };
+      }
+      const section = spec.pages
+        .find((p) => p.slug === objSec.pageSlug)!
+        .sections.find((s) => s.id === objSec.sectionId)!;
+      const alreadyHidden = Array.isArray(section.presentation.hiddenObjectIds)
+        ? section.presentation.hiddenObjectIds.includes(obj.id)
+        : false;
+      if (alreadyHidden) {
+        return {
+          resolved: false,
+          parsed,
+          reason:
+            "\"" + obj.title + "\" is already hidden in the " +
+            objSec.component + " section, so there is nothing to hide.",
+        };
+      }
+      return {
+        resolved: true,
+        parsed,
+        siteIntent: {
+          kind: "deactivate_object",
+          pageSlug: objSec.pageSlug,
+          sectionId: objSec.sectionId,
+          objectId: obj.id,
+        },
+        resolutionNote:
+          "\"" + parsed.target + "\" is \"" + obj.title +
+          "\"; hiding it in the " + objSec.component + " section.",
       };
     }
   }

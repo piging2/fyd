@@ -21,7 +21,9 @@
  *     ambiguous or absent match is unresolved, never guessed.
  *  4. Applying the same journal twice is idempotent: reorder to an index
  *     the section already occupies, hide an already-hidden section, and
- *     feature an already-featured object are all no-ops.
+ *     feature an already-featured object are all no-ops. Deactivating an
+ *     already-deactivated object rewrites the same hidden set, also a
+ *     no-op.
  */
 
 import {
@@ -67,6 +69,8 @@ function summarize(d: PresentationIntentDirective): string {
       return "feature [" + si.objectIds.join(", ") + "] in " + si.sectionId;
     case "reorder_object":
       return "order objects [" + si.objectIds.join(", ") + "] in " + si.sectionId;
+    case "deactivate_object":
+      return "hide object " + si.objectId + " in " + si.sectionId;
     case "edit_copy":
       return "copy edit on " + si.sectionId;
     case "set_theme_token":
@@ -167,8 +171,14 @@ export function applyPresentationIntent(
         continue;
       }
     }
-    if (si.kind === "set_featured" || si.kind === "reorder_object") {
-      const missing = si.objectIds.filter((id) => !objectIds.has(id));
+    if (
+      si.kind === "set_featured" ||
+      si.kind === "reorder_object" ||
+      si.kind === "deactivate_object"
+    ) {
+      const ids =
+        si.kind === "deactivate_object" ? [si.objectId] : si.objectIds;
+      const missing = ids.filter((id) => !objectIds.has(id));
       if (missing.length > 0) {
         nope(
           "objects [" + missing.join(", ") + "] are no longer in the site's " +

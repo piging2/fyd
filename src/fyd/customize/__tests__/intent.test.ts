@@ -144,6 +144,33 @@ describe("parseCustomizationIntent", () => {
     if (!isUnsupported(s)) expect(s.intent.kind).toBe("show_section");
   });
 
+  test("hide/deactivate object parses to hide_object", () => {
+    const h = parseCustomizationIntent("hide the Heating & Cooling service");
+    expect(isUnsupported(h)).toBe(false);
+    if (!isUnsupported(h)) {
+      expect(h.intent).toEqual({
+        kind: "hide_object",
+        target: "heating & cooling service",
+      });
+    }
+    const d = parseCustomizationIntent("deactivate deck construction");
+    expect(isUnsupported(d)).toBe(false);
+    if (!isUnsupported(d)) {
+      expect(d.intent).toEqual({
+        kind: "hide_object",
+        target: "deck construction",
+      });
+    }
+  });
+
+  test("explicit 'section' keeps the hide_section parsed kind", () => {
+    const h = parseCustomizationIntent("hide the services section");
+    expect(isUnsupported(h)).toBe(false);
+    if (!isUnsupported(h)) {
+      expect(h.intent).toEqual({ kind: "hide_section", target: "services" });
+    }
+  });
+
   test("unsupported language returns unsupported, never a guess", () => {
     for (const text of [
       "make the site blue",
@@ -263,5 +290,80 @@ describe("resolveCustomizationIntent", () => {
     if (isUnsupported(parsed)) return;
     const res = resolveCustomizationIntent(spec(), graph(), parsed.intent);
     expect(res.resolved).toBe(false);
+  });
+
+  test("hide_object on an object resolves to deactivate_object", () => {
+    const parsed = parseCustomizationIntent("hide deck construction");
+    expect(isUnsupported(parsed)).toBe(false);
+    if (isUnsupported(parsed)) return;
+    expect(parsed.intent.kind).toBe("hide_object");
+    const res = resolveCustomizationIntent(spec(), graph(), parsed.intent);
+    expect(res.resolved).toBe(true);
+    if (!res.resolved) return;
+    expect(res.siteIntent).toEqual({
+      kind: "deactivate_object",
+      pageSlug: "home",
+      sectionId: "home:Services:1",
+      objectId: "svc-2",
+    });
+    expect(res.resolutionNote).toContain("Deck Construction");
+  });
+
+  test("hide_object where the target names a section still hides the section", () => {
+    const parsed = parseCustomizationIntent("hide services");
+    expect(isUnsupported(parsed)).toBe(false);
+    if (isUnsupported(parsed)) return;
+    expect(parsed.intent.kind).toBe("hide_object");
+    const res = resolveCustomizationIntent(spec(), graph(), parsed.intent);
+    expect(res.resolved).toBe(true);
+    if (!res.resolved) return;
+    // Section-level hide wins even though the parse kind is hide_object.
+    expect(res.siteIntent).toEqual({
+      kind: "toggle_section",
+      pageSlug: "home",
+      sectionId: "home:Services:1",
+      hidden: true,
+    });
+  });
+
+  test("hide_object on an unknown name is unresolved", () => {
+    const parsed = parseCustomizationIntent("hide emergency response");
+    expect(isUnsupported(parsed)).toBe(false);
+    if (isUnsupported(parsed)) return;
+    const res = resolveCustomizationIntent(spec(), graph(), parsed.intent);
+    expect(res.resolved).toBe(false);
+    if (res.resolved) return;
+    expect(res.reason).toContain("emergency response");
+  });
+
+  test("hide_object on an object shown in no section is unresolved", () => {
+    const g = graph();
+    g.objects.push({
+      ...g.objects[0],
+      id: "doc-1",
+      schema: "ping.social.document@1",
+      title: "Price List",
+    });
+    const parsed = parseCustomizationIntent("hide price list");
+    expect(isUnsupported(parsed)).toBe(false);
+    if (isUnsupported(parsed)) return;
+    const res = resolveCustomizationIntent(spec(), g, parsed.intent);
+    expect(res.resolved).toBe(false);
+    if (res.resolved) return;
+    expect(res.reason).toContain("Price List");
+    expect(res.reason).toContain("not shown in any section");
+  });
+
+  test("hide_object on an already-hidden object is refused honestly", () => {
+    const s = spec();
+    s.pages[0].sections[1].presentation.hiddenObjectIds = ["svc-2"];
+    const parsed = parseCustomizationIntent("hide deck construction");
+    expect(isUnsupported(parsed)).toBe(false);
+    if (isUnsupported(parsed)) return;
+    const res = resolveCustomizationIntent(s, graph(), parsed.intent);
+    expect(res.resolved).toBe(false);
+    if (res.resolved) return;
+    expect(res.reason).toContain("Deck Construction");
+    expect(res.reason).toContain("already hidden");
   });
 });

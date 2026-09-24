@@ -61,6 +61,12 @@ export interface FYDPresentation {
    * default query order. Never a fact: only the display sequence.
    */
   objectOrder?: string[];
+  /**
+   * Owner-approved hidden object ids within this section. The renderer
+   * filters these ids out after resolving the section query (and after
+   * applying objectOrder). Never a fact: only a display decision.
+   */
+  hiddenObjectIds?: string[];
 }
 
 export interface FYDSection {
