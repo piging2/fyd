@@ -30,7 +30,7 @@ import {
   useRef,
   useState,
   type ReactNode,
-  type RefObject,
+  type Ref,
 } from "react";
 import type { DisplayMedia } from "../media/select";
 import type { FYDThemeTokens } from "../sitespec/types";
@@ -123,8 +123,8 @@ export function HeroPhotoBlock({
   hero: DisplayMedia | null;
   failed: boolean;
   onMediaError: () => void;
-  mainRef?: RefObject<HTMLImageElement | null>;
-  blurRef?: RefObject<HTMLImageElement | null>;
+  mainRef?: Ref<HTMLImageElement>;
+  blurRef?: Ref<HTMLImageElement>;
 }) {
   if (!hero || failed) return null;
   return (
