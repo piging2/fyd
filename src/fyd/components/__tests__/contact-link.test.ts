@@ -9,7 +9,7 @@
  *    value as a disclosure toggle), NOT a top-level tel:/mailto: anchor.
  *    The tel:/mailto: href exists exactly once, INSIDE the contact flow.
  * 3. ProvenanceLine: progressive disclosure renders the compact
- *    "Verified from X · N sources" line; tap expands the full lineage.
+ *    "Observed X · N sources" line; tap expands the full lineage.
  *
  * Run: npx jest --config src/fyd/components/jest.config.cjs contact-link
  */
@@ -182,7 +182,7 @@ describe("FydContactLink", () => {
       }),
     );
     expect(html).toContain(PHONE);
-    expect(html).toContain("Verified from example.com");
+    expect(html).toContain("Observed example.com");
     expect(html).toContain('href="tel:' + PHONE + '"');
     expect(html).toContain(">Call<");
   });
@@ -191,7 +191,7 @@ describe("FydContactLink", () => {
 describe("ProvenanceLine progressive disclosure", () => {
   test("compact line names the receipt and the honest source count", () => {
     expect(compactProvenanceLine(phoneEvidence())).toBe(
-      "Verified from example.com · 1 source",
+      "Observed example.com · 1 source",
     );
   });
 
@@ -210,7 +210,7 @@ describe("ProvenanceLine progressive disclosure", () => {
       React.createElement(ProvenanceLine, { evidence: phoneEvidence() }),
     );
     // Claim line -> compact line...
-    expect(html).toContain("Verified from example.com · 1 source");
+    expect(html).toContain("Observed example.com · 1 source");
     // ...tap expands the full lineage (details content is in the DOM).
     expect(html).toContain("<details");
     expect(html).toContain("Object field:");
@@ -224,7 +224,7 @@ describe("ProvenanceLine progressive disclosure", () => {
         evidence: { state: "observed", receipt: "example.com" },
       }),
     );
-    expect(html).toContain("Verified from example.com");
+    expect(html).toContain("Observed example.com");
     expect(html).not.toContain("<details");
   });
 });

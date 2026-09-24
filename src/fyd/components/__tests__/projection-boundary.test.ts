@@ -242,7 +242,7 @@ describe("projection boundary", () => {
     expect(hrefsOutsideContactFlow(html, "tel:")).toEqual([]);
     expect(hrefsOutsideContactFlow(html, "mailto:")).toEqual([]);
     // The flow carries the evidence: compact provenance line.
-    expect(html).toContain("Verified from example.com");
+    expect(html).toContain("Observed example.com");
   });
 
   test("hero with no safe website renders the FYD phone affordance as the primary action", () => {

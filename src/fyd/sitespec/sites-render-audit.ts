@@ -198,7 +198,7 @@ export const RENDERER_INJECTED_CLAIMS: readonly RendererInjectedClaim[] = [
     basis:
       "Evidence-state to wording map. State observed currently renders as Verified, which overclaims and contradicts the footer.",
     fixState:
-      "DEFERRED until golden thaw (changes golden DOM). See WIRE-SPEC.md section 9 and the deferred diff in section 11.",
+      "FIXED by contact-provenance truth pass (2026-09-24): observed now renders \u201cObserved\u201d per the template {Observed|Inferred from|Unverified} {receipt} {· N sources}; golden DOM fixtures thawed to the honest mapping.",
   },
   {
     id: "demo-banner",

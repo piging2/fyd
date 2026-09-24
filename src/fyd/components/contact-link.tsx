@@ -53,7 +53,7 @@ function sourceRefs(evidence: ClaimEvidence): string[] {
 }
 
 /**
- * Compact one-line provenance, e.g. "Verified from example.com · 2 sources".
+ * Compact one-line provenance, e.g. "Observed example.com · 2 sources".
  * The count is honest: distinct Source steps in the lineage. No em dashes;
  * the "·" separator matches existing surface copy.
  */
@@ -63,7 +63,7 @@ export function compactProvenanceLine(evidence: ClaimEvidence): string {
   const count = n > 0 ? ` · ${n} source${n === 1 ? "" : "s"}` : "";
   switch (evidence.state) {
     case "observed":
-      return `Verified from ${receipt}${count}`;
+      return `Observed ${receipt}${count}`;
     case "inferred":
       return `Inferred from ${receipt}${count}`;
     case "unverified":
@@ -80,7 +80,7 @@ export function compactProvenanceLine(evidence: ClaimEvidence): string {
 /**
  * MAKE EVIDENCE BEAUTIFUL: progressive disclosure for provenance.
  *
- * Claim line -> compact "Verified from business website · N sources" ->
+ * Claim line -> compact "Observed business website · N sources" ->
  * tap expands the full evidence lineage. Trust without clutter. When the
  * lineage is empty there is nothing to expand, so the compact line
  * renders as plain text rather than a dead toggle.
