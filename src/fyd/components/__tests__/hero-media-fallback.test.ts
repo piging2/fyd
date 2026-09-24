@@ -29,6 +29,7 @@ import {
   effectiveHeroMedia,
   HeroPhotoBlock,
   HeroSection,
+  imageAlreadyFailed,
 } from "../hero-section";
 import type { DisplayMedia } from "../../media/select";
 import type { FYDThemeTokens } from "../../sitespec/types";
@@ -213,4 +214,57 @@ describe("hero media fallback", () => {
     // The honest typographic hero still names the business.
     expect(html).toContain("Happy Place");
   });
+
+describe("hero hydration race", () => {
+  test("imageAlreadyFailed detects a completed-but-broken image", () => {
+    expect(imageAlreadyFailed({ complete: true, naturalWidth: 0 })).toBe(true);
+  });
+
+  test("imageAlreadyFailed ignores in-flight, healthy, and missing images", () => {
+    expect(imageAlreadyFailed({ complete: false, naturalWidth: 0 })).toBe(
+      false,
+    );
+    expect(imageAlreadyFailed({ complete: true, naturalWidth: 1600 })).toBe(
+      false,
+    );
+    expect(imageAlreadyFailed(null)).toBe(false);
+    expect(imageAlreadyFailed(undefined)).toBe(false);
+  });
+
+  test("HeroPhotoBlock threads refs onto both images", () => {
+    const mainRef = { current: null };
+    const blurRef = { current: null };
+    const tree = HeroPhotoBlock({
+      hero: MEDIA,
+      failed: false,
+      onMediaError: () => {},
+      mainRef: mainRef as never,
+      blurRef: blurRef as never,
+    });
+    const imgs = imgElements(tree);
+    expect(imgs).toHaveLength(2);
+    const bySrc = new Map(imgs.map((i) => [i.props.src, i]));
+    // ref is a special element field, not a prop.
+    expect((bySrc.get(MEDIA.src) as unknown as { ref: unknown }).ref).toBe(
+      mainRef,
+    );
+    expect((bySrc.get(MEDIA.blurUrl) as unknown as { ref: unknown }).ref).toBe(
+      blurRef,
+    );
+  });
+
+  test("HeroPhotoBlock still renders without refs (backwards compatible)", () => {
+    const tree = HeroPhotoBlock({
+      hero: MEDIA,
+      failed: false,
+      onMediaError: () => {},
+    });
+    const imgs = imgElements(tree);
+    expect(imgs).toHaveLength(2);
+    for (const img of imgs) {
+      expect(img.props.ref).toBeUndefined();
+      expect(typeof img.props.onError).toBe("function");
+    }
+  });
+});
 });
