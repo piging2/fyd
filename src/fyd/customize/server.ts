@@ -8,7 +8,9 @@
  * emitOverlayEvent: appends a FYD_SITE_OVERLAY event to the FYD demo
  * journal (the repo-booted gateway; no auth on its event route). The
  * projection dump picks it up on the next regen. Demo-journal only;
- * nothing here touches the main deployment journal.
+ * nothing here touches the main deployment journal. FYD-037: the emit
+ * pre-flights the journal's live-derived identity marker and fails closed
+ * (typed WRONG_JOURNAL, zero POSTs) on mismatch or unreadable marker.
  */
 
 import { createHash } from "node:crypto";
@@ -71,6 +73,60 @@ function gatewayUrl(): string {
 }
 
 /**
+ * FYD-037: journal identity. The FYD demo journal asserts a live-derived
+ * identity marker on GET / ({"journal": "fyd-demo-journal@<derived>"}).
+ * This pre-flight runs before any POST: the asserted marker must match
+ * EXPECTED_OVERLAY_JOURNAL_MARKER (the derived suffix after "@" may vary),
+ * otherwise the emit throws a typed WRONG_JOURNAL error and no POST is
+ * attempted. A misconfigured FYD_CUSTOMIZE_GATEWAY_URL can never silently
+ * write an FYD overlay into the wrong journal. No hostname/port/DB-URL
+ * matching: identity comes from the journal's own assertion.
+ */
+const EXPECTED_OVERLAY_JOURNAL_MARKER =
+  process.env.FYD_EXPECTED_OVERLAY_JOURNAL ?? "fyd-demo-journal";
+
+function journalMarkerOk(asserted: unknown, expected: string): boolean {
+  return (
+    typeof asserted === "string" &&
+    (asserted === expected || asserted.startsWith(expected + "@"))
+  );
+}
+
+async function preflightJournal(): Promise<void> {
+  const base = gatewayUrl()
+    .replace(/\/events$/, "")
+    .replace(/\/$/, "");
+  let res: Response;
+  try {
+    res = await fetch(base + "/", { method: "GET" });
+  } catch (e) {
+    throw new Error(
+      "customize: WRONG_JOURNAL: journal identity unreadable at " + base + "/: " +
+        (e instanceof Error ? e.message : String(e)),
+    );
+  }
+  let doc: unknown;
+  try {
+    doc = await res.json();
+  } catch {
+    throw new Error(
+      "customize: WRONG_JOURNAL: journal identity unreadable at " + base + "/ (non-JSON)",
+    );
+  }
+  const asserted =
+    doc && typeof doc === "object"
+      ? (doc as Record<string, unknown>)["journal"]
+      : null;
+  if (!journalMarkerOk(asserted, EXPECTED_OVERLAY_JOURNAL_MARKER)) {
+    throw new Error(
+      "customize: WRONG_JOURNAL: expected overlay journal marker " +
+        JSON.stringify(EXPECTED_OVERLAY_JOURNAL_MARKER) + " at " + base + "/, got " +
+        JSON.stringify(asserted ?? null),
+    );
+  }
+}
+
+/**
  * Emit one FYD_SITE_OVERLAY event carrying presentation-intent ops to the
  * FYD demo journal. Returns the accepted event_id. Throws on rejection:
  * an unrecorded approval is never reported as recorded.
@@ -79,6 +135,7 @@ export async function emitOverlayEvent(
   siteId: string,
   ops: PresentationIntentOverlayOp[],
 ): Promise<string> {
+  await preflightJournal(); // FYD-037: fail closed before any POST.
   const envelope = {
     event_type: "FYD_SITE_OVERLAY",
     aggregate_id: "fyd-site:" + siteId,
