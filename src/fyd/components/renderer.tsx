@@ -1163,15 +1163,19 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
           <p className="mt-4 max-w-2xl text-lg text-background/80">{copy}</p>
         ) : null}
         <div className="mt-8 flex flex-wrap gap-3">
-          {/* ISSUE-3: thumb-reachable dial action on mobile. phoneMethod is a
-              binding-verified ContactMethod; when the primary slot is taken by
-              Visit website, mobile also gets a Call button (md:hidden keeps
-              desktop untouched). It opens the FYD contact flow (value +
-              provenance + the real Call action), never a raw tel: link. */}
-          {website.kind === "safe" && phoneMethod ? (
-            <span className="md:hidden">
-              <FydContactLink method={phoneMethod} theme={theme} variant="button" />
-            </span>
+          {/* CONTACT-DISCOVERABILITY: the business phone is a hero CTA on
+              every viewport. phoneMethod is a binding-verified ContactMethod
+              (the same verifier as the Contact section), safety-gated through
+              contactMethodFor: an unverifiable or unsafe number is null and
+              the caller renders nothing. The old ISSUE-3 logic coupled the
+              dial affordance to website.kind === "safe" and hid it behind
+              md:hidden, which is exactly why no phone was visible in the
+              desktop hero. Decoupled here: any tenant with a binding-verified
+              phone method gets the button, website or not. It opens the FYD
+              contact flow (value + provenance + the real Call action inside),
+              never a raw tel: link. */}
+          {phoneMethod ? (
+            <FydContactLink method={phoneMethod} theme={theme} variant="button" />
           ) : null}
           {website.kind === "safe" ? (
             <a
@@ -1185,8 +1189,6 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
             >
               Visit website
             </a>
-          ) : phoneMethod ? (
-            <FydContactLink method={phoneMethod} theme={theme} variant="button" />
           ) : null}
           <a
             href="#ask"
