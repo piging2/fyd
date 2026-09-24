@@ -293,6 +293,24 @@ export interface StructuredRelation {
   blockIndex: number;
 }
 
+/**
+ * An @id-reference candidate that died inside extraction, before the
+ * proceduralizer ever saw it. G3 (2026-09-24): no silent semantic loss.
+ * outcome is one of the relationship terminal outcomes (see
+ * proceduralizer.ts RelationshipOutcome): UNRESOLVED_TARGET when the
+ * referenced node id was never visited; POLICY_SUPPRESSED when the target
+ * was visited but deliberately skipped as site chrome.
+ */
+export interface StructuredRefDrop {
+  subjectKey: string;
+  property: string;
+  predicate: string;
+  refNodeId: string;
+  blockIndex: number;
+  outcome: "UNRESOLVED_TARGET" | "POLICY_SUPPRESSED";
+  reason: string;
+}
+
 export interface UnsupportedEvidence {
   kind:
     | "malformed-block"
@@ -310,6 +328,8 @@ export interface UnsupportedEvidence {
 export interface StructuredExtraction {
   facts: ParsedFact[];
   relationships: StructuredRelation[];
+  /** @id-ref candidates dropped inside extraction (G3: typed, never silent). */
+  refDrops: StructuredRefDrop[];
   entities: EntityCandidate[];
   unsupported: UnsupportedEvidence[];
   stats: {
@@ -459,6 +479,7 @@ export async function extractStructuredData(
 
   const facts: ParsedFact[] = [];
   const relationships: StructuredRelation[] = [];
+  const refDrops: StructuredRefDrop[] = [];
   let privateFactsWithheld = 0;
 
   const skippedKeys = new Set<string>();
@@ -519,10 +540,38 @@ export async function extractStructuredData(
 
       for (const ref of refs) {
         const objectKey = keyByNodeId.get(ref);
-        if (!objectKey || skippedKeys.has(objectKey)) continue;
+        const predicate = PREDICATE_MAP[property] ?? "references";
+        if (!objectKey) {
+          // The bytes referenced a node id the expansion never visited:
+          // observed, but unresolvable.
+          refDrops.push({
+            subjectKey: e.key,
+            property,
+            predicate,
+            refNodeId: ref,
+            blockIndex: e.blockIndex,
+            outcome: "UNRESOLVED_TARGET",
+            reason: `referenced node id "${ref}" was never visited by @graph expansion`,
+          });
+          continue;
+        }
+        if (skippedKeys.has(objectKey)) {
+          // Visited, then deliberately skipped: site chrome is a policy
+          // decision, so the drop is POLICY_SUPPRESSED, not unresolved.
+          refDrops.push({
+            subjectKey: e.key,
+            property,
+            predicate,
+            refNodeId: ref,
+            blockIndex: e.blockIndex,
+            outcome: "POLICY_SUPPRESSED",
+            reason: `target node is site chrome (${objectKey}), skipped by policy`,
+          });
+          continue;
+        }
         relationships.push({
           subjectKey: e.key,
-          predicate: PREDICATE_MAP[property] ?? "references",
+          predicate,
           objectKey,
           property,
           blockIndex: e.blockIndex,
@@ -551,9 +600,15 @@ export async function extractStructuredData(
 
   const nodeIds = visitedNodeIds;
   const malformed = blocks.filter((b) => !b.ok).length;
+  refDrops.sort((a, b) => {
+    const ka = a.subjectKey + "|" + a.property + "|" + a.refNodeId;
+    const kb = b.subjectKey + "|" + b.property + "|" + b.refNodeId;
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
   return {
     facts,
     relationships,
+    refDrops,
     entities: entities.filter((e) => !skippedKeys.has(e.key)),
     unsupported,
     stats: {

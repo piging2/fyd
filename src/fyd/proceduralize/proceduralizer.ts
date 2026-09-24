@@ -564,6 +564,49 @@ export function relate(fields: ExtractedField[]): RelatedPair[] {
 // the JSON-LD describes them (RUN-NOTES #8: previously unreachable).
 // ---------------------------------------------------------------------------
 
+/**
+ * Terminal outcome of a relationship CANDIDATE. G3 (2026-09-24): every
+ * candidate the pipeline considers terminates in exactly one of these;
+ * there is no silent drop. Working vocabulary: the names are not yet
+ * constitutionalized.
+ *
+ * Firing paths in the current pipeline:
+ * - ACCEPTED: emitted into the graph.
+ * - REJECTED_SCHEMA: structurally invalid (self-loop); predicate/schema
+ *   vocabulary violations would also terminate here.
+ * - UNRESOLVED_SOURCE / UNRESOLVED_TARGET: an endpoint entity key has no
+ *   projected object.
+ * - AMBIGUOUS_TARGET: defined for future multi-match resolution; no live
+ *   firing path (entity keys resolve 1:1 today).
+ * - DUPLICATE: identical (subject, predicate, object) triple already
+ *   emitted; the first occurrence wins.
+ * - POLICY_SUPPRESSED: candidate observed but deliberately skipped by
+ *   policy (site-chrome @id-ref targets).
+ * - UNSUPPORTED: defined for relationship-shaped evidence with no
+ *   pipeline representation; no live firing path (distinct from
+ *   UNRESOLVED_TARGET, where the target was never observed).
+ */
+export type RelationshipOutcome =
+  | "ACCEPTED"
+  | "REJECTED_SCHEMA"
+  | "UNRESOLVED_SOURCE"
+  | "UNRESOLVED_TARGET"
+  | "AMBIGUOUS_TARGET"
+  | "DUPLICATE"
+  | "POLICY_SUPPRESSED"
+  | "UNSUPPORTED";
+
+export interface RelationshipDrop {
+  /** Resolved object id when available, else the entity key or hint. */
+  subject: string;
+  predicate: string;
+  /** Resolved object id when available, else the entity key, hint, or @id. */
+  object: string;
+  outcome: Exclude<RelationshipOutcome, "ACCEPTED">;
+  reason: string;
+  evidenceRef: string;
+}
+
 export interface ProjectedGraph {
   objects: PingObject[];
   relationships: PingRelationship[];
@@ -571,12 +614,16 @@ export interface ProjectedGraph {
   fieldClasses?: Record<string, Record<string, FactClass>>;
   /** Relationships dropped because an endpoint had no projected object. */
   droppedRelationships?: number;
+  /** G3: every non-accepted candidate with its terminal outcome. */
+  relationshipDrops?: RelationshipDrop[];
 }
 
 export interface ProjectOptions {
   entities?: EntityCandidate[];
   entityFields?: Map<string, ExtractedField[]>;
   relationships?: StructuredRelation[];
+  /** @id-ref candidates dropped inside structured extraction (G3). */
+  refDrops?: import("./structured-data").StructuredRefDrop[];
   primaryKey?: string | null;
   /** Pairs from relate(): page-scope social links. */
   pairs?: RelatedPair[];
@@ -779,6 +826,18 @@ export function project(
     [businessId]: businessClasses,
   };
   let droppedRelationships = 0;
+  const relationshipDrops: RelationshipDrop[] = [];
+  const dropRel = (
+    subject: string,
+    predicate: string,
+    object: string,
+    outcome: Exclude<RelationshipOutcome, "ACCEPTED">,
+    reason: string,
+    evidenceRef: string,
+  ): void => {
+    relationshipDrops.push({ subject, predicate, object, outcome, reason, evidenceRef });
+    droppedRelationships++;
+  };
 
   const objectIdByEntityKey = new Map<string, string>();
   if (opts.primaryKey) objectIdByEntityKey.set(opts.primaryKey, businessId);
@@ -1082,20 +1141,33 @@ export function project(
   //    through the entity->object map; unmapped endpoints are dropped and
   //    counted, never half-emitted).
   for (const r of opts.relationships ?? []) {
+    const evidenceRef = `proceduralizer:structured:${r.property}`;
     const subject = objectIdByEntityKey.get(r.subjectKey);
     const object = objectIdByEntityKey.get(r.objectKey);
-    if (!subject || !object || subject === object) {
-      droppedRelationships++;
+    if (!subject) {
+      dropRel(r.subjectKey, r.predicate, r.objectKey, "UNRESOLVED_SOURCE",
+        `subject entity key "${r.subjectKey}" has no projected object`, evidenceRef);
       continue;
     }
-    mkRel(subject, r.predicate, object, `proceduralizer:structured:${r.property}`);
+    if (!object) {
+      dropRel(subject, r.predicate, r.objectKey, "UNRESOLVED_TARGET",
+        `object entity key "${r.objectKey}" has no projected object`, evidenceRef);
+      continue;
+    }
+    if (subject === object) {
+      dropRel(subject, r.predicate, object, "REJECTED_SCHEMA",
+        "self-loop: subject and object resolve to the same object", evidenceRef);
+      continue;
+    }
+    mkRel(subject, r.predicate, object, evidenceRef);
   }
 
   // -- Page-scope pairs from relate() (RUN-NOTES #7: now consumed).
   for (const p of opts.pairs ?? []) {
     const subject = p.subjectHint === "business" ? businessId : objectIdByEntityKey.get(p.subjectHint);
     if (!subject) {
-      droppedRelationships++;
+      dropRel(p.subjectHint, p.predicate, p.objectHint, "UNRESOLVED_SOURCE",
+        `subject hint "${p.subjectHint}" has no projected object`, "proceduralizer:relate");
       continue;
     }
     let object: string | undefined;
@@ -1104,11 +1176,24 @@ export function project(
     } else {
       object = objectIdByEntityKey.get(p.objectHint);
     }
-    if (!object || subject === object) {
-      droppedRelationships++;
+    if (!object) {
+      dropRel(subject, p.predicate, p.objectHint, "UNRESOLVED_TARGET",
+        `object hint "${p.objectHint}" has no projected object`, "proceduralizer:relate");
+      continue;
+    }
+    if (subject === object) {
+      dropRel(subject, p.predicate, object, "REJECTED_SCHEMA",
+        "self-loop: subject and object resolve to the same object", "proceduralizer:relate");
       continue;
     }
     mkRel(subject, p.predicate, object, "proceduralizer:relate");
+  }
+
+  // -- Candidates that died inside structured extraction (G3): folded into
+  //    the same ledger so no drop is silent anywhere in the pipeline.
+  for (const d of opts.refDrops ?? []) {
+    dropRel(d.subjectKey, d.predicate, d.refNodeId, d.outcome, d.reason,
+      `proceduralizer:structured-ref:${d.property}`);
   }
 
   // Deterministic order: ids are content-derived, sort for stability.
@@ -1118,14 +1203,30 @@ export function project(
   const seenRel = new Set<string>();
   const uniqueRelationships = relationships.filter((r) => {
     const k = r.subject + "|" + r.predicate + "|" + r.object;
-    if (seenRel.has(k)) return false;
+    if (seenRel.has(k)) {
+      dropRel(r.subject, r.predicate, r.object, "DUPLICATE",
+        "identical (subject, predicate, object) triple already emitted; first occurrence wins",
+        r.evidenceRef);
+      return false;
+    }
     seenRel.add(k);
     return true;
   });
   objects.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   uniqueRelationships.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  return { objects, relationships: uniqueRelationships, fieldClasses, droppedRelationships };
+  relationshipDrops.sort((a, b) => {
+    const ka = a.outcome + "|" + a.subject + "|" + a.predicate + "|" + a.object + "|" + a.reason;
+    const kb = b.outcome + "|" + b.subject + "|" + b.predicate + "|" + b.object + "|" + b.reason;
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+  return {
+    objects,
+    relationships: uniqueRelationships,
+    fieldClasses,
+    droppedRelationships,
+    relationshipDrops,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -1156,6 +1257,10 @@ export interface PipelineReport {
   /** @GRAPH VERIFIED: every node the expansion visited. */
   graphNodesVisited: number;
   graphNodeIds: string[];
+  /** G3: every non-accepted relationship candidate with its terminal outcome. */
+  relationshipDrops: RelationshipDrop[];
+  /** G3: extracted entity counts by schema.org type (sorted keys). */
+  entitiesByType: Record<string, number>;
 }
 
 export interface PipelineOutput {
@@ -1172,6 +1277,7 @@ function mergeStructuredExtractions(
 ): StructuredExtraction {
   const facts: ParsedFact[] = [];
   const relationships: StructuredRelation[] = [];
+  const refDrops: StructuredExtraction["refDrops"] = [];
   const unsupported: StructuredExtraction["unsupported"] = [];
   const seenEntities = new Map<string, EntityCandidate>();
   const seenNodeIds = new Set<string>();
@@ -1186,6 +1292,7 @@ function mergeStructuredExtractions(
   for (const e of extractions) {
     facts.push(...e.facts);
     relationships.push(...e.relationships);
+    refDrops.push(...e.refDrops);
     unsupported.push(...e.unsupported);
     for (const ent of e.entities) {
       if (!seenEntities.has(ent.key)) seenEntities.set(ent.key, ent);
@@ -1216,7 +1323,12 @@ function mergeStructuredExtractions(
     const kb = b.subjectKey + "|" + b.predicate + "|" + b.objectKey;
     return ka < kb ? -1 : ka > kb ? 1 : 0;
   });
-  return { facts, relationships, entities, unsupported, stats };
+  refDrops.sort((a, b) => {
+    const ka = a.subjectKey + "|" + a.property + "|" + a.refNodeId;
+    const kb = b.subjectKey + "|" + b.property + "|" + b.refNodeId;
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+  return { facts, relationships, refDrops, entities, unsupported, stats };
 }
 
 export async function runExtractionPipeline(
@@ -1257,6 +1369,7 @@ export async function runExtractionPipeline(
     entities: structured.entities,
     entityFields,
     relationships: structured.relationships,
+    refDrops: structured.refDrops,
     primaryKey,
     pairs,
     overrides: opts.overrides,
@@ -1278,6 +1391,13 @@ export async function runExtractionPipeline(
   const factsBySource: Record<string, number> = {};
   for (const k of Object.keys(sourceCounts).sort()) factsBySource[k] = sourceCounts[k];
 
+  const entitiesByType: Record<string, number> = {};
+  for (const e of structured.entities) {
+    for (const t of e.types) entitiesByType[t] = (entitiesByType[t] ?? 0) + 1;
+  }
+  const sortedEntitiesByType: Record<string, number> = {};
+  for (const k of Object.keys(entitiesByType).sort()) sortedEntitiesByType[k] = entitiesByType[k];
+
   return {
     graph,
     fields,
@@ -1292,6 +1412,8 @@ export async function runExtractionPipeline(
       privateWithheld: fields.filter((f) => f.visibility === "private").length,
       graphNodesVisited: structured.stats.nodesVisited,
       graphNodeIds: structured.stats.nodeIds,
+      relationshipDrops: graph.relationshipDrops ?? [],
+      entitiesByType: sortedEntitiesByType,
     },
   };
 }
