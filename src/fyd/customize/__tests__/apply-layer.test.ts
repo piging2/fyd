@@ -11,7 +11,10 @@
 
 import { applyPresentationIntent } from "../apply-layer";
 import { proposeFromSiteIntent } from "../propose";
-import { applyHiddenObjects } from "../../components/renderer";
+import {
+  applyHiddenObjects,
+  siteDeactivatedObjectIds,
+} from "../../components/renderer";
 import { proposalDigest } from "../../proceduralize/patch";
 import type {
   FYDSiteSpec,
@@ -491,5 +494,36 @@ describe("applyHiddenObjects", () => {
       "svc-1",
       "svc-3",
     ]);
+  });
+});
+
+describe("siteDeactivatedObjectIds", () => {
+  function specWithHidden(): FYDSiteSpec {
+    const s = spec();
+    s.pages[0].sections[1].presentation.hiddenObjectIds = ["svc-2"];
+    s.pages[0].sections[2].presentation.hiddenObjectIds = ["svc-2", "svc-4"];
+    return s;
+  }
+
+  test("returns undefined when nothing is hidden", () => {
+    expect(siteDeactivatedObjectIds(spec())).toBeUndefined();
+  });
+
+  test("unions every section's hidden ids in spec order, deduplicated", () => {
+    expect(siteDeactivatedObjectIds(specWithHidden())).toEqual([
+      "svc-2",
+      "svc-4",
+    ]);
+  });
+
+  test("an id hidden in one section excludes it from another section's projection", () => {
+    // The Featured Object rail resolves a different section than the one the
+    // owner hid the object in. The site-wide set must still exclude it.
+    const s = specWithHidden();
+    const railObjects = [obj("svc-1", "A"), obj("svc-2", "B"), obj("svc-3", "C")];
+    const ids = (arr: typeof railObjects) => arr.map((o) => o.id);
+    expect(
+      ids(applyHiddenObjects(railObjects, siteDeactivatedObjectIds(s))),
+    ).toEqual(["svc-1", "svc-3"]);
   });
 });

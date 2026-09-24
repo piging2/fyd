@@ -187,6 +187,37 @@ export function applyHiddenObjects(
   return objects.filter((o) => !hidden.has(o.id));
 }
 
+
+/**
+ * Site-wide owner deactivation set (PRESENTATION INTENT layer). Pure and
+ * deterministic: the union of every section's hiddenObjectIds, in spec
+ * order, deduplicated. An object the owner hid in one section must not be
+ * promoted anywhere else on the public surface: the Featured Object rail,
+ * mobile in-flow composition, and every other section resolve through
+ * renderSection, so they all share this exclusion set. Source observations
+ * and the canonical graph are untouched; owner/internal tooling still sees
+ * the hidden objects. Zero customer-specific conditionals.
+ */
+export function siteDeactivatedObjectIds(
+  spec: FYDSiteSpec,
+): readonly string[] | undefined {
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const page of spec.pages) {
+    for (const section of page.sections) {
+      const hidden = section.presentation.hiddenObjectIds;
+      if (!hidden) continue;
+      for (const id of hidden) {
+        if (!seen.has(id)) {
+          seen.add(id);
+          ids.push(id);
+        }
+      }
+    }
+  }
+  return ids.length > 0 ? ids : undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Section rendering.
 // ---------------------------------------------------------------------------
@@ -1943,7 +1974,10 @@ export function renderSection(section: FYDSection, ctx: RenderContext, motionInd
   );
   // Owner-approved presentation intent: object deactivation after ordering.
   // Pure and deterministic; unknown ids are ignored, never rendered.
-  const objects = applyHiddenObjects(ordered, section.presentation.hiddenObjectIds);
+  // The exclusion set is site-wide: an object the owner hid in ANY section
+  // is excluded from every public projection surface (including the Featured
+  // Object rail and mobile in-flow composition), never only its home section.
+  const objects = applyHiddenObjects(ordered, siteDeactivatedObjectIds(ctx.spec));
   if (def.requiresData && objects.length === 0) return null;
   const props: SectionProps = {
     section,
