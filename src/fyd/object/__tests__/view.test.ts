@@ -210,15 +210,19 @@ describe("buildCapabilities ask gating (Phase 2)", () => {
     expect(caps.some((c) => c.kind === "ask")).toBe(true);
   });
 
-  test("service gets reference, not follow/like/contact", () => {
+  test("service gets reference and like (schema-declared), not follow/contact", () => {
+    // G4: the capability authority decides. SERVICE_SCHEMA declares
+    // likeable: true, so the like propagates to the render model; the
+    // pre-G4 view layer used to suppress it with a role rule. If the
+    // product decision changes, the schema flag flips, not the view code.
     const caps = buildCapabilities("ping.social.service@1", "s7", emptyContact, {
       summary: "Emergency plumbing.",
       services: [],
     });
     expect(caps.some((c) => c.kind === "ask")).toBe(true);
     expect(caps.some((c) => c.kind === "reference")).toBe(true);
+    expect(caps.some((c) => c.kind === "like")).toBe(true);
     expect(caps.some((c) => c.kind === "follow")).toBe(false);
-    expect(caps.some((c) => c.kind === "like")).toBe(false);
     expect(caps.some((c) => c.kind === "call")).toBe(false);
   });
 

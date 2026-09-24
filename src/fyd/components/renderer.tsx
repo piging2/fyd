@@ -795,6 +795,8 @@ function FydObjectCard({
           objectId={o.id}
           title={title ?? null}
           kindLabel={friendlySchemaLabel(o.schema)}
+          schemaId={o.schema}
+          controllerId={o.controllerId}
           evidenceLine={affordanceEvidenceLine(o)}
           theme={theme}
         />
@@ -1520,6 +1522,8 @@ function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex
                     objectId={o.id}
                     title={title ?? null}
                     kindLabel={friendlySchemaLabel(o.schema)}
+                    schemaId={o.schema}
+                    controllerId={o.controllerId}
                     evidenceLine={affordanceEvidenceLine(o)}
                     theme={theme}
                   />
@@ -1679,6 +1683,8 @@ function FeedList({
                 objectId={o.id}
                 title={title ?? null}
                 kindLabel={friendlySchemaLabel(o.schema)}
+                schemaId={o.schema}
+                controllerId={o.controllerId}
                 evidenceLine={affordanceEvidenceLine(o)}
                 theme={theme}
               />

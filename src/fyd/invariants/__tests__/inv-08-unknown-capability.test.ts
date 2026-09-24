@@ -65,9 +65,11 @@ describe("INV-08 unknown capability -> no action button (data seam)", () => {
       contactOf({}),
       NO_EVIDENCE,
     );
-    // follow is the business role's unconditional action; ask needs
-    // evidence; call/email/website need values. Nothing else renders.
-    expect(caps.map((c) => c.kind)).toEqual(["follow"]);
+    // G4: the authority grants "reference" in the base set, so it
+    // propagates. follow is the business schema's unconditional action;
+    // ask needs evidence; call/email/website need values. Nothing else
+    // renders: no dead buttons.
+    expect(caps.map((c) => c.kind)).toEqual(["reference", "follow"]);
   });
 
   test("business with phone only: call appears, email/website do not", () => {

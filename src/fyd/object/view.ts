@@ -33,7 +33,7 @@ import {
   getPingObjectGraphSync,
   listPingSiteIdsSync,
 } from "@/fyd/data/ping-object-source";
-import { SCHEMA_ROLES, schemaRole } from "../sitespec/schemas";
+import { SCHEMA_ROLES, capabilityOptionsForSchema, schemaRole } from "../sitespec/schemas";
 import { resolveSafeLink } from "../sitespec/safe-link";
 import type { ObjectGraph } from "../sitespec/types";
 import type { PingObject } from "../../lib/ping/types";
@@ -167,32 +167,49 @@ function buildServices(
   };
 }
 
+/**
+ * Capability resolution for one object (G4).
+ *
+ * OBJECT + VIEWER + CONTEXT -> CAPABILITY RESOLUTION -> AVAILABLE ACTIONS
+ * -> RENDER MODEL. The allowed action set comes from
+ * capabilityOptionsForSchema (the capability authority in
+ * ../sitespec/schemas); this function only maps each allowed kind to its
+ * render model and applies executability gates (evidence for ask,
+ * safe-link resolution for contact actions). There is no role switch
+ * here: schema decides the actions, the view layer renders them.
+ *
+ * Executability notes:
+ * - "open" is demoted: the full customer page is not a capability action.
+ * - "ask" requires evidence (summary or visible services).
+ * - contact kinds (call/email/website/directions) require a safe,
+ *   evidence-backed value; resolveSafeLink "navigate" refuses hostile or
+ *   non-public values, so no dead or unsafe button is emitted.
+ * - "reply" is not emitted: no reply backend exists, and a button
+ *   without a working action is a lie.
+ * - "propose_update"/"site_propose" are owner-surface actions with no
+ *   customer render model; they are allowed by the authority but not
+ *   rendered here.
+ */
+export interface CapabilityViewer {
+  viewerId: string | null;
+  controllerId: string;
+}
+
 export function buildCapabilities(
   schemaId: string,
   objectId: string,
   contact: ObjectContactView,
   evidence: { summary: string; services: ObjectServiceView[] },
+  viewer: CapabilityViewer = { viewerId: null, controllerId: "" },
 ): ObjectCapability[] {
-  // SCHEMA DECIDES THE ACTIONS (2026-09-23, binding). Every object role
-  // gets the action set its schema supports; no role inherits another's
-  // buttons, and no button renders without its underlying value.
-  //
-  //   business -> follow, ask, contact (call/email/website)
-  //   service  -> ask, reference (+ request quote when a quote backend exists)
-  //   product  -> ask, reference
-  //   location -> ask, directions, contact where supported
-  //   person   -> ask, follow
-  //   post     -> ask, like, reference (+ reply when a reply backend exists)
-  //   article  -> ask, reference
-  //
-  // "view" is demoted: the full customer page is no longer a capability
-  // (the type variant stays for compatibility, but it is never emitted).
-  // "ask" is evidence-gated: the ask pipeline answers from the object's
-  // own record, so ask appears only when the object carries something to
-  // answer from. No ask evidence -> no ask action, never a dead box.
-  // "quote" and "reply" are not emitted: no backend exists yet, and a
-  // button without a working action is a lie.
-  const role = schemaRole(schemaId);
+  const allowed = capabilityOptionsForSchema(schemaId, {
+    viewerId: viewer.viewerId,
+    controllerId: viewer.controllerId,
+    hasWebsite: contact.website !== null,
+    hasPhone: contact.phone !== null,
+    hasEmail: contact.email !== null,
+    hasLocality: contact.locality !== null,
+  });
   const caps: ObjectCapability[] = [];
   const hasAskEvidence =
     evidence.summary.trim().length > 0 ||
@@ -201,63 +218,67 @@ export function buildCapabilities(
     contact.email !== null ||
     contact.website !== null ||
     contact.locality !== null;
-  if (hasAskEvidence) caps.push({ kind: "ask" });
-
-  // Contact hrefs are EXECUTABLE CAPABILITIES: every one clears the single
-  // safe-link choke point (resolveSafeLink) before it becomes an href. An
-  // unsafe value emits NO capability (no fake buttons); the contact block
-  // still shows the value as inert text.
-  const contactActions = () => {
-    if (contact.phone) {
-      const link = resolveSafeLink(contact.phone, "call");
-      if (link.kind === "safe")
-        caps.push({ kind: "call", href: link.href, label: "Call" });
+  for (const kind of allowed) {
+    switch (kind) {
+      case "open":
+        // Demoted: the full customer page is not a capability action.
+        break;
+      case "ask":
+        if (hasAskEvidence) caps.push({ kind: "ask" });
+        break;
+      case "reference":
+        caps.push({ kind: "reference", objectId });
+        break;
+      case "follow":
+        caps.push({ kind: "follow" });
+        break;
+      case "like":
+        caps.push({ kind: "like" });
+        break;
+      case "reply":
+        // No reply backend: never render a button without a working action.
+        break;
+      case "propose_update":
+      case "site_propose":
+        // Owner-surface actions; no customer render model.
+        break;
+      case "open_website": {
+        const resolved = resolveSafeLink(contact.website, "navigate");
+        if (resolved.kind === "safe" && contact.website) {
+          caps.push({ kind: "website", href: resolved.href, label: "Website" });
+        }
+        break;
+      }
+      case "call": {
+        const resolved = resolveSafeLink(contact.phone, "call");
+        if (resolved.kind === "safe" && contact.phone) {
+          caps.push({ kind: "call", href: resolved.href, label: "Call" });
+        }
+        break;
+      }
+      case "email": {
+        const resolved = resolveSafeLink(contact.email, "email");
+        if (resolved.kind === "safe" && contact.email) {
+          caps.push({ kind: "email", href: resolved.href, label: "Email" });
+        }
+        break;
+      }
+      case "directions": {
+        // The locality is encoded into a Google Maps query; it never
+        // becomes a navigated URL, so no safe-link gate applies. This
+        // matches the pre-G4 construction exactly.
+        if (contact.locality) {
+          caps.push({
+            kind: "directions",
+            href:
+              "https://www.google.com/maps/search/?api=1&query=" +
+              encodeURIComponent(contact.locality),
+            label: "Directions",
+          });
+        }
+        break;
+      }
     }
-    if (contact.email) {
-      const link = resolveSafeLink(contact.email, "email");
-      if (link.kind === "safe")
-        caps.push({ kind: "email", href: link.href, label: "Email" });
-    }
-    if (contact.website) {
-      const link = resolveSafeLink(contact.website, "navigate");
-      if (link.kind === "safe")
-        caps.push({ kind: "website", href: link.href, label: "Website" });
-    }
-  };
-
-  switch (role) {
-    case "business":
-      caps.push({ kind: "follow" });
-      contactActions();
-      break;
-    case "service":
-    case "product":
-      caps.push({ kind: "reference", objectId });
-      break;
-    case "location":
-      if (contact.locality)
-        caps.push({
-          kind: "directions",
-          href:
-            "https://www.google.com/maps/search/?api=1&query=" +
-            encodeURIComponent(contact.locality),
-          label: "Directions",
-        });
-      contactActions();
-      break;
-    case "person":
-      caps.push({ kind: "follow" });
-      break;
-    case "post":
-      caps.push({ kind: "like" });
-      caps.push({ kind: "reference", objectId });
-      break;
-    case "article":
-      caps.push({ kind: "reference", objectId });
-      break;
-    default:
-      // Unknown role: ask only (when evidence-gated above). Never guess.
-      break;
   }
   return caps;
 }
@@ -348,7 +369,13 @@ export function composeObjectView(
     services,
     serviceArea: parseServiceArea(field(obj, "area_served")),
     contact,
-    capabilities: buildCapabilities(obj.schema, obj.id, contact, { summary: description, services }),
+    capabilities: buildCapabilities(
+      obj.schema,
+      obj.id,
+      contact,
+      { summary: description, services },
+      { viewerId: null, controllerId: obj.controllerId },
+    ),
     provenance: {
       kind: obj.provenance?.kind ?? "unknown",
       ref: obj.provenance?.ref ?? "",
