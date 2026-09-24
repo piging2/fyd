@@ -55,6 +55,12 @@ export interface FYDPresentation {
   copy?: string;
   featuredIds?: string[];
   hidden?: boolean;
+  /**
+   * Owner-approved object display order (object ids). The renderer lists
+   * these ids first, in this order; objects not listed follow in their
+   * default query order. Never a fact: only the display sequence.
+   */
+  objectOrder?: string[];
 }
 
 export interface FYDSection {

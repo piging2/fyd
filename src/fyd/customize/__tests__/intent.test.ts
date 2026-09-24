@@ -18,10 +18,10 @@ import type {
 } from "../../sitespec/types";
 import type { PingObject } from "@/lib/ping/types";
 
-function obj(id: string, title: string): PingObject {
+function obj(id: string, title: string, schema = "ping.social.service@1"): PingObject {
   return {
     id,
-    schema: "ping.social.service@1",
+    schema,
     controllerId: "ctrl-1",
     visibility: "public",
     title,
@@ -78,8 +78,9 @@ function spec(): FYDSiteSpec {
 function graph(): ObjectGraph {
   return {
     objects: [
-      obj("biz-1", "Test Business"),
+      obj("biz-1", "Test Business", "ping.social.business@1"),
       obj("svc-1", "Pergola Design Consultations"),
+      obj("svc-2", "Deck Construction"),
     ],
     relationships: [],
   };
@@ -190,7 +191,25 @@ describe("resolveCustomizationIntent", () => {
     expect(res.reason).toMatch(/No section or object named/);
   });
 
-  test("promote_first on an existing OBJECT is refused honestly (sections only this wave)", () => {
+  test("promote_first on an existing OBJECT resolves to reorder_object moving it first", () => {
+    const parsed = parseCustomizationIntent("Move deck construction to the top");
+    expect(isUnsupported(parsed)).toBe(false);
+    if (isUnsupported(parsed)) return;
+    const res = resolveCustomizationIntent(spec(), graph(), parsed.intent);
+    expect(res.resolved).toBe(true);
+    if (!res.resolved) return;
+    // Default query order is svc-1, svc-2 (same timestamp, id tie-break);
+    // the directive moves svc-2 first inside the Services section.
+    expect(res.siteIntent).toEqual({
+      kind: "reorder_object",
+      pageSlug: "home",
+      sectionId: "home:Services:1",
+      objectIds: ["svc-2", "svc-1"],
+    });
+    expect(res.resolutionNote).toContain("Deck Construction");
+  });
+
+  test("promote_first on an object already first is refused honestly", () => {
     const parsed = parseCustomizationIntent("Put pergola design consultations first");
     expect(isUnsupported(parsed)).toBe(false);
     if (isUnsupported(parsed)) return;
@@ -198,7 +217,25 @@ describe("resolveCustomizationIntent", () => {
     expect(res.resolved).toBe(false);
     if (res.resolved) return;
     expect(res.reason).toContain("Pergola Design Consultations");
-    expect(res.reason).toContain("only promotes whole sections");
+    expect(res.reason).toContain("already first");
+  });
+
+  test("promote_first on an object shown in no section is unresolved", () => {
+    const g = graph();
+    g.objects.push({
+      ...g.objects[0],
+      id: "doc-1",
+      schema: "ping.social.document@1",
+      title: "Price List",
+    });
+    const parsed = parseCustomizationIntent("Move price list to the top");
+    expect(isUnsupported(parsed)).toBe(false);
+    if (isUnsupported(parsed)) return;
+    const res = resolveCustomizationIntent(spec(), g, parsed.intent);
+    expect(res.resolved).toBe(false);
+    if (res.resolved) return;
+    expect(res.reason).toContain("Price List");
+    expect(res.reason).toContain("not shown in any section");
   });
 
   test("feature_object resolves to set_featured in the containing section", () => {

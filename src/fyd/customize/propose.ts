@@ -19,7 +19,8 @@ import {
   type SiteIntent,
   type SitePatchBody,
 } from "../proceduralize/patch";
-import type { FYDSiteSpec } from "../sitespec/types";
+import { applyObjectOrder, resolveQuery } from "../components/renderer";
+import type { FYDSiteSpec, ObjectGraph } from "../sitespec/types";
 
 export interface ReviewCard {
   title: string;
@@ -77,14 +78,51 @@ function describeFeatured(spec: FYDSiteSpec, intent: SiteIntent): { before: stri
   };
 }
 
+function describeObjectOrder(
+  spec: FYDSiteSpec,
+  intent: Extract<SiteIntent, { kind: "reorder_object" }>,
+  graph: ObjectGraph | undefined,
+): { before: string[]; after: string[]; noOp: boolean } | null {
+  const sec = spec.pages
+    .find((p) => p.slug === intent.pageSlug)
+    ?.sections.find((s) => s.id === intent.sectionId);
+  if (!sec) return null;
+  const afterIds = [...new Set(intent.objectIds)];
+  const titleOf = (id: string) =>
+    graph?.objects.find((o) => o.id === id)?.title ?? id;
+  const name = (ids: string[]) =>
+    ids.map(titleOf).join(", ") || "(query order)";
+  let beforeIds: string[];
+  if (graph) {
+    beforeIds = applyObjectOrder(
+      resolveQuery(sec.query, graph, spec.ownerObjectId),
+      sec.presentation.objectOrder,
+    ).map((o) => o.id);
+  } else {
+    beforeIds = sec.presentation.objectOrder
+      ? [...sec.presentation.objectOrder]
+      : [];
+  }
+  return {
+    before: ["Objects in " + sec.component + ": " + name(beforeIds)],
+    after: ["Objects in " + sec.component + ": " + name(afterIds)],
+    noOp: beforeIds.join("|") === afterIds.join("|"),
+  };
+}
+
 /**
  * Draft the digest-bound proposal for a resolved intent. Refuses honestly
- * on no-ops (already first, already hidden, already featured) instead of
- * producing an empty proposal.
+ * on no-ops (already first, already hidden, already featured, already
+ * ordered) instead of producing an empty proposal.
+ *
+ * graph is optional: when provided, review cards resolve object titles and
+ * the current object order comes from the live query; without it the card
+ * falls back to ids and any stored objectOrder.
  */
 export function proposeFromSiteIntent(
   spec: FYDSiteSpec,
   siteIntent: SiteIntent,
+  graph?: ObjectGraph,
 ): ProposeOutcome {
   const specDigest = specDigestOf(spec);
   const drafted = proposeSitePatch(spec, siteIntent);
@@ -151,6 +189,22 @@ export function proposeFromSiteIntent(
     if (!t) return { ok: false, error: "Section not found in this spec." };
     card = {
       title: "Feature object",
+      before: t.before,
+      after: t.after,
+      operationCount: 1,
+    };
+  } else if (siteIntent.kind === "reorder_object") {
+    const t = describeObjectOrder(spec, siteIntent, graph);
+    if (!t) return { ok: false, error: "Section not found in this spec." };
+    if (t.noOp) {
+      return {
+        ok: false,
+        error:
+          "The objects are already in that order, so there is nothing to change.",
+      };
+    }
+    card = {
+      title: "Reorder objects within section",
       before: t.before,
       after: t.after,
       operationCount: 1,

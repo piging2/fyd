@@ -196,7 +196,7 @@ async function handleParse(siteId: string, text: string) {
       { status: 422 },
     );
   }
-  const outcome = proposeFromSiteIntent(site.spec, resolved.siteIntent);
+  const outcome = proposeFromSiteIntent(site.spec, resolved.siteIntent, site.graph);
   if (!outcome.ok) {
     return NextResponse.json(
       {
@@ -257,7 +257,7 @@ async function handleApprove(req: Request, siteId: string, text: string, clientP
       { status: 422 },
     );
   }
-  const outcome = proposeFromSiteIntent(site.spec, resolved.siteIntent);
+  const outcome = proposeFromSiteIntent(site.spec, resolved.siteIntent, site.graph);
   if (!outcome.ok) {
     return NextResponse.json(
       { ok: false, code: "no_op", error: outcome.error, demo: true },

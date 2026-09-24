@@ -22,6 +22,13 @@ export type SiteIntent =
   | { kind: "reorder_section"; pageSlug: string; sectionId: string; toIndex: number }
   | { kind: "toggle_section"; pageSlug: string; sectionId: string; hidden: boolean }
   | { kind: "set_featured"; pageSlug: string; sectionId: string; objectIds: string[] }
+  | {
+      kind: "reorder_object";
+      pageSlug: string;
+      sectionId: string;
+      /** Full desired display order of the section's objects (object ids). */
+      objectIds: string[];
+    }
   | { kind: "edit_copy"; pageSlug: string; sectionId: string; heading?: string; copy?: string }
   | { kind: "set_theme_token"; token: keyof FYDThemeTokens; value: string };
 
@@ -141,6 +148,22 @@ export function proposeSitePatch(spec: FYDSiteSpec, intent: SiteIntent): PatchRe
         reason: "Select featured objects for section.",
       });
     }
+    case "reorder_object": {
+      const sec = page!.sections.find((s) => s.id === intent.sectionId);
+      if (!sec) return { ok: false, error: "Section '" + intent.sectionId + "' not found." };
+      // Order is significant: dedupe preserving the requested sequence.
+      const ids = [...new Set(intent.objectIds)];
+      if (ids.length === 0) {
+        return { ok: false, error: "Object reorder needs at least one object id." };
+      }
+      return build({
+        targetPage: page!.slug,
+        targetSection: intent.sectionId,
+        component: sec.component,
+        propsDiff: { "presentation.objectOrder": ids },
+        reason: "Reorder objects within section.",
+      });
+    }
     case "edit_copy": {
       const sec = page!.sections.find((s) => s.id === intent.sectionId);
       if (!sec) return { ok: false, error: "Section '" + intent.sectionId + "' not found." };
@@ -207,6 +230,9 @@ export function applySitePatch(spec: FYDSiteSpec, proposal: SitePatchBody): FYDS
   }
   if (Array.isArray(diff["presentation.featuredIds"])) {
     sec.presentation.featuredIds = diff["presentation.featuredIds"] as string[];
+  }
+  if (Array.isArray(diff["presentation.objectOrder"])) {
+    sec.presentation.objectOrder = diff["presentation.objectOrder"] as string[];
   }
   if (typeof diff["presentation.heading"] === "string") {
     sec.presentation.heading = diff["presentation.heading"] as string;

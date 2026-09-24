@@ -11,7 +11,8 @@
  * Supported this wave (anything else is UnsupportedIntent, never silently
  * reinterpreted):
  *   "make X the first thing people see" / "put X first" /
- *   "move X to the top" / "lead with X"   -> promote_first
+ *   "move X to the top" / "lead with X"   -> promote_first (a section when X
+ *   names one; the named object moved to the top of its section otherwise)
  *   "feature X" / "highlight X" / "spotlight X" -> feature_object
  *   "hide (the) X (section)" / "show (the) X (section)" -> hide/show_section
  *
@@ -21,7 +22,7 @@
  */
 
 import { sha256Hex } from "../proceduralize/sha256";
-import { resolveQuery } from "../components/renderer";
+import { applyObjectOrder, resolveQuery } from "../components/renderer";
 import type { ObjectGraph, FYDSiteSpec } from "../sitespec/types";
 import type {
   ParsedIntent,
@@ -209,14 +210,46 @@ export function resolveCustomizationIntent(
       }
       const obj = findObject(graph, parsed.target);
       if (obj) {
+        const objSec = sectionContaining(spec, graph, obj.id);
+        if (!objSec) {
+          return {
+            resolved: false,
+            parsed,
+            reason:
+              "\"" + obj.title + "\" exists but is not shown in any " +
+              "section of this site, so it cannot be moved to the top.",
+          };
+        }
+        const section = spec.pages
+          .find((p) => p.slug === objSec.pageSlug)!
+          .sections.find((s) => s.id === objSec.sectionId)!;
+        const current = applyObjectOrder(
+          resolveQuery(section.query, graph, spec.ownerObjectId),
+          section.presentation.objectOrder,
+        ).map((o) => o.id);
+        const after = [obj.id, ...current.filter((id) => id !== obj.id)];
+        if (after.join("|") === current.join("|")) {
+          return {
+            resolved: false,
+            parsed,
+            reason:
+              "\"" + obj.title + "\" is already first in the " +
+              objSec.component + " section, so there is nothing to move.",
+          };
+        }
         return {
-          resolved: false,
+          resolved: true,
           parsed,
-          reason:
-            "\"" + parsed.target + "\" names the object \"" + obj.title +
-            "\", but this wave only promotes whole sections to the top of " +
-            "the page. Reordering objects inside a section is not supported " +
-            "yet, so nothing was changed or reinterpreted.",
+          siteIntent: {
+            kind: "reorder_object",
+            pageSlug: objSec.pageSlug,
+            sectionId: objSec.sectionId,
+            objectIds: after,
+          },
+          resolutionNote:
+            "\"" + parsed.target + "\" is \"" + obj.title +
+            "\"; moving it to the top of the " + objSec.component +
+            " section.",
         };
       }
       return {

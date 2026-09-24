@@ -23,10 +23,10 @@ import type {
   PresentationIntentDirective,
 } from "../types";
 
-function obj(id: string, title: string): PingObject {
+function obj(id: string, title: string, schema = "ping.social.service@1"): PingObject {
   return {
     id,
-    schema: "ping.social.service@1",
+    schema,
     controllerId: "ctrl-1",
     visibility: "public",
     title,
@@ -82,7 +82,11 @@ function spec(): FYDSiteSpec {
 
 function graph(): ObjectGraph {
   return {
-    objects: [obj("biz-1", "Test Business"), obj("svc-1", "Pergola Design Consultations")],
+    objects: [
+      obj("biz-1", "Test Business", "ping.social.business@1"),
+      obj("svc-1", "Pergola Design Consultations"),
+      obj("svc-2", "Deck Construction"),
+    ],
     relationships: [],
   };
 }
@@ -286,5 +290,74 @@ describe("applyPresentationIntent", () => {
     const featResult = applyPresentationIntent(before, blockWith(feat), g);
     expect(featResult.applied).toHaveLength(0);
     expect(featResult.unresolved[0].reason).toContain("no longer in the site's evidence");
+  });
+
+  test("reorder_object applies the approved object order to the section", () => {
+    const before = spec();
+    const g = graph();
+    const d = approvedDirective(before, {
+      kind: "reorder_object",
+      pageSlug: "home",
+      sectionId: "home:Services:1",
+      objectIds: ["svc-2", "svc-1"],
+    });
+    const result = applyPresentationIntent(before, blockWith(d), g);
+    expect(result.applied).toHaveLength(1);
+    expect(result.unresolved).toHaveLength(0);
+    const sec = result.spec.pages[0].sections.find(
+      (x) => x.component === "Services",
+    )!;
+    expect(sec.presentation.objectOrder).toEqual(["svc-2", "svc-1"]);
+    // Facts untouched: the graph keeps its own order.
+    expect(g.objects.map((o) => o.id)).toEqual([
+      "biz-1",
+      "svc-1",
+      "svc-2",
+    ]);
+  });
+
+  test("reorder_object with an object gone from evidence is unresolved, kept not dropped", () => {
+    const before = spec();
+    const d = approvedDirective(before, {
+      kind: "reorder_object",
+      pageSlug: "home",
+      sectionId: "home:Services:1",
+      objectIds: ["svc-2", "svc-gone"],
+    });
+    const result = applyPresentationIntent(before, blockWith(d), graph());
+    expect(result.applied).toHaveLength(0);
+    expect(result.unresolved).toHaveLength(1);
+    expect(result.unresolved[0].intentId).toBe("pi-test-1");
+    expect(result.unresolved[0].reason).toContain(
+      "no longer in the site's evidence",
+    );
+  });
+
+  test("reorder_object proposal digest binds the exact order; re-apply is idempotent", () => {
+    const before = spec();
+    const g = graph();
+    const d = approvedDirective(before, {
+      kind: "reorder_object",
+      pageSlug: "home",
+      sectionId: "home:Services:1",
+      objectIds: ["svc-2", "svc-1"],
+    });
+    const first = applyPresentationIntent(before, blockWith(d), g);
+    const second = applyPresentationIntent(first.spec, blockWith(d), g);
+    expect(second.applied).toHaveLength(1);
+    expect(JSON.stringify(second.spec)).toBe(JSON.stringify(first.spec));
+    // A proposal for the same order against the already-ordered spec is a no-op refusal.
+    const again = proposeFromSiteIntent(
+      first.spec,
+      {
+        kind: "reorder_object",
+        pageSlug: "home",
+        sectionId: "home:Services:1",
+        objectIds: ["svc-2", "svc-1"],
+      },
+      g,
+    );
+    expect(again.ok).toBe(false);
+    if (!again.ok) expect(again.error).toContain("already in that order");
   });
 });

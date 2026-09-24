@@ -142,6 +142,34 @@ export function resolveQuery(
   }
 }
 
+/**
+ * Owner-approved object ordering (PRESENTATION INTENT layer). Pure and
+ * deterministic: ids listed in objectOrder come first, in that order;
+ * resolved objects not listed keep their relative query order after
+ * them. Unknown ids are ignored, never rendered. Zero customer-specific
+ * conditionals: every section component shares this seam.
+ */
+export function applyObjectOrder(
+  objects: PingObject[],
+  objectOrder: readonly string[] | undefined,
+): PingObject[] {
+  if (!objectOrder || objectOrder.length === 0) return objects;
+  const byId = new Map(objects.map((o) => [o.id, o]));
+  const seen = new Set<string>();
+  const out: PingObject[] = [];
+  for (const id of objectOrder) {
+    const o = byId.get(id);
+    if (o && !seen.has(id)) {
+      seen.add(id);
+      out.push(o);
+    }
+  }
+  for (const o of objects) {
+    if (!seen.has(o.id)) out.push(o);
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Section rendering.
 // ---------------------------------------------------------------------------
@@ -1980,7 +2008,10 @@ export function renderSection(section: FYDSection, ctx: RenderContext, motionInd
   const def = getComponentDef(section.component);
   if (!def) return null;
   if (section.presentation.hidden) return null;
-  const objects = resolveQuery(section.query, ctx.graph, ctx.spec.ownerObjectId);
+  const objects = applyObjectOrder(
+    resolveQuery(section.query, ctx.graph, ctx.spec.ownerObjectId),
+    section.presentation.objectOrder,
+  );
   if (def.requiresData && objects.length === 0) return null;
   const props: SectionProps = {
     section,

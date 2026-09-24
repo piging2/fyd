@@ -65,6 +65,8 @@ function summarize(d: PresentationIntentDirective): string {
       return (si.hidden ? "hide " : "show ") + "section " + si.sectionId;
     case "set_featured":
       return "feature [" + si.objectIds.join(", ") + "] in " + si.sectionId;
+    case "reorder_object":
+      return "order objects [" + si.objectIds.join(", ") + "] in " + si.sectionId;
     case "edit_copy":
       return "copy edit on " + si.sectionId;
     case "set_theme_token":
@@ -165,7 +167,7 @@ export function applyPresentationIntent(
         continue;
       }
     }
-    if (si.kind === "set_featured") {
+    if (si.kind === "set_featured" || si.kind === "reorder_object") {
       const missing = si.objectIds.filter((id) => !objectIds.has(id));
       if (missing.length > 0) {
         nope(

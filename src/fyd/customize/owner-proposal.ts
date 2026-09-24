@@ -249,7 +249,7 @@ function draftClassic(
   if (!parsed) return { ok: false, reason: "Not a classic intent." };
   const resolved = resolveCustomizationIntent(ctx.spec, ctx.graph, parsed);
   if (!resolved.resolved) return { ok: false, reason: resolved.reason };
-  const proposed = proposeFromSiteIntent(ctx.spec, resolved.siteIntent);
+  const proposed = proposeFromSiteIntent(ctx.spec, resolved.siteIntent, ctx.graph);
   if (!proposed.ok || !proposed.proposal) {
     return { ok: false, reason: proposed.error };
   }
@@ -406,7 +406,7 @@ function draftShowLocations(
       sectionId: locSection.sectionId,
       hidden: false,
     };
-    const proposed = proposeFromSiteIntent(ctx.spec, siteIntent);
+    const proposed = proposeFromSiteIntent(ctx.spec, siteIntent, ctx.graph);
     if (!proposed.ok || !proposed.proposal) {
       return { ok: false, reason: proposed.error };
     }
