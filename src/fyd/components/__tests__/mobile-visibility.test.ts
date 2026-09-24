@@ -95,6 +95,12 @@ describe("private payload boundary", () => {
     const p = path.join(REPO, "src/app/sites/happy-place/page.tsx");
     const src = fs.readFileSync(p, "utf8");
     expect(src).toContain("publicGraph(graph)");
-    expect(src).toMatch(/visibility === "public"/);
+    // The visibility filter lives in publicGraph (spec-pipeline.ts), not in
+    // the page: assert the actual boundary, not an inline copy of it.
+    const boundary = fs.readFileSync(
+      path.join(REPO, "src/app/sites/_shared/spec-pipeline.ts"),
+      "utf8",
+    );
+    expect(boundary).toMatch(/visibility === "public"/);
   });
 });
