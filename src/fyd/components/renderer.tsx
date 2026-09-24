@@ -19,6 +19,7 @@ import { ObjectRail, pingObjectToView, richestObject } from "./object-rail";
 import { ObjectCard } from "../object/card";
 import { ObjectCircle } from "../ui/object-circle";
 import { WhyThis, type EvidenceStep } from "../ui/why-this";
+import { whyThisStepsFor } from "../object/why-this-steps";
 import {
   ownerAssertionsFromGraph,
   resolveBoundFieldVerified,
@@ -710,6 +711,9 @@ function FydObjectCard({
       <div className="mt-3">
         <ClaimBadge objects={[o]} />
       </div>
+      {title ? (
+        <WhyThis claim={title} steps={whyThisStepsFor(o)} className="mt-2" />
+      ) : null}
       {affordanceEligible(o) ? (
         <ObjectAffordance
           objectId={o.id}
