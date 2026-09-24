@@ -59,7 +59,9 @@ kinds abort the dump):
   {op:"clear_presentation_intent", intentId}     # remove an intent directive
 
 Exit codes: 0 ok, 1 usage/internal error, 2 overlay query failed (fail closed:
-no projection is written).
+no projection is written). Exit 2 also covers FYD-037 WRONG_JOURNAL: the
+overlay journal did not prove the expected identity (marker mismatch or
+unreadable marker) on its pre-flight GET.
 """
 
 import hashlib
@@ -69,6 +71,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import urllib.request
 
 DUMPER_VERSION = "fyd-projection-dump@1.2.1"
 REPO = "/home/nolan/projects/ping"
@@ -89,6 +92,60 @@ OUT_DIR = "/home/nolan/ping/var/fyd-projections"
 OVERLAY_JOURNAL = os.environ.get("FYD_OVERLAY_JOURNAL", "main")
 JOURNAL_GATEWAY_URL = os.environ.get("FYD_JOURNAL_GATEWAY_URL",
                                      "http://127.0.0.1:18199").rstrip("/")
+MAIN_GATEWAY_URL = os.environ.get("FYD_MAIN_GATEWAY_URL",
+                                  "http://127.0.0.1:8080").rstrip("/")
+
+# FYD-037: journal identity (symmetric to emit-overlay.py). Every overlay
+# read path performs exactly one pre-flight GET against the journal's
+# identity endpoint and fails closed (exit 2, typed WRONG_JOURNAL) on
+# marker mismatch OR on an unreadable marker. A projection is never built
+# from a journal that cannot prove it is the intended overlay journal.
+# The expected marker follows the selected journal: the FYD demo journal
+# asserts "fyd-demo-journal@<live-derived>" on GET /; the main PING
+# journal will assert "ping-main-journal@<live-derived>" on GET /health
+# once its journal field lands (pending the gateway cutover HOLD: until
+# then, main-mode reads fail closed as unreadable-marker, which is the
+# correct posture because the main journal does not accept
+# FYD_SITE_OVERLAY anyway, FL-20260921-231). FYD_EXPECTED_OVERLAY_JOURNAL
+# overrides the derived expectation explicitly.
+EXPECTED_OVERLAY_JOURNAL_MARKER = os.environ.get(
+    "FYD_EXPECTED_OVERLAY_JOURNAL") or (
+        "fyd-demo-journal" if OVERLAY_JOURNAL == "demo"
+        else "ping-main-journal")
+
+
+def _journal_marker_ok(asserted, expected):
+    """The derived suffix after '@' is allowed to vary (the journal
+    re-derives it live from its store); the marker name must match."""
+    return (isinstance(asserted, str)
+            and (asserted == expected
+                 or asserted.startswith(expected + "@")))
+
+
+def _preflight_journal(base_url, identity_path):
+    """One pre-flight GET against the journal's identity endpoint.
+
+    Fail closed (exit 2): a projection must never be built from a
+    journal that cannot prove its identity.
+    """
+    url = base_url.rstrip("/") + identity_path
+    try:
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            if resp.status != 200:
+                raise RuntimeError("HTTP %s" % resp.status)
+            doc = json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        sys.stderr.write(
+            "WRONG_JOURNAL: journal identity unreadable at %s: %s\n"
+            % (url, e))
+        sys.exit(2)
+    asserted = doc.get("journal") if isinstance(doc, dict) else None
+    if not _journal_marker_ok(asserted, EXPECTED_OVERLAY_JOURNAL_MARKER):
+        sys.stderr.write(
+            "WRONG_JOURNAL: expected overlay journal marker %r at %s, "
+            "got %r\n" % (EXPECTED_OVERLAY_JOURNAL_MARKER, url, asserted))
+        sys.exit(2)
 DEMO_PG = {
     "host": os.environ.get("FYD_DEMO_PG_HOST", "127.0.0.1"),
     "port": os.environ.get("FYD_DEMO_PG_PORT", "55433"),
@@ -307,7 +364,10 @@ def query_overlays_demo(site):
     different event_ids, and the two-store merge double-applied add_object,
     aborting the happy-place dump fail-closed. Events are applied in
     (timestamp, event_id) order. No event is authored here; provenance
-    (event_id) is preserved from the journal."""
+    (event_id) is preserved from the journal.
+    FYD-037: the JSONL gateway asserts the demo journal's identity; one
+    pre-flight covers this read."""
+    _preflight_journal(JOURNAL_GATEWAY_URL, "/")
     events = query_overlays_jsonl(site)
     events.sort(key=lambda e: (e.get("timestamp") or "", e["event_id"]))
     return events
@@ -317,9 +377,12 @@ def query_overlays(site):
     """Read FYD_SITE_OVERLAY events for the site from PING Postgres, using the
     gateway container's own pg client and POSTGRES_* env (read-only SELECT).
     The probe JS is docker-cp'd into the container (node cannot execute a
-    script piped through `docker exec -i ... node /dev/stdin`)."""
+    script piped through `docker exec -i ... node /dev/stdin`).
+    FYD-037: the main journal must prove its identity on /health before any
+    overlay is read from it."""
     if OVERLAY_JOURNAL == "demo":
         return query_overlays_demo(site)
+    _preflight_journal(MAIN_GATEWAY_URL, "/health")
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as f:
         f.write(QUERY_JS)
         js_path = f.name
