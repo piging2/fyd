@@ -78,7 +78,14 @@ const DEFINITIONS: FYDComponentDef[] = [
   { name: "People", label: "People", description: "The people behind the business.", acceptsSchemas: SCHEMA_ROLES.person, ownerBound: false, requiresData: true },
   { name: "Posts", label: "Posts", description: "Recent posts and articles.", acceptsSchemas: [...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article], ownerBound: false, requiresData: true },
   { name: "ObjectGrid", label: "Object grid", description: "Generic responsive grid for any object list.", acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.service, ...SCHEMA_ROLES.product, ...SCHEMA_ROLES.location, ...SCHEMA_ROLES.person, ...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, KNOWLEDGE_WEBSITE], ownerBound: false, requiresData: true },
-  { name: "ObjectFeed", label: "Object feed", description: "Chronological feed of objects, newest first.", acceptsSchemas: [...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, ...SCHEMA_ROLES.service, KNOWLEDGE_WEBSITE], ownerBound: false, requiresData: true },
+  // G1 (2026-09-24): business/product/location/person are feed content again.
+  // The 2026-09-23 convergence dropped them from ObjectFeed as "stale drift"
+  // at the mechanism level, which silently removed the Explore page for real
+  // businesses (bemis-electric, gear-junction: business+person/location graphs).
+  // Product semantics win over mechanism convergence: a refactor may change
+  // implementation, it must not silently change generated pages. Pinned by
+  // the page-inventory test (proceduralize/__tests__/page-inventory.test.ts).
+  { name: "ObjectFeed", label: "Object feed", description: "Chronological feed of objects, newest first.", acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.product, ...SCHEMA_ROLES.location, ...SCHEMA_ROLES.person, ...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, ...SCHEMA_ROLES.service, KNOWLEDGE_WEBSITE], ownerBound: false, requiresData: true },
   { name: "RecentObjects", label: "Recent objects", description: "Latest objects across schemas, newest first.", acceptsSchemas: [...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, ...SCHEMA_ROLES.service, ...SCHEMA_ROLES.business], ownerBound: false, requiresData: true },
   { name: "Contact", label: "Contact", description: "Public contact channels: phone, email, website.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
   { name: "Links", label: "Links", description: "Social and website links published by the business.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },

@@ -171,17 +171,19 @@ describe("schema derivations", () => {
         dedicated.length > 0 ? dedicated[0] : "GenericObjectCard",
       );
     }
-    // Converged truth (2026-09-23): the registry's component-authored
-    // coverage wins over the deleted hand table's stale omissions.
-    // Note: ObjectFeed is deliberately absent for business (converged
-    // 2026-09-23): the registry's ObjectFeed accepts post/article/service/
-    // website only. The deleted hand table's business->ObjectFeed entry was
-    // the same class of stale drift as the four omissions fixed here.
+    // Restored truth (2026-09-24, G1): ObjectFeed is feed content for
+    // business/product/location/person again. The 2026-09-23 convergence
+    // dropped it as "stale drift" at the mechanism level, but that silently
+    // removed the Explore page for real businesses (bemis-electric,
+    // gear-junction). Product semantics outrank mechanism convergence: the
+    // page-level effect is pinned by the page-inventory test, and this pin
+    // records the restored mechanism truth.
     expect(eligibleComponents("ping.social.business@1")).toEqual([
       "Hero",
       "IdentityCard",
       "BusinessSummary",
       "ObjectGrid",
+      "ObjectFeed",
       "RecentObjects",
       "Contact",
       "Links",
@@ -190,6 +192,9 @@ describe("schema derivations", () => {
       "AskFYD",
       "ObjectRail",
     ]);
+    expect(eligibleComponents("ping.social.person@1")).toContain("ObjectFeed");
+    expect(eligibleComponents("ping.social.location@1")).toContain("ObjectFeed");
+    expect(eligibleComponents("ping.social.product@1")).toContain("ObjectFeed");
     expect(eligibleComponents("ping.social.service@1")).toContain("RecentObjects");
     expect(eligibleComponents("ping.social.location@1")).toContain("ObjectRail");
   });

@@ -36,6 +36,7 @@ import {
   type FYDSchemaRole,
 } from "../sitespec/schemas";
 import { resolveWebsiteUrl } from "../sitespec/graph";
+import { componentsForSchema } from "../components/registry";
 import type { ObjectGraph } from "../sitespec/types";
 
 /** Schema id for external identities (no SCHEMA_ROLES entry; observed vocabulary). */
@@ -181,11 +182,23 @@ export function deriveEligibility(graph: ObjectGraph): EligibilityReport {
   set("People", counts.team > 0, "team count " + counts.team + " (person-role relationship, either direction)");
   set("Posts", counts.posts + counts.articles > 0, "published count " + (counts.posts + counts.articles) + " > 0");
   set("RecentObjects", counts.posts + counts.articles > 0, "published count " + (counts.posts + counts.articles) + " > 0");
-  // ObjectFeed renders any feed-eligible content (posts, articles, services,
-  // products): eligibility mirrors what the generator can actually emit so
-  // the planner never filters a generator-emitted section.
-  const feedable = counts.posts + counts.articles + counts.services + counts.products;
-  set("ObjectFeed", feedable > 0, "feed-eligible count " + feedable + " > 0");
+  // ObjectFeed renders any feed-eligible content. Feed eligibility is
+  // DERIVED from the component registry (the single schema<->component
+  // mapping), mirroring exactly what the generator's explorePage can emit,
+  // so the planner never filters a generator-emitted Explore section.
+  // G1 (2026-09-24): the previous hand-count (posts+articles+services+
+  // products) drifted from the registry and would have filtered a
+  // restored Explore page; one definition now serves both.
+  const feedable = graph.objects.filter(
+    (o) =>
+      o.visibility === "public" &&
+      componentsForSchema(o.schema).includes("ObjectFeed"),
+  ).length;
+  set(
+    "ObjectFeed",
+    feedable > 0,
+    "feed-eligible public objects " + feedable + " > 0 (registry-derived)",
+  );
   set("Contact", hasContact, hasContact ? "phone/email/website present" : "no contact channels");
   set("Links", counts.connected > 0, "connected count " + counts.connected + " > 0");
   set("AskFYD", true, "site capability, always eligible with an owner");

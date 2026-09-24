@@ -1,0 +1,165 @@
+[
+  {
+    "site_id": "bemis-electric",
+    "pages_ok": 5,
+    "pages": [
+      "home",
+      "about",
+      "explore"
+    ],
+    "public_objects": 6,
+    "object_schemas": [
+      "ping.social.business@1",
+      "ping.social.person@1"
+    ],
+    "feed_schemas_new": [
+      "ping.social.business@1",
+      "ping.social.person@1"
+    ],
+    "feed_schemas_old": [
+      "ping.social.business@1",
+      "ping.social.person@1"
+    ],
+    "explore_present_new": true,
+    "explore_present_old": true,
+    "drift": "none"
+  },
+  {
+    "site_id": "gear-junction",
+    "pages_ok": 5,
+    "pages": [
+      "home",
+      "about",
+      "explore"
+    ],
+    "public_objects": 4,
+    "object_schemas": [
+      "ping.social.business@1",
+      "ping.social.external_identity@1",
+      "ping.social.location@1"
+    ],
+    "feed_schemas_new": [
+      "ping.social.business@1",
+      "ping.social.location@1"
+    ],
+    "feed_schemas_old": [
+      "ping.social.business@1",
+      "ping.social.location@1"
+    ],
+    "explore_present_new": true,
+    "explore_present_old": true,
+    "drift": "none"
+  },
+  {
+    "site_id": "dalby-cpa",
+    "pages_ok": 1,
+    "pages": [
+      "home",
+      "about"
+    ],
+    "public_objects": 1,
+    "object_schemas": [
+      "ping.social.business@1"
+    ],
+    "feed_schemas_new": [
+      "ping.social.business@1"
+    ],
+    "feed_schemas_old": [
+      "ping.social.business@1"
+    ],
+    "explore_present_new": false,
+    "explore_present_old": false,
+    "drift": "none"
+  },
+  {
+    "site_id": "klik-boutique",
+    "pages_ok": 0,
+    "failure_stage": "fetch"
+  },
+  {
+    "site_id": "suehiro",
+    "pages_ok": 1,
+    "pages": [
+      "home",
+      "about"
+    ],
+    "public_objects": 1,
+    "object_schemas": [
+      "ping.social.business@1"
+    ],
+    "feed_schemas_new": [
+      "ping.social.business@1"
+    ],
+    "feed_schemas_old": [
+      "ping.social.business@1"
+    ],
+    "explore_present_new": false,
+    "explore_present_old": false,
+    "drift": "none"
+  },
+  {
+    "site_id": "bistro-317",
+    "pages_ok": 1,
+    "pages": [
+      "home",
+      "about"
+    ],
+    "public_objects": 2,
+    "object_schemas": [
+      "ping.social.business@1",
+      "ping.social.location@1"
+    ],
+    "feed_schemas_new": [
+      "ping.social.business@1",
+      "ping.social.location@1"
+    ],
+    "feed_schemas_old": [
+      "ping.social.business@1",
+      "ping.social.location@1"
+    ],
+    "explore_present_new": false,
+    "explore_present_old": false,
+    "drift": "none"
+  },
+  {
+    "site_id": "tt-hvac",
+    "pages_ok": 1,
+    "pages": [
+      "home"
+    ],
+    "public_objects": 1,
+    "object_schemas": [
+      "ping.social.business@1"
+    ],
+    "feed_schemas_new": [
+      "ping.social.business@1"
+    ],
+    "feed_schemas_old": [
+      "ping.social.business@1"
+    ],
+    "explore_present_new": false,
+    "explore_present_old": false,
+    "drift": "none"
+  },
+  {
+    "site_id": "legacy-coffee",
+    "pages_ok": 8,
+    "pages": [
+      "home",
+      "about"
+    ],
+    "public_objects": 1,
+    "object_schemas": [
+      "ping.social.business@1"
+    ],
+    "feed_schemas_new": [
+      "ping.social.business@1"
+    ],
+    "feed_schemas_old": [
+      "ping.social.business@1"
+    ],
+    "explore_present_new": false,
+    "explore_present_old": false,
+    "drift": "none"
+  }
+]
