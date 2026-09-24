@@ -231,7 +231,7 @@ function buildPresentationIntentBlock(
  * closed): a tenant graph with partially applied corrections is never
  * served.
  */
-function applyTenantOverlays(
+export function applyTenantOverlays(
   graph: ObjectGraph,
   overlays: FydJournalOverlay[],
 ): { eventIds: string[]; directives: PresentationIntentDirective[] } {
@@ -351,9 +351,12 @@ function applyTenantOverlays(
               eventId: eid,
             },
           };
+          // Journal-event order invariant (mirrors dump.py): a re-approved
+          // intent moves to the end, so the newest journal event wins in the
+          // apply layer (which consumes the list in order, last wins).
           const idx = directives.findIndex((d) => d.intentId === intentId);
-          if (idx >= 0) directives[idx] = directive;
-          else directives.push(directive);
+          if (idx >= 0) directives.splice(idx, 1);
+          directives.push(directive);
           break;
         }
         case "clear_presentation_intent": {

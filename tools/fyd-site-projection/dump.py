@@ -355,7 +355,8 @@ def apply_overlays(graph, events):
     """Apply overlay ops deterministically.
     Returns (graph, applied_event_ids, presentation_intents).
     Presentation-intent ops never touch the graph: they accumulate in a
-    separate journal-ordered list, upserted by intentId. Any malformed op
+    separate journal-ordered list, upserted by intentId with the newest
+    journal event last. Any malformed op
     aborts the whole dump (fail closed)."""
     objects = {o["id"]: o for o in graph["objects"]}
     rel_ids = {r["id"] for r in graph["relationships"]}
@@ -452,12 +453,16 @@ def apply_overlays(graph, events):
                         "eventId": eid,
                     },
                 }
+                # Journal-event order invariant: directives are emitted in the
+                # order of their newest journal event. A re-approved intent is
+                # removed and re-appended, so for same-section conflicts the
+                # newest journal event wins in the apply layer (which consumes
+                # the list in order, last wins).
                 for i, existing in enumerate(presentation_intents):
                     if existing["intentId"] == intent_id:
-                        presentation_intents[i] = directive
+                        del presentation_intents[i]
                         break
-                else:
-                    presentation_intents.append(directive)
+                presentation_intents.append(directive)
             elif kind == "clear_presentation_intent":
                 intent_id = op.get("intentId")
                 if not (isinstance(intent_id, str) and intent_id):
