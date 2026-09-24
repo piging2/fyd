@@ -210,7 +210,12 @@ export function buildAskContext(input: AskContextInput): AskContext {
     evidenceRefs.push({
       kind: "relationship",
       id: r.id,
-      label: `${r.subject.slice(0, 12)} ${r.predicate} ${r.object.slice(0, 12)} (${r.status})`,
+      // FYD P1: full endpoint ids (no truncation). The subject and object
+      // of overlay relationships share a "website-" prefix, so truncating
+      // both to 12 chars rendered every relationship as the identical
+      // "website-busi <pred> website-busi", making the consulted-evidence
+      // line useless as an evidence-transparency surface.
+      label: `${r.subject} ${r.predicate} ${r.object} (${r.status})`,
       detail: `event ${r.evidenceRef}`,
     });
   }
@@ -572,13 +577,33 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
     // and from the active relationships incident to the target. A related
     // object's evidence informs the answer but is cited as THAT object's
     // evidence, never merged into the target's record.
-    if (
+    //
+    // Association triggers ("associated", "linked", ...) keep the
+    // incident-relationship listing. Pure people questions ("who works
+    // here?", "who owns this?") do not dump unrelated associations, and
+    // say explicitly when no person records exist instead of answering
+    // around the question.
+    const asksAssociation = hasWord(
+      q,
+      "associated",
+      "associate",
+      "associates",
+      "association",
+      "affiliated",
+      "affiliate",
+      "affiliation",
+      "connected",
+      "linked",
+    );
+    const asksPeople =
       hasWord(
         q,
         "person",
         "people",
         "owner",
         "owners",
+        "owns",
+        "owned",
         "founder",
         "founders",
         "staff",
@@ -587,17 +612,10 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
         "employees",
         "member",
         "members",
-        "associated",
-        "associate",
-        "associates",
-        "association",
-        "affiliated",
-        "affiliate",
-        "affiliation",
-        "connected",
-        "linked",
-      )
-    ) {
+        "employs",
+      ) ||
+      (hasWord(q, "who") && hasWord(q, "works", "working", "runs", "manages"));
+    if (asksPeople || asksAssociation) {
       const seenIds = new Set<string>();
       const persons = [target, ...ctx.relatedObjects].filter((o) =>
         o.schema.toLowerCase().includes("person"),
@@ -634,7 +652,11 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
                 : 1,
         );
       let associations = 0;
-      for (const { predicate, otherId } of incident) {
+      // The incident-relationship listing answers association questions;
+      // for a pure people question it is unrelated noise, so it only
+      // runs when the question asked about associations.
+      const incidentToList = asksAssociation ? incident : [];
+      for (const { predicate, otherId } of incidentToList) {
         if (seenIds.has(otherId)) continue;
         const other = ctx.relatedObjects.find((o) => o.id === otherId);
         if (!other) continue;
@@ -651,7 +673,11 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
           "relationship_fact",
         );
       }
-      if (persons.length === 0 && associations === 0) {
+      // A pure people question with no person records is an honest
+      // unknown even when other associations exist: listing services or
+      // locations does not answer "who works here?". Association
+      // questions keep the listing behavior (associations are the answer).
+      if (persons.length === 0 && (associations === 0 || !asksAssociation)) {
         return {
           ...base,
           unknowns: ["people associated with this business"],
