@@ -371,8 +371,13 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
           >
             Ask FYD about this
           </a>
+          {/* data-fyd-open-full: bypasses the site client's /o/ interception
+              so this really navigates to the node route. Neighbor links
+              above intentionally stay intercepted: they swap the open
+              object, which IS the traversal surface. */}
           <a
             href={detailHref}
+            data-fyd-open-full="true"
             style={{
               display: "block",
               textAlign: "center",

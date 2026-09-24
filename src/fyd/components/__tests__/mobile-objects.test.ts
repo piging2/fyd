@@ -205,6 +205,10 @@ describe("ObjectOverlay compact experience", () => {
     expect(html).toContain(`/o/${encodeURIComponent(business.id)}#ask`);
     // Open full object.
     expect(html).toContain("Open full object");
+    // The Open full object link carries the interception bypass so it
+    // really navigates to the node route instead of reopening the
+    // overlay through the site client's /o/ handler.
+    expect(html).toContain('data-fyd-open-full="true"');
   });
 
   test("neighbor links in the overlay point back at /o/<id> for traversal", () => {

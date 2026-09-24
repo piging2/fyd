@@ -85,8 +85,10 @@ export function SiteClient({
       const target = e.target as HTMLElement;
       const link = target.closest('a[href^="/o/"]') as HTMLAnchorElement | null;
       if (!link) return;
-      // Let modifier clicks (new tab) and #ask links pass through.
+      // Let modifier clicks (new tab), #ask links, and explicit
+      // full-navigation links (data-fyd-open-full) pass through.
       if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+      if (link.hasAttribute("data-fyd-open-full")) return;
       const href = link.getAttribute("href") || "";
       if (href.includes("#ask")) return;
       const match = href.match(/^\/o\/([^#?]+)/);
