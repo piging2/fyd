@@ -3,6 +3,14 @@ import { getTenant } from "@/lib/tenant-config";
 import { getAllPosts } from "@/lib/blog";
 
 /**
+ * Version of the sitemap entry contract (Q-C-03): the URL set plus the
+ * per-entry fields (url, lastModified, changeFrequency, priority).
+ * Bump when the entry shape or the covered route set changes; inv-13
+ * pins the current value so a contract change without a bump fails.
+ */
+export const SITEMAP_CONTRACT_VERSION = "fyd.sitemap@1";
+
+/**
  * Site URL resolves from the tenant config. Falls back to the current Vercel
  * deployment URL until a PING domain is assigned. Never hardcode a domain here.
  */

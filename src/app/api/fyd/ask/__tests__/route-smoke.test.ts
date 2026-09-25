@@ -42,6 +42,7 @@ describe("POST /api/fyd/ask", () => {
     });
     expect(r.status).toBe(200);
     expect(r.json.ok).toBe(true);
+    expect(r.json.contractVersion).toBe("fyd.ask-response@1");
     expect(typeof r.json.answer).toBe("string");
     expect(r.json.refusal).toBe(false);
     expect(Array.isArray(r.json.citations)).toBe(true);

@@ -61,6 +61,7 @@ import {
   type AskFydOutcome,
 } from "@/fyd/ask/visitor-answer";
 import {
+  ASK_RESPONSE_CONTRACT_VERSION,
   AskContractError,
   assertAskAnswerContract,
   contractClaimsFor,
@@ -398,6 +399,7 @@ export async function handleAskRequest(
   }
   return NextResponse.json({
     ok: true,
+    contractVersion: ASK_RESPONSE_CONTRACT_VERSION,
     answer: outcome.answer,
     answerClass,
     answerState,

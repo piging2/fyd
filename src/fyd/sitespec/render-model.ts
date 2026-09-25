@@ -226,8 +226,10 @@ function sortKeys(value: unknown): unknown {
 
 /**
  * Canonical string encoding of a model: JSON with recursively sorted object
- * keys. Two models are semantically identical iff their canonical forms are
- * byte-identical. No new dependencies; deterministic across processes.
+ * keys. Byte-identical canonical forms prove equality only of what this
+ * section-binding manifest captures (checkpoint, digests, section bindings);
+ * they say nothing about renderer behavior or content outside the manifest.
+ * No new dependencies; deterministic across processes.
  */
 export function canonicalizeModel(model: SemanticRenderModel): string {
   return JSON.stringify(sortKeys(model));

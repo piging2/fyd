@@ -471,6 +471,13 @@ export function trimTagline(summary: string, maxChars: number): string {
  * background. Returns null for unknown slugs (the route turns this into a
  * 404).
  */
+/**
+ * Version of the served Circle projection envelope (Q-C-03). Bump when
+ * the CircleProjection shape changes; inv-13 pins the current value so
+ * a shape change without a bump fails the suite.
+ */
+export const CIRCLE_PROJECTION_CONTRACT_VERSION = "fyd.circle-projection@1";
+
 export function loadCircleProjection(
   projection: VerifiedPublicProjection | null,
   slug: string,

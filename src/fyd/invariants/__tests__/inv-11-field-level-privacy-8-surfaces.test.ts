@@ -486,6 +486,26 @@ describe("Q-C-13 hostile field test: PUBLIC field A + PRIVATE field B (B reachab
       expect(typeof contract.checkpoint).toBe("string");
       expect(body).toHaveProperty("graph");
       expect(body).not.toHaveProperty("history");
+      // The old raw route served the dump envelope as `meta`; that shape is gone.
+      expect(body).not.toHaveProperty("meta");
+      // PROOF the served graph IS the boundary output: every object is
+      // public, and the graph is byte-identical to what the boundary
+      // produces for the same tenant (a parallel raw-graph construction
+      // cannot pass this assertion).
+      const served = body.graph as {
+        objects: { id: string; visibility: string }[];
+        relationships: unknown[];
+      };
+      expect(Array.isArray(served.objects)).toBe(true);
+      for (const o of served.objects) {
+        expect(o.visibility).toBe("public");
+      }
+      const { getVerifiedPublicProjectionSync } = await import(
+        "../../data/ping-object-source"
+      );
+      const expected = getVerifiedPublicProjectionSync("happy-place", "anonymous");
+      expect(jsonOf(served)).toBe(jsonOf(expected.graph));
+      expect(contract.checkpoint).toBe(expected.provenance.checkpoint);
     });
 
     test("P0 contained: GET /api/fyd/objects/[objectId] never serves owner history", async () => {
@@ -510,6 +530,19 @@ describe("Q-C-13 hostile field test: PUBLIC field A + PRIVATE field B (B reachab
         view: body.view,
         projection: body.projection,
       });
+      // PROOF the view and projection were composed from the verified
+      // projection: recompute the projection from the boundary output and
+      // require byte-equality. A view composed over a raw graph cannot
+      // pass this assertion.
+      const { getVerifiedPublicProjectionSync: syncObj } = await import(
+        "../../data/ping-object-source"
+      );
+      const verifiedObj = syncObj(body.siteId as string, "anonymous");
+      const recomputed = objectViewToProjection(
+        body.view as import("../../object/view").ObjectView,
+        verifiedObj.graph,
+      );
+      expect(jsonOf(body.projection)).toBe(jsonOf(recomputed));
     });
   });
 
@@ -539,7 +572,7 @@ describe("Q-C-13 hostile field test: PUBLIC field A + PRIVATE field B (B reachab
         };
         appendOwnerEvent(LOC_ID, draft);
         const replayed = readOverrides(LOC_ID);
-        expect(replayed.addressVisibility).toBe("hidden");
+        expect(replayed.addressVisibility).toBe("hide");
         expect(
           replayed.history.some((h) => h.text.includes("hid the address")),
         ).toBe(true);
@@ -550,7 +583,7 @@ describe("Q-C-13 hostile field test: PUBLIC field A + PRIVATE field B (B reachab
           "../../object/owner-store",
         ) as typeof import("../../object/owner-store");
         const afterRestart = fresh.readOverrides(LOC_ID);
-        expect(afterRestart.addressVisibility).toBe("hidden");
+        expect(afterRestart.addressVisibility).toBe("hide");
         expect(
           afterRestart.history.some((h) => h.text.includes("hid the address")),
         ).toBe(true);
