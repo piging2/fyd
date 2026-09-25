@@ -9,6 +9,9 @@
  * - not linked from any public page or navigation
  * - absent from the sitemap (sitemap.ts is a static list)
  * - no marketing language anywhere on the page
+ * - gated to demo-owner mode on private-network hosts (same gate the
+ *   customize owner actions use): the lab serves the full graph,
+ *   including private objects, so it is never reachable anonymously.
  *
  * Data: the PING-backed projection read model (getPingObjectGraph), the same
  * fail-closed source the demo sites and Ask FYD read. A missing or tampered
@@ -17,10 +20,17 @@
  */
 
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import {
   getPingObjectGraph,
+  getVerifiedPublicProjection,
   listPingSiteIds,
 } from "@/fyd/data/ping-object-source";
+import {
+  isDemoOwnerModeEnabled,
+  isPrivateHost,
+} from "@/fyd/owner-mode/gate";
 import { buildLabData, type LabTypeName } from "./lab-adapter";
 import {
   ObjectsLabClient,
@@ -86,6 +96,13 @@ export default async function ObjectsLabPage({
 }) {
   const { site, type: rawType, projection: rawProjection, viewport: rawViewport } =
     await searchParams;
+  // Lab gate: the lab serves the full graph including private objects
+  // (summarizeObject/genericObjectView carry no visibility filter), so it
+  // is reachable only in demo-owner mode on a private-network host — the
+  // same boundary the customize owner actions use. Reversible: removing
+  // this block restores the previous obscurity-only behavior.
+  const host = (await headers()).get("host") ?? "";
+  if (!isDemoOwnerModeEnabled() || !isPrivateHost(host)) notFound();
   const siteIds = await listPingSiteIds();
   if (siteIds.length === 0) {
     return (
@@ -113,9 +130,11 @@ export default async function ObjectsLabPage({
       ? (rawViewport as ViewportPreset)
       : undefined;
 
-  let projection;
+  // The lab inspects the PUBLIC read model (Q-C-01): even this internal
+  // surface renders through the verified public projection boundary.
+  let verified;
   try {
-    projection = await getPingObjectGraph(siteId);
+    verified = await getVerifiedPublicProjection(siteId, "anonymous");
   } catch (err) {
     return (
       <LabFailure
@@ -125,8 +144,8 @@ export default async function ObjectsLabPage({
     );
   }
 
-  const { graph, meta } = projection;
-  const { typeGroups, views } = buildLabData(siteId, graph);
+  const { graph, meta } = await getPingObjectGraph(siteId);
+  const { typeGroups, views } = buildLabData(verified, graph);
   const labMeta: LabMeta = {
     dumpedAt: meta.dumpedAt,
     dumperVersion: meta.dumperVersion,

@@ -14,7 +14,10 @@
  *       Removes an approved directive from the journal (demo only).
  *
  * GET ?siteId=<id>&view=inspect — current presentation-intent state,
- *   section order, digest of the spec the owner reviews.
+ *   section order, digest of the spec the owner reviews. Same
+ *   demo-owner/private-host gate as the POST actions: owner
+ *   presentation-intent state is a confidentiality class, never served
+ *   to anonymous viewers.
  *
  * Failures are typed and honest: 400 (bad request / unsupported /
  * unresolved), 403 (no demo-owner mode, capability denied, public host),
@@ -128,6 +131,11 @@ export async function GET(req: Request) {
       { status: 400 },
     );
   }
+  // Owner-state confidentiality class: the inspect view serves
+  // presentation-intent directives (approvedBy, approvedAt, eventId) and
+  // hidden-section decisions. Same gate as the POST owner actions.
+  const gate = demoDenied(req);
+  if (gate) return gate;
   try {
     const site = await loadCustomizedSite(siteId);
     const body: InspectView = {
