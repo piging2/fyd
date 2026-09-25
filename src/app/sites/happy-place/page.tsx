@@ -18,7 +18,7 @@ import {
 } from "../_shared/spec-pipeline";
 import { generateSiteMetadata } from "../_shared/site-metadata";
 import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
-import { heroMediaFor } from "@/fyd/media/select";
+import { galleryMediaFor, heroMediaFor } from "@/fyd/media/select";
 import {
   auditSitesRenderClaims,
   logSitesRenderAudit,
@@ -41,6 +41,11 @@ export default async function HappyPlaceDemoPage() {
   // Hero media, resolved once per page load at the server render
   // seam. Null when the owner has no acquired media.
   const heroMedia = heroMediaFor(SITE_ID, graph, spec.ownerObjectId);
+  // Gallery media, resolved once per page load at the server render
+  // seam. Null when the owner has no gallery assets: the Gallery
+  // section renders nothing, never an empty frame.
+  const galleryAssets = galleryMediaFor(SITE_ID, graph, spec.ownerObjectId);
+  const galleryMedia = galleryAssets.length > 0 ? galleryAssets : null;
 
   // Binding-verification observation tap (WIRE-SPEC; QA-TRUTH R-A,
   // LANE-CLAIM R-MODEL): run this render's claims through the strong
@@ -62,6 +67,7 @@ export default async function HappyPlaceDemoPage() {
         renderable={renderable}
         siteId={SITE_ID}
         heroMedia={heroMedia}
+        galleryMedia={galleryMedia}
       />
       <DemoOwnerMode siteId={SITE_ID} />
     </main>

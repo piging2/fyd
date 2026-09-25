@@ -38,6 +38,10 @@ export async function compileSiteSpecWithIntent(
   const base = generateSiteSpec(graph, {
     generatedAt: meta.generatedAt,
     eventSequences: meta.eventSequences ?? undefined,
+    // Media-backed section emission (Gallery): the generator consults the
+    // site media manifest when a site id is present. Generic: every page
+    // passes only its site id; no per-site branching.
+    siteId,
   });
   // PRESENTATION INTENT layer: approved owner directives applied OVER the
   // compiled spec. Facts (graph) and design system (theme) are untouched.

@@ -21,8 +21,8 @@ import type {
   ObjectGraph,
   ViewerContext,
 } from "@/fyd/sitespec/types";
-// Type-only: the hero media is serialized DisplayMedia resolved on the
-// server; the client never touches the media store.
+// Type-only: the hero and gallery media are serialized DisplayMedia
+// resolved on the server; the client never touches the media store.
 import type { DisplayMedia } from "@/fyd/media/select";
 import { FydMotionFallback } from "@/fyd/components/fyd-motion-fallback";
 import { ObjectOverlay } from "@/fyd/components/object-overlay";
@@ -65,6 +65,7 @@ export function SiteClient({
   renderable,
   siteId,
   heroMedia = null,
+  galleryMedia = null,
 }: {
   spec: FYDSiteSpec;
   graph: ObjectGraph;
@@ -72,6 +73,7 @@ export function SiteClient({
   renderable: boolean;
   siteId?: string;
   heroMedia?: DisplayMedia | null;
+  galleryMedia?: DisplayMedia[] | null;
 }) {
   const [spec, setSpec] = useState(initialSpec);
   const [activeSlug, setActiveSlug] = useState(
@@ -82,8 +84,8 @@ export function SiteClient({
   const [overlayObjectId, setOverlayObjectId] = useState<string | null>(null);
 
   const ctx = useMemo(
-    () => ({ spec, graph, viewer: VIEWER, siteId, heroMedia }),
-    [spec, graph, siteId, heroMedia],
+    () => ({ spec, graph, viewer: VIEWER, siteId, heroMedia, galleryMedia }),
+    [spec, graph, siteId, heroMedia, galleryMedia],
   );
   const page = spec.pages.find((p) => p.slug === activeSlug) ?? spec.pages[0];
   // Object doorway: intercept taps/clicks on /o/ links. EDGE-1 routes them
