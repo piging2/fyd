@@ -43,7 +43,7 @@ import {
   resolveCustomizationIntent,
 } from "../intent";
 import { isUnsupported } from "../types";
-import { proposeFromSiteIntent } from "../propose";
+import { proposeFromSiteIntent, specDigestOf } from "../propose";
 import { applyPresentationIntent } from "../apply-layer";
 import { buildDirective } from "../server";
 import type {
@@ -309,5 +309,127 @@ describe("honesty guard: against the RAW base the exact command is a no-op refus
     if (resolved.resolved) throw new Error("unreachable");
     expect(resolved.reason).toMatch(/already first/);
     // The system never fabricates a change: no proposal, no patch.
+  });
+});
+
+describe("FYD-019 completion: determinism, conflict-wins, causal read-back", () => {
+  /** Run the full pinned flow once: NL -> proposal -> approved directive. */
+  function runPinnedFlow() {
+    const { spec, graph } = loadPreState();
+    const parsed = parseCustomizationIntent(EXACT_COMMAND);
+    if (isUnsupported(parsed)) throw new Error("unreachable");
+    const classic = classicIntentOf({
+      kind: "promote_first",
+      target: "emergency plumbing",
+    })!;
+    const resolved = resolveCustomizationIntent(spec, graph, classic);
+    if (!resolved.resolved) throw new Error("unreachable");
+    const proposed = proposeFromSiteIntent(spec, resolved.siteIntent, graph);
+    if (!proposed.ok) throw new Error("unreachable");
+    const op = buildDirective(
+      SITE_ID,
+      resolved.siteIntent,
+      proposed.proposal,
+      "2026-09-25T15:41:06.209Z",
+    );
+    const block: PresentationIntentBlock = {
+      directives: [toBlockDirective(op)],
+      provenance: { kind: "owner-presentation-intent", note: "test", eventIds: [] },
+    };
+    const layered = applyPresentationIntent(spec, block, graph);
+    return { spec, graph, proposed, op, layered };
+  }
+
+  test("deterministic: same intent + same graph -> same digests, same projection order", () => {
+    const a = runPinnedFlow();
+    const b = runPinnedFlow();
+    // The proposal binds the exact transition digest; the directive id
+    // derives from site + proposal digest (not the wall clock).
+    expect(b.proposed.proposal.proposalDigest).toBe(
+      a.proposed.proposal.proposalDigest,
+    );
+    expect(b.op.intentId).toBe(a.op.intentId);
+    expect(specDigestOf(b.layered.spec)).toBe(specDigestOf(a.layered.spec));
+    expect(servicesOrder(b.layered.spec, b.graph)).toEqual(
+      servicesOrder(a.layered.spec, a.graph),
+    );
+    expect(servicesOrder(a.layered.spec, a.graph)[0]).toBe("Plumbing");
+  });
+
+  test("conflicting source change: re-observed order differs, owner intent still wins presentation", () => {
+    const { graph, ventilationBlock } = loadPreState();
+    // Simulate a source re-observation that ships its own service order
+    // (HVAC first) in the freshly compiled base spec.
+    const changedBase = loadBase().spec;
+    const home = changedBase.pages.find((pg) => pg.slug === "home")!;
+    const services = home.sections.find((sec) => sec.component === "Services")!;
+    const ids = resolveQuery(services.query, graph, changedBase.ownerObjectId).map(
+      (o) => o.id,
+    );
+    const hvacFirst = [
+      ids.find((id) => graph.objects.find((o) => o.id === id)?.title === "HVAC")!,
+      ...ids.filter(
+        (id) => graph.objects.find((o) => o.id === id)?.title !== "HVAC",
+      ),
+    ];
+    services.presentation.objectOrder = hvacFirst;
+    expect(servicesOrder(changedBase, graph)[0]).toBe("HVAC");
+
+    // The approved owner directives replay over the changed base: the
+    // source conflict is preserved in the base, but presentation follows
+    // the owner intent (product law: intent wins presentation).
+    const flow = runPinnedFlow();
+    const bothBlock: PresentationIntentBlock = {
+      directives: [
+        ...ventilationBlock.directives,
+        toBlockDirective(flow.op),
+      ],
+      provenance: { kind: "owner-presentation-intent", note: "test", eventIds: [] },
+    };
+    const graphBefore = JSON.stringify(graph.objects);
+    const layered = applyPresentationIntent(changedBase, bothBlock, graph);
+    expect(layered.unresolved).toEqual([]);
+    expect(
+      layered.applied.map((a) => a.intentId),
+    ).toContain(flow.op.intentId);
+    expect(servicesOrder(layered.spec, graph)[0]).toBe("Plumbing");
+    // Facts untouched by the conflict or the replay.
+    expect(JSON.stringify(graph.objects)).toBe(graphBefore);
+  });
+
+  test("causal read-back: applied directive carries proposal id + before/after", () => {
+    const { graph, ventilationBlock } = loadPreState();
+    const flow = runPinnedFlow();
+    const bothBlock: PresentationIntentBlock = {
+      directives: [
+        ...ventilationBlock.directives,
+        toBlockDirective(flow.op),
+      ],
+      provenance: { kind: "owner-presentation-intent", note: "test", eventIds: [] },
+    };
+    const base = loadBase().spec;
+    const layered = applyPresentationIntent(base, bothBlock, graph);
+    const plumbing = layered.applied.find(
+      (a) => a.intentId === flow.op.intentId,
+    )!;
+    expect(plumbing).toBeDefined();
+    // The read-back names the exact approved transition.
+    expect(plumbing.reviewCard).not.toBeNull();
+    expect(plumbing.reviewCard!.title).toMatch(/Reorder objects/);
+    expect(plumbing.reviewCard!.before[0]).toMatch(
+      /^Objects in Services: Ventilation, /,
+    );
+    expect(plumbing.reviewCard!.after[0]).toMatch(
+      /^Objects in Services: Plumbing, /,
+    );
+    // ...and the directive record carries the approval lineage the
+    // read-back joins against (actor, timestamp, proposal digest).
+    const directive = bothBlock.directives.find(
+      (d) => d.intentId === flow.op.intentId,
+    )!;
+    expect(directive.approval.approvedBy).toBe("demo-owner (seeded, unverified)");
+    expect(directive.approval.proposalDigest).toBe(
+      flow.proposed.proposal.proposalDigest,
+    );
   });
 });

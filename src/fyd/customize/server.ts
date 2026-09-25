@@ -17,11 +17,12 @@ import { createHash } from "node:crypto";
 import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
 import { generateSiteSpec } from "@/fyd/proceduralize/generator";
 import type { FYDSiteSpec, ObjectGraph } from "@/fyd/sitespec/types";
-import { applyPresentationIntent } from "./apply-layer";
+import { applyPresentationIntent, type AppliedDirective } from "./apply-layer";
 import type {
   PresentationIntentBlock,
   PresentationIntentDirective,
   PresentationIntentOverlayOp,
+  SetPresentationIntentOp,
 } from "./types";
 import { UnknownOutcomeError } from "./write-boundary";
 import { TENANT_ID_PATTERN } from "../tenant/tenant-context";
@@ -37,6 +38,8 @@ export interface CustomizedSite {
   specDigest: string;
   presentationIntent: PresentationIntentBlock | null;
   appliedIntentIds: string[];
+  /** Applied directives in journal order, each carrying its review card. */
+  applied: AppliedDirective[];
   unresolved: { intentId: string; reason: string }[];
 }
 
@@ -61,6 +64,7 @@ export async function loadCustomizedSite(siteId: string): Promise<CustomizedSite
     specDigest,
     presentationIntent,
     appliedIntentIds: layered.applied.map((a) => a.intentId),
+    applied: layered.applied,
     unresolved: layered.unresolved,
   };
 }
@@ -282,7 +286,7 @@ export function buildDirective(
   siteIntent: PresentationIntentDirective["siteIntent"],
   proposal: PresentationIntentDirective["proposal"],
   approvedAt: string,
-): PresentationIntentOverlayOp {
+): SetPresentationIntentOp {
   return {
     op: "set_presentation_intent",
     intentId: directiveIdFor(siteId, proposal.proposalDigest),

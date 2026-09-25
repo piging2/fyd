@@ -43,6 +43,12 @@ interface InspectData {
     approvedBy: string;
     approvedAt: string;
     eventId?: string;
+    change: {
+      title: string;
+      before: string[];
+      after: string[];
+      operationCount: number;
+    } | null;
   }[];
   appliedIntentIds: string[];
   unresolved: { intentId: string; reason: string }[];
@@ -67,7 +73,7 @@ const label = {
 const body = { color: "#c9b98a", fontSize: 13, marginTop: 6 };
 
 export function CustomizePanel({ siteId }: { siteId: string }) {
-  const [text, setText] = useState("Make emergency service the first thing people see");
+  const [text, setText] = useState("Move emergency plumbing first");
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<ApiError | null>(null);
   const [proposal, setProposal] = useState<ParsedProposal | null>(null);
@@ -351,6 +357,13 @@ export function CustomizePanel({ siteId }: { siteId: string }) {
                   {d.eventId ? (
                     <span> · event <code>{d.eventId}</code></span>
                   ) : null}{" "}
+                  {d.change ? (
+                    <div style={{ marginTop: 4, fontSize: 12 }}>
+                      <div style={{ color: "#9c8a4d" }}>What changed: {d.change.title}</div>
+                      <div>Before: {d.change.before.join(" ")}</div>
+                      <div>After: {d.change.after.join(" ")}</div>
+                    </div>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => runClear(d.intentId)}

@@ -133,6 +133,84 @@ function describeDeactivated(
 }
 
 /**
+ * Pure before/after review card for a site intent against a spec snapshot.
+ * This is the exact card the owner reviews at propose time; the apply layer
+ * and the inspect read-back reuse it so "what changed" is always derived
+ * from the same describers, never reworded.
+ *
+ * Returns null when the target section is missing or the kind has no
+ * presentation card (edit_copy, set_theme_token). Never refuses no-ops: the
+ * card of an already-satisfied intent shows identical before/after, which is
+ * the honest replay evidence.
+ *
+ * graph is optional: when provided, cards resolve object titles and the
+ * current object order comes from the live query; without it the card falls
+ * back to ids and any stored objectOrder.
+ */
+export function reviewCardForSiteIntent(
+  spec: FYDSiteSpec,
+  siteIntent: SiteIntent,
+  graph?: ObjectGraph,
+): ReviewCard | null {
+  switch (siteIntent.kind) {
+    case "reorder_section": {
+      const order = describeMove(spec, siteIntent);
+      if (!order) return null;
+      // proposeSitePatch sets propsDiff.moveTo = intent.toIndex, so the
+      // title matches the proposal-time card exactly.
+      return {
+        title: "Move section to position " + siteIntent.toIndex,
+        before: ["Page order: " + order.before.join(" | ")],
+        after: ["Page order: " + order.after.join(" | ")],
+        operationCount: 1,
+      };
+    }
+    case "toggle_section": {
+      const t = describeToggle(spec, siteIntent);
+      if (!t) return null;
+      return {
+        title: siteIntent.hidden ? "Hide section" : "Show section",
+        before: t.before,
+        after: t.after,
+        operationCount: 1,
+      };
+    }
+    case "set_featured": {
+      const t = describeFeatured(spec, siteIntent);
+      if (!t) return null;
+      return {
+        title: "Feature object",
+        before: t.before,
+        after: t.after,
+        operationCount: 1,
+      };
+    }
+    case "reorder_object": {
+      const t = describeObjectOrder(spec, siteIntent, graph);
+      if (!t) return null;
+      return {
+        title: "Reorder objects within section",
+        before: t.before,
+        after: t.after,
+        operationCount: 1,
+      };
+    }
+    case "deactivate_object": {
+      const t = describeDeactivated(spec, siteIntent, graph);
+      if (!t) return null;
+      return {
+        title: "Hide object",
+        before: t.before,
+        after: t.after,
+        operationCount: 1,
+      };
+    }
+    default:
+      return null;
+  }
+}
+
+/**
  * Draft the digest-bound proposal for a resolved intent. Refuses honestly
  * on no-ops (already first, already hidden, already featured, already
  * ordered, already deactivated) instead of producing an empty proposal.
@@ -153,7 +231,9 @@ export function proposeFromSiteIntent(
   }
   const proposal = drafted.proposal;
 
-  let card: ReviewCard | null = null;
+  // Honest no-op refusals. The card itself comes from
+  // reviewCardForSiteIntent below so propose-time and read-back cards are
+  // the same object shape from the same describers.
   if (siteIntent.kind === "reorder_section") {
     const diff = proposal.propsDiff as { moveFrom?: number; moveTo?: number };
     if (diff.moveFrom === diff.moveTo) {
@@ -167,14 +247,6 @@ export function proposeFromSiteIntent(
           ", so there is nothing to change.",
       };
     }
-    const order = describeMove(spec, siteIntent);
-    if (!order) return { ok: false, error: "Section not found in this spec." };
-    card = {
-      title: "Move section to position " + diff.moveTo,
-      before: ["Page order: " + order.before.join(" | ")],
-      after: ["Page order: " + order.after.join(" | ")],
-      operationCount: 1,
-    };
   } else if (siteIntent.kind === "toggle_section") {
     const sec = spec.pages
       .find((p) => p.slug === siteIntent.pageSlug)
@@ -188,14 +260,6 @@ export function proposeFromSiteIntent(
           (siteIntent.hidden ? "hidden" : "visible") + ", so there is nothing to change.",
       };
     }
-    const t = describeToggle(spec, siteIntent);
-    if (!t) return { ok: false, error: "Section not found in this spec." };
-    card = {
-      title: siteIntent.hidden ? "Hide section" : "Show section",
-      before: t.before,
-      after: t.after,
-      operationCount: 1,
-    };
   } else if (siteIntent.kind === "set_featured") {
     const sec = spec.pages
       .find((p) => p.slug === siteIntent.pageSlug)
@@ -207,14 +271,6 @@ export function proposeFromSiteIntent(
     if (cur.join("|") === next.join("|")) {
       return { ok: false, error: "That object is already featured, so there is nothing to change." };
     }
-    const t = describeFeatured(spec, siteIntent);
-    if (!t) return { ok: false, error: "Section not found in this spec." };
-    card = {
-      title: "Feature object",
-      before: t.before,
-      after: t.after,
-      operationCount: 1,
-    };
   } else if (siteIntent.kind === "reorder_object") {
     const t = describeObjectOrder(spec, siteIntent, graph);
     if (!t) return { ok: false, error: "Section not found in this spec." };
@@ -225,12 +281,6 @@ export function proposeFromSiteIntent(
           "The objects are already in that order, so there is nothing to change.",
       };
     }
-    card = {
-      title: "Reorder objects within section",
-      before: t.before,
-      after: t.after,
-      operationCount: 1,
-    };
   } else if (siteIntent.kind === "deactivate_object") {
     const t = describeDeactivated(spec, siteIntent, graph);
     if (!t) return { ok: false, error: "Section not found in this spec." };
@@ -241,12 +291,6 @@ export function proposeFromSiteIntent(
           "That object is already hidden, so there is nothing to change.",
       };
     }
-    card = {
-      title: "Hide object",
-      before: t.before,
-      after: t.after,
-      operationCount: 1,
-    };
   } else {
     return {
       ok: false,
@@ -256,5 +300,7 @@ export function proposeFromSiteIntent(
     };
   }
 
-  return { ok: true, proposal, reviewCard: card!, specDigest };
+  const card = reviewCardForSiteIntent(spec, siteIntent, graph);
+  if (!card) return { ok: false, error: "Section not found in this spec." };
+  return { ok: true, proposal, reviewCard: card, specDigest };
 }

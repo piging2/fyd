@@ -121,3 +121,13 @@ export type PresentationIntentOverlayOp =
       };
     }
   | { op: "clear_presentation_intent"; intentId: string };
+
+/**
+ * The set-variant of the overlay op: the exact approved directive the owner
+ * reviewed (proposal digest, approval lineage). buildDirective (./server.ts)
+ * always produces this variant.
+ */
+export type SetPresentationIntentOp = Extract<
+  PresentationIntentOverlayOp,
+  { op: "set_presentation_intent" }
+>;

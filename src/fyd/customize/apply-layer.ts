@@ -31,6 +31,7 @@ import {
   proposalDigest,
   type SitePatchBody,
 } from "../proceduralize/patch";
+import { reviewCardForSiteIntent, type ReviewCard } from "./propose";
 import type { FYDSiteSpec, ObjectGraph } from "../sitespec/types";
 import type {
   PresentationIntentBlock,
@@ -40,6 +41,14 @@ import type {
 export interface AppliedDirective {
   intentId: string;
   summary: string;
+  /**
+   * The before/after review card for this directive, computed against the
+   * spec snapshot just before it applied (with the resolved section id).
+   * This is the causal read-back: proposal id + before/after + the
+   * directive's approval lineage say what changed and why. Null when the
+   * intent kind has no presentation card.
+   */
+  reviewCard: ReviewCard | null;
 }
 
 export interface UnresolvedDirective {
@@ -187,9 +196,16 @@ export function applyPresentationIntent(
         continue;
       }
     }
-    // 5. Apply the exact approved proposal. Pure: returns a new spec.
+    // 5. Capture the before/after card against the pre-apply snapshot,
+    //    then apply the exact approved proposal. Pure: returns a new spec.
     //    Rewrite the proposal's targetSection to the resolved id so a
     //    position-shifted section still applies to the right section.
+    const resolvedIntent = {
+      ...si,
+      pageSlug: target.pageSlug,
+      sectionId: target.sectionId,
+    };
+    const reviewCard = reviewCardForSiteIntent(current, resolvedIntent, graph);
     const proposalForApply: SitePatchBody = {
       ...d.proposal,
       targetSection: target.sectionId,
@@ -197,7 +213,7 @@ export function applyPresentationIntent(
     };
     const after = applySitePatch(current, proposalForApply);
     current = after;
-    applied.push({ intentId: d.intentId, summary: summarize(d) });
+    applied.push({ intentId: d.intentId, summary: summarize(d), reviewCard });
   }
 
   return { spec: current, applied, unresolved };

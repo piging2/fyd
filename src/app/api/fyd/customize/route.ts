@@ -126,6 +126,17 @@ interface InspectView {
     approvedBy: string;
     approvedAt: string;
     eventId?: string;
+    /**
+     * Causal read-back: the exact before/after the owner approved, from the
+     * same review-card describers as propose time. Null when the intent kind
+     * has no presentation card.
+     */
+    change: {
+      title: string;
+      before: string[];
+      after: string[];
+      operationCount: number;
+    } | null;
   }[];
   appliedIntentIds: string[];
   unresolved: { intentId: string; reason: string }[];
@@ -150,6 +161,9 @@ export async function GET(req: Request) {
   if (gate) return gate;
   try {
     const site = await loadCustomizedSite(siteId);
+    const cards = new Map(
+      site.applied.map((a) => [a.intentId, a.reviewCard] as const),
+    );
     const body: InspectView = {
       siteId,
       specDigest: site.specDigest,
@@ -169,6 +183,9 @@ export async function GET(req: Request) {
         approvedBy: d.approval.approvedBy,
         approvedAt: d.approval.approvedAt,
         eventId: d.approval.eventId,
+        // Causal read-back: proposal id + before/after + actor + timestamp
+        // say what changed and why.
+        change: cards.get(d.intentId) ?? null,
       })),
       appliedIntentIds: site.appliedIntentIds,
       unresolved: site.unresolved,
