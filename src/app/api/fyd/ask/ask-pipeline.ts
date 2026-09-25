@@ -61,6 +61,11 @@ import {
   type AskFydOutcome,
 } from "@/fyd/ask/visitor-answer";
 import {
+  AskContractError,
+  assertAskAnswerContract,
+  contractClaimsFor,
+} from "@/fyd/ask/contract";
+import {
   requireTenantContext,
   TenantContextError,
 } from "@/fyd/tenant/tenant-context";
@@ -365,14 +370,42 @@ export async function handleAskRequest(
     outcome.citations,
     outcome.claimClassifications,
   );
+  // Coarse state, fed by the five support classes (both layers).
+  const answerState = answerStateFor(answerClass);
+  // CLAIMS: every factual claim with its support class and evidence refs.
+  const claims = contractClaimsFor(outcome.claimClassifications);
+  // THE binding-contract enforcement seam (Nolan 2026-09-25): the answer
+  // the pipeline produced is checked against the contract it claims.
+  // A violation is a pipeline bug, so the route fails closed as
+  // honest-unknown instead of serving a structurally dishonest answer.
+  // No new authority: truth stays upstream; this checks the output shape.
+  try {
+    assertAskAnswerContract({ outcome, answerClass, answerState, claims });
+  } catch (err) {
+    if (err instanceof AskContractError) {
+      console.error(`answerAskFyd: contract violation for site "${siteId}":`, err.message);
+      return NextResponse.json(
+        {
+          ok: false,
+          kind: "internal_error",
+          error: "Ask FYD hit an unexpected problem. The answer is unknown.",
+          answerUnknown: true,
+        },
+        { status: 500 },
+      );
+    }
+    throw err;
+  }
   return NextResponse.json({
     ok: true,
     answer: outcome.answer,
     answerClass,
-    // Coarse state, fed by the five support classes (both layers).
-    answerState: answerStateFor(answerClass),
+    answerState,
     refusal: outcome.refusal,
     citations: outcome.citations,
+    // OUTPUT "CLAIMS": claim text + support class + the evidence ref ids
+    // behind it. Every factual answer is recoverable to evidence here.
+    claims,
     // Structured, citation-backed refs: the objects, evidence, and sources
     // the answer stands on. Derived from citations only; never invented.
     objectRefs: outcome.objectRefs,

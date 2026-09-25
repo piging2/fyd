@@ -26,8 +26,11 @@ export const runtime = "nodejs";
  *   exists it is treated as visitor-safe and grants nothing.
  *
  * Response: { ok: true, answer, answerClass, answerState, refusal,
- *   citations, objectRefs, evidenceRefs, sourceRefs, unknowns,
+ *   citations, claims, objectRefs, evidenceRefs, sourceRefs, unknowns,
  *   suggestedActions, proposal, tenantId }
+ *   claims is the OUTPUT "CLAIMS" element of the Ask FYD binding contract
+ *   (contract.ts): each claim with its support class and evidence ref ids.
+ *   The contract seam asserts the served answer before it leaves.
  *   unknowns is string[]; suggestedActions is the available-actions list
  *   ([] when none); proposal is a draft AskProposal or null.
  *   answerClass is exactly one of "SUPPORTED DIRECTLY" | "SUPPORTED BY
