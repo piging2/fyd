@@ -26,6 +26,16 @@ import type {
   ObjectServiceView,
   ObjectView,
 } from "../types";
+import { getVerifiedPublicProjectionSync } from "../../data/ping-object-source";
+/** Anonymous verified projection for a fixture slug (null when unknown). */
+const proj = (slug: string) => getVerifiedPublicProjectionSync(slug, "anonymous");
+const projOrNull = (slug: string) => {
+  try {
+    return proj(slug);
+  } catch {
+    return null;
+  }
+};
 
 const PROJECTIONS = join(__dirname, "fixtures", "projections");
 
@@ -99,7 +109,7 @@ function projectionDirWithPrivateObject(): string {
 
 describe("loadObjectViewById", () => {
   test("loads the business object by id", () => {
-    const view = loadObjectViewById(HAPPY.site, HAPPY.business);
+    const view = loadObjectViewById(projOrNull(HAPPY.site), HAPPY.site, HAPPY.business);
     expect(view).not.toBeNull();
     expect(view!.id).toBe(HAPPY.business);
     expect(view!.schema).toBe("ping.social.business@1");
@@ -115,7 +125,7 @@ describe("loadObjectViewById", () => {
   });
 
   test("loads the location object by id", () => {
-    const view = loadObjectViewById(HAPPY.site, HAPPY.location);
+    const view = loadObjectViewById(projOrNull(HAPPY.site), HAPPY.site, HAPPY.location);
     expect(view).not.toBeNull();
     expect(view!.id).toBe(HAPPY.location);
     expect(view!.schema).toBe("ping.social.location@1");
@@ -131,7 +141,7 @@ describe("loadObjectViewById", () => {
   });
 
   test("loads the service object by id", () => {
-    const view = loadObjectViewById(HAPPY.site, HAPPY.service);
+    const view = loadObjectViewById(projOrNull(HAPPY.site), HAPPY.site, HAPPY.service);
     expect(view).not.toBeNull();
     expect(view!.id).toBe(HAPPY.service);
     expect(view!.schema).toBe("ping.social.service@1");
@@ -142,7 +152,7 @@ describe("loadObjectViewById", () => {
   });
 
   test("loads the coppersmith business by id with its acquired media", () => {
-    const view = loadObjectViewById(COPPER.site, COPPER.business);
+    const view = loadObjectViewById(projOrNull(COPPER.site), COPPER.site, COPPER.business);
     expect(view).not.toBeNull();
     expect(view!.id).toBe(COPPER.business);
     expect(view!.name).not.toBe("Happy Place Carpentry LLC");
@@ -151,29 +161,29 @@ describe("loadObjectViewById", () => {
   });
 
   test("returns null for an unknown tenant", () => {
-    expect(loadObjectViewById("nope", HAPPY.business)).toBeNull();
+    expect(loadObjectViewById(projOrNull("nope"), "nope", HAPPY.business)).toBeNull();
   });
 
   test("returns null for an unknown object id", () => {
-    expect(loadObjectViewById(HAPPY.site, "nope")).toBeNull();
+    expect(loadObjectViewById(projOrNull(HAPPY.site), HAPPY.site, "nope")).toBeNull();
   });
 
   test("never crosses tenants", () => {
     // The coppersmith business id is not in the happy-place graph.
-    expect(loadObjectViewById(HAPPY.site, COPPER.business)).toBeNull();
-    expect(loadObjectViewById(COPPER.site, HAPPY.business)).toBeNull();
+    expect(loadObjectViewById(projOrNull(HAPPY.site), HAPPY.site, COPPER.business)).toBeNull();
+    expect(loadObjectViewById(projOrNull(COPPER.site), COPPER.site, HAPPY.business)).toBeNull();
   });
 
   test("returns null for a private object", () => {
     process.env.FYD_PROJECTION_DIR = projectionDirWithPrivateObject();
-    expect(loadObjectViewById(HAPPY.site, "secret-service-1")).toBeNull();
-    expect(loadCircleProjectionById(HAPPY.site, "secret-service-1")).toBeNull();
+    expect(loadObjectViewById(projOrNull(HAPPY.site), HAPPY.site, "secret-service-1")).toBeNull();
+    expect(loadCircleProjectionById(projOrNull(HAPPY.site), HAPPY.site, "secret-service-1")).toBeNull();
   });
 });
 
 describe("loadCircleProjectionById", () => {
   test("projects the business object", () => {
-    const proj = loadCircleProjectionById(HAPPY.site, HAPPY.business);
+    const proj = loadCircleProjectionById(projOrNull(HAPPY.site), HAPPY.site, HAPPY.business);
     expect(proj).not.toBeNull();
     expect(proj!.id).toBe(HAPPY.business);
     expect(proj!.name).toBe("Happy Place Carpentry LLC");
@@ -183,12 +193,12 @@ describe("loadCircleProjectionById", () => {
     expect(proj!.sampleQuestions).toHaveLength(3);
     // Tagline is a 90-char word-boundary trim of the summary.
     expect(proj!.tagline.length).toBeLessThanOrEqual(90);
-    expect(loadObjectViewById(HAPPY.site, HAPPY.business)!.summary.startsWith(proj!.tagline)).toBe(true);
+    expect(loadObjectViewById(projOrNull(HAPPY.site), HAPPY.site, HAPPY.business)!.summary.startsWith(proj!.tagline)).toBe(true);
   });
 
   test("gradient background is deterministic and matches the media-lane convention", () => {
-    const a = loadCircleProjectionById(HAPPY.site, HAPPY.business);
-    const b = loadCircleProjectionById(HAPPY.site, HAPPY.business);
+    const a = loadCircleProjectionById(projOrNull(HAPPY.site), HAPPY.site, HAPPY.business);
+    const b = loadCircleProjectionById(projOrNull(HAPPY.site), HAPPY.site, HAPPY.business);
     expect(a).toEqual(b);
     // Independent recomputation of the sha256(objectId) gradient.
     const hash = createHash("sha256").update(HAPPY.business, "utf8").digest();
@@ -210,7 +220,7 @@ describe("loadCircleProjectionById", () => {
   });
 
   test("coppersmith business gets an image background from rights-authorized media", () => {
-    const proj = loadCircleProjectionById(COPPER.site, COPPER.business);
+    const proj = loadCircleProjectionById(projOrNull(COPPER.site), COPPER.site, COPPER.business);
     expect(proj).not.toBeNull();
     expect(proj!.background.kind).toBe("image");
     if (proj!.background.kind === "image") {
@@ -220,8 +230,8 @@ describe("loadCircleProjectionById", () => {
   });
 
   test("honesty gates: unknown tenant / object id -> null", () => {
-    expect(loadCircleProjectionById("nope", HAPPY.business)).toBeNull();
-    expect(loadCircleProjectionById(HAPPY.site, "nope")).toBeNull();
+    expect(loadCircleProjectionById(projOrNull("nope"), "nope", HAPPY.business)).toBeNull();
+    expect(loadCircleProjectionById(projOrNull(HAPPY.site), HAPPY.site, "nope")).toBeNull();
   });
 });
 

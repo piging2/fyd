@@ -9,7 +9,7 @@
  */
 
 import { loadObjectView } from "@/fyd/object/view";
-import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
 import { objectViewToProjection } from "@/fyd/object/object-projection";
 import { resolveCircleBackground } from "@/fyd/media/circle-background";
 import { ObjectsClient } from "./objects-client";
@@ -45,20 +45,17 @@ function faceFor(
 export default function ObjectsPage() {
   const objects: ObjectHandle[] = [];
   for (const siteId of SITE_IDS) {
-    let view;
+    // Verified public projection (Q-C-01): the view and the related
+    // objects both come from the boundary-projected graph.
+    let verified;
     try {
-      view = loadObjectView(siteId);
+      verified = getVerifiedPublicProjectionSync(siteId, "anonymous");
     } catch {
       continue;
     }
+    const view = loadObjectView(verified, siteId);
     if (!view) continue;
-    let graph;
-    try {
-      graph = getPingObjectGraphSync(siteId).graph;
-    } catch {
-      continue;
-    }
-    const projection = objectViewToProjection(view, graph);
+    const projection = objectViewToProjection(view, verified.graph);
     objects.push({
       siteId,
       projection,

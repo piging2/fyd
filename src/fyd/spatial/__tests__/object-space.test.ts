@@ -26,6 +26,15 @@ import type {
 import { loadObjectViewBySlugOrId } from "@/fyd/object/by-id";
 import { objectViewToProjection } from "@/fyd/object/object-projection";
 import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
+/** Anonymous verified projection for a fixture slug (null when unknown). */
+const projOrNull = (slug: string) => {
+  try {
+    return getVerifiedPublicProjectionSync(slug, "anonymous");
+  } catch {
+    return null;
+  }
+};
 
 const PROVENANCE_REF =
   "website-ingestion:https://happy-place-platform.vercel.app/";
@@ -306,7 +315,7 @@ describe("deriveSpatialSpec / by-id loader (real projection seam)", () => {
   });
 
   function projectionFor(objectId: string): ObjectProjection {
-    const resolved = loadObjectViewBySlugOrId(objectId);
+    const resolved = loadObjectViewBySlugOrId(objectId, projOrNull);
     expect(resolved).not.toBeNull();
     const graph = getPingObjectGraphSync(resolved!.siteId).graph;
     return objectViewToProjection(resolved!.view, graph);

@@ -17,6 +17,18 @@ import { loadObjectViewBySlugOrId } from "../by-id";
 import { loadObjectView } from "../view";
 import { objectViewToProjection } from "../object-projection";
 
+import { getVerifiedPublicProjectionSync } from "../../data/ping-object-source";
+
+/** Resolve the anonymous verified projection for a fixture slug. */
+const proj = (slug: string) => getVerifiedPublicProjectionSync(slug, "anonymous");
+const projOrNull = (slug: string) => {
+  try {
+    return proj(slug);
+  } catch {
+    return null;
+  }
+};
+
 const PROJECTIONS = join(__dirname, "fixtures", "projections");
 
 const HAPPY = {
@@ -40,7 +52,7 @@ beforeEach(() => {
 
 describe("loadObjectViewBySlugOrId", () => {
   test("resolves a site slug to the business view", () => {
-    const found = loadObjectViewBySlugOrId("happy-place");
+    const found = loadObjectViewBySlugOrId("happy-place", projOrNull);
     expect(found).not.toBeNull();
     expect(found!.siteId).toBe("happy-place");
     // Slug views are keyed by site slug (legacy loader contract).
@@ -49,28 +61,28 @@ describe("loadObjectViewBySlugOrId", () => {
   });
 
   test("resolves a service object id to its view and tenant", () => {
-    const found = loadObjectViewBySlugOrId(HAPPY.service);
+    const found = loadObjectViewBySlugOrId(HAPPY.service, projOrNull);
     expect(found).not.toBeNull();
     expect(found!.siteId).toBe("happy-place");
     expect(found!.view.id).toBe(HAPPY.service);
   });
 
   test("resolves a coppersmith person id without crossing tenants", () => {
-    const found = loadObjectViewBySlugOrId(COPPER.person);
+    const found = loadObjectViewBySlugOrId(COPPER.person, projOrNull);
     expect(found).not.toBeNull();
     expect(found!.siteId).toBe("coppersmith-plumbing");
     expect(found!.view.id).toBe(COPPER.person);
   });
 
   test("returns null for an unknown slug or id", () => {
-    expect(loadObjectViewBySlugOrId("no-such-site")).toBeNull();
-    expect(loadObjectViewBySlugOrId("website-nope-123")).toBeNull();
+    expect(loadObjectViewBySlugOrId("no-such-site", projOrNull)).toBeNull();
+    expect(loadObjectViewBySlugOrId("website-nope-123", projOrNull)).toBeNull();
   });
 });
 
 describe("objectViewToProjection relationship fields", () => {
   test("happy-place: location and service refs from real active edges", () => {
-    const view = loadObjectView("happy-place")!;
+    const view = loadObjectView(proj("happy-place"), "happy-place")!;
     const { graph } = getPingObjectGraphSync("happy-place");
     const p = objectViewToProjection(view, graph);
 
@@ -90,7 +102,7 @@ describe("objectViewToProjection relationship fields", () => {
   });
 
   test("coppersmith: person, external identity, and location from real edges", () => {
-    const view = loadObjectView("coppersmith-plumbing")!;
+    const view = loadObjectView(proj("coppersmith-plumbing"), "coppersmith-plumbing")!;
     const { graph } = getPingObjectGraphSync("coppersmith-plumbing");
     const p = objectViewToProjection(view, graph);
 
@@ -117,7 +129,7 @@ describe("objectViewToProjection relationship fields", () => {
   });
 
   test("without a graph the fields stay empty, exactly as before", () => {
-    const view = loadObjectView("happy-place")!;
+    const view = loadObjectView(proj("happy-place"), "happy-place")!;
     const p = objectViewToProjection(view);
     expect(p.people).toEqual([]);
     expect(p.externalIdentities).toEqual([]);
@@ -126,7 +138,7 @@ describe("objectViewToProjection relationship fields", () => {
   });
 
   test("owner visibility wins: hidden services never surface as refs", () => {
-    const view = loadObjectView("happy-place")!;
+    const view = loadObjectView(proj("happy-place"), "happy-place")!;
     const { graph } = getPingObjectGraphSync("happy-place");
     const hidden = {
       ...view,

@@ -21,6 +21,18 @@ import {
   loadObjectView,
 } from "../view";
 
+import { getVerifiedPublicProjectionSync } from "../../data/ping-object-source";
+
+/** Resolve the anonymous verified projection for a fixture slug. */
+const proj = (slug: string) => getVerifiedPublicProjectionSync(slug, "anonymous");
+const projOrNull = (slug: string) => {
+  try {
+    return proj(slug);
+  } catch {
+    return null;
+  }
+};
+
 const PROJECTIONS = join(__dirname, "fixtures", "projections");
 
 beforeEach(() => {
@@ -66,11 +78,11 @@ function projectionServiceTitles(slug: string): string[] {
 
 describe("loadObjectView", () => {
   test("returns null for unknown objects", () => {
-    expect(loadObjectView("nope")).toBeNull();
+    expect(loadObjectView(projOrNull("nope"), "nope")).toBeNull();
   });
 
   test("loads the Happy Place view from the PING-backed projection", () => {
-    const view = loadObjectView("happy-place");
+    const view = loadObjectView(proj("happy-place"), "happy-place");
     expect(view).not.toBeNull();
     expect(view!.id).toBe("happy-place");
     expect(view!.schema).toBe("ping.social.business@1");
@@ -105,7 +117,7 @@ describe("loadObjectView", () => {
   test("service list agrees with the projection graph (FL-20260921-233)", () => {
     // The loader must enumerate exactly the structured services the
     // projection carries: no fixture prose-parse, no second source.
-    const view = loadObjectView("happy-place");
+    const view = loadObjectView(proj("happy-place"), "happy-place");
     expect(view!.services.map((s) => s.name)).toEqual(
       projectionServiceTitles("happy-place"),
     );
@@ -128,7 +140,7 @@ describe("loadObjectView", () => {
       ids,
       names,
     );
-    const view = loadObjectView("happy-place");
+    const view = loadObjectView(proj("happy-place"), "happy-place");
     expect(
       view!.services.find((s) => s.id === "website-service-51de038c1defe8bd")!.visible,
     ).toBe(false);
@@ -138,7 +150,7 @@ describe("loadObjectView", () => {
     const { ids, names } = knownServices("happy-place");
     const { applyOwnerCommand } = require("../owner-store") as typeof import("../owner-store");
     applyOwnerCommand("happy-place", { type: "add-service", name: "Gutter Cleaning" }, ids, names);
-    const view = loadObjectView("happy-place");
+    const view = loadObjectView(proj("happy-place"), "happy-place");
     const added = view!.services.find((s) => s.name === "Gutter Cleaning")!;
     expect(added.basis).toBe("owner");
     expect(added.visible).toBe(true);
@@ -146,7 +158,7 @@ describe("loadObjectView", () => {
   });
 
   test("Coppersmith loads with no structured services", () => {
-    const view = loadObjectView("coppersmith-plumbing");
+    const view = loadObjectView(proj("coppersmith-plumbing"), "coppersmith-plumbing");
     expect(view).not.toBeNull();
     expect(view!.id).toBe("coppersmith-plumbing");
     expect(view!.name).not.toBe("Happy Place Carpentry LLC");
@@ -164,7 +176,7 @@ describe("loadObjectView", () => {
   });
 
   test("legacy buildObjectView alias still resolves", () => {
-    expect(buildObjectView("happy-place")?.services.map((s) => s.name)).toEqual([
+    expect(buildObjectView(proj("happy-place"), "happy-place")?.services.map((s) => s.name)).toEqual([
       "Pergola Design Consultations",
     ]);
   });

@@ -14,7 +14,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { notFound } from "next/navigation";
 import { loadObjectView } from "@/fyd/object/view";
-import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
 import { objectViewToProjection } from "@/fyd/object/object-projection";
 import { deriveSpatialSpec } from "@/fyd/spatial/object-space";
 import type { SnapshotInfo } from "@/fyd/ui/spatial/center-portal";
@@ -85,22 +85,17 @@ function loadSnapshot(): SnapshotInfo | null {
 }
 
 export default function SpatialObjectsPage() {
-  let view;
+  let verified;
   try {
-    view = loadObjectView("happy-place");
+    verified = getVerifiedPublicProjectionSync("happy-place", "anonymous");
   } catch {
-    view = null;
+    verified = null;
   }
+  if (!verified) notFound();
+  const view = loadObjectView(verified, "happy-place");
   if (!view) notFound();
 
-  let graph;
-  try {
-    graph = getPingObjectGraphSync("happy-place").graph;
-  } catch {
-    notFound();
-  }
-
-  const projection = objectViewToProjection(view, graph);
+  const projection = objectViewToProjection(view, verified.graph);
   const spec = deriveSpatialSpec({ focus: projection });
   if (!spec) notFound();
 

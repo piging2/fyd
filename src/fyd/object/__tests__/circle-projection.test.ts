@@ -15,6 +15,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { resolveCircleBackground } from "../../media/circle-background";
 import { buildCircleProjection, loadCircleProjection } from "../view";
+import { getVerifiedPublicProjectionSync } from "../../data/ping-object-source";
+/** Anonymous verified projection for a fixture slug (null when unknown). */
+const proj = (slug: string) => getVerifiedPublicProjectionSync(slug, "anonymous");
+const projOrNull = (slug: string) => {
+  try {
+    return proj(slug);
+  } catch {
+    return null;
+  }
+};
 
 beforeEach(() => {
   // Isolate owner state so tests never touch real demo data, and point the
@@ -77,39 +87,39 @@ describe("resolveCircleBackground", () => {
 
 describe("loadCircleProjection", () => {
   test("returns null for unknown objects", () => {
-    expect(loadCircleProjection("nope")).toBeNull();
+    expect(loadCircleProjection(projOrNull("nope"), "nope")).toBeNull();
   });
 
   test("coppersmith circle: no view capability, follow and ask always present", () => {
-    const proj = loadCircleProjection("coppersmith-plumbing");
-    expect(proj).not.toBeNull();
-    const kinds = proj!.capabilities.map((c) => c.kind);
+    const circle = loadCircleProjection(proj("coppersmith-plumbing"), "coppersmith-plumbing");
+    expect(circle).not.toBeNull();
+    const kinds = circle!.capabilities.map((c) => c.kind);
     expect(kinds).not.toContain("view");
     expect(kinds).toContain("follow");
     expect(kinds).toContain("ask");
-    expect(proj!.background.kind).toBe("image");
+    expect(circle!.background.kind).toBe("image");
     // Tagline is the summary's first 90 chars, trimmed at a word boundary.
-    expect(proj!.tagline.length).toBeLessThanOrEqual(90);
-    expect(proj!.topFacts.length).toBeLessThanOrEqual(3);
-    expect(proj!.sampleQuestions).toHaveLength(3);
-    expect(proj!.provenanceLabel).not.toBe("");
-    expect(proj!.provenanceDetail).not.toBe("");
+    expect(circle!.tagline.length).toBeLessThanOrEqual(90);
+    expect(circle!.topFacts.length).toBeLessThanOrEqual(3);
+    expect(circle!.sampleQuestions).toHaveLength(3);
+    expect(circle!.provenanceLabel).not.toBe("");
+    expect(circle!.provenanceDetail).not.toBe("");
   });
 
   test("happy-place circle: gradient background, word-boundary tagline", () => {
-    const proj = loadCircleProjection("happy-place");
-    expect(proj).not.toBeNull();
-    expect(proj!.background.kind).toBe("gradient");
-    expect(proj!.tagline.length).toBeLessThanOrEqual(90);
-    expect(proj!.topFacts.length).toBeLessThanOrEqual(3);
+    const circle = loadCircleProjection(proj("happy-place"), "happy-place");
+    expect(circle).not.toBeNull();
+    expect(circle!.background.kind).toBe("gradient");
+    expect(circle!.tagline.length).toBeLessThanOrEqual(90);
+    expect(circle!.topFacts.length).toBeLessThanOrEqual(3);
     // Happy Place's only structured service (PING journal overlay) is the fact.
-    expect(proj!.topFacts).toEqual(["Pergola Design Consultations"]);
-    const kinds = proj!.capabilities.map((c) => c.kind);
+    expect(circle!.topFacts).toEqual(["Pergola Design Consultations"]);
+    const kinds = circle!.capabilities.map((c) => c.kind);
     expect(kinds).toContain("follow");
   });
 
   test("legacy buildCircleProjection alias still resolves", () => {
-    expect(buildCircleProjection("happy-place")?.topFacts).toEqual([
+    expect(buildCircleProjection(proj("happy-place"), "happy-place")?.topFacts).toEqual([
       "Pergola Design Consultations",
     ]);
   });

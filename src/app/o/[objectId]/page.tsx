@@ -19,6 +19,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink, Mail, MapPin, MessageCircleQuestion, Phone } from "lucide-react";
 import { loadObjectViewBySlugOrId } from "@/fyd/object/by-id";
+import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
+import type { VerifiedPublicProjection } from "@/fyd/sitespec/public-projection";
 import { AskObjectPanel } from "@/fyd/ui/ask-object-panel";
 import { ReferenceButton } from "@/fyd/ui/reference-button";
 import { FollowButton } from "@/fyd/ui/follow-button";
@@ -36,13 +38,37 @@ function initials(name: string): string {
   return (first + last).toUpperCase();
 }
 
+/**
+ * Memoized public-projection resolver for the cross-tenant scan (Q-C-01):
+ * every view on this page is composed from a verified public projection.
+ */
+function resolvePublicProjection(
+  cache: Map<string, VerifiedPublicProjection | null>,
+  siteId: string,
+): VerifiedPublicProjection | null {
+  if (!cache.has(siteId)) {
+    try {
+      cache.set(
+        siteId,
+        getVerifiedPublicProjectionSync(siteId, "anonymous"),
+      );
+    } catch {
+      cache.set(siteId, null);
+    }
+  }
+  return cache.get(siteId) ?? null;
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ objectId: string }>;
 }): Promise<Metadata> {
   const { objectId } = await params;
-  const resolved = loadObjectViewBySlugOrId(objectId);
+  const cache = new Map<string, VerifiedPublicProjection | null>();
+  const resolved = loadObjectViewBySlugOrId(objectId, (siteId) =>
+    resolvePublicProjection(cache, siteId),
+  );
   const view = resolved?.view ?? null;
   const tenantId = resolved?.siteId ?? null;
   if (!view) return { title: { absolute: "Object not found | FYD" }, robots: { index: false } };
@@ -153,7 +179,10 @@ export default async function ObjectNodePage({
   params: Promise<{ objectId: string }>;
 }) {
   const { objectId } = await params;
-  const resolved = loadObjectViewBySlugOrId(objectId);
+  const cache = new Map<string, VerifiedPublicProjection | null>();
+  const resolved = loadObjectViewBySlugOrId(objectId, (siteId) =>
+    resolvePublicProjection(cache, siteId),
+  );
   const view = resolved?.view ?? null;
   const tenantId = resolved?.siteId ?? null;
   if (!view) notFound();

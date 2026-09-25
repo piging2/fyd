@@ -28,6 +28,18 @@ import { loadObjectView } from "../view";
 import type { ObjectCapability } from "../types";
 import type { ObjectContactView } from "../types";
 
+import { getVerifiedPublicProjectionSync } from "../../data/ping-object-source";
+
+/** Resolve the anonymous verified projection for a fixture slug. */
+const proj = (slug: string) => getVerifiedPublicProjectionSync(slug, "anonymous");
+const projOrNull = (slug: string) => {
+  try {
+    return proj(slug);
+  } catch {
+    return null;
+  }
+};
+
 const PROJECTIONS = join(__dirname, "fixtures", "projections");
 
 beforeEach(() => {
@@ -63,7 +75,7 @@ const NO_EVIDENCE = { summary: "", services: [] };
 
 describe("G4 capability propagation", () => {
   test("coppersmith business resolves the full allowed action set end to end", () => {
-    const view = loadObjectView("coppersmith-plumbing");
+    const view = loadObjectView(proj("coppersmith-plumbing"), "coppersmith-plumbing");
     expect(view).not.toBeNull();
     const kinds = view!.capabilities.map((c) => c.kind);
     // Authority order: ask, reference, follow, website, call, directions.

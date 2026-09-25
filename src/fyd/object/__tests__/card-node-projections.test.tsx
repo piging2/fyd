@@ -25,7 +25,7 @@ import { ObjectCircle } from "../../ui/object-circle";
 import { buildObjectView } from "../view";
 import type { ObjectView } from "../types";
 import type { PingObject } from "@/lib/ping/types";
-import { getPingObjectGraphSync } from "../../data/ping-object-source";
+import { getVerifiedPublicProjectionSync } from "../../data/ping-object-source";
 import {
   objectViewToProjection,
   type Fact,
@@ -33,6 +33,15 @@ import {
 } from "../object-projection";
 import { ObjectCard } from "../card";
 import { ObjectNode } from "../node";
+/** Anonymous verified projection for a fixture slug (null when unknown). */
+const proj = (slug: string) => getVerifiedPublicProjectionSync(slug, "anonymous");
+const projOrNull = (slug: string) => {
+  try {
+    return proj(slug);
+  } catch {
+    return null;
+  }
+};
 
 const PROJECTIONS = join(
   process.cwd(),
@@ -87,7 +96,7 @@ function circleViewFor(o: PingObject, kindLabel: string): ObjectView {
 /* ------------------------------------------------------------------ */
 
 function personProjection(): ObjectProjection {
-  const { graph } = getPingObjectGraphSync("coppersmith-plumbing");
+  const { graph } = getVerifiedPublicProjectionSync("coppersmith-plumbing", "anonymous");
   const person = objectBySchema(graph.objects, "ping.social.person@1");
   const business = objectBySchema(graph.objects, "ping.social.business@1");
   const rel = graph.relationships.find(
@@ -155,7 +164,7 @@ function personProjection(): ObjectProjection {
 /* ------------------------------------------------------------------ */
 
 function serviceProjection(): ObjectProjection {
-  const { graph } = getPingObjectGraphSync("happy-place");
+  const { graph } = getVerifiedPublicProjectionSync("happy-place", "anonymous");
   const svc = objectBySchema(graph.objects, "ping.social.service@1");
   const business = objectBySchema(graph.objects, "ping.social.business@1");
   const provides = graph.relationships.find(
@@ -241,7 +250,7 @@ function serviceProjection(): ObjectProjection {
 
 describe("objectViewToProjection adapter (Lane A ObjectView -> generic prop)", () => {
   test("happy-place business maps with honest evidence basis", () => {
-    const view = buildObjectView("happy-place");
+    const view = buildObjectView(proj("happy-place"), "happy-place");
     expect(view).not.toBeNull();
     const p = objectViewToProjection(view!);
     expect(p.kindLabel).toBe("Business");
@@ -267,7 +276,7 @@ describe("objectViewToProjection adapter (Lane A ObjectView -> generic prop)", (
   });
 
   test("hidden address becomes a withheld location, never a leak", () => {
-    const view = buildObjectView("happy-place");
+    const view = buildObjectView(proj("happy-place"), "happy-place");
     expect(view).not.toBeNull();
     const hidden: ObjectView = {
       ...view!,
@@ -280,11 +289,11 @@ describe("objectViewToProjection adapter (Lane A ObjectView -> generic prop)", (
 });
 
 describe("Business: Happy Place x Circle / Card / Node (same object data)", () => {
-  const view = () => objectViewToProjection(buildObjectView("happy-place")!);
+  const view = () => objectViewToProjection(buildObjectView(proj("happy-place"), "happy-place")!);
 
   test("Circle (existing primitive) renders the business", () => {
     const html = renderToStaticMarkup(
-      <ObjectCircle view={buildObjectView("happy-place")!} />,
+      <ObjectCircle view={buildObjectView(proj("happy-place"), "happy-place")!} />,
     );
     expect(html).toContain("Happy Place Carpentry LLC");
     expect(html).toContain("Carpentry");
@@ -314,7 +323,7 @@ describe("Business: Happy Place x Circle / Card / Node (same object data)", () =
 
 describe("Person: fixture person x Circle / Card / Node (same object data)", () => {
   test("Circle (existing primitive) renders the person", () => {
-    const { graph } = getPingObjectGraphSync("coppersmith-plumbing");
+    const { graph } = getVerifiedPublicProjectionSync("coppersmith-plumbing", "anonymous");
     const person = objectBySchema(graph.objects, "ping.social.person@1");
     const html = renderToStaticMarkup(
       <ObjectCircle view={circleViewFor(person, "Person")} />,
@@ -348,7 +357,7 @@ describe("Person: fixture person x Circle / Card / Node (same object data)", () 
 
 describe("Service: Pergola Design Consultations x Circle / Card / Node", () => {
   const svcObject = () => {
-    const { graph } = getPingObjectGraphSync("happy-place");
+    const { graph } = getVerifiedPublicProjectionSync("happy-place", "anonymous");
     return objectBySchema(graph.objects, "ping.social.service@1");
   };
 

@@ -13,10 +13,7 @@
  */
 
 import { SiteClient } from "../_shared/site-client";
-import {
-  compileSiteSpecWithIntent,
-  publicGraph,
-} from "../_shared/spec-pipeline";
+import { compilePublicSite } from "../_shared/spec-pipeline";
 import { generateSiteMetadata } from "../_shared/site-metadata";
 import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
 import { galleryMediaFor, heroMediaFor } from "@/fyd/media/select";
@@ -37,8 +34,10 @@ export async function generateMetadata() {
 export default async function CoppersmithDemoPage() {
   // Shared render pipeline: base spec compiled from the PING-backed graph
   // with the approved presentation intent applied over it.
+  // Verified public projection (Q-C-01): the graph below already passed
+  // the single public projection boundary; no separate publicGraph step.
   const { graph, spec, findings, renderable } =
-    await compileSiteSpecWithIntent(SITE_ID);
+    await compilePublicSite(SITE_ID);
   // Hero media, resolved once per page load at the server render
   // seam. Null when the owner has no acquired media.
   const heroMedia = heroMediaFor(SITE_ID, graph, spec.ownerObjectId);
@@ -63,7 +62,7 @@ export default async function CoppersmithDemoPage() {
     <main className="min-h-screen bg-background">
       <SiteClient
         spec={spec}
-        graph={publicGraph(graph)}
+        graph={graph}
         findings={findings}
         renderable={renderable}
         siteId={SITE_ID}

@@ -19,6 +19,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadCircleProjection, listObjectIds } from "../object/view";
+import { getVerifiedPublicProjectionSync } from "../data/ping-object-source";
 import { resolveFocal } from "./focal";
 import { isSafeWebHref } from "./types";
 import type { PortalProjection, PreviewMode, PreviewRecord } from "./types";
@@ -109,7 +110,17 @@ function websiteHrefFor(circle: PortalProjection["circle"]): string | null {
  * unknown ids. Server-only: reads preview + media manifests from disk.
  */
 export function buildPortalProjection(objectId: string): PortalProjection | null {
-  const circle = loadCircleProjection(objectId);
+  // Public consumer (Q-C-01): the circle is composed over the verified
+  // public projection, never the raw source graph.
+  let circle = null;
+  try {
+    circle = loadCircleProjection(
+      getVerifiedPublicProjectionSync(objectId, "anonymous"),
+      objectId,
+    );
+  } catch {
+    circle = null;
+  }
   if (!circle) return null;
   const manifest = readPreviewManifest(objectId);
   // Re-resolve the focal basis deterministically so the record is
