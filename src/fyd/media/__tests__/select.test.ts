@@ -94,8 +94,15 @@ function renderHero(heroMedia: DisplayMedia | null): string {
 }
 
 describe("heroMediaFor selection rule (real pipeline manifests)", () => {
-  test("happy-place: zero acquired media selects null, never an invented image", () => {
-    expect(heroMediaFor("happy-place", testGraph(), "biz-test-1")).toBeNull();
+  test("happy-place: demo-authorized media selects the first photographic asset, never an invented image", () => {
+    const hero = heroMediaFor("happy-place", testGraph(), "biz-test-1");
+    expect(hero).not.toBeNull();
+    expect(hero!.id.startsWith("fyd-media-")).toBe(true);
+    expect(hero!.role).not.toBe("logo");
+    expect(hero!.rightsSource).toBe("public-demo-source");
+    // FYD-served derivative, never a hotlink.
+    expect(hero!.src.startsWith("/fyd-media/")).toBe(true);
+    expect(hero!.src.startsWith("http")).toBe(false);
   });
 
   test("coppersmith-plumbing: the hero-role asset wins", () => {
