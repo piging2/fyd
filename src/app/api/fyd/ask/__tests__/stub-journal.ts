@@ -156,16 +156,28 @@ export async function startStubJournal(
 ): Promise<StubJournal> {
   const server: Server = createServer(
     (req: IncomingMessage, res: ServerResponse) => {
-      if (req.method === "GET" && req.url === "/events/FYD_SITE_OVERLAY") {
+      const u = new URL(req.url || "/", "http://127.0.0.1");
+      if (req.method === "GET" && u.pathname === "/events/FYD_SITE_OVERLAY") {
+        // Faithful to the live gateway: ?tenant= is required and enforced
+        // server-side; only the requested tenant's events are returned.
+        const tenant = u.searchParams.get("tenant");
+        if (!tenant || !/^[a-z0-9-]{1,64}$/.test(tenant)) {
+          res.writeHead(400, { "content-type": "application/json" });
+          res.end(JSON.stringify({ error: "tenant_required" }));
+          return;
+        }
         // Faithful to the live gateway's GET /events/:stream: raw
         // ping_events rows ({ event_id, timestamp, event_data }).
         const body = JSON.stringify({
-          events: events.map((e) => ({
-            event_id: e.id,
-            timestamp: e.ts,
-            event_type: "FYD_SITE_OVERLAY",
-            event_data: { siteId: e.siteId, ops: e.ops },
-          })),
+          events: events
+            .filter((e) => e.siteId === tenant)
+            .map((e) => ({
+              event_id: e.id,
+              timestamp: e.ts,
+              event_type: "FYD_SITE_OVERLAY",
+              tenant_id: e.siteId,
+              event_data: { siteId: e.siteId, ops: e.ops },
+            })),
         });
         res.writeHead(200, { "content-type": "application/json" });
         res.end(body);

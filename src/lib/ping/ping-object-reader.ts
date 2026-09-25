@@ -276,7 +276,12 @@ class GatewayPingObjectReader implements PingObjectReader {
 
   async queryFydSiteOverlays(siteId: string): Promise<FydJournalOverlay[]> {
     if (!siteId || !siteId.trim()) throw new BadRequestError("siteId is required");
-    const res = await this.gwFyd(`/events/${encodeURIComponent("FYD_SITE_OVERLAY")}`);
+    // Server-side tenant scoping: the gateway enforces ?tenant= exactly
+    // (fail-closed without it). The event_data.siteId filter below stays
+    // as defense in depth.
+    const res = await this.gwFyd(
+      `/events/${encodeURIComponent("FYD_SITE_OVERLAY")}?tenant=${encodeURIComponent(siteId)}`,
+    );
     if (res.status === 404) {
       throw new GatewayNotReadyError("event query route /events/FYD_SITE_OVERLAY is not exposed");
     }

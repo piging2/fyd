@@ -40,6 +40,11 @@ import {
   assertTenantKey,
   type TenantContext,
 } from "./tenant-context";
+import {
+  getFydTenantGraph,
+  type FydTenantGraph,
+  type GetFydTenantGraphOpts,
+} from "@/fyd/data/fyd-tenant-graph";
 
 /** Scoped owner-override read: tenant A can never read tenant B's overrides. */
 export function scopedReadOverrides(
@@ -97,6 +102,22 @@ export function scopedGetProjection(
     );
   }
   return projection;
+}
+
+/**
+ * Scoped tenant-graph read: the acting tenant's key must equal the site id.
+ * getFydTenantGraph already fails closed on unknown tenants; this adds the
+ * explicit trusted-context requirement so request/worker paths cannot read
+ * a tenant graph without a context. Cross-tenant reads are refused before
+ * any I/O, never answered empty.
+ */
+export async function scopedGetFydTenantGraph(
+  ctx: TenantContext,
+  siteId: string,
+  opts?: GetFydTenantGraphOpts,
+): Promise<FydTenantGraph> {
+  assertTenantKey(ctx, siteId);
+  return getFydTenantGraph(siteId, opts);
 }
 
 /**

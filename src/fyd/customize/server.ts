@@ -24,6 +24,7 @@ import type {
   PresentationIntentOverlayOp,
 } from "./types";
 import { UnknownOutcomeError } from "./write-boundary";
+import { TENANT_ID_PATTERN } from "../tenant/tenant-context";
 
 export interface CustomizedSite {
   siteId: string;
@@ -93,6 +94,19 @@ function journalMarkerOk(asserted: unknown, expected: string): boolean {
   );
 }
 
+/**
+ * Connection-level failures (nothing answered): there is no journal to
+ * misidentify, so these are NOT WRONG_JOURNAL. Returns the errno code, or
+ * null when the failure happened after bytes were sent.
+ */
+function isPreSendError(e: unknown): string | null {
+  const code = (e as { cause?: { code?: string } })?.cause?.code;
+  return typeof code === "string" &&
+    ["ECONNREFUSED", "ENOTFOUND", "EHOSTUNREACH", "ENETUNREACH"].includes(code)
+    ? code
+    : null;
+}
+
 async function preflightJournal(): Promise<void> {
   const base = gatewayUrl()
     .replace(/\/events$/, "")
@@ -101,6 +115,12 @@ async function preflightJournal(): Promise<void> {
   try {
     res = await fetch(base + "/", { method: "GET" });
   } catch (e) {
+    const preSend = isPreSendError(e);
+    if (preSend) {
+      // Nothing listened: the honest error is "unreachable". WRONG_JOURNAL
+      // means a journal answered with the wrong identity marker.
+      throw new Error("customize: demo gateway unreachable at " + base + "/: " + preSend);
+    }
     throw new Error(
       "customize: WRONG_JOURNAL: journal identity unreadable at " + base + "/: " +
         (e instanceof Error ? e.message : String(e)),
@@ -166,8 +186,17 @@ export async function emitOverlayEvent(
   const requestId = opts.requestId;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // Tenant identity is immutable on the envelope: in this runtime the
+  // tenant id IS the site id. The journal gateway re-validates it on
+  // append (tenant_id vs aggregate_id vs event_data.siteId).
+  if (!TENANT_ID_PATTERN.test(siteId)) {
+    throw new Error(
+      "customize: refusing to emit overlay for invalid site id " + JSON.stringify(siteId),
+    );
+  }
   const envelope: Record<string, unknown> = {
     event_type: "FYD_SITE_OVERLAY",
+    tenant_id: siteId,
     aggregate_id: "fyd-site:" + siteId,
     aggregate_type: "fyd_site",
     event_data: { siteId, ops },
@@ -184,11 +213,9 @@ export async function emitOverlayEvent(
   } catch (e) {
     // The request never reached the gateway (connection refused / DNS):
     // nothing was recorded, so the honest 502 path still applies.
-    const cause = (e as { cause?: { code?: string } })?.cause;
-    const code = typeof cause?.code === "string" ? cause.code : "";
-    const preSend = ["ECONNREFUSED", "ENOTFOUND", "EHOSTUNREACH", "ENETUNREACH"].includes(code);
+    const preSend = isPreSendError(e);
     if (preSend) {
-      throw new Error("customize: demo gateway unreachable at " + gatewayUrl() + ": " + code);
+      throw new Error("customize: demo gateway unreachable at " + gatewayUrl() + ": " + preSend);
     }
     // Anything else (abort/timeout, socket destroyed mid-flight): the POST
     // may have been recorded. UNKNOWN, never failed.
