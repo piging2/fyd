@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import { WhyThis } from "../ui/why-this";
-import { whyThisStepsFor } from "../object/why-this-steps";
+import { whyThisClaimChainFor } from "../object/why-this-steps";
 import { verifyPresentationBinding } from "../sitespec/graph";
 import { coarsenAddress } from "../sitespec/field-visibility";
 import type { ObjectGraph } from "../sitespec/types";
@@ -188,7 +188,7 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
   const schemaLabel = object.schema.replace("ping.social.", "").replace("@1", "");
   const facts = overlayFacts(object, graph);
   const relationships = overlayRelationships(object, graph);
-  const whySteps = whyThisStepsFor(object);
+  const whySteps = whyThisClaimChainFor(object);
 
   const sectionLabel: CSSProperties = {
     fontSize: "12px",

@@ -8,7 +8,8 @@
  * 2. /sites pages lacked FydMotionFallback.
  *    Fixed: fallback mounted, handles stuck timelines.
  * 3. Private Pergola leaked into client payload.
- *    Fixed: publicGraph strips private objects (verified by build).
+ *    Fixed: the verified public projection strips private objects (Q-C-01,
+ *    verified by build).
  * 4. No rich object overlay experience.
  *    Fixed: ObjectOverlay with scroll preservation.
  */
@@ -91,16 +92,22 @@ describe("object overlay experience", () => {
 });
 
 describe("private payload boundary", () => {
-  test("page uses publicGraph to strip private objects", () => {
+  test("page serves only the verified public projection", () => {
     const p = path.join(REPO, "src/app/sites/happy-place/page.tsx");
     const src = fs.readFileSync(p, "utf8");
-    expect(src).toContain("publicGraph(graph)");
-    // The visibility filter lives in publicGraph (spec-pipeline.ts), not in
-    // the page: assert the actual boundary, not an inline copy of it.
+    expect(src).toContain("compilePublicSite");
+    // The privacy boundary is the verified projection (Q-C-01): the page
+    // pipeline resolves it, and only its graph reaches rendering. Assert
+    // the actual boundary, not an inline copy of it.
     const boundary = fs.readFileSync(
       path.join(REPO, "src/app/sites/_shared/spec-pipeline.ts"),
       "utf8",
     );
-    expect(boundary).toMatch(/visibility === "public"/);
+    expect(boundary).toMatch(/getVerifiedPublicProjection/);
+    const core = fs.readFileSync(
+      path.join(REPO, "src/fyd/sitespec/public-projection.ts"),
+      "utf8",
+    );
+    expect(core).toMatch(/visibility === "public"/);
   });
 });
