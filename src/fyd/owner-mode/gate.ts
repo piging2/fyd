@@ -22,8 +22,14 @@ export const DEMO_OWNER_MODE_ENV_VAR = "NEXT_PUBLIC_FYD_DEMO_OWNER_MODE";
 
 /**
  * True only when the demo explicitly opts in via the env var.
- * Evaluated at module load on the client (NEXT_PUBLIC_* is inlined at
- * build time) and per-call on the server.
+ *
+ * SERVER-ONLY RESOLUTION (hydration #418, 2026-09-25): call this in a
+ * server component / route handler and pass the resolved boolean down to
+ * client components as a prop. Client components MUST NOT call this
+ * themselves: NEXT_PUBLIC_* is inlined into the client bundle at build
+ * time while the server reads it at request time, and any skew between
+ * the two is a guaranteed hydration mismatch. One resolution source,
+ * passed down.
  */
 export function isDemoOwnerModeEnabled(): boolean {
   // Direct process.env.NEXT_PUBLIC_* access (not via DEMO_OWNER_MODE_ENV_VAR)

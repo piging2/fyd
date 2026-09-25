@@ -77,6 +77,12 @@ interface LabClientProps {
   initialType?: LabTypeName;
   initialProjection?: ProjectionKind;
   initialViewport?: ViewportPreset;
+  /**
+   * Resolved server-side in page.tsx via isDemoOwnerModeEnabled() and passed
+   * down. The client never reads the environment for this decision
+   * (hydration #418, 2026-09-25).
+   */
+  demoOwnerModeEnabled: boolean;
 }
 
 function Control({
@@ -237,6 +243,7 @@ export function ObjectsLabClient({
   initialType,
   initialProjection,
   initialViewport,
+  demoOwnerModeEnabled,
 }: LabClientProps) {
   const [type, setType] = useState<LabTypeName>(initialType ?? "Business");
   const [projection, setProjection] = useState<ProjectionKind>(
@@ -410,7 +417,7 @@ export function ObjectsLabClient({
               zero write operations, so it is structurally unable to authorize
               production actions.
             </p>
-            <DemoOwnerMode siteId={siteId} />
+            <DemoOwnerMode siteId={siteId} enabled={demoOwnerModeEnabled} />
           </div>
         )}
 

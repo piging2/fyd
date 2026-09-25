@@ -2,8 +2,10 @@
  * H3 lane: DEMO OWNER MODE panel.
  *
  * "use client" because the attestation walkthrough is interactive demo
- * state (button -> gate -> verdict). Renders NOTHING unless the dev-only
- * gate (./gate.ts) is enabled via NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1.
+ * state (button -> gate -> verdict). Renders NOTHING unless the 
+ * prop is true; the server resolves the dev-only gate (./gate.ts) once per
+ * request and passes the resolved boolean down. The client never reads the
+ * environment for this decision (hydration #418, 2026-09-25).
  *
  * The banner is deliberately conspicuous: striped hazard border and the
  * exact words "DEMO OWNER MODE - not real authentication". Nothing about
@@ -14,7 +16,6 @@
 "use client";
 
 import { useState } from "react";
-import { isDemoOwnerModeEnabled } from "./gate";
 import {
   DEMO_OWNER_ACTOR,
   evaluateAllCapabilities,
@@ -32,12 +33,27 @@ interface AttestAttempt {
   result: ReturnType<typeof attest>;
 }
 
-export function DemoOwnerMode({ siteId }: { siteId: string }) {
+export function DemoOwnerMode({
+  siteId,
+  enabled,
+}: {
+  siteId: string;
+  /**
+   * Resolved server-side (see ./gate.ts) and passed down as a prop.
+   * The client MUST NOT independently read environment state for this
+   * decision: NEXT_PUBLIC_* build-time inlining skew between the server
+   * request-time value and the client bundle caused hydration #418
+   * (2026-09-25). One resolution source, passed down. That is the whole
+   * contract.
+   */
+  enabled: boolean;
+}) {
   const [attempts, setAttempts] = useState<AttestAttempt[]>([]);
 
   // Dev-only gate: the entire panel (banner included) renders null unless
-  // the demo env var is explicitly set. There is no other way to enable it.
-  if (!isDemoOwnerModeEnabled()) return null;
+  // the server resolved demo-owner mode as enabled. There is no other way
+  // to enable it, and the client never consults the environment itself.
+  if (!enabled) return null;
 
   const actor = DEMO_OWNER_ACTOR;
   const relationship = resolveDemoRelationship(siteId, actor);

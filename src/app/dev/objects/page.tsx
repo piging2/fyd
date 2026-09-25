@@ -165,6 +165,7 @@ export default async function ObjectsLabPage({
       initialType={initialType}
       initialProjection={initialProjection}
       initialViewport={initialViewport}
+      demoOwnerModeEnabled={isDemoOwnerModeEnabled()}
     />
   );
 }

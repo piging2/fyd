@@ -16,6 +16,7 @@ import { SiteClient } from "../_shared/site-client";
 import { compilePublicSite } from "../_shared/spec-pipeline";
 import { generateSiteMetadata } from "../_shared/site-metadata";
 import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
+import { isDemoOwnerModeEnabled } from "@/fyd/owner-mode/gate";
 import { galleryMediaFor, heroMediaFor } from "@/fyd/media/select";
 import {
   auditSitesRenderClaims,
@@ -69,7 +70,7 @@ export default async function CoppersmithDemoPage() {
         heroMedia={heroMedia}
         galleryMedia={galleryMedia}
       />
-      <DemoOwnerMode siteId={SITE_ID} />
+      <DemoOwnerMode siteId={SITE_ID} enabled={isDemoOwnerModeEnabled()} />
     </main>
   );
 }
