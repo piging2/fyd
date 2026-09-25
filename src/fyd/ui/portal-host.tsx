@@ -26,7 +26,9 @@
  */
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import {
+  PEEK_D,
   createSlotManager,
   type PeripheralSlot,
 } from "@/fyd/spatial/slot-manager";
@@ -45,6 +47,10 @@ interface Assignment {
   slot: PeripheralSlot | null;
   x: number;
   y: number;
+  /** Collapsed circle diameter for this placement (64 band, 56 peek). */
+  d: number;
+  /** True when the circle is an edge peek (narrow band or mobile overlay). */
+  peek: boolean;
 }
 
 interface PortalHostProps {
@@ -58,10 +64,15 @@ interface PortalHostProps {
 export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHostProps) {
   const [mounted, setMounted] = React.useState(false);
   const [slots, setSlots] = React.useState<PeripheralSlot[]>([]);
-  const [slotsReady, setSlotsReady] = React.useState(false);
   const [awareId, setAwareId] = React.useState<string | null>(null);
   const [engagedId, setEngagedId] = React.useState<string | null>(null);
   const [followed, setFollowed] = React.useState<Record<string, boolean>>({});
+  // Mobile overlay anchor: 30% of the initial viewport height, document
+  // relative. The overlay is absolute in the document (not fixed), so it
+  // scrolls away naturally with the page.
+  const [overlayY] = React.useState(() =>
+    Math.round((typeof window !== "undefined" ? window.innerHeight : 800) * 0.3),
+  );
   const controllerRef = React.useRef<AttentionController | null>(null);
   if (!controllerRef.current) controllerRef.current = new AttentionController();
 
@@ -75,7 +86,6 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
     setMounted(true);
     const mgr = createSlotManager((s) => {
       setSlots(s);
-      setSlotsReady(true);
     });
     let cancelled = false;
     portals.forEach((p) => {
@@ -111,8 +121,10 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
         a.side === b.side ? 0 : a.side === "right" ? -1 : 1,
       );
     if (usable.length === 0) {
-      // Dock mode: no honest margin. Compact circles, bottom edge.
-      return portals.map((portal, i) => ({ portal, slot: null, x: i, y: 0 }));
+      // No usable slot anywhere. These assignments never render: desktop
+      // fails closed to null and mobile uses the edge overlay. Kept
+      // well-typed so reconcileEngagementOnModeChange still sees "none".
+      return portals.map((portal, i) => ({ portal, slot: null, x: i, y: 0, d: 64, peek: false }));
     }
     const targets = resolveSemanticTargets();
     const targetById = new Map(targets.map((t) => [t.objectId, t]));
@@ -151,27 +163,55 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
         placedThisRound++;
         const portal = portals.find((p) => p.circle.id === winner.objectId);
         if (!portal) continue;
-        // Pin the collapsed 64px circle to the EXTREME outer edge of its
-        // band (viewport edge side), never centered. The outer edge is the
-        // farthest point from host content, so extreme placement is also
-        // the safest: the circle stays fully inside the measured band
-        // (inset clamps to band width - 64), which by construction never
-        // overlaps center content.
-        const inset = Math.max(0, Math.min(12, slot.rect.width - 64));
-        const x =
-          slot.side === "left"
-            ? slot.rect.x + inset
-            : slot.rect.x + slot.rect.width - 64 - inset;
-        // Vertical stacking for round >= 1: first circle at 26% of band
-        // height, each extra one circle + 16px gap below, clamped inside
-        // the band so nothing escapes the measured safe rectangle.
         const k = perSlotCount.get(slot.id) ?? 0;
         perSlotCount.set(slot.id, k + 1);
-        const y = Math.min(
-          slot.rect.y + slot.rect.height * 0.26 + k * (64 + 16),
-          slot.rect.y + Math.max(0, slot.rect.height - 64),
-        );
-        out.push({ portal, slot, x, y });
+        let x: number;
+        let y: number;
+        let d = 64;
+        let peek = false;
+        if (slot.kind === "peek") {
+          // Nolan 2026-09-25 margin directive, round 3: narrow desktop
+          // bands (28..72px) host a 56px circle CENTERED ON THE SCREEN
+          // EDGE. Only the in-band sliver shows (vis <= band width), so
+          // host content is never overlapped. No inline strip on desktop.
+          d = PEEK_D;
+          peek = true;
+          // Anchor the right peek to the LAYOUT width (excludes the classic
+          // scrollbar), not the visual viewport: otherwise the scrollbar
+          // covers the outer half of the sliver and the tappable target
+          // shrinks to ~13px. The full 28px sliver stays clickable and the
+          // circle stays inside the measured band.
+          const layoutW =
+            typeof document !== "undefined"
+              ? document.documentElement.clientWidth
+              : 1280;
+          const vis = Math.min(PEEK_D / 2, slot.rect.width);
+          x = slot.side === "left" ? vis - PEEK_D : layoutW - vis;
+          y = Math.min(
+            slot.rect.y + slot.rect.height * 0.26 + k * (PEEK_D + 14),
+            slot.rect.y + Math.max(0, slot.rect.height - PEEK_D),
+          );
+        } else {
+          // Pin the collapsed 64px circle to the EXTREME outer edge of its
+          // band (viewport edge side), never centered. The outer edge is the
+          // farthest point from host content, so extreme placement is also
+          // the safest: the circle stays fully inside the measured band
+          // (inset clamps to band width - 64), which by construction never
+          // overlaps center content.
+          const inset = Math.max(0, Math.min(12, slot.rect.width - 64));
+          x =
+            slot.side === "left"
+              ? slot.rect.x + inset
+              : slot.rect.x + slot.rect.width - 64 - inset;
+          // Vertical stacking for round >= 1: first circle at 26% of band
+          // height, each extra one circle + 16px gap below, clamped inside
+          // the band so nothing escapes the measured safe rectangle.
+          y = Math.min(
+            slot.rect.y + slot.rect.height * 0.26 + k * (64 + 16),
+            slot.rect.y + Math.max(0, slot.rect.height - 64),
+          );
+        }
+        out.push({ portal, slot, x, y, d, peek });
       }
       if (placedThisRound === 0) break;
     }
@@ -180,13 +220,12 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
     // nothing for every remaining portal).
     portals.forEach((portal, i) => {
       if (!assigned.has(portal.circle.id)) {
-        out.push({ portal, slot: null, x: i, y: 0 });
+        out.push({ portal, slot: null, x: i, y: 0, d: 64, peek: false });
       }
     });
     return out;
   }, [mounted, slots, portals, followed]);
 
-  const docked = assignments.filter((a) => a.slot === null);
   const slotted = assignments.filter((a) => a.slot !== null);
 
   const handleEngageRequest = React.useCallback(
@@ -255,44 +294,68 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
 
   if (!mounted) return null;
 
-  // No honest margin anywhere (narrow viewports): the circles render as an
-  // inline strip in the page flow instead of fixed margin portals. Same
-  // Circle component, same information; tap engages, tap-outside or Escape
-  // collapses. This is not a bottom portal and never overlays content: it
-  // lives in the document flow like any other section. The engaged circle
-  // itself is viewport-fixed (dock geometry), so expansion works at any
-  // width. The strip appears only when geometry reports zero usable slots,
-  // so it never competes with the margin portals.
-  if (slotsReady && portals.length > 0 && slotted.length === 0) {
-    return (
-      <div className="px-4 py-8" data-ping-host data-ping-inline-strip>
-        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-text-muted">
-          Businesses on PING
-        </p>
-        <div
-          className="flex items-start justify-center gap-6"
-          role="list"
-          aria-label="Featured businesses"
-        >
-          {portals.map((portal) => (
-            <div key={portal.circle.id} role="listitem" className="relative">
-              <PortalCircle
-                portal={portal}
-                slot={null}
-                aware={awareId === portal.circle.id}
-                engaged={engagedId === portal.circle.id}
-                onAware={handleAware}
-                onUnaware={handleUnaware}
-                onEngageRequest={handleEngageRequest}
-                onRelease={handleRelease}
-                onAskRequest={handleAskRequest}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
+  const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
+  const isMobile = vw < 640;
+
+  // Nolan 2026-09-25 margin directive, round 3: NO INLINE STRIP anywhere.
+  // Mobile renders a floating edge overlay instead: a peek of each circle
+  // at the right screen edge. The overlay is absolute in the document
+  // (portaled to body), so it scrolls away naturally with the page: not
+  // fixed chrome, not in-flow layout. Tap opens the sheet.
+  if (isMobile && portals.length > 0 && typeof document !== "undefined") {
+    return createPortal(
+      <div
+        data-ping-host
+        data-ping-mobile-overlay
+        role="list"
+        aria-label="Featured businesses"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: 0,
+          zIndex: 40,
+          pointerEvents: "none",
+        }}
+      >
+        {portals.map((portal, i) => (
+          <div
+            key={portal.circle.id}
+            role="listitem"
+            data-ping-slot="mobile-edge"
+            style={{
+              position: "absolute",
+              top: overlayY + i * (PEEK_D + 14),
+              right: -(PEEK_D - 28),
+              width: PEEK_D,
+              height: PEEK_D,
+              pointerEvents: "auto",
+            }}
+          >
+            <PortalCircle
+              portal={portal}
+              slot={null}
+              peek
+              aware={awareId === portal.circle.id}
+              engaged={engagedId === portal.circle.id}
+              onAware={handleAware}
+              onUnaware={handleUnaware}
+              onEngageRequest={handleEngageRequest}
+              onRelease={handleRelease}
+              onAskRequest={handleAskRequest}
+            />
+          </div>
+        ))}
+      </div>,
+      document.body,
     );
   }
+
+  // Desktop with no usable slot on either side: fail closed and render
+  // nothing. The inline strip is gone by directive; it would compete with
+  // margins and shift layout.
+  if (slotted.length === 0) return null;
 
   return (
     <>
@@ -300,14 +363,16 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
         <div
           key={a.portal.circle.id}
           className="fixed z-40"
-          style={{ left: a.x, top: a.y }}
+          style={{ left: a.x, top: a.y, width: a.d, height: a.d }}
           data-ping-host
           data-ping-slot={a.slot?.id}
+          data-ping-peek={a.peek ? "true" : undefined}
         >
           <div className="relative">
             <PortalCircle
               portal={a.portal}
               slot={a.slot}
+              peek={a.peek}
               aware={awareId === a.portal.circle.id}
               engaged={engagedId === a.portal.circle.id}
               onAware={handleAware}
@@ -319,14 +384,6 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
           </div>
         </div>
       ))}
-
-      {/* Placement directive (Nolan, 2026-09-21): NO BOTTOM PORTAL anywhere.
-          A portal with a safe side margin renders fixed in that margin. A
-          portal with no safe margin renders nothing here; when NO portal
-          has a safe margin (narrow viewports), the inline strip above
-          carries the circles in the document flow instead. The fixed dock
-          branch always collapses to null. */}
-      {docked.length > 0 ? null : null}
     </>
   );
 }

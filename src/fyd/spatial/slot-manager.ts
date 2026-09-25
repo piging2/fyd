@@ -23,6 +23,8 @@ export interface Rect {
 
 export type SlotSide = "left" | "right" | "top" | "bottom";
 
+export type SlotKind = "band" | "peek" | "none";
+
 export interface PeripheralSlot {
   id: string;
   /** Viewport coordinates. */
@@ -34,6 +36,15 @@ export interface PeripheralSlot {
   stability: number;
   /** 0..1 after fixed-chrome subtraction; 0 is clean. */
   collisionRisk: number;
+  /**
+   * "band": the full collapsed circle fits inside the measured band.
+   * "peek": narrow band; the circle centers on the screen edge so only
+   * the in-band sliver shows, never overlapping host content.
+   * "none": not even a peek fits; the slot hosts nothing.
+   */
+  kind: SlotKind;
+  /** Collapsed circle diameter this slot hosts (64 for band, 56 for peek). */
+  collapsedD: number;
 }
 
 /**
@@ -47,6 +58,18 @@ export interface PeripheralSlot {
  * content column by construction.
  */
 export const MIN_SLOT_WIDTH = 72;
+/**
+ * Edge-peek tier (Nolan 2026-09-25 margin directive, round 3): desktop
+ * bands narrower than 72px (1280/1366 viewports measure 32..50px on the
+ * PING homepage) host a 56px circle centered on the screen edge instead
+ * of collapsing to an inline strip. Only the in-band sliver is visible,
+ * so host content is never overlapped. Below 28px even a peek would
+ * cover content, so the slot reports unusable.
+ */
+export const PEEK_D = 56;
+export const MIN_PEEK_WIDTH = 28;
+/** Minimum band height that can stack peek circles. */
+export const MIN_PEEK_HEIGHT = 120;
 
 function unionRects(rects: Rect[]): Rect | null {
   const valid = rects.filter((r) => r.width > 0 && r.height > 0);
@@ -205,14 +228,24 @@ export function computeSlots(): PeripheralSlot[] {
 
   return bands.map((b) => {
     const rect = subtractBars(b.rect, bars);
-    const usable = rect.width >= MIN_SLOT_WIDTH && rect.height >= MIN_SLOT_WIDTH;
+    const w = rect.width;
+    const h = rect.height;
+    const kind: SlotKind =
+      w >= MIN_SLOT_WIDTH && h >= MIN_SLOT_WIDTH
+        ? "band"
+        : w >= MIN_PEEK_WIDTH && h >= MIN_PEEK_HEIGHT
+          ? "peek"
+          : "none";
+    const usable = kind !== "none";
     return {
       id: b.id,
       rect,
       side: b.side,
-      capacity: usable ? rect.width * rect.height : 0,
+      capacity: usable ? (kind === "band" ? w * h : 1) : 0,
       stability: 1,
       collisionRisk: usable ? 0 : 1,
+      kind,
+      collapsedD: kind === "band" ? 64 : PEEK_D,
     };
   });
 }

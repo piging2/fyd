@@ -14,6 +14,8 @@ function rightSlot(width: number): PeripheralSlot {
     capacity: width * 1080,
     stability: 1,
     collisionRisk: 0,
+    kind: "band",
+    collapsedD: 64,
   };
 }
 

@@ -5,7 +5,8 @@
  *
  * The ONE Circle primitive for the PING homepage (Circle-Only Product Reset,
  * 2026-09-22). One physical object, no teleport:
- * - rest:    64px circle. The website preview (or logo/gradient) fills it.
+ * - rest:    64px circle (56px edge peek on narrow bands / mobile overlay).
+ *            The website preview (or logo/gradient) fills it.
  *            Almost static; PING chrome almost absent.
  * - aware:   hover/focus proximity. Rim wakes, spring to 112px, slight
  *            luminance lift, name hint. Media prewarms for engage.
@@ -43,7 +44,7 @@ import {
 } from "lucide-react";
 import { spring } from "@/motion/motionTokens";
 import type { PeripheralSlot } from "@/fyd/spatial/slot-manager";
-import { engagedGeometryFor, type EngagedSide } from "@/fyd/spatial/slot-manager";
+import { PEEK_D, engagedGeometryFor, type EngagedSide } from "@/fyd/spatial/slot-manager";
 import { focalToObjectPosition } from "@/fyd/preview/focal";
 import { isSafeWebHref } from "@/fyd/preview/types";
 import type { PortalProjection } from "@/fyd/preview/types";
@@ -62,6 +63,12 @@ interface PortalCircleProps {
   /** Assigned peripheral slot (viewport coords), or null in dock mode. */
   slot: PeripheralSlot | null;
   dock?: boolean;
+  /**
+   * Edge-peek placement: a 56px circle centered on the screen edge (narrow
+   * desktop bands, mobile overlay). Tap opens the sheet; there is no
+   * spatial expansion because no safe footprint exists.
+   */
+  peek?: boolean;
   aware: boolean;
   engaged: boolean;
   onAware: (id: string) => void;
@@ -153,8 +160,10 @@ export function PortalCircle(props: PortalCircleProps) {
     if (!el) return;
     // Directive (Nolan, 2026-09-22): do not force desktop spatial behavior
     // onto mobile. Below 640px the tap opens the bottom sheet; the
-    // circle+orbit expansion stays a desktop treatment.
-    if (window.innerWidth < 640) {
+    // circle+orbit expansion stays a desktop treatment. Edge peeks (round
+    // 3: narrow desktop bands, mobile overlay) also open the sheet: no
+    // safe footprint exists for spatial expansion there.
+    if (window.innerWidth < 640 || props.peek) {
       setSheetOpen(true);
       props.onEngageRequest(id);
       return;
@@ -244,7 +253,8 @@ export function PortalCircle(props: PortalCircleProps) {
     </span>
   );
 
-  const scale = aware && !engaged ? AWARE_D / COLLAPSED_D : 1;
+  const D = props.peek ? PEEK_D : COLLAPSED_D;
+  const scale = aware && !engaged ? AWARE_D / D : 1;
 
   return (
     <>
@@ -263,8 +273,8 @@ export function PortalCircle(props: PortalCircleProps) {
         whileTap={reduceMotion ? undefined : { scale: scale * 0.96 }}
         className="relative block overflow-hidden rounded-full"
         style={{
-          width: COLLAPSED_D,
-          height: COLLAPSED_D,
+          width: D,
+          height: D,
           boxShadow: aware ? rimAware : rimRest,
           cursor: "pointer",
           pointerEvents: engaged ? "none" : "auto",
@@ -524,7 +534,7 @@ function CompactSheet(p: SheetProps) {
       animate={{ y: 0 }}
       exit={{ y: "100%" }}
       transition={p.reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 38 }}
-      className="pointer-events-auto absolute inset-x-0 bottom-0 z-[95] max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-border-soft bg-surface shadow-[0_-18px_60px_rgba(0,0,0,0.45)]"
+      className="pointer-events-auto fixed inset-x-0 bottom-0 z-[95] max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-border-soft bg-surface shadow-[0_-18px_60px_rgba(0,0,0,0.45)]"
     >
       <div className="sticky top-0 flex items-center justify-between bg-surface px-4 pb-2 pt-3">
         <span aria-hidden="true" className="mx-auto h-1 w-10 rounded-full bg-border-soft" />
