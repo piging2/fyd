@@ -1,21 +1,31 @@
 /**
  * FYD semantic render model.
  *
+ * Honest scope: this is a SECTION-BINDING MANIFEST, not a full semantic
+ * render model. It records which sections bind which objects in render
+ * order, plus the versioned contract the binding was computed under. It
+ * does not capture layout, styling, interaction, or the final DOM; naming
+ * it a "semantic render model" overstates what it proves, so the docs say
+ * the smaller true thing.
+ *
  * Semantic determinism, not DOM-byte determinism: the same SiteSpec +
- * ObjectGraph snapshot + ViewerContext + OwnerOverrides + renderer version
- * + design-token version must always produce the same semantic rendered
- * experience.
+ * VerifiedPublicProjection + renderer version + design-token version must
+ * always produce the same manifest.
  *
- * Owner overrides enter through the projected graph (buildRenderContext
- * applies them before the model is built), but the model ALSO records the
- * override set explicitly: two models built from the same source graph
- * with different owner decisions must differ, so the invariant is visible
- * in the model itself rather than only implicit in the input.
+ * Identity is semantic, not temporal (Q-C-02): the model records the
+ * projection checkpoint (graphDigest:decisionsDigest), the graph and
+ * decisions digests, and the viewer policy digest. It does NOT record an
+ * arbitrary viewerId or a wall-clock asOf: two builds from the same
+ * projection are identical, and two builds from different projections
+ * (different owner decisions, different source graph) differ visibly in
+ * the model itself.
  *
- * This module is the projection seam's deterministic summary: it resolves
- * every section query through the real render path (resolveQuery, whose
- * ordering is the renderer's ordering contract) and records the result as
- * plain data. It contains no layout, no styling, no wall-clock reads, no
+ * The input graph MUST be a VerifiedPublicProjection: the model is built
+ * over the already-authorized public graph, never over a raw source graph.
+ * Owner decisions are read from the projection (the decisions that
+ * actually shaped the graph), never from a caller-supplied claim.
+ *
+ * This module contains no layout, no styling, no wall-clock reads, no
  * randomness, and no module-level mutable state.
  *
  * RENDER_MODEL_VERSION must be bumped whenever renderer.ts render semantics
@@ -23,28 +33,48 @@
  * a section binds).
  */
 
-import { resolveQuery } from "../components/renderer";
+import {
+  applyHiddenObjects,
+  applyObjectOrder,
+  resolveQuery,
+  siteDeactivatedObjectIds,
+} from "../components/renderer";
+import {
+  COMPONENT_CATALOG_DIGEST,
+  THEME_TOKENS_DIGEST,
+} from "./contract-digests";
 import type { FieldVisibilityDecision } from "./field-visibility";
-import type { FYDSiteSpec, ObjectGraph, ViewerContext } from "./types";
+import type {
+  PublicViewerKind,
+  VerifiedPublicProjection,
+} from "./public-projection";
+import type { FYDSiteSpec } from "./types";
 
 /** Semantic render-model version. Bump when renderer.ts render semantics change. */
 export const RENDER_MODEL_VERSION = 1;
 
 /**
- * renderer.tsx carries no version constant (gap, 2026-09-21): until the
- * renderer lane versions its render semantics, the model pins the source
- * file that defines them.
+ * Semantic version of the render contract (Q-C-03): the section component
+ * catalog pinned by digest. Any catalog change rotates this version and
+ * fails the contract-drift check until the digests are regenerated.
  */
-export const RENDERER_VERSION = "renderer.tsx@unversioned";
+export const RENDERER_VERSION =
+  `renderer-components@${COMPONENT_CATALOG_DIGEST.slice(0, 16)}`;
 
 /**
- * FYDThemeTokens carries no version field (gap, 2026-09-21): until the
- * sitespec lane versions its design tokens, the model records an explicit
- * placeholder (overridable per build via options).
+ * Semantic version of the design-token contract (Q-C-03): FYDThemeTokens
+ * and its token interfaces pinned by digest.
  */
-export const DESIGN_TOKEN_VERSION = "tokens@unversioned";
+export const DESIGN_TOKEN_VERSION =
+  `tokens@${THEME_TOKENS_DIGEST.slice(0, 16)}`;
 
-/** One rendered section: its identity, its component, and the objects it binds, in render order. */
+/**
+ * One rendered section: its identity, its component, and the objects it
+ * binds, in the order the real render path emits them (resolveQuery,
+ * then the owner-approved objectOrder, then owner-hidden object
+ * exclusion). Sections with presentation.hidden never render and are
+ * absent from the model.
+ */
 export interface SemanticSectionModel {
   id: string;
   component: string;
@@ -60,19 +90,30 @@ export interface SemanticPageModel {
   sections: SemanticSectionModel[];
 }
 
-/** The full semantic render model: the deterministic summary of one render. */
+/** The section-binding manifest: the deterministic summary of one render. */
 export interface SemanticRenderModel {
   renderModelVersion: number;
   rendererVersion: string;
   designTokenVersion: string;
-  viewerId: string | null;
-  /** Genuine time dependence enters only here, never via hidden wall-clock. */
-  asOf: string;
+  /**
+   * Semantic checkpoint of the projection this manifest was built from:
+   * `${graphDigest}:${decisionsDigest}`. Replaces the old arbitrary asOf:
+   * identity is what the projection contained, not when it was built.
+   */
+  checkpoint: string;
+  /** sha256 of the source graph, carried over from the projection receipt. */
+  graphDigest: string;
+  /** sha256 of the owner decisions applied, carried over from the receipt. */
+  decisionsDigest: string;
+  /** The viewer policy the projection was built under. */
+  viewerKind: PublicViewerKind;
+  /** sha256 of the resolved viewer policy, carried over from the receipt. */
+  viewerPolicyDigest: string;
   specKind: string;
   /**
-   * The owner-visibility decisions this model was built under, in stable
-   * canonical form ("none" when the caller passed none). Part of the
-   * determinism invariant: same decisions -> same model.
+   * The owner-visibility decisions this manifest was built under, in stable
+   * canonical form ("none" when the projection carried none). Read from the
+   * projection itself: same projection -> same manifest, always.
    */
   ownerOverrides: string;
   /** Pages in spec order. */
@@ -80,54 +121,70 @@ export interface SemanticRenderModel {
 }
 
 export interface BuildRenderModelOptions {
-  asOf: string;
   designTokenVersion?: string;
-  /**
-   * Owner visibility decisions applied to the input graph. Canonicalized
-   * (sorted, JSON) before recording so decision order never affects the
-   * model.
-   */
-  ownerOverrides?: FieldVisibilityDecision[];
 }
 
 /**
- * Build the semantic render model. Pure function of its inputs:
- * pages and sections are visited in spec order, and objectIds preserve
- * resolveQuery's deterministic ordering (updatedAt desc with id tiebreak;
- * "related" sorted by id). No Date.now(), no Math.random(), no counters,
- * no request-order-dependent ids.
+ * Build the section-binding manifest. Pure function of its inputs:
+ * pages and sections are visited in spec order, and objectIds follow
+ * the real render path's ordering: resolveQuery's deterministic ordering
+ * (updatedAt desc with id tiebreak; "related" sorted by id), then the
+ * owner-approved objectOrder, then owner-hidden object exclusion.
+ * No Date.now(), no Math.random(), no counters, no request-order-
+ * dependent ids.
  */
 export function buildSemanticRenderModel(
   spec: FYDSiteSpec,
-  graph: ObjectGraph,
-  viewer: ViewerContext,
-  opts: BuildRenderModelOptions,
+  projection: VerifiedPublicProjection,
+  opts: BuildRenderModelOptions = {},
 ): SemanticRenderModel {
+  const graph = projection.graph;
+  // The real render seam (renderSection in components/renderer.tsx):
+  // an owner-hidden object is excluded from every surface site-wide.
+  const hiddenObjectIds = siteDeactivatedObjectIds(spec);
   const pages: SemanticPageModel[] = spec.pages.map((page) => ({
     slug: page.slug,
-    sections: page.sections.map((section) => ({
-      id: section.id,
-      component: section.component,
-      objectIds: resolveQuery(section.query, graph, spec.ownerObjectId).map((o) => o.id),
-      heading: section.presentation.heading,
-      copy: section.presentation.copy,
-    })),
+    sections: page.sections
+      // presentation.hidden sections never render: the model mirrors the
+      // real path and omits them.
+      .filter((section) => !section.presentation.hidden)
+      .map((section) => {
+        // Mirror the real render path exactly: query resolution, then the
+        // owner-approved objectOrder, then owner-hidden object exclusion.
+        const objects = applyHiddenObjects(
+          applyObjectOrder(
+            resolveQuery(section.query, graph, spec.ownerObjectId),
+            section.presentation.objectOrder,
+          ),
+          hiddenObjectIds,
+        );
+        return {
+          id: section.id,
+          component: section.component,
+          objectIds: objects.map((o) => o.id),
+          heading: section.presentation.heading,
+          copy: section.presentation.copy,
+        };
+      }),
   }));
   return {
     renderModelVersion: RENDER_MODEL_VERSION,
     rendererVersion: RENDERER_VERSION,
     designTokenVersion: opts.designTokenVersion ?? DESIGN_TOKEN_VERSION,
-    viewerId: viewer.viewerId,
-    asOf: opts.asOf,
+    checkpoint: projection.provenance.checkpoint,
+    graphDigest: projection.provenance.graphDigest,
+    decisionsDigest: projection.provenance.decisionsDigest,
+    viewerKind: projection.provenance.viewerKind,
+    viewerPolicyDigest: projection.provenance.viewerPolicyDigest,
     specKind: spec.kind,
-    ownerOverrides: canonicalizeOverrides(opts.ownerOverrides),
+    ownerOverrides: canonicalizeOverrides(projection.decisions),
     pages,
   };
 }
 
 /**
  * Stable canonical form of the owner-override set: decisions sorted by
- * (objectId, field, decision) and JSON-encoded, so the same logical
+ * (objectId, field, policy) and JSON-encoded, so the same logical
  * decision set always records the same string regardless of input order.
  */
 export function canonicalizeOverrides(
@@ -175,3 +232,4 @@ function sortKeys(value: unknown): unknown {
 export function canonicalizeModel(model: SemanticRenderModel): string {
   return JSON.stringify(sortKeys(model));
 }
+

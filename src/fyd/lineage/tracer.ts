@@ -31,8 +31,8 @@
  *   into Services sections; validateSiteSpec findings.
  * - RENDERED CLAIM: the real renderSection() server-side rendered with
  *   renderToStaticMarkup; the claim string must appear in the markup
- *   (inside the FydObjectCard description read through resolveBoundField,
- *   the binding verifier).
+ *   (inside the FydObjectCard description read through resolveBoundFieldVerified,
+ *   the strong binding verifier).
  * - ASK FYD ANSWER: the real buildAskFydContext + composeAskFyd pipeline
  *   (anonymous visitor, no grants, like the visitor ask route); the answer
  *   must state the claim and cite the object via evidenceRefs /
@@ -885,9 +885,10 @@ function traceRenderedClaim(
     detail: {
       mechanism:
         "ServicesSection -> CardGrid -> FydObjectCard reads boundDescription " +
-        "-> resolveBoundField (src/fyd/sitespec/graph.ts binding verifier) " +
-        "-> renderToStaticMarkup(renderSection(...))",
-      boundFieldVerifier: "src/fyd/sitespec/graph.ts resolveBoundField",
+        "-> resolveBoundFieldVerified (src/fyd/sitespec/binding-verifier.ts " +
+        "strong BindingVerifier) -> renderToStaticMarkup(renderSection(...))",
+      boundFieldVerifier:
+        "src/fyd/sitespec/binding-verifier.ts resolveBoundFieldVerified",
       boundFieldValue: boundValue,
       renders,
     },

@@ -138,25 +138,27 @@ function sha256Hex(input: string): string {
  * field-visibility decisions. Extends the existing owner-store reads;
  * it does NOT invent new durable state.
  *
- * Current coverage: addressVisibility hidden/coarse (the durable states
- * the owner store supports). Arbitrary field hide/coarse decisions have
- * no durable writer yet (open product gap); this function must not
- * invent them.
+ * Coverage: the owner's SHOW / HIDE / DEFAULT address preference (the
+ * durable states the owner store supports). HIDE -> a "hide" decision;
+ * SHOW -> a "show" decision; DEFAULT -> no decision, so the conservative
+ * default applies (address-bearing fields coarsen). Arbitrary field
+ * hide/coarse decisions have no durable writer yet (open product gap);
+ * this function must not invent them.
  */
 export function objectDecisionsToFieldVisibility(
   objectId: string,
 ): FieldVisibilityDecision[] {
   const overrides = readOverrides(objectId);
   const decisions: FieldVisibilityDecision[] = [];
-  // Durable owner state is addressVisibility: "public" | "hidden" plus the
-  // addressVisibilityAssertion carrying the OwnerAssertion contract (with a
-  // durable `at` timestamp). decidedAt comes from durable state, never from
-  // the wall clock, so the decisions digest is replay-deterministic.
-  if (overrides.addressVisibility === "hidden") {
+  // decidedAt comes from durable state, never from the wall clock, so the
+  // decisions digest is replay-deterministic. The addressVisibilityAssertion
+  // carries the OwnerAssertion contract (with a durable `at` timestamp).
+  const pref = overrides.addressVisibility;
+  if (pref === "hide" || pref === "show") {
     decisions.push({
       objectId,
       field: "address",
-      policy: "hide",
+      policy: pref,
       decidedBy: "owner",
       decidedAt:
         overrides.addressVisibilityAssertion?.at ?? overrides.updatedAt,
@@ -164,6 +166,8 @@ export function objectDecisionsToFieldVisibility(
       version: 1,
     });
   }
+  // "default": no owner decision is emitted; the conservative default in
+  // resolveFieldVisibility (coarse for address-bearing fields) applies.
   return decisions;
 }
 
@@ -217,12 +221,34 @@ export function verifyPublicProjection(
   viewerKind: PublicViewerKind,
 ): VerifiedPublicProjection {
   const graphDigest = sha256Hex(canonicalize(graph));
-  const policySubset = decisions.map((d) => ({
-    objectId: d.objectId,
-    field: d.field,
-    policy: d.policy,
-    version: d.version,
-  }));
+  // OwnerOverrides are a SET: the decisions digest must not depend on
+  // caller input order. Sort canonically before hashing (explicit
+  // tie-breaker, same discipline as render-model.canonicalizeOverrides)
+  // so [A, B] and [B, A] produce the same decisionsDigest, checkpoint,
+  // and viewerPolicyDigest. This is an identity function of the decision
+  // set, not of the application order.
+  const policySubset = decisions
+    .map((d) => ({
+      objectId: d.objectId,
+      field: d.field,
+      policy: d.policy,
+      version: d.version,
+    }))
+    .sort((a, b) =>
+      a.objectId !== b.objectId
+        ? a.objectId < b.objectId
+          ? -1
+          : 1
+        : a.field !== b.field
+          ? a.field < b.field
+            ? -1
+            : 1
+          : a.policy !== b.policy
+            ? a.policy < b.policy
+              ? -1
+              : 1
+            : a.version - b.version,
+    );
   const decisionsDigest = sha256Hex(canonicalize(policySubset));
   const capabilities =
     viewerKind === "owner" ? [...OWNER_CAPABILITIES] : [...ANONYMOUS_CAPABILITIES];

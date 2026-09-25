@@ -18,7 +18,11 @@
  */
 
 import type { Metadata } from "next";
-import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+import { getVerifiedPublicProjection } from "@/fyd/data/ping-object-source";
+import {
+  ownerAssertionsFromGraph,
+  resolveBoundFieldVerified,
+} from "@/fyd/sitespec/binding-verifier";
 import type { ObjectGraph } from "@/fyd/sitespec/types";
 
 const OWNER_BUSINESS_SCHEMA = "ping.social.business@1";
@@ -35,15 +39,43 @@ function ownerObject(graph: ObjectGraph) {
  * the site's own projection at render time; nothing is hardcoded per site.
  */
 export async function generateSiteMetadata(siteId: string): Promise<Metadata> {
-  const { graph } = await getPingObjectGraph(siteId);
+  // Verified public projection (Q-C-01): metadata derives from the
+  // public graph, never the raw source graph.
+  const { graph } = await getVerifiedPublicProjection(siteId, "anonymous");
   const owner = ownerObject(graph);
-  const name = owner?.title?.trim() || siteId;
+  // Binding-verified owner text (FYD product authority directive,
+  // 2026-09-25: the BindingVerifier owns ENFORCEMENT, truth stays
+  // upstream). The <title>, meta description, and social tags are factual
+  // render bindings: they may publish the business's own
+  // title/description only when the binding verifies against the strong
+  // BindingVerifier (direct: object field + evidence ref + fresh
+  // website-derived provenance; owner-authored: a recorded owner
+  // assertion matching the value). An unverified name/description is
+  // never published as the business's words. The fallback is
+  // explicitly generator-labeled presentation copy (GENERATED class),
+  // never a factual claim about the business.
+  const assertions = ownerAssertionsFromGraph(graph);
+  const verifiedTitle = owner
+    ? resolveBoundFieldVerified(
+        graph,
+        { objectId: owner.id, field: "title", classification: "direct" },
+        assertions,
+      )?.trim() || undefined
+    : undefined;
+  const verifiedDescription = owner
+    ? resolveBoundFieldVerified(
+        graph,
+        { objectId: owner.id, field: "description", classification: "direct" },
+        assertions,
+      )?.trim() || undefined
+    : undefined;
+  const name = verifiedTitle ?? "FYD Social generated site";
   // The business's own description from its object graph. Never PING's.
   // Falls back to a plain generator-labeled line when the source object
-  // carries no description; the fallback never claims facts about the
-  // business and never mentions PING's infrastructure.
+  // carries no verifiable description; the fallback never claims facts
+  // about the business and never mentions PING's infrastructure.
   const description =
-    owner?.description?.trim() || `${name} | FYD Social generated site`;
+    verifiedDescription ?? name + " | FYD Social generated site";
   // Canonical product decision (2026-09-24, W-META 80% call): these demo
   // tenants have no public domain of their own, so the canonical URL is
   // the site's own served route, resolved against the app's metadataBase
