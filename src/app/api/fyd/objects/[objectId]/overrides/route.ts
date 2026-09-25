@@ -92,6 +92,10 @@ import {
 } from "@/fyd/object/commands";
 import { foldLegacyTier } from "@/fyd/object/consequence-tiers";
 import {
+  classifyOwnerAction,
+  frictionForTier,
+} from "@/fyd/object/consequence-classification";
+import {
   applyOwnerCommand,
   parseOwnerCommand,
   OwnerCommandError,
@@ -208,6 +212,24 @@ export async function GET(
     history,
     siteId: objectId,
   });
+}
+
+/**
+ * Authority-UX lane: the consequence classification that travels with a
+ * proposal/decision record (tier + plain-language consequence + friction),
+ * so WHY THIS and audit can show it. The renderer never invents this:
+ * it reads it off the record.
+ */
+function classificationRecord(command: OwnerCommand) {
+  const c = classifyOwnerAction({ kind: "owner-command", command });
+  return {
+    tier: c.tier,
+    productTier: c.productTier,
+    ownerConsequence: c.ownerConsequence,
+    rationale: c.rationale,
+    friction: c.friction,
+    changeKind: c.changeKind,
+  };
 }
 
 export async function POST(
@@ -336,6 +358,9 @@ export async function POST(
             tier: detected.tier,
             category: detected.category,
             reason: detected.reason,
+            // Authority-UX lane: the friction this tier demands, so the
+            // refusal states what authorization would be required.
+            friction: frictionForTier(detected.tier),
             receipt,
             chain: ctx.auditView(),
           },
@@ -387,6 +412,9 @@ export async function POST(
       // the business" (knowledge transition, all projections follow).
       changeKind: changeKindForTier(tier),
       consequenceNote: consequenceNoteFor(tier),
+      // Authority-UX lane: consequence classification + friction stamped
+      // on the proposal record (renderer reads it, never invents it).
+      classification: classificationRecord(command),
       digests: {
         baseStateDigest: ownerStateDigest(objectId),
         baseViewDigest: buildViewDigest(ownerProjection, objectId),
@@ -569,6 +597,9 @@ export async function POST(
         approval,
         tier,
         changeKind: changeKindForTier(tier),
+        // Authority-UX lane: the decision record carries the same
+        // classification the proposal carried, for WHY THIS and audit.
+        classification: classificationRecord(command),
         undo,
         chain: audit,
       });
