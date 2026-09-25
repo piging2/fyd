@@ -20,6 +20,7 @@ import type { ObjectGraph } from "@/fyd/sitespec/types";
 import { schemaRole } from "@/fyd/sitespec/schemas";
 import type { PingObject } from "@/lib/ping/types";
 import { loadObjectView } from "@/fyd/object/view";
+import type { VerifiedPublicProjection } from "@/fyd/sitespec/public-projection";
 import type {
   ObjectCapability,
   ObjectContactView,
@@ -167,7 +168,10 @@ export interface LabData {
   views: Record<string, ObjectView>;
 }
 
-export function buildLabData(siteId: string, graph: ObjectGraph): LabData {
+export function buildLabData(
+  verified: VerifiedPublicProjection,
+  graph: ObjectGraph,
+): LabData {
   const groups = new Map<LabTypeName, LabObjectSummary[]>();
   const views: Record<string, ObjectView> = {};
   for (const obj of graph.objects) {
@@ -176,9 +180,9 @@ export function buildLabData(siteId: string, graph: ObjectGraph): LabData {
     list.push(summarizeObject(obj));
     groups.set(type, list);
     if (type === "Business") {
-      // Canonical read-model loader (PING-backed, digest-verified). Same
-      // source the /o routes and the demo sites render from.
-      const v = loadObjectView(siteId);
+      // Canonical read-model loader over the verified public projection
+      // (Q-C-01). Same source the /o routes and the demo sites render from.
+      const v = loadObjectView(verified, obj.id);
       if (v) views[obj.id] = v;
     } else {
       views[obj.id] = genericObjectView(obj);

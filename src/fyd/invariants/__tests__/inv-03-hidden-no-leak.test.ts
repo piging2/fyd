@@ -123,6 +123,8 @@ describe("INV-03 hidden objects never leak into public projections", () => {
   });
 
   test("object loader: unknown tenant/object never serves a view", () => {
-    expect(loadObjectViewById("no-such-tenant", "no-such-object")).toBeNull();
+        // Unknown tenant: the caller resolves no projection (null), so the
+    // loader serves nothing. Unknown object: same, via a real projection.
+    expect(loadObjectViewById(null, "no-such-tenant", "no-such-object")).toBeNull();
   });
 });

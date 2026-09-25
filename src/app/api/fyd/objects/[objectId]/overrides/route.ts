@@ -73,7 +73,11 @@ import {
   parseOwnerCommand,
   OwnerCommandError,
 } from "@/fyd/object/owner-store";
-import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+import {
+  getPingObjectGraphSync,
+  getVerifiedPublicProjectionSync,
+} from "@/fyd/data/ping-object-source";
+import { readOverrides } from "@/fyd/object/owner-store";
 import { findBusinessObject, rawFieldValue } from "@/fyd/object/owner-overlay";
 import { TenantContextError } from "@/fyd/tenant/tenant-context";
 import type { OwnerCommand } from "@/fyd/object/types";
@@ -120,6 +124,69 @@ function tenantMismatchResponse(ctx: OwnerContext, key: string, claimed: string)
   );
 }
 
+/**
+ * GET /api/fyd/objects/[objectId]/overrides
+ *
+ * Owner-lane read (Q-C-01): the owner-authorized ObjectView built over the
+ * OWNER projection (hidden fields stay visible to the owner for
+ * management) plus the human-language owner history. This is the Manage
+ * surface's read path; the public GET /api/fyd/objects/[objectId] never
+ * serves history.
+ *
+ * DEMO/DEV ONLY, same as POST: no production authentication. The
+ * OwnerContext seam stamps the response; the Manage surface labels every
+ * session DEV/DEMO.
+ */
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ objectId: string }> },
+) {
+  const { objectId } = await params;
+  let ctx: OwnerContext;
+  try {
+    ctx = await createOwnerContext(objectId);
+  } catch (err) {
+    if (err instanceof TenantContextError) {
+      return NextResponse.json(
+        {
+          ...ownerContextRefusalLabel(),
+          ok: false,
+          code: "invalid_tenant",
+          error:
+            "Refusing to act: the route object id is not a valid tenant id. " +
+            "Tenant ids are DNS-safe slugs.",
+        },
+        { status: 400 },
+      );
+    }
+    throw err;
+  }
+  let projection;
+  try {
+    projection = getVerifiedPublicProjectionSync(objectId, "owner");
+  } catch {
+    return NextResponse.json(
+      { ...ctx.responseLabel(), ok: false, error: "Unknown object." },
+      { status: 404 },
+    );
+  }
+  const view = loadObjectView(projection, objectId);
+  if (!view) {
+    return NextResponse.json(
+      { ...ctx.responseLabel(), ok: false, error: "Unknown object." },
+      { status: 404 },
+    );
+  }
+  const history = readOverrides(objectId).history;
+  return NextResponse.json({
+    ...ctx.responseLabel(),
+    ok: true,
+    view,
+    history,
+    siteId: objectId,
+  });
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ objectId: string }> },
@@ -154,7 +221,16 @@ export async function POST(
     throw err;
   }
 
-  if (!loadObjectView(objectId)) {
+  // Owner-authorized read (Q-C-01): the owner projection passes the
+  // boundary with the owner viewer policy, so hidden fields stay visible
+  // to the owner for management.
+  let ownerProjection;
+  try {
+    ownerProjection = getVerifiedPublicProjectionSync(objectId, "owner");
+  } catch {
+    return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Unknown object." }, { status: 404 });
+  }
+  if (!loadObjectView(ownerProjection, objectId)) {
     return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Unknown object." }, { status: 404 });
   }
 
@@ -227,7 +303,7 @@ export async function POST(
           : "Public factual change. Explicit confirmation: approving records an owner assertion with actor and timestamp. The source record is never rewritten.",
       digests: {
         baseStateDigest: ownerStateDigest(objectId),
-        baseViewDigest: buildViewDigest(objectId),
+        baseViewDigest: buildViewDigest(ownerProjection, objectId),
         patchDigest: patchDigestOf(command),
       },
       chain: ctx.auditView(),
@@ -290,7 +366,7 @@ export async function POST(
     // unchanged owner journal). Either way the approval's binding is broken:
     // refuse, write nothing, name what moved.
     const currentBase = ownerStateDigest(objectId);
-    const currentView = buildViewDigest(objectId);
+    const currentView = buildViewDigest(ownerProjection, objectId);
     const stateMoved = presentedBase !== currentBase;
     const viewMoved = presentedView !== currentView;
     if (stateMoved || viewMoved) {
@@ -378,7 +454,8 @@ export async function POST(
         eventId: lastEventId(objectId),
         resultDigest: digestOf(overrides),
       });
-      const view = loadObjectView(objectId);
+      const refreshedProjection = getVerifiedPublicProjectionSync(objectId, "owner");
+      const view = loadObjectView(refreshedProjection, objectId);
       // Fast proposal/undo for local presentation changes: the exact
       // inverse command, pre-bound to the POST-APPLY digests, so the owner
       // can reverse it in one approve call. If the state moved since, the
@@ -394,7 +471,7 @@ export async function POST(
               command: inverse,
               summary: describeCommand(inverse, names),
               baseStateDigest: ownerStateDigest(objectId),
-              baseViewDigest: buildViewDigest(objectId),
+              baseViewDigest: buildViewDigest(ownerProjection, objectId),
               patchDigest: patchDigestOf(inverse),
             };
       return NextResponse.json({

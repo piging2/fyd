@@ -6,9 +6,9 @@
  * projection's digest verification, which gives three guarantees:
  *
  * 1. The source projection is never mutated. Its digest still verifies,
- *    the projection file still says what the source said, and the raw
- *    source endpoint (/api/fyd/projection) still serves it. SOURCE SAYS X
- *    stands on its own evidence.
+ *    the projection file still says what the source said, and the public
+ *    projection endpoint (/api/fyd/projection) serves only the verified
+ *    public projection. SOURCE SAYS X stands on its own evidence.
  * 2. Every consumer of the read seam (generated site pages, Ask FYD, the
  *    ObjectView, the Circle projection) sees the same EFFECTIVE value
  *    with the same provenance. There is no per-surface patching: the

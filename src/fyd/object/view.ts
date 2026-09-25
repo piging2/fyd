@@ -38,6 +38,7 @@ import { resolveSafeLink } from "../sitespec/safe-link";
 import type { ObjectGraph } from "../sitespec/types";
 import type { PingObject } from "../../lib/ping/types";
 import { readOverrides } from "./owner-store";
+import type { VerifiedPublicProjection } from "../sitespec/public-projection";
 import { resolveCircleBackground } from "../media/circle-background";
 import { listObjectMedia } from "../media/select";
 import type {
@@ -299,14 +300,22 @@ export function buildCapabilities(
  * Not a public loader on its own: use loadObjectView / loadObjectViewById,
  * which enforce the tenant/object honesty gates (unknown tenant, unknown
  * id, non-public object).
+ *
+ * The first parameter is the VERIFIED public projection (Q-C-01): the object
+ * is resolved from the projection's own graph, so there is no path that
+ * composes a view over an unprojected object. Returns null when the object
+ * is absent from the projection (unknown id, or hidden from this viewer).
  */
 export function composeObjectView(
-  graph: ObjectGraph,
+  projection: VerifiedPublicProjection,
   siteId: string,
-  obj: PingObject,
+  objectId: string,
   viewId: string,
   overridesKey: string,
-): ObjectView {
+): ObjectView | null {
+  const graph = projection.graph;
+  const obj = graph.objects.find((o) => o.id === objectId);
+  if (!obj) return null;
   const overrides = readOverrides(overridesKey);
   const description = field(obj, "description") ?? obj.description ?? "";
   const website = field(obj, "website");
@@ -393,23 +402,25 @@ export function composeObjectView(
 }
 
 /**
- * Load the public ObjectView for a site slug from the PING-backed
- * projection. This is the canonical read-model loader; Card/Node lanes
- * should reuse it. Returns null for unknown slugs (the route turns this
- * into a 404). Throws only on programmer error, never on missing data.
+ * Load the public ObjectView for a site slug from a VERIFIED public
+ * projection (Q-C-01). This is the canonical read-model loader; Card/Node
+ * lanes should reuse it. The caller resolves the projection through
+ * getVerifiedPublicProjectionSync (unknown tenant -> null projection ->
+ * the route answers 404). Returns null when the slug's business is absent
+ * from the projection. Throws only on programmer error, never on missing
+ * data.
  */
-export function loadObjectView(slug: string): ObjectView | null {
-  let graph: ObjectGraph;
-  try {
-    graph = getPingObjectGraphSync(slug).graph;
-  } catch {
-    return null;
-  }
+export function loadObjectView(
+  projection: VerifiedPublicProjection | null,
+  slug: string,
+): ObjectView | null {
+  if (!projection) return null;
+  const graph = projection.graph;
   const business = graph.objects.find(
     (o) => SCHEMA_ROLES.business.includes(o.schema) && o.visibility === "public",
   );
   if (!business) return null;
-  return composeObjectView(graph, slug, business, slug, slug);
+  return composeObjectView(projection, slug, business.id, slug, slug);
 }
 
 /**
@@ -454,8 +465,12 @@ export function trimTagline(summary: string, maxChars: number): string {
  * background. Returns null for unknown slugs (the route turns this into a
  * 404).
  */
-export function loadCircleProjection(slug: string): CircleProjection | null {
-  const view = loadObjectView(slug);
+export function loadCircleProjection(
+  projection: VerifiedPublicProjection | null,
+  slug: string,
+): CircleProjection | null {
+  if (!projection) return null;
+  const view = loadObjectView(projection, slug);
   if (!view) return null;
   return {
     id: view.id,

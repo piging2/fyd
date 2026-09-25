@@ -38,6 +38,12 @@ import {
   type OwnerOverlayResult,
 } from "@/fyd/object/owner-overlay";
 import type { PresentationIntentBlock } from "@/fyd/customize/types";
+import {
+  decisionsForGraph,
+  verifyPublicProjection,
+  type PublicViewerKind,
+  type VerifiedPublicProjection,
+} from "@/fyd/sitespec/public-projection";
 
 export interface ProjectionMeta {
   siteId: string;
@@ -317,4 +323,31 @@ export function listPingSiteIdsSync(): string[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * THE public read funnel (Q-C-01): verify the source projection and its
+ * provenance, compose owner field corrections, resolve durable owner
+ * visibility decisions, and project for the declared viewer. Every public
+ * consumer reads tenant object data through this function (or its Sync
+ * variant), never through getPingObjectGraph directly: the returned graph
+ * is the only graph public constructors accept.
+ */
+export async function getVerifiedPublicProjection(
+  siteId: string,
+  viewerKind: PublicViewerKind,
+  opts?: PingSourceOpts,
+): Promise<VerifiedPublicProjection> {
+  const { graph } = await getPingObjectGraph(siteId, opts);
+  return verifyPublicProjection(graph, decisionsForGraph(graph), viewerKind);
+}
+
+/** Synchronous variant of getVerifiedPublicProjection. */
+export function getVerifiedPublicProjectionSync(
+  siteId: string,
+  viewerKind: PublicViewerKind,
+  opts?: PingSourceOpts,
+): VerifiedPublicProjection {
+  const { graph } = getPingObjectGraphSync(siteId, opts);
+  return verifyPublicProjection(graph, decisionsForGraph(graph), viewerKind);
 }

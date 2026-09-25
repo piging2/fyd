@@ -30,6 +30,7 @@ import { readOverrides } from "@/fyd/object/owner-store";
 import { readOwnerEvents } from "@/fyd/object/owner-events";
 import type { OwnerCommand } from "@/fyd/object/types";
 import { loadObjectView } from "@/fyd/object/view";
+import type { VerifiedPublicProjection } from "@/fyd/sitespec/public-projection";
 
 /** sha256 hex over the canonicalized value. Deterministic across reads. */
 export function digestOf(value: unknown): string {
@@ -293,8 +294,11 @@ export interface BoundApproval {
  * build state the owner approval is bound to. Unknown objects hash a
  * stable missing marker so the digest is always well defined.
  */
-export function buildViewDigest(objectId: string): string {
-  const view = loadObjectView(objectId);
+export function buildViewDigest(
+  projection: VerifiedPublicProjection,
+  objectId: string,
+): string {
+  const view = loadObjectView(projection, objectId);
   return digestOf(view ?? { objectId, missing: true });
 }
 
