@@ -187,4 +187,65 @@ describe("live loop hostile URLs (no real network)", () => {
     expect(bad?.code).toBe("ACQ_PRIVATE_IP");
     expect(r.report.graphSummary.schemas["ping.social.external_identity@1"]).toBe(1);
   });
+
+  it("fails closed on a redirect pivot into private space (never fetches it)", async () => {
+    const requested: string[] = [];
+    const deps: SafeFetchDeps = {
+      dnsLookup: PUBLIC_DNS,
+      fetchImpl: stubFetch((url) => {
+        requested.push(url);
+        if (url.endsWith("/robots.txt"))
+          return new Response("User-agent: *\nDisallow:\n", {
+            status: 200,
+            headers: { "content-type": "text/plain" },
+          });
+        return new Response("", {
+          status: 302,
+          headers: { location: "http://10.0.0.5/internal" },
+        });
+      }),
+    };
+    const r = await runLiveLoop({
+      url: "https://shop.testtradeco.example/",
+      safeFetchDeps: deps,
+      runMedia: false,
+    });
+    expect(r.report.error?.code).toBe("ACQ_PRIVATE_IP");
+    expect(r.report.error?.stage).toBe("acquire");
+    expect(requested.some((u) => u.includes("10.0.0.5"))).toBe(false);
+  });
+
+  it("fails closed on an oversized declared body", async () => {
+    const deps: SafeFetchDeps = {
+      dnsLookup: PUBLIC_DNS,
+      fetchImpl: stubFetch((url) => {
+        if (url.endsWith("/robots.txt"))
+          return new Response("User-agent: *\nDisallow:\n", {
+            status: 200,
+            headers: { "content-type": "text/plain" },
+          });
+        return new Response("tiny body, huge lie", {
+          status: 200,
+          headers: { "content-type": "text/html", "content-length": "99999999" },
+        });
+      }),
+    };
+    const r = await runLiveLoop({
+      url: "https://www.testtradeco.example/",
+      safeFetchDeps: deps,
+      runMedia: false,
+    });
+    expect(r.report.error?.code).toBe("ACQ_TOO_LARGE");
+    expect(r.report.error?.stage).toBe("acquire");
+  });
+
+  it("rejects file:// URLs at the L0 gate", async () => {
+    const r = await runLiveLoop({
+      url: "file:///etc/passwd",
+      safeFetchDeps: { dnsLookup: PUBLIC_DNS },
+      runMedia: false,
+    });
+    expect(r.report.error?.code).toBe("ACQ_SCHEME_REJECTED");
+    expect(r.report.error?.stage).toBe("discover");
+  });
 });
