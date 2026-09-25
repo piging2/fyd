@@ -31,6 +31,25 @@ describe("isPublicIp", () => {
     expect(isPublicIp("224.0.0.1")).toBe(false);
     expect(isPublicIp("::ffff:192.168.1.1")).toBe(false);
   });
+  test("rejects hex-form v4-mapped loopback and private (SSRF D1)", () => {
+    // Node treats these as the embedded v4 address; they must not pass
+    // as public. ::ffff:7f00:1 === 127.0.0.1, ::ffff:a00:1 === 10.0.0.1.
+    expect(isPublicIp("::ffff:7f00:1")).toBe(false);
+    expect(isPublicIp("::FFFF:7F00:1")).toBe(false);
+    expect(isPublicIp("::ffff:a00:1")).toBe(false);
+    expect(isPublicIp("::ffff:7f000001")).toBe(false);
+    expect(isPublicIp("::ffff:c0a8:101")).toBe(false);
+  });
+  test("hex-form v4-mapped public stays public", () => {
+    // 93.184.216.34 === 5db8:d822
+    expect(isPublicIp("::ffff:5db8:d822")).toBe(true);
+  });
+  test("malformed v4-mapped forms fail closed", () => {
+    expect(isPublicIp("::ffff:")).toBe(false);
+    expect(isPublicIp("::ffff:zzzz:1")).toBe(false);
+    expect(isPublicIp("::ffff:1:2:3")).toBe(false);
+    expect(isPublicIp("::ffff:7f00:1.2.3.4")).toBe(false);
+  });
   test("accepts public addresses", () => {
     expect(isPublicIp("93.184.216.34")).toBe(true);
     expect(isPublicIp("2606:2800:220:1:248:1893:25c8:1946")).toBe(true);

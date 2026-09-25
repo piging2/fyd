@@ -91,9 +91,39 @@ export function isPublicIp(ip: string): boolean {
     if (low.startsWith("fe80:")) return false; // link-local
     if (low.startsWith("fc00:") || low.startsWith("fd00:")) return false; // unique local
     if (low.startsWith("ff00:")) return false; // multicast
-    // IPv4-mapped: ::ffff:a.b.c.d -> check the embedded v4
-    const m = low.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if (m) return isPublicIp(m[1]);
+    // IPv4-mapped: ::ffff:a.b.c.d (dotted) or ::ffff:7f00:1 (hex) ->
+    // check the embedded v4. Node treats the hex form as the mapped v4
+    // address, so it must not fall through to "public". Malformed forms
+    // fail closed.
+    const m = low.match(/^::ffff:([0-9a-f:.]+)$/);
+    if (m) {
+      const tail = m[1];
+      if (tail.includes(".")) {
+        // Dotted tail must be exactly the quad; mixed hex+dotted fails closed.
+        if (!/^\d+\.\d+\.\d+\.\d+$/.test(tail)) return false;
+        return isPublicIp(tail);
+      }
+      // Hex tail: colon-separated 16-bit groups of the embedded v4 address
+      // (::ffff:7f00:1 === 127.0.0.1, ::ffff:a00:1 === 10.0.0.1). A single
+      // group of 1-8 hex digits is the low 32 bits.
+      const groups = tail.split(":");
+      let hex: string;
+      if (groups.length === 1) {
+        if (!/^[0-9a-f]{1,8}$/.test(groups[0])) return false;
+        hex = groups[0].padStart(8, "0");
+      } else if (groups.length === 2) {
+        if (!groups.every((g) => /^[0-9a-f]{1,4}$/.test(g))) return false;
+        hex = groups.map((g) => g.padStart(4, "0")).join("");
+      } else {
+        return false;
+      }
+      const n = parseInt(hex, 16);
+      if (Number.isNaN(n)) return false;
+      const quad = [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(
+        ".",
+      );
+      return isPublicIp(quad);
+    }
     return true;
   }
   return false;
