@@ -63,6 +63,7 @@ import {
 } from "./manifest";
 import {
   assertGeneratedPresentationVerified,
+  copyClassToBindingClassification,
   type GeneratedCopySlot,
   type GeneratedPresentation,
 } from "./generated-presentation";
@@ -273,7 +274,7 @@ function slotBindingsForVerification(
       out.push({
         objectId: b.objectId,
         field: b.field,
-        classification: "direct",
+        classification: copyClassToBindingClassification(slot.copyClass),
         evidenceRef: b.claimRef ?? undefined,
       });
     }
@@ -378,7 +379,9 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     if (locality !== "") {
       bindings.push({ objectId: owner.id, field: "locality", claimRef: owner.provenance?.ref ?? null });
     }
-    slots.push({ slotId: "hero-tagline", sectionId: "", text: tagline, bindings });
+    // DIRECT_FACT: the tagline interpolates ONLY bound object fields, so
+    // every binding must resolve or the spec is refused.
+    slots.push({ slotId: "hero-tagline", sectionId: "", text: tagline, bindings, copyClass: "DIRECT_FACT" });
   }
   const generatedPresentation: GeneratedPresentation = { version: 1, slots };
 

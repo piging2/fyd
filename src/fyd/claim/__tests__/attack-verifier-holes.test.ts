@@ -280,6 +280,7 @@ describe("H6: withdrawn evidence has no binding path: the visibility gates refus
             slotId: "hero-phone",
             sectionId: "hero",
             text: "Call 555-0100 today",
+            copyClass: "DIRECT_FACT",
             bindings: [
               {
                 objectId: "biz-trade",
