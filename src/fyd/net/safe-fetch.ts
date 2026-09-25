@@ -88,9 +88,9 @@ export function isPublicIp(ip: string): boolean {
   if (v === 6) {
     const low = ip.toLowerCase();
     if (low === "::1") return false;
-    if (low.startsWith("fe80:")) return false; // link-local
-    if (low.startsWith("fc00:") || low.startsWith("fd00:")) return false; // unique local
-    if (low.startsWith("ff00:")) return false; // multicast
+    if (/^fe[89ab][0-9a-f]:/.test(low)) return false; // link-local fe80::/10
+    if (/^f[cd][0-9a-f]{2}:/.test(low)) return false; // unique local fc00::/7
+    if (/^ff[0-9a-f]{2}:/.test(low)) return false; // multicast ff00::/8
     // IPv4-mapped: ::ffff:a.b.c.d (dotted) or ::ffff:7f00:1 (hex) ->
     // check the embedded v4. Node treats the hex form as the mapped v4
     // address, so it must not fall through to "public". Malformed forms
