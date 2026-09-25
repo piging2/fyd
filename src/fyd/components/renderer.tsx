@@ -847,6 +847,8 @@ export function ObjectDoorway({
       className={"fyd-object-doorway " + (className ?? "")}
       style={{
         display: "inline-flex",
+        maxWidth: "100%",
+        boxSizing: "border-box",
         alignItems: "center",
         gap: "0.5rem",
         minHeight: "44px",
