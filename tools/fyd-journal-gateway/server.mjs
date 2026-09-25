@@ -11,26 +11,37 @@
  *
  * Contract (mirrors the main gateway's GET /events/:stream and the ask-lane
  * test stub at src/app/api/fyd/ask/__tests__/stub-journal.ts):
- *   GET  /events/FYD_SITE_OVERLAY[?limit=&offset=]
- *     -> 200 { events: [ { event_id, timestamp, event_type,
+ *   GET  /events/FYD_SITE_OVERLAY?tenant=<tenant_id>[&limit=&offset=]
+ *     -> 200 { events: [ { event_id, timestamp, event_type, tenant_id,
  *                          aggregate_id, aggregate_type, event_data } ],
- *              stream, count, limit, offset }
+ *              stream, count, limit, offset, tenant }
  *        Events are returned in journal (timestamp ascending) order.
- *        The reader does tenant scoping itself (event_data.siteId), so all
- *        events of the stream are returned.
+ *        Tenant scoping is enforced server-side: the tenant query param is
+ *        REQUIRED (400 tenant_required without it) and only events whose
+ *        immutable tenant_id exactly matches are returned. The reader keeps
+ *        its own event_data.siteId filter as defense in depth. Other (non
+ *        FYD-scoped) streams keep the legacy unfiltered shape.
  *   POST /events
- *     Body: { event_type, aggregate_id?, aggregate_type?, event_data, request_id? }
+ *     Body: { event_type, tenant_id, aggregate_id?, aggregate_type?, event_data, request_id? }
  *     -> 200 { event_id, deduped }  (the accepted event's id)
+ *     Tenant enforcement on append (FYD_SITE_OVERLAY): tenant_id is REQUIRED
+ *     and immutable (in this runtime the tenant id IS the site id). The
+ *     gateway refuses with 400 tenant_mismatch when tenant_id is missing
+ *     or invalid, when aggregate_id is present and != "fyd-site:<tenant_id>",
+ *     or when event_data.siteId != tenant_id. A spoofed envelope is never
+ *     journaled under another tenant's name.
  *     Write-boundary P0: when request_id (string, <=128 chars) is present
- *     and was seen before, the gateway returns the ORIGINAL event_id with
- *     deduped:true and appends NOTHING. This is the backstop that makes
- *     lost-response retries and crash recovery converge: any retry that
- *     reaches the gateway with the same request_id gets the original
- *     event instead of a duplicate. The in-memory index is rebuilt from
- *     the store at startup (first record wins), so dedupe survives
- *     restarts. The check -> append -> index-update sequence is
- *     synchronous (no awaits between), so concurrent same-request_id
- *     POSTs cannot both append.
+ *     and was seen before UNDER THE SAME TENANT, the gateway returns the
+ *     ORIGINAL event_id with deduped:true and appends NOTHING. This is the
+ *     backstop that makes lost-response retries and crash recovery
+ *     converge: any retry that reaches the gateway with the same
+ *     request_id gets the original event instead of a duplicate. A
+ *     DIFFERENT tenant reusing the request_id gets a 400
+ *     request_id_tenant_conflict WITHOUT learning the original event_id
+ *     (zero disclosure). The in-memory index is rebuilt from the store at
+ *     startup (first record wins), so dedupe survives restarts. The
+ *     check -> append -> index-update sequence is synchronous (no awaits
+ *     between), so concurrent same-request_id POSTs cannot both append.
  *     Used by src/fyd/customize/server.ts emitOverlayEvent to journal
  *     owner-approved presentation-intent overlays.
  *   GET  /  -> 200 { ok: true, service, store, journal } (health +
@@ -81,6 +92,33 @@ const JOURNAL_MARKER =
     .digest("hex")
     .slice(0, 12);
 
+const TENANT_ID_PATTERN = /^[a-z0-9-]{1,64}$/;
+
+function isValidTenantId(v) {
+  return typeof v === "string" && TENANT_ID_PATTERN.test(v);
+}
+
+/**
+ * Immutable tenant id of a stored record. In-memory backfill only (the
+ * store file is never rewritten): records journaled before tenant_id was
+ * mandatory carry the tenant in event_data.siteId / aggregate_id.
+ */
+function tenantIdOf(rec) {
+  if (rec && isValidTenantId(rec.tenant_id)) return rec.tenant_id;
+  const data =
+    rec && typeof rec.event_data === "object" && rec.event_data !== null
+      ? rec.event_data
+      : null;
+  const sid = data ? data.siteId : null;
+  if (isValidTenantId(sid)) return sid;
+  const agg = rec ? rec.aggregate_id : null;
+  if (typeof agg === "string" && agg.startsWith("fyd-site:")) {
+    const t = agg.slice("fyd-site:".length);
+    if (isValidTenantId(t)) return t;
+  }
+  return null;
+}
+
 function loadEvents() {
   if (!existsSync(STORE)) return [];
   const out = [];
@@ -88,7 +126,9 @@ function loadEvents() {
     const t = line.trim();
     if (!t) continue;
     try {
-      out.push(JSON.parse(t));
+      const rec = JSON.parse(t);
+      rec.tenant_id = tenantIdOf(rec);
+      out.push(rec);
     } catch {
       /* skip corrupt line, keep serving */
     }
@@ -97,16 +137,20 @@ function loadEvents() {
   return out;
 }
 
-// Write-boundary P0: request_id -> event_id. The event record IS the
-// index entry (stored on the record itself), so there is no two-file
-// atomicity problem. Rebuilt from disk at startup; updated synchronously
+// Write-boundary P0: request_id -> { tenantId, eventId }. A request_id is
+// bound to the tenant that first used it: the same tenant may replay it
+// idempotently, but a DIFFERENT tenant reusing it is rejected without
+// learning the original event_id (zero disclosure across tenants).
+// The event record IS the index entry (stored on the record itself), so
+// there is no two-file atomicity problem. Rebuilt from disk at startup
+// (tenantIdOf backfills legacy records in memory); updated synchronously
 // on every append.
 const requestIndex = new Map();
 function rebuildRequestIndex() {
   requestIndex.clear();
   for (const e of loadEvents()) {
     if (e && typeof e.request_id === "string" && e.request_id && !requestIndex.has(e.request_id)) {
-      requestIndex.set(e.request_id, e.event_id);
+      requestIndex.set(e.request_id, { tenantId: e.tenant_id || null, eventId: e.event_id });
     }
   }
 }
@@ -166,6 +210,23 @@ const server = createServer(async (req, res) => {
       const stream = decodeURIComponent(path.slice("/events/".length));
       const limit = Math.max(1, Math.min(10000, parseInt(url.searchParams.get("limit") || "1000", 10) || 1000));
       const offset = Math.max(0, parseInt(url.searchParams.get("offset") || "0", 10) || 0);
+      if (stream === "FYD_SITE_OVERLAY") {
+        // Tenant enforcement on READ: no tenant context = fail closed.
+        const tenant = url.searchParams.get("tenant");
+        if (!isValidTenantId(tenant)) {
+          send(res, 400, {
+            error: "tenant_required",
+            detail: "a valid ?tenant=<tenant_id> query param is required to read FYD_SITE_OVERLAY",
+          });
+          return;
+        }
+        const all = loadEvents().filter(
+          (e) => e.event_type === stream && tenantIdOf(e) === tenant,
+        );
+        const page = all.slice(offset, offset + limit);
+        send(res, 200, { events: page, stream, count: page.length, limit, offset, tenant });
+        return;
+      }
       const all = loadEvents().filter((e) => e.event_type === stream);
       const page = all.slice(offset, offset + limit);
       send(res, 200, { events: page, stream, count: page.length, limit, offset });
@@ -187,6 +248,34 @@ const server = createServer(async (req, res) => {
         send(res, 400, { error: "event_type (string) and event_data (object) are required" });
         return;
       }
+      // Tenant enforcement on APPEND (FYD_SITE_OVERLAY): the envelope's
+      // tenant_id is immutable and must agree with aggregate_id and
+      // event_data.siteId. A spoofed envelope is refused, never stored.
+      const tenant_id = doc && typeof doc.tenant_id === "string" ? doc.tenant_id.trim() : "";
+      if (event_type === "FYD_SITE_OVERLAY") {
+        if (!isValidTenantId(tenant_id)) {
+          send(res, 400, {
+            error: "tenant_required",
+            detail: "FYD_SITE_OVERLAY events require a valid tenant_id (the site id)",
+          });
+          return;
+        }
+        const agg = typeof doc.aggregate_id === "string" ? doc.aggregate_id : null;
+        if (agg !== null && agg !== "fyd-site:" + tenant_id) {
+          send(res, 400, {
+            error: "tenant_mismatch",
+            detail: "aggregate_id does not belong to tenant_id",
+          });
+          return;
+        }
+        if (event_data.siteId !== tenant_id) {
+          send(res, 400, {
+            error: "tenant_mismatch",
+            detail: "event_data.siteId does not match tenant_id",
+          });
+          return;
+        }
+      }
       let requestId = null;
       if (doc.request_id !== undefined && doc.request_id !== null) {
         if (typeof doc.request_id !== "string" || !doc.request_id.trim() || doc.request_id.length > 128) {
@@ -196,8 +285,17 @@ const server = createServer(async (req, res) => {
         requestId = doc.request_id.trim();
         const prior = requestIndex.get(requestId);
         if (prior) {
-          // Idempotent replay: the original event, no new append.
-          send(res, 200, { event_id: prior, deduped: true });
+          if (prior.tenantId && prior.tenantId === tenant_id) {
+            // Idempotent replay by the same tenant: the original event, no new append.
+            send(res, 200, { event_id: prior.eventId, deduped: true });
+            return;
+          }
+          // A different tenant is reusing another tenant's request_id.
+          // Reject without disclosing the original event_id.
+          send(res, 400, {
+            error: "request_id_tenant_conflict",
+            detail: "request_id is already bound to a different tenant",
+          });
           return;
         }
       }
@@ -205,6 +303,7 @@ const server = createServer(async (req, res) => {
         event_id: mintId("fyd-ovl"),
         timestamp: new Date().toISOString(),
         event_type,
+        tenant_id: isValidTenantId(tenant_id) ? tenant_id : null,
         aggregate_id: typeof doc.aggregate_id === "string" ? doc.aggregate_id : null,
         aggregate_type: typeof doc.aggregate_type === "string" ? doc.aggregate_type : null,
         event_data,
@@ -212,7 +311,7 @@ const server = createServer(async (req, res) => {
       };
       mkdirSync(dirname(STORE), { recursive: true });
       appendFileSync(STORE, JSON.stringify(rec) + "\n", "utf8");
-      if (requestId) requestIndex.set(requestId, rec.event_id);
+      if (requestId) requestIndex.set(requestId, { tenantId: tenant_id, eventId: rec.event_id });
       send(res, 200, { event_id: rec.event_id, deduped: false });
       return;
     }
