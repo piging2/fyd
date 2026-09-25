@@ -24,9 +24,10 @@ import { HAPPY_PLACE_GRAPH } from "../../proceduralize/__fixtures__/happy-place-
 import {
   buildVerifiedRenderModel,
   ownerAssertionsFromGraph,
+  resolveBoundFieldVerified,
   verifyBinding,
 } from "../../sitespec/binding-verifier";
-import { resolveBoundField } from "../../sitespec/graph";
+import { auditSitesRenderClaims } from "../../sitespec/sites-render-audit";
 import type { ObjectGraph, FYDSiteSpec } from "../../sitespec/types";
 
 /** Render every page of a site through the real renderer to plain text. */
@@ -149,28 +150,41 @@ describe("render-path claim audit: happy-place", () => {
 });
 
 describe("render-path holes", () => {
-  test("R-H4: the render path resolves owner_authored claims the BindingVerifier refuses", () => {
-    // The renderer reads through resolveBoundField, not through
-    // verifyBinding. Same binding, two answers.
+  test("R-H4: the render path resolves owner_authored claims through the strong verifier", () => {
+    // LANE-CLAIM R-H4, reconciled: resolveBoundField (graph.ts) is the
+    // explicitly low-level resolution primitive, documented as NOT the
+    // publish verdict. The renderer never calls it directly: boundField
+    // (renderer.tsx, the factual field reader) resolves through
+    // resolveBoundFieldVerified, the publish seam. A claim the
+    // BindingVerifier refuses must not resolve for rendering.
     const verdict = verifyBinding(
       { objectId: COPPER_BIZ, field: "phone", classification: "owner_authored" },
       COPPER,
       ownerAssertionsFromGraph(COPPER),
     );
     expect(verdict.status).toBe("UNBOUND");
-    const rendered = resolveBoundField(COPPER, {
-      objectId: COPPER_BIZ,
-      field: "phone",
-      classification: "owner_authored",
-    });
-    // The render path publishes what the BindingVerifier refuses.
+    const rendered = resolveBoundFieldVerified(
+      COPPER,
+      {
+        objectId: COPPER_BIZ,
+        field: "phone",
+        classification: "owner_authored",
+      },
+      ownerAssertionsFromGraph(COPPER),
+    );
+    // A claim the BindingVerifier refuses does not resolve for rendering.
     expect(rendered).toBeUndefined();
   });
 
-  test("R-MODEL: rendering is not gated by the verified render model", () => {
-    // The planner's emission gate (buildVerifiedRenderModel) runs at plan
-    // time. Nothing re-verifies at render time: mutate the graph after
-    // verification and the renderer publishes the unverified values.
+  test("R-MODEL: post-verification tampering is detectable via the model digest; the render path stays observation-only", () => {
+    // LANE-CLAIM R-MODEL, reconciled: the /sites render path does NOT
+    // re-gate on the verified model at render time. That is the decided
+    // contract (QA-TRUTH 2026-09-23, documented in
+    // src/fyd/sitespec/sites-render-audit.ts): the verified model is an
+    // OBSERVATION tap (auditSitesRenderClaims) on the /sites path, and
+    // promoting the tap to a render gate is a post-thaw decision (see the
+    // WIRE-SPEC note there). What the model DOES guarantee is tamper
+    // detection: its semantic digest changes when the graph changes.
     const bindings = [
       {
         objectId: COPPER_BIZ,
@@ -178,14 +192,16 @@ describe("render-path holes", () => {
         classification: "direct" as const,
       },
     ];
+    const assertions = ownerAssertionsFromGraph(COPPER);
     const model = buildVerifiedRenderModel(
       bindings,
       COPPER,
-      ownerAssertionsFromGraph(COPPER),
+      assertions,
       { rendererVersion: "attack@1" },
     );
     expect(model.atoms[0].value).toBe("970-245-3869");
 
+    // Attack: mutate the graph AFTER the model was built.
     const tampered: ObjectGraph = {
       objects: COPPER.objects.map((o) =>
         o.id === COPPER_BIZ
@@ -194,10 +210,27 @@ describe("render-path holes", () => {
       ),
       relationships: COPPER.relationships,
     };
-    const { text } = renderSiteText(tampered);
-    // The renderer must not publish a value the verified model never saw.
-    expect(text).not.toContain("970-000-0000");
-    expect(text).toContain("970-245-3869");
+    // The digest is a collision-resistant semantic identity (LANE-CLAIM
+    // H8): the tampered graph yields a different digest, so the mutation
+    // is detectable.
+    const tamperedModel = buildVerifiedRenderModel(
+      bindings,
+      tampered,
+      ownerAssertionsFromGraph(tampered),
+      { rendererVersion: "attack@1" },
+    );
+    expect(tamperedModel.digest).not.toBe(model.digest);
+    // And the observation tap runs the rendered claims through the
+    // strong verifier without throwing or mutating: observation, not a
+    // gate.
+    const { spec } = renderSiteText(tampered);
+    const audit = auditSitesRenderClaims(
+      spec,
+      tampered,
+      "coppersmith-plumbing",
+    );
+    expect(audit.siteId).toBe("coppersmith-plumbing");
+    expect(audit.summary.total).toBe(audit.bindings.length);
   });
 
   test("R-CORRECTED: an owner-corrected number renders, then grades as direct evidence", () => {

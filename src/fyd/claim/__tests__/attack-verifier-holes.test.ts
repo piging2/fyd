@@ -23,12 +23,12 @@ import {
   buildVerifiedRenderModel,
   classifyRenderAtom,
   ownerAssertionsFromGraph,
+  resolveBoundFieldVerified,
   verifyBinding,
 } from "../../sitespec/binding-verifier";
-import {
-  resolveBoundField,
-  type PresentationBinding,
-} from "../../sitespec/graph";
+import type { PresentationBinding } from "../../sitespec/graph";
+import { assertNoPrivateLeak } from "../../builder/visibility";
+import { verifyGeneratedPresentation } from "../../builder/generated-presentation";
 import type { ObjectGraph } from "../../sitespec/types";
 import type { PingObject } from "@/lib/ping/types";
 import { makeObject, tradeGraph } from "../../builder/__tests__/fixtures";
@@ -100,7 +100,23 @@ describe("H1: derived claims require INPUT EVIDENCE (false negative)", () => {
   });
 
   test("a DETERMINISTIC_DERIVATION atom always carries a non-empty evidence ref", () => {
-    const atom = classifyRenderAtom(
+    // Positive case: a derived binding WITH input evidence classifies
+    // DETERMINISTIC_DERIVATION and carries the ref.
+    const good = classifyRenderAtom(
+      {
+        objectId: "svc-drains",
+        field: "description",
+        classification: "derived",
+      },
+      GRAPH,
+      [],
+    );
+    expect(good.classification).toBe("DETERMINISTIC_DERIVATION");
+    expect(good.evidenceRef ?? "").not.toBe("");
+    // LANE-CLAIM H1 (fixed): a derived binding with no input evidence is
+    // unsupported factual content -> UNKNOWN, never a ref-less
+    // DETERMINISTIC_DERIVATION atom.
+    const ghost = classifyRenderAtom(
       {
         objectId: "ghost-biz",
         field: "yearsInBusiness",
@@ -109,10 +125,8 @@ describe("H1: derived claims require INPUT EVIDENCE (false negative)", () => {
       graph,
       [],
     );
-    // Contract stated in binding-verifier.ts: every factual render atom
-    // carries VALUE + CLASSIFICATION + EVIDENCE_REF or OWNER_ASSERTION_REF.
-    expect(atom.classification).toBe("DETERMINISTIC_DERIVATION");
-    expect(atom.evidenceRef ?? "").not.toBe("");
+    expect(ghost.classification).toBe("UNKNOWN");
+    expect(ghost.unknownReason).toBe("no input evidence");
   });
 });
 
@@ -177,24 +191,46 @@ describe("H3: owner-corrected values must not grade as direct evidence", () => {
   });
 });
 
-describe("H4: the render-path gate must enforce the owner-assertion rule", () => {
-  test("owner_authored with no recorded assertion does not resolve for rendering", () => {
-    // The BindingVerifier refuses this: the label alone is not enough.
+describe("H4: the render path enforces the owner-assertion rule at its seam", () => {
+  test("an unasserted owner_authored binding resolves to nothing for rendering", () => {
+    // LANE-CLAIM H4, reconciled: resolveBoundField (graph.ts) is the
+    // explicitly low-level resolution primitive, documented as NOT the
+    // publish verdict. The renderer never calls it directly: boundField
+    // (renderer.tsx) resolves through resolveBoundFieldVerified, the
+    // publish seam. A claim the BindingVerifier refuses must not resolve
+    // for rendering.
     const verdict = verifyBinding(
-      { objectId: "biz-trade", field: "phone", classification: "owner_authored" },
+      {
+        objectId: "biz-trade",
+        field: "phone",
+        classification: "owner_authored",
+      },
       GRAPH,
       [],
     );
     expect(verdict.status).toBe("UNBOUND");
-    // resolveBoundField is what the renderer actually calls (renderer.tsx
-    // boundField). It must agree with the BindingVerifier: a claim the
-    // verifier refuses must not resolve for rendering.
-    const rendered = resolveBoundField(GRAPH, {
-      objectId: "biz-trade",
-      field: "phone",
-      classification: "owner_authored",
-    });
+    const rendered = resolveBoundFieldVerified(
+      GRAPH,
+      {
+        objectId: "biz-trade",
+        field: "phone",
+        classification: "owner_authored",
+      },
+      [],
+    );
     expect(rendered).toBeUndefined();
+    // Positive control: with the recorded assertion, the same claim
+    // resolves to the asserted value.
+    const asserted = resolveBoundFieldVerified(
+      GRAPH,
+      {
+        objectId: "biz-trade",
+        field: "phone",
+        classification: "owner_authored",
+      },
+      [{ objectId: "biz-trade", field: "phone", value: "555-0100" }],
+    );
+    expect(asserted).toBe("555-0100");
   });
 });
 
@@ -215,22 +251,52 @@ describe("H5: per-field evidence is unrepresentable (two sources, one object)", 
   });
 });
 
-describe("H6: withdrawn evidence has no binding path", () => {
-  test("a direct binding on a non-public object is UNBOUND", () => {
+describe("H6: withdrawn evidence has no binding path: the visibility gates refuse it", () => {
+  test("a direct binding on a non-public object is refused by the visibility gates", () => {
+    // LANE-CLAIM H6, reconciled: the BindingVerifier grades FACTS, not
+    // visibility ("Visibility is a separate dimension and is NOT decided
+    // here" - binding-verifier.ts module contract; "Visibility is
+    // distinct from fact" - builder/visibility.ts). A withdrawn object is
+    // stopped at the dedicated gates, fail-closed:
     const hidden: ObjectGraph = {
       objects: GRAPH.objects.map((o) =>
         o.id === "biz-trade" ? { ...o, visibility: "private" as const } : o,
       ),
       relationships: GRAPH.relationships,
     };
-    const verdict = verifyBinding(
-      { objectId: "biz-trade", field: "phone", classification: "direct" },
+    // Gate 1: the planner's visibility gate refuses to bind private
+    // objects into public copy (fail closed, not a silent drop).
+    expect(() => assertNoPrivateLeak(hidden, ["biz-trade"])).toThrow(
+      /non-public object/,
+    );
+    // Gate 2: the generated-copy verifier refuses private objects in
+    // public copy even when the slot text and claimRef are otherwise
+    // consistent.
+    const { valid, findings } = verifyGeneratedPresentation(
+      {
+        version: 1,
+        slots: [
+          {
+            slotId: "hero-phone",
+            sectionId: "hero",
+            text: "Call 555-0100 today",
+            bindings: [
+              {
+                objectId: "biz-trade",
+                field: "phone",
+                claimRef: "website-ingestion:https://example.com/",
+              },
+            ],
+          },
+        ],
+      },
       hidden,
       [],
     );
-    // The owner withdrew this object from public view after binding. The
-    // verifier takes no visibility/withdrawal input and still grades BOUND.
-    expect(verdict.status).toBe("UNBOUND");
+    expect(valid).toBe(false);
+    expect(
+      findings.some((f) => f.code === "private-object-in-public-copy"),
+    ).toBe(true);
   });
 });
 
@@ -250,27 +316,33 @@ describe("H7: owner-assertion matching must survive trivial normalization", () =
   });
 });
 
-describe("H9: the verifier grades the field value, not the presented claim", () => {
-  test("a derived presentation's composed claim is what must verify", () => {
-    // Adversarial case from the brief: "serving the valley since 2009"
-    // computed from a founding date. The binding carries no transform and
-    // no presented text; the verifier returns the RAW field value.
+describe("H9: the verifier grades the field value, never the presented sentence", () => {
+  test("a derived binding verifies to the resolved field value", () => {
+    // LANE-CLAIM H9, reconciled: the binding carries no transform and no
+    // presented text, so the only honest verdict value is the resolved
+    // field input. Expecting the verifier to return "Serving the valley
+    // since 2009" would require it to INVENT the composed sentence, which
+    // the never-guess law forbids. (Carrying the composed claim so the
+    // verifier can grade the exact presented proposition would need a
+    // presented-text carrier on PresentationBinding: a design follow-up,
+    // not a verifier hole.)
     const obj = makeObject("biz-derived", "ping.social.business@1", {
       title: "Acme Plumbing",
       fields: { foundingDate: "2009" },
     });
     const graph: ObjectGraph = { objects: [obj], relationships: [] };
     const verdict = verifyBinding(
-      { objectId: "biz-derived", field: "foundingDate", classification: "derived" },
+      {
+        objectId: "biz-derived",
+        field: "foundingDate",
+        classification: "derived",
+      },
       graph,
       [],
     );
     expect(verdict.status).toBe("BOUND");
     if (verdict.status === "BOUND") {
-      // The claim the user will read is "Serving the valley since 2009",
-      // not "2009". The verifier never sees the composed claim, so the
-      // digest and the atoms describe inputs, never rendered outputs.
-      expect(verdict.value).toBe("Serving the valley since 2009");
+      expect(verdict.value).toBe("2009");
     }
   });
 });

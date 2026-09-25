@@ -18,12 +18,19 @@
  * binding:
  *
  *   BOUND, source "evidence-ref":      a direct binding whose object field
- *                                       resolves and whose object carries a
- *                                       non-empty provenance ref (direct
- *                                       evidence).
+ *                                       resolves, whose object carries a
+ *                                       non-empty provenance ref, and whose
+ *                                       field carries no owner correction
+ *                                       (direct evidence; a corrected
+ *                                       field's value is the owner's, so it
+ *                                       verifies via the owner-assertion
+ *                                       path - LANE-CLAIM H3).
  *   BOUND, source "object-field":      a derived binding resolving to a
  *                                       deterministic transform of a present
- *                                       object field (derived fact).
+ *                                       object field whose object carries a
+ *                                       non-empty provenance ref (derived
+ *                                       claim WITH input evidence -
+ *                                       LANE-CLAIM H1).
  *   BOUND, source "owner-assertion":   an owner_authored binding whose value
  *                                       exactly matches a recorded owner
  *                                       assertion for that object and field
@@ -37,9 +44,10 @@
  *                                       smuggled as fact.
  *   UNBOUND:                           anything else. The verdict carries a
  *                                       reason (unknown object, unbound
- *                                       field, no evidence ref, no owner
- *                                       assertion, no generator ref,
- *                                       unknown classification).
+ *                                       field, no evidence ref, no input
+ *                                       evidence, no owner assertion, no
+ *                                       generator ref, unknown
+ *                                       classification).
  *
  * UNBOUND factual bindings fail closed at the emission gate
  * (assertSpecBindingsVerified throws before any spec is produced) or are
@@ -137,7 +145,11 @@ function findOwnerAssertion(
   const candidates = ownerAssertions
     .filter((a) => a.objectId === objectId && a.field === field)
     .sort((a, b) => (a.value < b.value ? -1 : a.value > b.value ? 1 : 0));
-  return candidates.find((a) => a.value === value);
+  // LANE-CLAIM H7: compare on trimmed values so trivial ingestion
+  // whitespace cannot void a real owner assertion (false UNBOUND).
+  // Trimming is not a weakening: the attested value must still match.
+  const needle = value.trim();
+  return candidates.find((a) => a.value.trim() === needle);
 }
 
 /**
@@ -154,12 +166,44 @@ export function verifyBinding(
     return { status: "UNBOUND", binding, reason: base.reason };
   }
   const value = base.value;
+  const obj = new Map(graph.objects.map((o) => [o.id, o])).get(
+    binding.objectId,
+  );
+  const evidenceRef = obj?.provenance?.ref ?? "";
   switch (binding.classification) {
-    case "direct":
+    case "direct": {
+      // LANE-CLAIM H3: an owner correction re-authors the field. The
+      // presented value is the owner's, not the source's, so grading it
+      // "evidence-ref" would launder owner authorship as direct evidence.
+      // A corrected field verifies through the owner-assertion path; with
+      // no matching assertion it is UNBOUND.
+      const corrected = obj?.ownerFieldCorrections?.some(
+        (c) => c.field === binding.field,
+      );
+      if (corrected) {
+        const match = findOwnerAssertion(
+          ownerAssertions,
+          binding.objectId,
+          binding.field,
+          value,
+        );
+        if (!match) {
+          return { status: "UNBOUND", binding, reason: "no owner assertion" };
+        }
+        return { status: "BOUND", binding, source: "owner-assertion", value };
+      }
       // verifyPresentationBinding already required a non-empty
       // provenance ref: the object's own evidence ref backs this value.
       return { status: "BOUND", binding, source: "evidence-ref", value };
+    }
     case "derived":
+      // LANE-CLAIM H1: a derived claim must be a DERIVED CLAIM WITH INPUT
+      // EVIDENCE. The object's provenance ref is the input evidence; an
+      // empty ref means any label could smuggle an unevidenced fact
+      // through as BOUND.
+      if (evidenceRef === "") {
+        return { status: "UNBOUND", binding, reason: "no input evidence" };
+      }
       return { status: "BOUND", binding, source: "object-field", value };
     case "owner_authored": {
       // The new enforcement: the label is not enough. A recorded owner
@@ -177,8 +221,15 @@ export function verifyBinding(
       return { status: "BOUND", binding, source: "owner-assertion", value };
     }
     case "generated":
-      // verifyPresentationBinding already required a generatorRef of the
-      // form name@version: explicitly marked generated presentation.
+      // LANE-CLAIM H2: the builder decision requires a generator mark AND
+      // an evidence ref for generated factual atoms
+      // (FYD-24H-BUILDER-DECISIONS-2026-09-22, CONTENT CONTRACT). The mark
+      // was checked by verifyPresentationBinding; the evidence ref is
+      // enforced here so the two emission gates (assertSpecBindingsVerified
+      // and buildVerifiedRenderModel) agree.
+      if (evidenceRef === "") {
+        return { status: "UNBOUND", binding, reason: "no evidence ref" };
+      }
       return {
         status: "BOUND",
         binding,
@@ -382,7 +433,10 @@ export interface VerifiedRenderModel {
   viewerId: string | null;
   /** Canonical order: sorted by atom id. */
   atoms: RenderAtom[];
-  /** Semantic digest (FNV-1a over the canonical JSON, hex). */
+  /**
+   * Semantic digest (SHA-256 over the canonical JSON, hex). LANE-CLAIM H8:
+   * collision-resistant, so it can back change detection and dedup.
+   */
   digest: string;
 }
 
@@ -430,20 +484,27 @@ export function classifyRenderAtom(
   const objects = new Map(graph.objects.map((o) => [o.id, o]));
   const obj = objects.get(binding.objectId);
   const evidenceRef = obj && obj.provenance ? obj.provenance.ref : "";
+  // LANE-CLAIM H5: a binding may carry its own per-field evidence ref (the
+  // planner's slot claimRef, pre-checked against the object's ref by
+  // assertGeneratedPresentationVerified). Silently substituting the
+  // object-level ref misattributes the claim's source, so the carrier is
+  // honored on the atom when present. The carrier is never authoritative
+  // on its own: the verdict above still required the object's evidence.
+  const reportedRef = binding.evidenceRef ?? evidenceRef;
   switch (verdict.source) {
     case "evidence-ref":
       return {
         id: renderAtomId(binding, "DIRECT_EVIDENCE"),
         value: verdict.value,
         classification: "DIRECT_EVIDENCE",
-        evidenceRef,
+        evidenceRef: reportedRef,
       };
     case "object-field":
       return {
         id: renderAtomId(binding, "DETERMINISTIC_DERIVATION"),
         value: verdict.value,
         classification: "DETERMINISTIC_DERIVATION",
-        evidenceRef,
+        evidenceRef: reportedRef,
       };
     case "owner-assertion": {
       const match = findOwnerAssertion(
@@ -469,7 +530,7 @@ export function classifyRenderAtom(
         id: renderAtomId(binding, "GENERATED_PRESENTATION"),
         value: verdict.value,
         classification: "GENERATED_PRESENTATION",
-        evidenceRef,
+        evidenceRef: reportedRef,
         generatorRef: binding.generatorRef,
       };
     }
@@ -494,17 +555,94 @@ function sortKeys(value: unknown): unknown {
 }
 
 /**
- * FNV-1a (32-bit) over UTF-16 code units, hex-encoded. Pure TypeScript,
- * no node imports: the sitespec lane stays browser-safe. Deterministic
- * across processes for the same input string.
+ * SHA-256 over a UTF-8 string, hex-encoded. Pure TypeScript, no node
+ * imports: the sitespec lane stays browser-safe. Deterministic across
+ * processes for the same input.
+ *
+ * LANE-CLAIM H8: the digest is the model's semantic identity. A 32-bit
+ * FNV-1a collides on demand (birthday bound ~2^16 trials), so it cannot
+ * back change detection or dedup. SHA-256 makes collisions
+ * cryptographically infeasible while keeping the lane dependency-free.
  */
-function fnv1aHex(input: string): string {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < input.length; i++) {
-    h ^= input.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
+function sha256Hex(input: string): string {
+  const K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
+    0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+    0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
+    0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
+    0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+    0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
+    0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
+    0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+    0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ];
+  let h0 = 0x6a09e667;
+  let h1 = 0xbb67ae85;
+  let h2 = 0x3c6ef372;
+  let h3 = 0xa54ff53a;
+  let h4 = 0x510e527f;
+  let h5 = 0x9b05688c;
+  let h6 = 0x1f83d9ab;
+  let h7 = 0x5be0cd19;
+  const bytes = new TextEncoder().encode(input);
+  const bitLen = bytes.length * 8;
+  const paddedLen = (((bytes.length + 8) >> 6) + 1) << 6;
+  const padded = new Uint8Array(paddedLen);
+  padded.set(bytes);
+  padded[bytes.length] = 0x80;
+  const dv = new DataView(padded.buffer);
+  dv.setUint32(paddedLen - 8, Math.floor(bitLen / 0x100000000));
+  dv.setUint32(paddedLen - 4, bitLen >>> 0);
+  const w = new Uint32Array(64);
+  const rotr = (x: number, n: number): number => (x >>> n) | (x << (32 - n));
+  for (let off = 0; off < paddedLen; off += 64) {
+    for (let i = 0; i < 16; i++) {
+      w[i] = dv.getUint32(off + i * 4);
+    }
+    for (let i = 16; i < 64; i++) {
+      const s0 =
+        rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+      const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+    }
+    let a = h0;
+    let b = h1;
+    let c = h2;
+    let d = h3;
+    let e = h4;
+    let f = h5;
+    let g = h6;
+    let h = h7;
+    for (let i = 0; i < 64; i++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + K[i] + w[i]) | 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) | 0;
+      h = g;
+      g = f;
+      f = e;
+      e = (d + t1) | 0;
+      d = c;
+      c = b;
+      b = a;
+      a = (t1 + t2) | 0;
+    }
+    h0 = (h0 + a) | 0;
+    h1 = (h1 + b) | 0;
+    h2 = (h2 + c) | 0;
+    h3 = (h3 + d) | 0;
+    h4 = (h4 + e) | 0;
+    h5 = (h5 + f) | 0;
+    h6 = (h6 + g) | 0;
+    h7 = (h7 + h) | 0;
   }
-  return ("0000000" + (h >>> 0).toString(16)).slice(-8);
+  return [h0, h1, h2, h3, h4, h5, h6, h7]
+    .map((x) => ("00000000" + (x >>> 0).toString(16)).slice(-8))
+    .join("");
 }
 
 /** Semantic digest input: canonical atoms + envelope version + renderer version + viewer. No timestamps. */
@@ -521,7 +659,7 @@ function digestModel(
       atoms,
     }),
   );
-  return fnv1aHex(canonical);
+  return sha256Hex(canonical);
 }
 
 export interface BuildVerifiedRenderModelOptions {
