@@ -389,11 +389,11 @@ export default function FydOnboardingPage() {
 
           {note && <p style={{ marginTop: 12 }}>{note}</p>}
 
-          {claim && claim.history.length > 0 && (
+          {claim && (claim.history ?? []).length > 0 && (
             <>
               <h3>History</h3>
               <ul>
-                {claim.history.map((h, i) => (
+                {(claim.history ?? []).map((h, i) => (
                   <li key={i}>
                     <strong>{h.type}</strong> by {h.actor}: {h.detail}
                   </li>
