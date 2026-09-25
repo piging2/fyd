@@ -117,38 +117,67 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
     const targets = resolveSemanticTargets();
     const targetById = new Map(targets.map((t) => [t.objectId, t]));
     const assigned = new Set<string>();
+    const perSlotCount = new Map<string, number>();
     const out: Assignment[] = [];
-    for (const slot of usable) {
-      const ranked = rankCandidates(
-        portals
-          .filter((p) => !assigned.has(p.circle.id))
-          .map((p) => {
-            const t = targetById.get(p.circle.id);
-            return {
-              objectId: p.circle.id,
-              semanticProximity: proximityScore(t?.rect ?? null, slot.rect),
-              followed: !!followed[p.circle.id],
-              liked: false,
-              capabilityCount: p.circle.capabilities.length,
-              recentInteractionAt: null,
-              slotStability: slot.stability,
-              slotCollisionRisk: slot.collisionRisk,
-            };
-          }),
-      );
-      const winner = ranked[0];
-      if (!winner) continue;
-      assigned.add(winner.objectId);
-      const portal = portals.find((p) => p.circle.id === winner.objectId);
-      if (!portal) continue;
-      out.push({
-        portal,
-        slot,
-        x: slot.rect.x + (slot.rect.width - 64) / 2,
-        y: slot.rect.y + slot.rect.height * 0.26,
-      });
+    // Nolan 2026-09-25 margin directive, round 2: EVERY portal gets a margin
+    // home. One portal per slot left the 3rd portal docked to null
+    // (invisible) on desktop. Round-robin across usable rails until all
+    // portals are placed; extras stack vertically inside their rail's band.
+    // Per-slot semantic ranking is preserved: each round picks the best
+    // remaining portal FOR that slot.
+    for (let round = 0; assigned.size < portals.length; round++) {
+      let placedThisRound = 0;
+      for (const slot of usable) {
+        const ranked = rankCandidates(
+          portals
+            .filter((p) => !assigned.has(p.circle.id))
+            .map((p) => {
+              const t = targetById.get(p.circle.id);
+              return {
+                objectId: p.circle.id,
+                semanticProximity: proximityScore(t?.rect ?? null, slot.rect),
+                followed: !!followed[p.circle.id],
+                liked: false,
+                capabilityCount: p.circle.capabilities.length,
+                recentInteractionAt: null,
+                slotStability: slot.stability,
+                slotCollisionRisk: slot.collisionRisk,
+              };
+            }),
+        );
+        const winner = ranked[0];
+        if (!winner) continue;
+        assigned.add(winner.objectId);
+        placedThisRound++;
+        const portal = portals.find((p) => p.circle.id === winner.objectId);
+        if (!portal) continue;
+        // Pin the collapsed 64px circle to the EXTREME outer edge of its
+        // band (viewport edge side), never centered. The outer edge is the
+        // farthest point from host content, so extreme placement is also
+        // the safest: the circle stays fully inside the measured band
+        // (inset clamps to band width - 64), which by construction never
+        // overlaps center content.
+        const inset = Math.max(0, Math.min(12, slot.rect.width - 64));
+        const x =
+          slot.side === "left"
+            ? slot.rect.x + inset
+            : slot.rect.x + slot.rect.width - 64 - inset;
+        // Vertical stacking for round >= 1: first circle at 26% of band
+        // height, each extra one circle + 16px gap below, clamped inside
+        // the band so nothing escapes the measured safe rectangle.
+        const k = perSlotCount.get(slot.id) ?? 0;
+        perSlotCount.set(slot.id, k + 1);
+        const y = Math.min(
+          slot.rect.y + slot.rect.height * 0.26 + k * (64 + 16),
+          slot.rect.y + Math.max(0, slot.rect.height - 64),
+        );
+        out.push({ portal, slot, x, y });
+      }
+      if (placedThisRound === 0) break;
     }
-    // Any portal without a slot joins the dock.
+    // Any portal without a slot joins the dock (renders null per the
+    // no-bottom-portal directive; reachable only when ranking yields
+    // nothing for every remaining portal).
     portals.forEach((portal, i) => {
       if (!assigned.has(portal.circle.id)) {
         out.push({ portal, slot: null, x: i, y: 0 });

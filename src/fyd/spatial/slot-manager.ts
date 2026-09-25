@@ -36,8 +36,17 @@ export interface PeripheralSlot {
   collisionRisk: number;
 }
 
-/** Minimum band width that can host a collapsed circle. */
-export const MIN_SLOT_WIDTH = 88;
+/**
+ * Minimum band width that can host a collapsed circle.
+ * Nolan 2026-09-25 margin directive: the collapsed portal circle is 64px
+ * (COLLAPSED_D in portal-circle.tsx). The gate must be glyph size plus a
+ * small edge offset, not a conservative 88px that starves real margins:
+ * the PING homepage margins measure ~75-80px at 1440, so 88px collapsed
+ * every desktop margin to the inline strip. A 64px circle inside a >=72px
+ * band never overlaps center content: the band is outside the measured
+ * content column by construction.
+ */
+export const MIN_SLOT_WIDTH = 72;
 
 function unionRects(rects: Rect[]): Rect | null {
   const valid = rects.filter((r) => r.width > 0 && r.height > 0);
