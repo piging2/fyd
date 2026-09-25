@@ -765,6 +765,7 @@ function FydObjectCard({
         >
           <a
             href={detailHref}
+            data-fyd-object-id={o.id}
             style={{ color: "inherit", textDecoration: "none" }}
           >
             {title}
@@ -1402,6 +1403,7 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
             <li key={o.id}>
               <a
                 href={detailHref}
+                data-fyd-object-id={o.id}
                 className="inline-block rounded-full border border-border-soft px-4 py-2 text-sm transition-colors hover:bg-stone-100"
                 style={{ color: theme.ink }}
               >

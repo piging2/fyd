@@ -210,6 +210,7 @@ export function edgeClientScript(siteSlug: string): string {
     "  }\n" +
     "\n" +
     "  function hideSheet(restoreFocus) {\n" +
+    '    if (triggerEl && triggerEl.setAttribute) triggerEl.setAttribute("aria-expanded", "false");\n' +
     "    if (!sheet || sheet.hidden) return;\n" +
     "    sheet.hidden = true;\n" +
     "    overlay.hidden = true;\n" +
@@ -223,7 +224,9 @@ export function edgeClientScript(siteSlug: string): string {
     "\n" +
     "  function openObject(objectId, trigger) {\n" +
     "    ensureChrome();\n" +
+    '    if (triggerEl && triggerEl !== trigger && triggerEl.setAttribute) triggerEl.setAttribute("aria-expanded", "false");\n' +
     "    if (trigger) triggerEl = trigger;\n" +
+    '    if (triggerEl && triggerEl.setAttribute) triggerEl.setAttribute("aria-expanded", "true");\n' +
     '    var url = EDGE_ENDPOINT + "?site=" + encodeURIComponent(SITE) +\n' +
     '      "&objectId=" + encodeURIComponent(objectId);\n' +
     '    announce("Loading details.");\n' +
@@ -427,6 +430,7 @@ export function edgeClientScript(siteSlug: string): string {
     "  // ---- mark bindings operable (no visual change) ----\n" +
     "  function markBindings() {\n" +
     '    document.querySelectorAll("[data-fyd-object-id]").forEach(function (el) {\n' +
+    '      el.setAttribute("aria-expanded", el.getAttribute("aria-expanded") || "false");\n' +
     '      if (el.hasAttribute("tabindex")) return;\n' +
     "      el.setAttribute(\"tabindex\", \"0\");\n" +
     '      el.setAttribute("role", "button");\n' +
