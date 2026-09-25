@@ -3,19 +3,29 @@
 /**
  * PortalHost: mounts portal circles into safe peripheral space.
  *
+ * Presence mode: "edge" (Nolan 2026-09-25 object-presence direction,
+ * standing product law). Resting circles are PAGE-ANCHORED, never
+ * viewport-fixed: the host resolves the page region it belongs to (the
+ * section preceding its mount point, e.g. the hero), rebases the measured
+ * margin slots onto that region in document coordinates, and renders the
+ * circles in one absolutely-positioned plane portaled to document.body.
+ * The circles scroll away with their region and return with it. The
+ * plane is out of flow (zero height, pointer-transparent except the
+ * circles), so host layout and CLS are untouched.
+ *
  * Wiring: SemanticTargetResolver -> SpatialSlotManager ->
  * ContextObjectRanker -> AttentionController -> CircleProjection.
  *
- * - Wide viewports: collapsed circles fixed into the best peripheral
- *   band (right preferred, then left). Each circle's engaged diameter is
- *   clamped to the largest circle fitting its slot: host content is
- *   never occluded, by construction.
- * - Narrow viewports: no honest margin exists, so the circles render as an
- *   inline strip in the page flow (same Circle component, tap to engage).
- *   Per the placement directive (Nolan, 2026-09-21): NO BOTTOM PORTAL
- *   anywhere. The fixed dock branch collapses to null; the inline strip
- *   is document flow, not an overlay, so margins are never faked and
- *   content is never covered.
+ * - Wide viewports: collapsed circles anchored into the best peripheral
+ *   band of the host region (right preferred, then left). Each circle's
+ *   engaged diameter is clamped to the largest circle fitting its slot:
+ *   host content is never occluded, by construction.
+ * - Narrow viewports: the circles render as a document-absolute edge
+ *   overlay (same Circle component, tap to engage). Per the placement
+ *   directive (Nolan, 2026-09-21): NO BOTTOM PORTAL anywhere. The overlay
+ *   is absolute in the document, so it scrolls away naturally with the
+ *   page: not fixed chrome, not in-flow layout, margins never faked,
+ *   content never covered.
  *
  * Circle-Only Product Reset (2026-09-22): the host also owns two thin
  * event seams for the ONE global assistant. onAskRequest fires when a
@@ -29,7 +39,9 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import {
   PEEK_D,
+  anchorSlotsToRegion,
   createSlotManager,
+  resolveAnchorRegion,
   type PeripheralSlot,
 } from "@/fyd/spatial/slot-manager";
 import {
@@ -45,7 +57,9 @@ import type { PortalProjection } from "@/fyd/preview/types";
 interface Assignment {
   portal: PortalProjection;
   slot: PeripheralSlot | null;
+  /** Viewport X (== document X: no horizontal scroll on host pages). */
   x: number;
+  /** Document-space Y inside the anchor region: scrolls with the page. */
   y: number;
   /** Collapsed circle diameter for this placement (64 band, 56 peek). */
   d: number;
@@ -59,9 +73,17 @@ interface PortalHostProps {
   onAskRequest?: (id: string) => void;
   /** The aware-or-engaged circle changed (null = no circle holds attention). */
   onContextChange?: (id: string | null) => void;
+  /**
+   * Declarative placement hook: CSS selector for the page region the
+   * circles belong to (e.g. "[data-ping-region='hero']"). When absent,
+   * the host discovers its region at runtime: the nearest preceding
+   * section-like sibling of its mount point. Placement stays
+   * declarative; the PING object never knows pixel positions.
+   */
+  anchorSelector?: string;
 }
 
-export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHostProps) {
+export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelector }: PortalHostProps) {
   const [mounted, setMounted] = React.useState(false);
   const [slots, setSlots] = React.useState<PeripheralSlot[]>([]);
   const [awareId, setAwareId] = React.useState<string | null>(null);
@@ -75,6 +97,10 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
   );
   const controllerRef = React.useRef<AttentionController | null>(null);
   if (!controllerRef.current) controllerRef.current = new AttentionController();
+  // Zero-height marker at the host's mount point: the anchor region is
+  // discovered from its position in the document (the section preceding
+  // the mount point), so no host markup changes are ever needed.
+  const mountRef = React.useRef<HTMLSpanElement>(null);
 
   // Keep the latest callbacks in refs so the context effect never loops.
   const contextCbRef = React.useRef(onContextChange);
@@ -84,9 +110,14 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
 
   React.useEffect(() => {
     setMounted(true);
-    const mgr = createSlotManager((s) => {
-      setSlots(s);
-    });
+    // Document-anchored rendering: positions are scroll-invariant, so
+    // the manager skips the scroll listener (resize/mutation only).
+    const mgr = createSlotManager(
+      (s) => {
+        setSlots(s);
+      },
+      { observeScroll: false },
+    );
     let cancelled = false;
     portals.forEach((p) => {
       fetch(`/api/fyd/follow?objectId=${encodeURIComponent(p.circle.id)}`)
@@ -115,7 +146,15 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
 
   const assignments: Assignment[] = React.useMemo(() => {
     if (!mounted || portals.length === 0) return [];
-    const usable = slots
+    // Page-anchored presence: rebase the viewport-measured slots onto the
+    // host region in document coordinates. Circles are positioned at
+    // document Y inside their region and scroll away with it.
+    const region = resolveAnchorRegion(mountRef.current, anchorSelector) ?? {
+      top: 0,
+      height: typeof window !== "undefined" ? window.innerHeight : 800,
+      source: "fallback" as const,
+    };
+    const usable = anchorSlotsToRegion(slots, region)
       .filter((s) => s.capacity > 0)
       .sort((a, b) =>
         a.side === b.side ? 0 : a.side === "right" ? -1 : 1,
@@ -203,9 +242,10 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
             slot.side === "left"
               ? slot.rect.x + inset
               : slot.rect.x + slot.rect.width - 64 - inset;
-          // Vertical stacking for round >= 1: first circle at 26% of band
-          // height, each extra one circle + 16px gap below, clamped inside
-          // the band so nothing escapes the measured safe rectangle.
+          // Vertical stacking for round >= 1: first circle at 26% of the
+          // anchor region height, each extra one circle + 16px gap below,
+          // clamped inside the region so nothing escapes the measured safe
+          // rectangle. Document-space Y: scrolls away with the region.
           y = Math.min(
             slot.rect.y + slot.rect.height * 0.26 + k * (64 + 16),
             slot.rect.y + Math.max(0, slot.rect.height - 64),
@@ -224,7 +264,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
       }
     });
     return out;
-  }, [mounted, slots, portals, followed]);
+  }, [mounted, slots, portals, followed, anchorSelector]);
 
   const slotted = assignments.filter((a) => a.slot !== null);
 
@@ -292,7 +332,20 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
     if (decision.releaseEngagedId) handleRelease(decision.releaseEngagedId);
   }, [engagedId, engagedSlotMode, handleRelease]);
 
-  if (!mounted) return null;
+  // Zero-height marker at the host's mount point. The anchor region is
+  // discovered from this marker's position in the document, so the host
+  // never needs host-markup changes. Rendered in every branch.
+  const mountMarker = (
+    <span
+      ref={mountRef}
+      data-ping-host
+      data-ping-host-mount
+      aria-hidden="true"
+      style={{ display: "block", height: 0 }}
+    />
+  );
+
+  if (!mounted) return mountMarker;
 
   const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
   const isMobile = vw < 640;
@@ -301,24 +354,28 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
   // Mobile renders a floating edge overlay instead: a peek of each circle
   // at the right screen edge. The overlay is absolute in the document
   // (portaled to body), so it scrolls away naturally with the page: not
-  // fixed chrome, not in-flow layout. Tap opens the sheet.
+  // fixed chrome, not in-flow layout. Tap opens the sheet. This behavior
+  // is provisionally accepted and MUST NOT REGRESS.
   if (isMobile && portals.length > 0 && typeof document !== "undefined") {
-    return createPortal(
-      <div
-        data-ping-host
-        data-ping-mobile-overlay
-        role="list"
-        aria-label="Featured businesses"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: 0,
-          zIndex: 40,
-          pointerEvents: "none",
-        }}
-      >
+    return (
+      <>
+        {mountMarker}
+        {createPortal(
+          <div
+            data-ping-host
+            data-ping-mobile-overlay
+            role="list"
+            aria-label="Featured businesses"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: 0,
+              zIndex: 40,
+              pointerEvents: "none",
+            }}
+          >
         {portals.map((portal, i) => (
           <div
             key={portal.circle.id}
@@ -346,44 +403,78 @@ export function PortalHost({ portals, onAskRequest, onContextChange }: PortalHos
               onAskRequest={handleAskRequest}
             />
           </div>
-        ))}
-      </div>,
-      document.body,
+            ))}
+          </div>,
+          document.body,
+        )}
+      </>
     );
   }
 
   // Desktop with no usable slot on either side: fail closed and render
   // nothing. The inline strip is gone by directive; it would compete with
   // margins and shift layout.
-  if (slotted.length === 0) return null;
+  if (slotted.length === 0) return mountMarker;
 
+  // Desktop edge presence (Nolan 2026-09-25 object-presence direction):
+  // ONE document-anchored plane, portaled to body. Absolutely no
+  // position:fixed in this path: each circle sits at document
+  // coordinates inside its anchor region, so it scrolls away with the
+  // region and returns with it. The plane is out of flow (zero height,
+  // pointer-transparent except the circles): host layout and CLS are
+  // untouched. data-ping-presence="edge" names the presence mode so we
+  // stop arguing CSS case-by-case.
   return (
     <>
-      {slotted.map((a) => (
+      {mountMarker}
+      {createPortal(
         <div
-          key={a.portal.circle.id}
-          className="fixed z-40"
-          style={{ left: a.x, top: a.y, width: a.d, height: a.d }}
           data-ping-host
-          data-ping-slot={a.slot?.id}
-          data-ping-peek={a.peek ? "true" : undefined}
+          data-ping-presence="edge"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: 0,
+            overflow: "visible",
+            pointerEvents: "none",
+            zIndex: 40,
+          }}
         >
-          <div className="relative">
-            <PortalCircle
-              portal={a.portal}
-              slot={a.slot}
-              peek={a.peek}
-              aware={awareId === a.portal.circle.id}
-              engaged={engagedId === a.portal.circle.id}
-              onAware={handleAware}
-              onUnaware={handleUnaware}
-              onEngageRequest={handleEngageRequest}
-              onRelease={handleRelease}
-              onAskRequest={handleAskRequest}
-            />
-          </div>
-        </div>
-      ))}
+          {slotted.map((a) => (
+            <div
+              key={a.portal.circle.id}
+              data-ping-slot={a.slot?.id}
+              data-ping-peek={a.peek ? "true" : undefined}
+              style={{
+                position: "absolute",
+                left: a.x,
+                top: a.y,
+                width: a.d,
+                height: a.d,
+                pointerEvents: "auto",
+              }}
+            >
+              <div className="relative">
+                <PortalCircle
+                  portal={a.portal}
+                  slot={a.slot}
+                  peek={a.peek}
+                  aware={awareId === a.portal.circle.id}
+                  engaged={engagedId === a.portal.circle.id}
+                  onAware={handleAware}
+                  onUnaware={handleUnaware}
+                  onEngageRequest={handleEngageRequest}
+                  onRelease={handleRelease}
+                  onAskRequest={handleAskRequest}
+                />
+              </div>
+            </div>
+          ))}
+        </div>,
+        document.body,
+      )}
     </>
   );
 }

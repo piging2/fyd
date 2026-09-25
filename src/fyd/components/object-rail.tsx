@@ -49,7 +49,7 @@ export function resolvePresenceMode(
 ): RailPlacement {
   if (!presence || presence.mode === "hidden") return "hidden";
   if (!presence.objects || presence.objects.length === 0) return "hidden";
-  if (presence.mode === "rail") return "rail";
+  if (presence.mode === "rail" || presence.mode === "edge") return "rail";
   if (presence.mode === "drawer") return "drawer";
   const bp = resolveCollapseBreakpoint(theme, presence.rules.collapseBelow);
   return viewportWidthPx >= bp ? "rail" : "drawer";
@@ -152,8 +152,9 @@ export function ObjectRail({ cards, presence, theme, heading }: ObjectRailProps)
 
   // auto is a placement input, not a resolved placement: geometry (CSS)
   // resolves it at render, so the component type admits it here.
+  // "edge" is the presence-law alias for "rail": normalize at the boundary.
   const placement: RailPlacement | "auto" =
-    !hasObjects || mode === "hidden" ? "hidden" : mode;
+    !hasObjects || mode === "hidden" ? "hidden" : mode === "edge" ? "rail" : mode;
 
   // Resize lifecycle (portal law): an open drawer releases when the viewport
   // crosses back to rail geometry, where the drawer placement is invalid.

@@ -372,7 +372,55 @@ export type FYDSpecStatus = "draft" | "published";
 export type FYDSiteArchetype = "KNOWLEDGE" | "TRADES" | "TECHNICAL_ENTERPRISE";
 
 /** ObjectPresence mode: explicit placement or geometry-decided. */
-export type ObjectPresenceMode = "auto" | "rail" | "drawer" | "hidden";
+export type ObjectPresenceMode =
+  | "auto"
+  | "rail"
+  | "drawer"
+  | "hidden"
+  /**
+   * "edge": Nolan 2026-09-25 presence-law name for "rail" (explicit
+   * alias). Edge presence = layered near the composition edge, anchored
+   * to a page region, scrolls away with it. Additive: pre-existing
+   * specs validate and render unchanged.
+   */
+  | "edge";
+
+/**
+ * ObjectPlacementMode: the three formal FYD object-presence modes
+ * (Nolan 2026-09-25 object-presence direction, standing product law).
+ * Single authority for the mode vocabulary; the spatial runtime aliases
+ * this type (see PresentationPresetMode in fyd/spatial/slot-manager.ts).
+ *
+ * - "embedded": the object participates naturally in the page
+ *   composition. Best default.
+ * - "edge": visually layered near the composition edge, anchored to a
+ *   specific page region; scrolls away with that region. The primary
+ *   FYD enhancement mode for existing websites.
+ * - "persistent": viewport-fixed or sticky utility. RARE: requires an
+ *   actual persistent use case. Never for decorative discovery objects.
+ */
+export type ObjectPlacementMode = "embedded" | "edge" | "persistent";
+
+/**
+ * Declarative per-object placement (Nolan 2026-09-25 presence law).
+ * All fields optional: absent fields fall back to geometry and ranking.
+ * Placement belongs to SiteSpec/presentation; the underlying PING object
+ * never knows pixel positions.
+ */
+export interface ObjectPlacement {
+  /** Semantic anchor key (e.g. "hero") this object's presence belongs to. */
+  anchorKey?: string;
+  /** Preferred presence mode for this object. */
+  mode?: ObjectPlacementMode;
+  /** Preferred margin side for edge presence. */
+  preferredSide?: "left" | "right";
+  /** Resting glyph diameter class in px (desktop). */
+  restSize?: number;
+  /** Lower wins ties when objects compete for one rail. */
+  priority?: number;
+  /** What may surface this object (open vocabulary; e.g. "auto", "tap"). */
+  activation?: string;
+}
 
 /**
  * ObjectPresence: the generic margin/rail layout capability.
@@ -387,6 +435,11 @@ export interface ObjectPresence {
   mode: ObjectPresenceMode;
   /** Contextual object ids eligible for the margin/rail, deterministic order. */
   objects: string[];
+  /**
+   * Optional per-object declarative placements, keyed by object id.
+   * Additive: specs without placements behave exactly as before.
+   */
+  placements?: Record<string, ObjectPlacement>;
   rules: {
     /** Breakpoint key (see FYDBreakpoints); the rail collapses to a drawer below it. */
     collapseBelow: string;

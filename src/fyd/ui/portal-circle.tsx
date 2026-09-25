@@ -186,10 +186,13 @@ export function PortalCircle(props: PortalCircleProps) {
     props.onEngageRequest(id);
   }, [id, slot, props]);
 
-  // Scroll while engaged: the circles are fixed-positioned, so host
-  // scrolling never moves them, but a host-page scroll means the reading
-  // context moved on, so release. Resize while engaged: the slot geometry
-  // changed, so release rather than sit on stale measurements.
+  // Scroll while engaged: the engaged overlay is viewport-fixed (a
+  // transient open interaction, not resting presence), so host scrolling
+  // never moves it; but a host-page scroll means the reading context
+  // moved on, so release. Resting circles are document-anchored and
+  // scroll away with their region naturally. Resize while engaged: the
+  // slot geometry changed, so release rather than sit on stale
+  // measurements.
   React.useEffect(() => {
     if (!engaged) return;
     const onScroll = () => props.onRelease(id);

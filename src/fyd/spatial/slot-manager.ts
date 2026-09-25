@@ -1,3 +1,4 @@
+import type { ObjectPlacementMode } from "../sitespec/types";
 /**
  * SpatialSlotManager: answers WHERE something can live. Never what deserves to.
  *
@@ -12,6 +13,14 @@
  *
  * Observers: ResizeObserver + RAF-throttled scroll + selective
  * MutationObserver + cached geometry. Recompute only on invalidation.
+ *
+ * Presence law (Nolan 2026-09-25 object-presence direction, standing
+ * product law): resting presence is PAGE-ANCHORED, never viewport-fixed.
+ * Edge-presence consumers rebase these viewport-measured slots onto an
+ * anchor region (see AnchorRegion / anchorSlotsToRegion) and render at
+ * document coordinates, so objects scroll away with their region.
+ * True viewport-fixed is reserved for the "persistent" presence mode
+ * (earned utility only), never for decorative discovery objects.
  */
 
 export interface Rect {
@@ -24,6 +33,111 @@ export interface Rect {
 export type SlotSide = "left" | "right" | "top" | "bottom";
 
 export type SlotKind = "band" | "peek" | "none";
+
+
+/**
+ * PresentationPresetMode: runtime alias for SiteSpec's ObjectPlacementMode
+ * (single authority for "embedded" | "edge" | "persistent").
+ *
+ * Resting presence and open interaction are separate problems: an open
+ * peek/expand is an interaction state, not a presence mode, and never
+ * justifies viewport-fixed resting objects.
+ */
+export type PresentationPresetMode = ObjectPlacementMode;
+
+/**
+ * AnchorRegion: the page region an edge-presence object belongs to, in
+ * DOCUMENT coordinates (scroll-invariant). The object scrolls away with
+ * this region; it is never viewport-fixed.
+ */
+export interface AnchorRegion {
+  /** Document-space Y of the region top (rect.top + scrollY at measure time). */
+  top: number;
+  /** Document-space height of the region. */
+  height: number;
+  /** How the region was found: a real element, or the viewport fallback. */
+  source: "element" | "fallback";
+}
+
+/**
+ * Resolve the anchor region for edge presence from the host's mount
+ * point, without touching host markup:
+ * 1. an explicit selector ([data-ping-region] or any CSS selector);
+ * 2. the nearest preceding section-like sibling of the mount point
+ *    (PortalHost is mounted directly after the region it belongs to,
+ *    e.g. the hero section);
+ * 3. fallback: document top, one viewport tall (the previous visual
+ *    behavior on load, but document-anchored so it scrolls away).
+ * Returns null on the server.
+ */
+export function resolveAnchorRegion(
+  mountEl: Element | null,
+  selector?: string,
+): AnchorRegion | null {
+  if (typeof window === "undefined" || typeof document === "undefined") return null;
+  const toRegion = (el: Element): AnchorRegion => {
+    const r = el.getBoundingClientRect();
+    return {
+      top: Math.round(r.top + window.scrollY),
+      height: Math.max(0, Math.round(r.height)),
+      source: "element",
+    };
+  };
+  if (selector) {
+    try {
+      const el = document.querySelector(selector);
+      if (el) return toRegion(el);
+    } catch {
+      // Invalid selector: fall through to sibling discovery.
+    }
+  }
+  let sib: Element | null = mountEl ? mountEl.previousElementSibling : null;
+  while (sib) {
+    if (sib.matches("section, [data-ping-region]")) return toRegion(sib);
+    sib = sib.previousElementSibling;
+  }
+  return { top: 0, height: window.innerHeight, source: "fallback" };
+}
+
+/**
+ * Rebase viewport-measured slots onto an anchor region: the bands keep
+ * their measured horizontal geometry (x/width are scroll-invariant) but
+ * their vertical span becomes the region, in document coordinates. Kind
+ * is re-derived from the region height; a slot that could not honestly
+ * host anything ("none") stays "none". Stability is 1 by construction:
+ * document-anchored slots never move on scroll.
+ */
+export function anchorSlotsToRegion(
+  slots: PeripheralSlot[],
+  region: AnchorRegion,
+): PeripheralSlot[] {
+  return slots.map((slot) => {
+    const rect: Rect = {
+      x: slot.rect.x,
+      y: region.top,
+      width: slot.rect.width,
+      height: region.height,
+    };
+    const w = rect.width;
+    const h = rect.height;
+    const kind: SlotKind =
+      w >= MIN_SLOT_WIDTH && h >= MIN_SLOT_WIDTH
+        ? "band"
+        : w >= MIN_PEEK_WIDTH && h >= MIN_PEEK_HEIGHT
+          ? "peek"
+          : "none";
+    const usable = kind !== "none";
+    return {
+      ...slot,
+      rect,
+      kind,
+      capacity: usable ? (kind === "band" ? w * h : 1) : 0,
+      stability: 1,
+      collisionRisk: usable ? 0 : 1,
+      collapsedD: kind === "band" ? 64 : PEEK_D,
+    };
+  });
+}
 
 export interface PeripheralSlot {
   id: string;
@@ -347,12 +461,25 @@ export interface SlotManager {
   dispose: () => void;
 }
 
+export interface SlotManagerOptions {
+  /**
+   * Document-anchored consumers (edge presence) position from
+   * scroll-invariant document coordinates, so scroll never invalidates
+   * the measurement: pass false to skip the scroll listener. Defaults
+   * to true (viewport-anchored consumers).
+   */
+  observeScroll?: boolean;
+}
+
 /**
  * Observe geometry invalidation and recompute slots. ResizeObserver +
  * passive RAF-throttled scroll + selective MutationObserver (childList on
  * body, debounced). No firehose: mutations debounce to 250ms.
  */
-export function createSlotManager(onSlots: (slots: PeripheralSlot[]) => void): SlotManager {
+export function createSlotManager(
+  onSlots: (slots: PeripheralSlot[]) => void,
+  opts: SlotManagerOptions = {},
+): SlotManager {
   let raf = 0;
   let debounce: ReturnType<typeof setTimeout> | null = null;
   let disposed = false;
@@ -370,7 +497,8 @@ export function createSlotManager(onSlots: (slots: PeripheralSlot[]) => void): S
   };
 
   const onScroll = () => schedule();
-  window.addEventListener("scroll", onScroll, { passive: true });
+  const observeScroll = opts.observeScroll !== false;
+  if (observeScroll) window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll);
 
   let ro: ResizeObserver | null = null;
@@ -397,7 +525,7 @@ export function createSlotManager(onSlots: (slots: PeripheralSlot[]) => void): S
       disposed = true;
       if (raf) window.cancelAnimationFrame(raf);
       if (debounce) clearTimeout(debounce);
-      window.removeEventListener("scroll", onScroll);
+      if (observeScroll) window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       ro?.disconnect();
       mo?.disconnect();
