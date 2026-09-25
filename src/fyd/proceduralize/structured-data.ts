@@ -30,7 +30,7 @@
  * instead of re-derived.
  */
 
-import jsonld, { type JsonLdDocument } from "jsonld";
+import jsonld, { type JsonLdDocument, type NodeObject } from "jsonld";
 import type { FactClass, ParsedFact, Visibility } from "./proceduralizer";
 import { sha256Hex } from "./sha256";
 
@@ -131,15 +131,15 @@ function offlineContext(doc: unknown): unknown {
 }
 
 interface LoadedDocument {
-  contextUrl: null;
+  contextUrl: undefined;
   documentUrl: string;
-  document: unknown;
+  document: NodeObject;
 }
 
 async function offlineDocumentLoader(url: string): Promise<LoadedDocument> {
   if (SCHEMA_CONTEXT_RE.test(url)) {
     return {
-      contextUrl: null,
+      contextUrl: undefined,
       documentUrl: url,
       document: { "@context": { "@vocab": SCHEMA_ORG } },
     };
