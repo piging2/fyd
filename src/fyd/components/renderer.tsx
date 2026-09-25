@@ -478,7 +478,7 @@ function characterOf(theme: FYDThemeTokens): FYDLayoutCharacter {
  * warning, and the browser honors it.
  */
 function vtNameStyle(name: string | undefined): CSSProperties {
-  return name ? ({ "view-transition-name": name } as unknown as CSSProperties) : {};
+  return name ? ({ viewTransitionName: name } as unknown as CSSProperties) : {};
 }
 
 /**
@@ -767,6 +767,10 @@ function FydObjectCard({
             href={detailHref}
             data-fyd-object-id={o.id}
             style={{ color: "inherit", textDecoration: "none" }}
+            role="button"
+            tabIndex={0}
+            aria-expanded="false"
+            aria-label={title}
           >
             {title}
           </a>
@@ -844,6 +848,9 @@ export function ObjectDoorway({
     <a
       href={detailHref}
       data-fyd-object-id={o.id}
+      role="button"
+      tabIndex={0}
+      aria-expanded="false"
       className={"fyd-object-doorway " + (className ?? "")}
       style={{
         display: "inline-flex",
@@ -1139,7 +1146,7 @@ function SectionShell({
           animationDelay: delay ? `${delay}ms` : undefined,
           // Deterministic section identity: lets view transitions keep a
           // section's identity across generated pages when MORPH is active.
-          ["view-transition-name" as string]:
+          viewTransitionName:
             sectionId && morph ? sectionViewTransitionName(sectionId) : undefined,
         } as CSSProperties
       }
@@ -1408,6 +1415,10 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
                 data-fyd-object-id={o.id}
                 className="inline-block rounded-full border border-border-soft px-4 py-2 text-sm transition-colors hover:bg-stone-100"
                 style={{ color: theme.ink }}
+                role="button"
+                tabIndex={0}
+                aria-expanded="false"
+                aria-label={title}
               >
                 {title}
               </a>
@@ -1669,6 +1680,10 @@ function FeedList({
                         href={detailHref}
                         data-fyd-object-id={o.id}
                         style={{ color: "inherit", textDecoration: "none" }}
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded="false"
+                        aria-label={title}
                       >
                         {title}
                       </a>

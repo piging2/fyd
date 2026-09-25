@@ -182,6 +182,10 @@ export function ObjectAffordance({
             <a
               href={detailHref}
               data-fyd-object-id={objectId}
+              role="button"
+              tabIndex={0}
+              aria-expanded="false"
+              aria-label="View details"
               className="inline-flex min-h-[44px] items-center rounded border px-4 py-2 text-sm font-semibold"
               style={{
                 borderColor: theme.accent,

@@ -26,7 +26,10 @@ export const DEMO_OWNER_MODE_ENV_VAR = "NEXT_PUBLIC_FYD_DEMO_OWNER_MODE";
  * build time) and per-call on the server.
  */
 export function isDemoOwnerModeEnabled(): boolean {
-  return process.env[DEMO_OWNER_MODE_ENV_VAR] === "1";
+  // Direct process.env.NEXT_PUBLIC_* access (not via DEMO_OWNER_MODE_ENV_VAR)
+  // so Next.js inlines the value at build time. Bracket-notation access
+  // defeats inlining, causing server/client skew and hydration #418.
+  return process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1";
 }
 
 /**
