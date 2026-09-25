@@ -12,7 +12,11 @@
  * - Only active relationships whose subject and object are both public.
  * - Owner field-visibility decisions apply first (conservative defaults when
  *   the owner has not decided): an address-bearing field is coarsened, never
- *   leaked verbatim.
+ *   leaked verbatim. A HIDE on a semantic address fact yields zero
+ *   disclosure, including via graph traversal (FYD-Q2).
+ * - Declared unresolved field conflicts suppress the contested value; the
+ *   answer describes the field as being verified, never selecting a
+ *   disputed value (FYD-Q1).
  * - The viewer is anonymous ({ id: null }) with no grants: no proposal,
  *   draft, or mutation capability exists in this pipeline.
  * - mode "owner" is accepted for a future authenticated lane, but until that
@@ -37,7 +41,17 @@ import type { SiteBundle } from "../media/site-bundle";
 import { buildAskFydContext } from "./context-builder";
 import { composeAskFyd } from "./answer";
 import { canonicalize } from "../../lib/ping/ask-composer";
-import { applyFieldVisibility } from "../sitespec/field-visibility";
+import {
+  applyFieldVisibility,
+  applyHideTraversal,
+  type FieldVisibilityDecision,
+} from "../sitespec/field-visibility";
+import {
+  type AskFieldConflict,
+  isUnresolvedConflict,
+  parseConflictObservationRefId,
+  suppressConflictedFields,
+} from "./field-conflicts";
 import { resolveQuery } from "../components/renderer";
 import { selectRelatedCircles } from "../object/related";
 import type { SiteSpecSummary } from "./site-spec";
@@ -104,6 +118,18 @@ export interface AnswerAskFydInput {
   objectId?: string;
   question: string;
   mode: AskFydMode;
+  /**
+   * Declared unresolved field conflicts (FYD-Q1). The public projection
+   * suppresses the contested value; the answer describes the field as
+   * being verified. Defaults to none.
+   */
+  fieldConflicts?: AskFieldConflict[];
+  /**
+   * Owner field-visibility decisions (FYD-Q2). A HIDE on a semantic fact
+   * yields zero disclosure in public answers, including via graph
+   * traversal. Defaults to conservative defaults only.
+   */
+  fieldVisibilityDecisions?: FieldVisibilityDecision[];
 }
 
 /** Injectable seam so tests can supply a synthetic bundle. Defaults to the real loader. */
@@ -177,17 +203,45 @@ const MAX_QUESTION_CHARS = 2000;
 
 /**
  * Project a bundle graph to what a visitor may see: owner field-visibility
- * decisions first (conservative defaults), then only public objects and only
- * active relationships whose subject and object are both public.
+ * decisions first (conservative defaults), then FYD-Q2 hide traversal and
+ * FYD-Q1 conflict suppression, then only public objects and only active
+ * relationships whose subject and object are both public. The input graph
+ * is never mutated: owner-authorized contexts keep the full observations.
  */
-function publicGraphOf(graph: ObjectGraph): ObjectGraph {
-  const projected = applyFieldVisibility(graph, []);
-  const publicObjects = projected.objects.filter((o) => o.visibility === "public");
+function publicGraphOf(
+  graph: ObjectGraph,
+  decisions: FieldVisibilityDecision[],
+  conflicts: AskFieldConflict[],
+): ObjectGraph {
+  const projected = applyFieldVisibility(graph, decisions);
+  // FYD-Q2: a hidden address fact must not leak through located_at ->
+  // Location.address. The traversal is cut in the projection.
+  const traversed = applyHideTraversal(projected, decisions);
+  // FYD-Q1: an unresolved conflict suppresses the contested value, so the
+  // composer can never select a disputed value.
+  const suppressed = suppressConflictedFields(traversed, conflicts);
+  const publicObjects = suppressed.objects.filter((o) => o.visibility === "public");
   const publicIds = new Set(publicObjects.map((o) => o.id));
-  const publicRelationships = projected.relationships.filter(
+  const publicRelationships = suppressed.relationships.filter(
     (r) => r.status === "active" && publicIds.has(r.subject) && publicIds.has(r.object),
   );
   return { objects: publicObjects, relationships: publicRelationships };
+}
+
+/** Attribute one conflict observation to its provenance for the citation. */
+function conflictObservationSource(ref: { detail?: string }): {
+  source: string;
+  lastChecked: string | null;
+} {
+  const detail = ref.detail ?? "";
+  const lastChecked = /recorded (\d{4}-\d{2}-\d{2})/.exec(detail)?.[1] ?? null;
+  const url = /website-ingestion:(\S+)/.exec(detail)?.[1]?.replace(/[,.]+$/, "");
+  if (url) return { source: `The business website (${url})`, lastChecked };
+  if (detail.includes("provenance canonical-journal"))
+    return { source: "Site record (canonical journal)", lastChecked };
+  if (detail.includes("provenance owner-correction") || detail.includes("provenance owner-authored"))
+    return { source: "Owner correction", lastChecked };
+  return { source: "Site record", lastChecked };
 }
 
 /** Build the SiteSpecSummary the ask pipeline reasons under, from the public view. */
@@ -272,11 +326,19 @@ function citationFor(
   // Note: AskEvidenceRef.id IS the cited object/relationship id (there is no
   // separate objectId field on the ref).
   if (ref.kind === "field") {
-    // Field-level evidence: the ref itself is the provenance. Today the
-    // only producer of field refs is an owner field correction (the
-    // composer labels it as such), so the citation names the owner as the
-    // source instead of misattributing the value to the website.
-    source = "Owner correction";
+    if (parseConflictObservationRefId(ref.id) !== null) {
+      // FYD-Q1: a conflict observation. Both evidence chains survive in
+      // the Why-this surface; the disputed value is never embedded.
+      const parsed = conflictObservationSource(ref);
+      source = parsed.source;
+      lastChecked = parsed.lastChecked;
+    } else {
+      // Field-level evidence: the ref itself is the provenance. The other
+      // producer of field refs is an owner field correction (the composer
+      // labels it as such), so the citation names the owner as the source
+      // instead of misattributing the value to the website.
+      source = "Owner correction";
+    }
   } else if (ref.kind === "object") {
     const obj = objects.get(ref.id);
     const prov = obj?.provenance;
@@ -421,7 +483,11 @@ export function answerAskFyd(
     };
   }
 
-  const publicGraph = publicGraphOf(bundle.graph);
+  const publicGraph = publicGraphOf(
+    bundle.graph,
+    input.fieldVisibilityDecisions ?? [],
+    (input.fieldConflicts ?? []).filter(isUnresolvedConflict),
+  );
   const requestedObjectId =
     typeof input.objectId === "string" ? input.objectId.trim() : "";
   // Object-scoped ask: the target is one object in THIS tenant's public
@@ -461,6 +527,7 @@ export function answerAskFyd(
     grants: [],
     siteSpec: summarizeSpec(bundle, publicGraph),
     question,
+    fieldConflicts: (input.fieldConflicts ?? []).filter(isUnresolvedConflict),
   });
   const ans = composeAskFyd(ctx, question);
   const answer = visitorizeAnswer(ans.answer);

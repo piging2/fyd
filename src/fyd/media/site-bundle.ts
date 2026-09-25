@@ -54,6 +54,17 @@ export interface SiteBundle {
   findings: FYDFinding[];
   renderable: boolean;
   mediaManifest: MediaManifest | null;
+  /**
+   * Declared unresolved field conflicts (FYD-Q1). Honored fail-closed by
+   * the ask pipeline. Detection belongs to the observing lane; the bundle
+   * carries the declaration. Defaults to none.
+   */
+  fieldConflicts?: import("../ask/field-conflicts").AskFieldConflict[];
+  /**
+   * Owner field-visibility decisions (FYD-Q2). Honored by the ask
+   * pipeline's public projection. Defaults to conservative defaults only.
+   */
+  fieldVisibilityDecisions?: import("../sitespec/field-visibility").FieldVisibilityDecision[];
 }
 
 function businessNameFor(graph: ObjectGraph, spec: FYDSiteSpec, siteId: string): string {

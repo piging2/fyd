@@ -12,6 +12,7 @@ import type {
   PingRelationship,
 } from "../../lib/ping/types";
 import type { SiteSpecSummary } from "./site-spec";
+import type { AskFieldConflict } from "./field-conflicts";
 
 export type { SiteSpecSummary };
 export type { FydGrant };
@@ -25,6 +26,8 @@ export interface AskFydContextInput {
   grants: FydGrant[];
   siteSpec: SiteSpecSummary | null;
   question: string;
+  /** Declared unresolved field conflicts (FYD-Q1). Fail-closed. */
+  fieldConflicts?: AskFieldConflict[];
 }
 
 /**
@@ -46,6 +49,8 @@ export interface AskFydContext {
   /** Effects the agent may never authorize. */
   forbiddenEffects: readonly FydGrant[];
   request: { question: string };
+  /** Declared unresolved field conflicts (FYD-Q1). Fail-closed. */
+  fieldConflicts: AskFieldConflict[];
 }
 
 /**

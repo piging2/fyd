@@ -245,6 +245,10 @@ export async function handleAskRequest(
         objectId: rawObjectId.length > 0 ? rawObjectId : undefined,
         question,
         mode: mode as AskFydMode,
+        // FYD-Q1/Q2: the bundle carries declared conflicts and owner
+        // visibility decisions; the ask lane honors them fail-closed.
+        fieldConflicts: bundle?.fieldConflicts,
+        fieldVisibilityDecisions: bundle?.fieldVisibilityDecisions,
       },
       deps,
     );

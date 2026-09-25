@@ -37,5 +37,6 @@ export function buildAskFydContext(input: AskFydContextInput): AskFydContext {
     capabilitiesLine: agentGrantList.join(","),
     forbiddenEffects: FORBIDDEN_AGENT_EFFECTS,
     request: { question: input.question },
+    fieldConflicts: input.fieldConflicts ?? [],
   };
 }

@@ -16,6 +16,7 @@
 
 import { createHash } from "node:crypto";
 import { ownerCorrectionForObject } from "@/fyd/object/owner-overlay";
+import { isAddressFamilyField } from "@/fyd/sitespec/field-visibility";
 import type {
   AskAnswer,
   AskClaimClassification,
@@ -310,6 +311,17 @@ const GENERIC_WORDS: ReadonlySet<string> = new Set([
   "just", "really", "please", "very", "quite",
   "tell", "know", "kinds", "kind", "types", "type", "many", "much", "more", "most",
   "list", "name", "names", "like",
+  "handle", "handles", "handling",
+]);
+
+/**
+ * Words the hours branch answers: schedule, availability, emergency. The
+ * services branch excludes these from its unmatched-topic reporting so
+ * the hours branch owns them (no double coverage, no UNKNOWN inflation).
+ */
+const HOURS_WORDS = new Set([
+  "hour", "hours", "emergency", "weekend", "weekends", "saturday", "sunday",
+  "open", "close", "closing", "schedule",
 ]);
 
 /**
@@ -418,7 +430,21 @@ function noEvidenceAnswer(ctx: AskContext, question: string, unknowns: string[] 
   };
 }
 
-export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
+/**
+ * Optional composer inputs.
+ *
+ * conflictedFields: public fields suppressed from the projection because
+ * of an unresolved field conflict (FYD-Q1). The composer must never state
+ * a disputed value; the contact/location/coverage branches describe the
+ * field with the locked copy "Contact information is being verified."
+ * instead. evidenceIndices point at pre-registered conflict-observation
+ * evidence refs, so both evidence chains survive in the Why-this surface.
+ */
+export interface ComposeAnswerOpts {
+  conflictedFields?: { objectId: string; field: string; evidenceIndices: number[] }[];
+}
+
+export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAnswerOpts = {}): AskAnswer {
   const q = question.toLowerCase().trim();
   const target = ctx.target;
   const base = baseAnswer(ctx);
@@ -537,7 +563,37 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
   if (target) {
     const sentences: Sentence[] = [];
     const claimClassifications: AskClaimClassification[] = [];
+    // Topics the question named that no branch can answer stay UNKNOWN:
+    // branches append here; the final assembly carries them on the answer.
+    const branchUnknowns: string[] = [];
+    const noteUnknown = (w: string): void => {
+      if (!branchUnknowns.includes(w)) branchUnknowns.push(w);
+    };
     const title = target.title || target.id;
+    const conflictedFields = opts.conflictedFields ?? [];
+    const conflictIndicesFor = (objectId: string, fields: string[]): number[] => {
+      const out: number[] = [];
+      for (const c of conflictedFields) {
+        if (c.objectId === objectId && fields.includes(c.field)) out.push(...c.evidenceIndices);
+      }
+      return out;
+    };
+    const isFieldConflicted = (objectId: string, field: string): boolean =>
+      conflictedFields.some((c) => c.objectId === objectId && c.field === field);
+    // FYD-Q1 locked public copy for a field with an unresolved conflict.
+    // The field is described as unverified, never filled with a disputed
+    // value, never reported as merely absent. Internal evidence mechanics
+    // stay out of the copy.
+    const pushConflictPendingClaim = (objectId: string, fields: string[], claimLabel: string): void => {
+      pushClaim(
+        "Contact information is being verified.",
+        conflictIndicesFor(objectId, fields),
+        claimLabel,
+        target,
+        fields[0] ?? "contact",
+        "DERIVED_FACT",
+      );
+    };
     const desc = target.description || fieldOf(target, "bio", "summary");
 
     /**
@@ -739,6 +795,101 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
         pushClaim(`Category on record: ${cat}.`, [0], `${title} category`, target, "category");
     }
 
+    // Coverage questions ("what don't you know?") get an evidence-bound
+    // limitations answer, not a refusal: which facets the packet supports
+    // and which are absent. Missing facets name categories the packet can
+    // establish (services, phone, email, website, hours, location, people,
+    // pricing, reviews, emergency) without guessing. Fields under an
+    // unresolved conflict are described as being verified, never as merely
+    // absent. Placed before the services branch: "what don't you know?"
+    // names no service topic, so the services branch would otherwise claim
+    // it with a general listing.
+    const asksCoverage =
+      (hasWord(q, "what", "which") &&
+        /don't|dont|do not|cannot|can't|will not/.test(q) &&
+        hasWord(q, "know", "answer", "tell", "say")) ||
+      (hasWord(q, "what", "which", "list") &&
+        hasWord(q, "missing", "unknown", "unknowns", "coverage", "limitations", "lacking", "gaps"));
+    if (asksCoverage) {
+      const serviceObjs = ctx.relatedObjects.filter((o) =>
+        ["ping.social.service@1", "ping.social.product@1"].includes(o.schema),
+      );
+      const located = ctx.relationships.some(
+        (r) =>
+          r.status === "active" &&
+          r.predicate === "located_at" &&
+          (r.subject === target.id || r.object === target.id),
+      );
+      const conflictFacets = new Set<string>();
+      for (const c of conflictedFields) {
+        if (c.objectId !== target.id) continue;
+        if (c.field === "phone" || c.field === "email" || c.field === "website")
+          conflictFacets.add(c.field);
+        else if (isAddressFamilyField(c.field)) conflictFacets.add("address");
+        else conflictFacets.add(c.field);
+      }
+      const covered: string[] = [];
+      const missing: string[] = [];
+      const facet = (label: string, present: boolean, conflictKey?: string): void => {
+        if (conflictKey && conflictFacets.has(conflictKey)) return;
+        (present ? covered : missing).push(label);
+      };
+      facet("services", serviceObjs.length > 0 || !!fieldOf(target, "services"));
+      facet("phone", !!fieldOf(target, "phone"), "phone");
+      facet("email", !!fieldOf(target, "email"), "email");
+      facet("website", !!fieldOf(target, "website", "url", "domain"), "website");
+      facet("hours", !!fieldOf(target, "hours", "businessHours", "openingHours"));
+      facet("location", located || !!fieldOf(target, "location", "address", "city", "locality"), "address");
+      facet(
+        "people",
+        [target, ...ctx.relatedObjects].some((o) => o.schema.toLowerCase().includes("person")),
+      );
+      facet("pricing", !!fieldOf(target, "price", "pricing", "cost", "rates", "rate", "estimate", "quote"));
+      facet("reviews", !!fieldOf(target, "review", "reviews", "rating", "testimonial"));
+      const emBlob = [
+        target.title,
+        target.description ?? "",
+        ...serviceObjs.map((o) => `${o.title} ${o.description ?? ""}`),
+      ].join(" ");
+      facet("emergency service", /emergency/i.test(emBlob));
+      pushClaim(
+        `Here is what I can and cannot answer about ${title}, based only on the site record.`,
+        [0],
+        `${title} coverage summary`,
+        target,
+        "coverage",
+      );
+      if (covered.length > 0)
+        pushClaim(`On record: ${covered.join("; ")}.`, [0], `${title} covered facets`, target, "coverage");
+      if (missing.length > 0) {
+        for (const m of missing) noteUnknown(m);
+        pushClaim(
+          `Not on record: ${missing.join("; ")}. I will not guess at these.`,
+          [],
+          `${title} missing facets`,
+          target,
+          "coverage",
+          "INFERENCE",
+        );
+      }
+      if (conflictFacets.size > 0) {
+        pushConflictPendingClaim(
+          target.id,
+          conflictedFields.filter((c) => c.objectId === target.id).map((c) => c.field),
+          `${title} coverage conflict pending`,
+        );
+      }
+      // The coverage answer is complete: no other branch may append.
+      return {
+        ...base,
+        answer: sentences.map((s) => cite(s.text, s.cites)).join("\n\n"),
+        claimClassifications,
+        unknowns: [...branchUnknowns],
+        proposal: null,
+        partial: false,
+      };
+    }
+
     // A profile question about a service object ("tell me about this
     // service") is answered from the service's own record by the profile
     // branch above, not from a service listing.
@@ -757,8 +908,13 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       // ("financing") skips the branch, so the question falls through to
       // the honest fallback instead of dumping unrelated offerings.
       const topics = topicWords(q);
+      // Identity words (the business name) never count as a service topic:
+      // "What services does Coppersmith offer?" is a general services
+      // question, not a claim about a "coppersmith" service.
+      const nameWords = new Set(titleWords);
+      const matchable = topics.filter((w) => !nameWords.has(w));
       const vocab = serviceVocabulary(target, relatedServices);
-      const grounded = topics.length === 0 || topics.some((w) => vocab.has(w));
+      const grounded = matchable.length === 0 || matchable.some((w) => vocab.has(w));
       if (grounded) {
         if (services)
           pushClaim(
@@ -769,16 +925,36 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
             "services",
           );
         // Offers are evidence-chain nodes, not services: the answer names
-        // only service/product objects. Classifications cover exactly the
-        // claims the answer states.
+        // only service/product objects. Each offering carries its own
+        // evidence marker in listing order, so every named offering binds
+        // to its own service record.
         const named = relatedServices.filter(
           (o) => o.schema !== "ping.social.offer@1",
         );
         if (named.length > 0) {
-          const evIdx = ctx.evidenceRefs.findIndex((e) => e.id === named[0].id);
+          // Every named offering binds to its own service record: the
+          // context caps related-object refs, so register any missing
+          // service ref here (same shape as buildAskContext) rather than
+          // leaving an offering uncited.
+          const cites = named.map((s) => {
+            let idx = ctx.evidenceRefs.findIndex((e) => e.id === s.id);
+            if (idx < 0) {
+              idx = ctx.evidenceRefs.length;
+              ctx.evidenceRefs.push({
+                kind: "object",
+                id: s.id,
+                label: `${schemaLabel(s.schema)}: ${s.title || s.id}`,
+              });
+            }
+            return idx;
+          });
+          // No sentence-level classification here: each marker must
+          // resolve to its own per-service classification below, so a
+          // demo-synthetic service keeps its demo basis instead of
+          // inheriting the target's website-statement basis.
           sentences.push({
             text: `Related offerings: ${named.map((o) => o.title).join("; ")}.`,
-            cites: evIdx >= 0 ? [evIdx] : [],
+            cites,
           });
           for (const s of named) {
             const refId = ctx.evidenceRefs.find((e) => e.id === s.id)?.id;
@@ -788,6 +964,21 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
               evidenceRefIds: refId ? [refId] : [],
             });
           }
+        }
+        // Topics the question named that no branch can address stay
+        // UNKNOWN: they join unknowns, and the answer says so plainly.
+        // Hours words are excluded here: the hours branch owns them.
+        const unmatched = matchable.filter((w) => !vocab.has(w) && !HOURS_WORDS.has(w));
+        for (const w of unmatched) noteUnknown(w);
+        if (unmatched.length > 0) {
+          pushClaim(
+            `The site data has no record addressing ${unmatched.map((w) => `'${w}'`).join(", ")} specifically.`,
+            [],
+            `${title} unmatched service topics`,
+            target,
+            "services",
+            "INFERENCE",
+          );
         }
         if (!services && named.length === 0) {
           return noEvidenceAnswer(ctx, question, ["services offered by this business"]);
@@ -834,10 +1025,19 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
           "owner_override",
         );
       };
+      // FYD-Q1: a contact field with an unresolved conflict is suppressed
+      // in the projection, so site/email/phone read null here. The field
+      // is described as being verified: never filled with a disputed value
+      // and never reported as merely absent.
+      const conflictedContact = (["website", "email", "phone"] as const).filter((f) =>
+        isFieldConflicted(target.id, f),
+      );
       if (site) pushContactClaim("Website", "website", site);
       if (email) pushContactClaim("Email", "email", email);
       if (phone) pushContactClaim("Phone", "phone", phone);
-      if (!site && !email && !phone) {
+      if (conflictedContact.length > 0) {
+        pushConflictPendingClaim(target.id, [...conflictedContact], `${title} contact conflict pending`);
+      } else if (!site && !email && !phone) {
         pushClaim(
           `${title} lists no public contact details in the current context.`,
           [0],
@@ -848,7 +1048,72 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       }
     }
 
+    // Hours and availability: schedule words, weekend words, and the
+    // emergency qualifier are owned here. Hours on record are stated with
+    // their evidence; emergency service with no record is an explicit
+    // UNKNOWN, never inferred from a general plumbing offering.
+    const asksCloseTime =
+      hasWord(q, "close", "closing") &&
+      hasWord(q, "what", "when", "time", "hour", "hours", "open", "do", "does");
+    if (
+      hasWord(
+        q,
+        "hour", "hours", "emergency", "weekend", "weekends",
+        "saturday", "sunday", "open", "schedule",
+      ) ||
+      asksCloseTime
+    ) {
+      const hours = fieldOf(target, "hours", "businessHours", "openingHours");
+      if (hours)
+        pushClaim(`Hours on record: ${hours}.`, [0], `${title} hours`, target, "hours");
+      else
+        pushClaim(
+          `No hours are on record for ${title}.`,
+          [0],
+          `${title} has no hours on record`,
+          target,
+          "hours",
+        );
+      const blob = [
+        target.title,
+        target.description ?? "",
+        ...ctx.relatedObjects.map((o) => `${o.title} ${o.description ?? ""}`),
+      ].join(" ");
+      if (/emergency/i.test(blob)) {
+        const emIdx = ctx.relatedObjects.findIndex((o) =>
+          /emergency/i.test(`${o.title} ${o.description ?? ""}`),
+        );
+        const emRefIdx =
+          emIdx >= 0 ? ctx.evidenceRefs.findIndex((e) => e.id === ctx.relatedObjects[emIdx].id) : -1;
+        pushClaim(
+          `Emergency service is mentioned in the site data.`,
+          emRefIdx >= 0 ? [emRefIdx] : [0],
+          `${title} emergency service mentioned`,
+          target,
+          "services",
+        );
+      } else {
+        noteUnknown("emergency");
+        pushClaim(
+          `No emergency service is on record for ${title}.`,
+          [0],
+          `${title} has no emergency service on record`,
+          target,
+          "services",
+          "INFERENCE",
+        );
+      }
+    }
+
     if (hasWord(q, "where", "location", "address", "based")) {
+      // FYD-Q1: an unresolved address conflict suppresses the value in the
+      // projection. Describe it as being verified; never select a side.
+      const addressConflictFields = conflictedFields
+        .filter((c) => c.objectId === target.id && isAddressFamilyField(c.field))
+        .map((c) => c.field);
+      if (addressConflictFields.length > 0) {
+        pushConflictPendingClaim(target.id, addressConflictFields, `${title} address conflict pending`);
+      } else {
       // located_at direction: the subject is the located thing, the object
       // is the location. From the target's perspective the location object
       // is either a related object (target is the subject) or the target
@@ -913,6 +1178,7 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
             target,
             "location",
           );
+      }
       }
     }
 
@@ -997,6 +1263,7 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
         ...base,
         answer: sentences.map((s) => cite(s.text, s.cites)).join("\n\n"),
         claimClassifications,
+        unknowns: [...branchUnknowns],
         proposal: null,
         partial: false,
       };

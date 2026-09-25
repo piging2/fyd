@@ -6,6 +6,11 @@
  */
 
 import { composeAnswer } from "../../lib/ping/ask-composer";
+import type { ComposeAnswerOpts } from "../../lib/ping/ask-composer";
+import {
+  conflictObservationRefId,
+  isUnresolvedConflict,
+} from "./field-conflicts";
 import type { AskAnswer } from "../../lib/ping/types";
 import {
   buildSitePatchCard,
@@ -76,6 +81,30 @@ export function composeAskFyd(ctx: AskFydContext, question: string): AskFydAnswe
       sitePatchCard: buildSitePatchCard(ctx, proposal),
     };
   }
-  const base = composeAnswer(ctx.base, question);
+  // FYD-Q1: register both evidence chains for every unresolved conflict
+  // BEFORE the composer runs, so the locked "being verified" copy can cite
+  // them. Observation values are never embedded: the labels name the field
+  // and the provenance, not the disputed value.
+  const conflictedFields: NonNullable<ComposeAnswerOpts["conflictedFields"]> = [];
+  for (const conflict of ctx.fieldConflicts) {
+    if (!isUnresolvedConflict(conflict)) continue;
+    const evidenceIndices: number[] = [];
+    conflict.observations.forEach((obs, i) => {
+      evidenceIndices.push(ctx.base.evidenceRefs.length);
+      const derived = obs.derivedAt ? `, recorded ${obs.derivedAt.slice(0, 10)}` : "";
+      ctx.base.evidenceRefs.push({
+        kind: "field",
+        id: conflictObservationRefId(conflict, i),
+        label: `${conflict.field}: conflicting observation ${i + 1} of ${conflict.observations.length} (value withheld while unresolved)`,
+        detail: `Conflicting observation: provenance ${obs.provenanceKind}, ref ${obs.provenanceRef}${derived}. Values are withheld until the conflict is resolved.`,
+      });
+    });
+    conflictedFields.push({
+      objectId: conflict.objectId,
+      field: conflict.field,
+      evidenceIndices,
+    });
+  }
+  const base = composeAnswer(ctx.base, question, { conflictedFields });
   return { ...base, sitePatchCard: null };
 }

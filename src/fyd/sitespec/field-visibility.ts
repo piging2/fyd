@@ -116,3 +116,100 @@ export function applyFieldVisibility(
   });
   return { objects, relationships: graph.relationships };
 }
+
+/**
+ * FYD-Q2 zero-disclosure traversal (Nolan 2026-09-24, locked).
+ *
+ * A HIDE on a semantic address fact must yield zero disclosure in public
+ * answers, including via graph traversal: a hidden Business.address must
+ * not leak through located_at -> Location.address. The owner-authorized
+ * context keeps the underlying observations; this projection removes them.
+ *
+ * Semantics: a hide decision on ANY address-family field of object X hides
+ * the whole address semantic fact for X:
+ *   1. every address-family field on X is dropped from the projection
+ *      (the decision names the fact, not one spelling of it: "address",
+ *      "locality", "city" etc. are the same fact);
+ *   2. located_at relationships incident to X are dropped;
+ *   3. location-schema objects left with no active relationships after (2)
+ *      are dropped, so no branch can resolve the address through the
+ *      neighborhood.
+ * Never mutates the input. Deterministic.
+ */
+
+/** Field names that realize the address semantic fact. */
+const ADDRESS_FAMILY_EXACT = new Set([
+  "locality",
+  "location",
+  "city",
+  "town",
+  "region",
+  "state",
+  "province",
+  "postal_code",
+  "postalcode",
+  "zip",
+  "zipcode",
+  "country",
+  "street",
+  "latitude",
+  "longitude",
+  "lat",
+  "lng",
+  "geo",
+  "coordinates",
+]);
+
+/** True when the field name realizes the address semantic fact. */
+export function isAddressFamilyField(field: string): boolean {
+  const name = field.toLowerCase();
+  if (name.includes("address")) return true;
+  return ADDRESS_FAMILY_EXACT.has(name);
+}
+
+/** True when the object is a location record (address carrier). */
+function isLocationObject(schema: string): boolean {
+  return schema.toLowerCase().includes("location");
+}
+
+export function applyHideTraversal(
+  graph: ObjectGraph,
+  decisions: FieldVisibilityDecision[],
+): ObjectGraph {
+  const addressHiddenFor = new Set<string>();
+  for (const d of decisions) {
+    if (d.policy === "hide" && isAddressFamilyField(d.field)) {
+      addressHiddenFor.add(d.objectId);
+    }
+  }
+  if (addressHiddenFor.size === 0) return graph;
+
+  const relationships = graph.relationships.filter((r) => {
+    if (r.status !== "active" || r.predicate !== "located_at") return true;
+    return !addressHiddenFor.has(r.subject) && !addressHiddenFor.has(r.object);
+  });
+
+  const stillLinked = new Set<string>();
+  for (const r of relationships) {
+    if (r.status !== "active") continue;
+    stillLinked.add(r.subject);
+    stillLinked.add(r.object);
+  }
+
+  const objects = graph.objects
+    .map((o) => {
+      if (!addressHiddenFor.has(o.id)) return o;
+      const fields: Record<string, string | string[]> = {};
+      for (const [key, value] of Object.entries(o.fields)) {
+        if (isAddressFamilyField(key)) continue;
+        fields[key] = value;
+      }
+      return { ...o, fields };
+    })
+    .filter((o) => {
+      if (!isLocationObject(o.schema)) return true;
+      return stillLinked.has(o.id);
+    });
+
+  return { objects, relationships };
+}
