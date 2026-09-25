@@ -16,7 +16,11 @@
 
 import { createHash } from "node:crypto";
 import { ownerCorrectionForObject } from "@/fyd/object/owner-overlay";
-import { isAddressFamilyField } from "@/fyd/sitespec/field-visibility";
+import {
+  coarsenAddress,
+  isAddressFamilyField,
+  valueLooksLikeAddress,
+} from "@/fyd/sitespec/field-visibility";
 import type {
   AskAnswer,
   AskClaimClassification,
@@ -280,6 +284,22 @@ function fieldOf(obj: PingObject, ...names: string[]): string | null {
     if (Array.isArray(v) && v.length > 0) return v.join(", ");
   }
   return null;
+}
+
+/**
+ * TITLE-SHAPE RULE (Q-P0-01 leak 4): the located_at branch names the
+ * location object by its TITLE, which never passes through field
+ * visibility. When the title is address-shaped ("123 Main St, Grand
+ * Junction, CO") it is coarsened exactly like an address field; a
+ * business-name title ("Acme Plumbing") passes through unchanged. A
+ * title that IS pure street ("123 Main St") coarsens to "" and returns
+ * null so the caller falls back to the locality field — fail closed on
+ * the title itself. Pure, deterministic, no I/O, no clock.
+ */
+function coarsenLocationTitle(title: string | null | undefined): string | null {
+  if (!title) return null;
+  if (!valueLooksLikeAddress(title)) return title;
+  return coarsenAddress(title) || null;
 }
 
 function hasWord(q: string, ...words: string[]): boolean {
@@ -1128,12 +1148,12 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
           const o = ctx.relatedObjects.find((x) => x.id === r.object);
           if (o) {
             locationObj = o;
-            locationName = o.title || fieldOf(o, "locality");
+            locationName = coarsenLocationTitle(o.title) || fieldOf(o, "locality");
             break;
           }
         } else if (r.object === target.id && r.subject !== target.id) {
           locationObj = target;
-          locationName = target.title || fieldOf(target, "locality");
+          locationName = coarsenLocationTitle(target.title) || fieldOf(target, "locality");
           locationSelf = true;
           break;
         }

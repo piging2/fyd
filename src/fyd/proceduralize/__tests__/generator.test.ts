@@ -311,3 +311,71 @@ describe("generateSiteSpec determinism", () => {
     ]);
   });
 });
+
+describe("generateSiteSpec Gallery emission (media-backed)", () => {
+  /** Minimal graph: one public business owner, no related objects. */
+  function ownerOnlyGraph() {
+    const owner: PingObject = {
+      id: "owner-1",
+      schema: "ping.social.business@1",
+      controllerId: "c1",
+      visibility: "public",
+      title: "Acme Plumbing",
+      description: "We fix pipes.",
+      fields: {},
+      createdAt: CONTENT_AT,
+      updatedAt: CONTENT_AT,
+      provenance: {
+        kind: "website-derived" as const,
+        ref: "website-ingestion:test",
+        derivedAt: CONTENT_AT,
+      },
+    };
+    return { objects: [owner], relationships: [] as PingRelationship[] };
+  }
+
+  const homeComponents = (spec: ReturnType<typeof generateSiteSpec>) =>
+    spec.pages.find((p) => p.slug === "home")!.sections.map((s) => s.component);
+
+  test("emits a Gallery section when the site manifest has gallery assets", () => {
+    const spec = generateSiteSpec(ownerOnlyGraph(), {
+      ...OPTS,
+      siteId: "coppersmith-plumbing",
+    });
+    const home = spec.pages.find((p) => p.slug === "home")!;
+    const gallery = home.sections.find((s) => s.component === "Gallery");
+    expect(gallery).toBeDefined();
+    // Deterministic section id following the pageSlug:component:index law.
+    const idx = home.sections.indexOf(gallery!);
+    expect(gallery!.id).toBe("home:Gallery:" + idx);
+    // Static query: the gallery resolves no graph objects; its media
+    // arrives via the render context (same seam as heroMedia).
+    expect(gallery!.query).toEqual({ kind: "static" });
+  });
+
+  test("emits no Gallery section when the site manifest has no gallery assets", () => {
+    const spec = generateSiteSpec(ownerOnlyGraph(), {
+      ...OPTS,
+      siteId: "happy-place",
+    });
+    expect(homeComponents(spec)).not.toContain("Gallery");
+  });
+
+  test("emits no Gallery section for an unknown site id (no manifest)", () => {
+    const spec = generateSiteSpec(ownerOnlyGraph(), {
+      ...OPTS,
+      siteId: "no-such-site",
+    });
+    expect(homeComponents(spec)).not.toContain("Gallery");
+  });
+
+  test("emits no Gallery section without siteId: byte-identical pure-graph compile", () => {
+    const without = generateSiteSpec(ownerOnlyGraph(), OPTS);
+    const withUnknownSite = generateSiteSpec(ownerOnlyGraph(), {
+      ...OPTS,
+      siteId: "no-such-site",
+    });
+    expect(homeComponents(without)).not.toContain("Gallery");
+    expect(JSON.stringify(without)).toBe(JSON.stringify(withUnknownSite));
+  });
+});

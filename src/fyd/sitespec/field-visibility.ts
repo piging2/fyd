@@ -45,6 +45,44 @@ export interface FieldVisibilityDecision {
 }
 
 /**
+ * HOUSE-NUMBER SIGNAL (Q-P0-01): a text segment leads with a house number
+ * when it starts with digits followed by whitespace ("123 Main St").
+ * Business names ("Acme Plumbing") and city names ("Grand Junction") do
+ * not; street lines do. This is the deliberately conservative street
+ * detector: it is biased toward catching addresses (fail closed on
+ * privacy) at the cost of occasionally flagging a non-address value that
+ * happens to lead with digits. That outcome is lossy but never a privacy
+ * leak.
+ */
+function hasHouseNumberLead(text: string): boolean {
+  return /^\d+\s/.test(text.trim());
+}
+
+/**
+ * Whole-value street test: a house number followed by street words with
+ * no commas, e.g. "123 Main St" (the schema.org streetAddress shape).
+ */
+function isStreetShaped(value: string): boolean {
+  return /^\d+\s+\w/.test(value.trim());
+}
+
+/**
+ * VALUE-SHAPE RULE (Q-P0-01): a field value is address-shaped when any
+ * comma-separated segment starts with a house number, or when the whole
+ * value matches the street pattern. The check is name-independent: it is
+ * what lets a street address hiding in a field named "location" (not
+ * "address") be treated as an address anyway, and what lets the Ask
+ * composer's located_at branch coarsen an address-shaped location TITLE.
+ * Pure, deterministic, no I/O, no clock.
+ */
+export function valueLooksLikeAddress(value: string | string[]): boolean {
+  const text = Array.isArray(value) ? value.join(", ") : value;
+  const segments = text.split(",").map((s) => s.trim());
+  if (segments.some((s) => hasHouseNumberLead(s))) return true;
+  return isStreetShaped(text);
+}
+
+/**
  * Resolve the visibility for one object field.
  *
  * An owner decision for the exact objectId+field wins; the highest version
@@ -54,12 +92,19 @@ export interface FieldVisibilityDecision {
  * case FYD will not show verbatim by default. A field whose name contains
  * "address" (case-insensitive; covers "address", "streetaddress",
  * "street_address", "address_locality", ...) defaults to "coarse".
- * Every other field defaults to "show".
+ *
+ * VALUE-SHAPE DEFAULT (Q-P0-01 leak 3): when the field's value is
+ * provided, an address-shaped VALUE also defaults to "coarse" regardless
+ * of the field name — a street address in a field named "location" is not
+ * exempt just because the name lacks "address". Triggers only on the
+ * strong house-number street signal (valueLooksLikeAddress); everything
+ * else defaults to "show". Owner decisions still win over this default.
  */
 export function resolveFieldVisibility(
   objectId: string,
   field: string,
   decisions: FieldVisibilityDecision[],
+  value?: string | string[],
 ): { policy: FieldVisibilityPolicy; source: VisibilitySource } {
   let best: FieldVisibilityDecision | undefined;
   for (const d of decisions) {
@@ -69,23 +114,42 @@ export function resolveFieldVisibility(
   if (best !== undefined) {
     return { policy: best.policy, source: "owner_override" };
   }
-  const policy: FieldVisibilityPolicy = field.toLowerCase().includes("address")
-    ? "coarse"
-    : "show";
-  return { policy, source: "conservative_default" };
+  if (field.toLowerCase().includes("address")) {
+    return { policy: "coarse", source: "conservative_default" };
+  }
+  if (value !== undefined && valueLooksLikeAddress(value)) {
+    return { policy: "coarse", source: "conservative_default" };
+  }
+  return { policy: "show", source: "conservative_default" };
 }
 
 /**
- * COARSEN RULE: split the value on commas, keep the last two segments,
- * trim each, and rejoin with ", ". The street-level detail (the first
- * segment) is dropped; city/region/postal survives.
+ * COARSEN RULE: split the value on commas and drop the street-level
+ * segment; city/region/postal survives.
+ *
+ * - Multi-segment: if the FIRST comma segment starts with a house number
+ *   (/^\d+\s/) it is the street segment — drop it before keeping the last
+ *   two segments. Without this, a single-comma value such as
+ *   "123 Main St, Grand Junction CO 81501" keeps its street inside the
+ *   kept last-two segments. (Q-P0-01 leak 1)
+ * - Multi-segment without a street lead: keep the last two segments,
+ *   trimmed, rejoined with ", ".
+ * - Single-segment: the value may BE the street segment (the schema.org
+ *   streetAddress shape, e.g. "123 Main St"). It cannot be coarsened, so
+ *   fail closed: suppress it to "". A non-street single value
+ *   ("Grand Junction") returns unchanged. (Q-P0-01 leak 2)
+ *
  * Example: "123 Main St, Grand Junction, CO 81501" -> "Grand Junction, CO 81501".
- * Deterministic. Fewer than two segments -> the value is returned unchanged.
+ * Deterministic, pure, no I/O.
  */
 export function coarsenAddress(value: string): string {
   const segments = value.split(",").map((s) => s.trim());
-  if (segments.length < 2) return value;
-  return segments.slice(-2).join(", ");
+  if (segments.length < 2) {
+    return isStreetShaped(value) ? "" : value;
+  }
+  const head = segments[0] ?? "";
+  const rest = hasHouseNumberLead(head) ? segments.slice(1) : segments;
+  return rest.slice(-2).join(", ");
 }
 
 /**
@@ -103,7 +167,7 @@ export function applyFieldVisibility(
   const objects: PingObject[] = graph.objects.map((o) => {
     const fields: Record<string, string | string[]> = {};
     for (const [key, value] of Object.entries(o.fields)) {
-      const { policy } = resolveFieldVisibility(o.id, key, decisions);
+      const { policy } = resolveFieldVisibility(o.id, key, decisions, value);
       if (policy === "hide") continue; // drop the field
       if (policy === "coarse") {
         const joined = Array.isArray(value) ? value.join(", ") : value;

@@ -8,10 +8,12 @@
 
 import { COPPERSMITH_GRAPH } from "@/fyd/proceduralize/__fixtures__/coppersmith-graph";
 import type { ObjectGraph } from "../types";
+import type { PingObject } from "@/lib/ping/types";
 import {
   applyFieldVisibility,
   coarsenAddress,
   resolveFieldVisibility,
+  valueLooksLikeAddress,
 } from "../field-visibility";
 import type { FieldVisibilityDecision } from "../field-visibility";
 
@@ -172,5 +174,136 @@ describe("owner address visibility override (address gate)", () => {
     const once = applyFieldVisibility(COPPERSMITH_GRAPH, decisions);
     const twice = applyFieldVisibility(COPPERSMITH_GRAPH, decisions);
     expect(JSON.stringify(twice)).toBe(JSON.stringify(once));
+  });
+});
+
+/**
+ * Minimal PingObject builder for the boundary-shape tests below.
+ */
+function boundaryObject(
+  id: string,
+  fields: Record<string, string | string[]>,
+  title = "Boundary Object",
+): PingObject {
+  return {
+    id,
+    schema: "ping.social.business@1",
+    controllerId: "ctrl-test",
+    visibility: "public",
+    title,
+    description: "",
+    fields,
+    createdAt: DECIDED_AT,
+    updatedAt: DECIDED_AT,
+    provenance: {
+      kind: "canonical-journal",
+      ref: "evt-test-1",
+      derivedAt: DECIDED_AT,
+    },
+  };
+}
+
+describe("Q-P0-01 boundary coarsening rules", () => {
+  test("single-comma address: the street segment is dropped, not kept", () => {
+    // Leak 1: the old last-two rule kept the street inside the kept
+    // segments. Now the first-segment house-number rule drops it.
+    expect(coarsenAddress("123 Main St, Grand Junction CO 81501")).toBe(
+      "Grand Junction CO 81501",
+    );
+    expect(coarsenAddress("123 Main St, Grand Junction, CO 81501")).toBe(
+      "Grand Junction, CO 81501",
+    );
+  });
+
+  test("no-comma street-shaped value is suppressed (fail closed)", () => {
+    // Leak 2: the schema.org streetAddress shape cannot be coarsened, so
+    // it is suppressed rather than returned verbatim.
+    expect(coarsenAddress("123 Main St")).toBe("");
+  });
+
+  test("no-comma non-street values still return unchanged", () => {
+    expect(coarsenAddress("Grand Junction")).toBe("Grand Junction");
+    expect(coarsenAddress("")).toBe("");
+    expect(coarsenAddress("Acme Plumbing")).toBe("Acme Plumbing");
+  });
+
+  test("multi-segment value without a street lead keeps current behavior", () => {
+    expect(coarsenAddress("Grand Junction, CO 81501")).toBe(
+      "Grand Junction, CO 81501",
+    );
+    expect(coarsenAddress("Downtown, Grand Junction, CO")).toBe(
+      "Grand Junction, CO",
+    );
+  });
+
+  test("valueLooksLikeAddress: name-independent street detection", () => {
+    expect(
+      valueLooksLikeAddress("123 Main St, Grand Junction, CO 81501"),
+    ).toBe(true);
+    expect(valueLooksLikeAddress("123 Main St")).toBe(true);
+    expect(valueLooksLikeAddress(["Grand Junction", "CO"])).toBe(false);
+    expect(valueLooksLikeAddress("Grand Junction, CO")).toBe(false);
+    expect(valueLooksLikeAddress("Acme Plumbing")).toBe(false);
+    expect(valueLooksLikeAddress("(970) 555-0100")).toBe(false);
+  });
+
+  test("resolveFieldVisibility: street-shaped value in a non-'address'-named field defaults to coarse", () => {
+    // Leak 3: the conservative default keyed on the field NAME only. Now
+    // the value shape also triggers coarsening.
+    expect(
+      resolveFieldVisibility(
+        "o",
+        "location",
+        [],
+        "123 Main St, Grand Junction, CO 81501",
+      ),
+    ).toEqual({ policy: "coarse", source: "conservative_default" });
+    // Non-address values keep the "show" default.
+    expect(
+      resolveFieldVisibility("o", "location", [], "Grand Junction, CO"),
+    ).toEqual({ policy: "show", source: "conservative_default" });
+    expect(
+      resolveFieldVisibility("o", "phone", [], "(970) 555-0100"),
+    ).toEqual({ policy: "show", source: "conservative_default" });
+    // Owner decisions still win over the value-shape default.
+    const hide: FieldVisibilityDecision = {
+      objectId: "o",
+      field: "location",
+      policy: "hide",
+      decidedBy: "owner",
+      decidedAt: DECIDED_AT,
+      source: "owner_override",
+      version: 1,
+    };
+    expect(
+      resolveFieldVisibility(
+        "o",
+        "location",
+        [hide],
+        "123 Main St, Grand Junction, CO 81501",
+      ),
+    ).toEqual({ policy: "hide", source: "owner_override" });
+  });
+
+  test("applyFieldVisibility: street address in a non-'address'-named field is coarsened, not shown verbatim", () => {
+    const graph: ObjectGraph = {
+      objects: [
+        boundaryObject("biz-1", {
+          location: "123 Main St, Grand Junction, CO 81501",
+          city: "Grand Junction, CO",
+        }),
+      ],
+      relationships: [],
+    };
+    const projected = applyFieldVisibility(graph, []);
+    const obj = projected.objects.find((o) => o.id === "biz-1");
+    if (!obj) throw new Error("FAIL: biz-1 missing from projected graph");
+    expect(obj.fields["location"]).toBe("Grand Junction, CO 81501");
+    // Non-address-shaped values are untouched.
+    expect(obj.fields["city"]).toBe("Grand Junction, CO");
+    // Source state stays intact.
+    expect(graph.objects[0]?.fields["location"]).toBe(
+      "123 Main St, Grand Junction, CO 81501",
+    );
   });
 });

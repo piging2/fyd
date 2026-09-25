@@ -21,11 +21,19 @@ import type {
   ObjectGraph,
   ViewerContext,
 } from "@/fyd/sitespec/types";
-// Type-only: the hero media is serialized DisplayMedia resolved on the
-// server; the client never touches the media store.
+// Type-only: the hero and gallery media are serialized DisplayMedia
+// resolved on the server; the client never touches the media store.
 import type { DisplayMedia } from "@/fyd/media/select";
 import { FydMotionFallback } from "@/fyd/components/fyd-motion-fallback";
 import { ObjectOverlay } from "@/fyd/components/object-overlay";
+import { edgeClientScript } from "@/fyd/edge/client";
+
+declare global {
+  interface Window {
+    /** Published by the edge client script: opens the edge object sheet. */
+    __fydEdgeOpen?: (objectId: string, trigger: unknown) => void;
+  }
+}
 
 const VIEWER: ViewerContext = { viewerId: null, displayName: null };
 
@@ -57,6 +65,7 @@ export function SiteClient({
   renderable,
   siteId,
   heroMedia = null,
+  galleryMedia = null,
 }: {
   spec: FYDSiteSpec;
   graph: ObjectGraph;
@@ -64,6 +73,7 @@ export function SiteClient({
   renderable: boolean;
   siteId?: string;
   heroMedia?: DisplayMedia | null;
+  galleryMedia?: DisplayMedia[] | null;
 }) {
   const [spec, setSpec] = useState(initialSpec);
   const [activeSlug, setActiveSlug] = useState(
@@ -74,12 +84,15 @@ export function SiteClient({
   const [overlayObjectId, setOverlayObjectId] = useState<string | null>(null);
 
   const ctx = useMemo(
-    () => ({ spec, graph, viewer: VIEWER, siteId, heroMedia }),
-    [spec, graph, siteId, heroMedia],
+    () => ({ spec, graph, viewer: VIEWER, siteId, heroMedia, galleryMedia }),
+    [spec, graph, siteId, heroMedia, galleryMedia],
   );
   const page = spec.pages.find((p) => p.slug === activeSlug) ?? spec.pages[0];
-  // Object overlay: intercept taps/clicks on /o/ links and open rich overlay.
-  // Close returns to exact scroll position (handled by ObjectOverlay).
+  // Object doorway: intercept taps/clicks on /o/ links. EDGE-1 routes them
+  // into the edge object sheet (the functional doorway into the authorized
+  // graph). The legacy ObjectOverlay remains only as a fallback when the
+  // edge script failed to load. Close returns to exact scroll position
+  // (handled by the sheet / ObjectOverlay).
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -98,7 +111,12 @@ export function SiteClient({
       const obj = graph.objects.find((o) => o.id === objectId);
       if (!obj) return;
       e.preventDefault();
-      setOverlayObjectId(objectId);
+      const edgeOpen = window.__fydEdgeOpen;
+      if (typeof edgeOpen === "function") {
+        edgeOpen(objectId, link);
+      } else {
+        setOverlayObjectId(objectId);
+      }
     };
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
@@ -124,6 +142,12 @@ export function SiteClient({
   return (
     <div>
       <FydMotionFallback />
+      {/* EDGE-1: tap-to-expand edge-object client. The script publishes
+          window.__fydEdgeOpen, which the /o/ interceptor above routes
+          doorway taps into. */}
+      {siteId ? (
+        <script dangerouslySetInnerHTML={{ __html: edgeClientScript(siteId) }} />
+      ) : null}
       {overlayObjectId && (() => {
         const obj = graph.objects.find((o) => o.id === overlayObjectId);
         if (!obj) return null;

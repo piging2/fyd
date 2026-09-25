@@ -181,6 +181,7 @@ export function ObjectAffordance({
           {canOpen ? (
             <a
               href={detailHref}
+              data-fyd-object-id={objectId}
               className="inline-flex min-h-[44px] items-center rounded border px-4 py-2 text-sm font-semibold"
               style={{
                 borderColor: theme.accent,
