@@ -11,7 +11,8 @@
  * Supported this wave (anything else is UnsupportedIntent, never silently
  * reinterpreted):
  *   "make X the first thing people see" / "put X first" /
- *   "move X to the top" / "lead with X"   -> promote_first (a section when X
+ *   "move X to the top" / "move X first" / "lead with X"
+ *                                          -> promote_first (a section when X
  *   names one; the named object moved to the top of its section otherwise)
  *   "feature X" / "highlight X" / "spotlight X" -> feature_object
  *   "hide (the) X section"                -> hide_section
@@ -66,6 +67,10 @@ const MATCHERS: Matcher[] = [
   { re: /\bput\b\s+(.+?)\s+\bfirst\b/, build: (t) => ({ kind: "promote_first", target: t }) },
   {
     re: /\bmove\b\s+(.+?)\s+\bto the top\b/,
+    build: (t) => ({ kind: "promote_first", target: t }),
+  },
+  {
+    re: /\bmove\b\s+(.+?)\s+\bfirst\b/,
     build: (t) => ({ kind: "promote_first", target: t }),
   },
   { re: /\blead with\b\s+(.+)/, build: (t) => ({ kind: "promote_first", target: t }) },

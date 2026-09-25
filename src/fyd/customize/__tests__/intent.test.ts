@@ -107,9 +107,10 @@ describe("parseCustomizationIntent", () => {
     expect(a.intentDigest).toBe(intentDigest(a.intent));
   });
 
-  test("prominence family: move X to the top, lead with X", () => {
+  test("prominence family: move X to the top, move X first, lead with X", () => {
     for (const text of [
       "Move services to the top",
+      "Move services first",
       "Lead with services",
       "Put services first",
     ]) {
@@ -120,6 +121,16 @@ describe("parseCustomizationIntent", () => {
         expect(r.intent.target).toBe("services");
       }
     }
+  });
+
+  test("owner NL 'Move emergency plumbing first' parses to promote_first", () => {
+    const r = parseCustomizationIntent("Move emergency plumbing first.");
+    expect(isUnsupported(r)).toBe(false);
+    if (isUnsupported(r)) return;
+    expect(r.intent).toEqual({
+      kind: "promote_first",
+      target: "emergency plumbing",
+    });
   });
 
   test("feature family parses", () => {
