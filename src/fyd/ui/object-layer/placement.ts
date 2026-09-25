@@ -222,6 +222,45 @@ export function placeObjects(
 }
 
 /**
+ * Balanced rail assignment for the dual-margin directive (Nolan,
+ * 2026-09-25 edge-placement directive: ONE edge object in the extreme
+ * LEFT margin, ONE in the extreme RIGHT margin, flanking center
+ * content).
+ *
+ * The plain `placeObjects` preference pass fills the preferred rail
+ * first, which leaves the second rail empty. This helper instead
+ * assigns inputs round-robin across the given rails, so both margins
+ * flank the content. It uses the exact same ordering `placeObjects`
+ * uses internally (priority, anchor Y, objectId), so the
+ * highest-priority objects take the preferred rail first,
+ * deterministically. The caller then runs `placeObjects` once per
+ * rail with `rails: [thatRail]`; per-rail collision resolution,
+ * clustering, and the never-overlap invariant are unchanged.
+ *
+ * Pure module: no React, no DOM. Stable input produces stable output.
+ */
+export function distributeBalanced(
+  inputs: AnchorInput[],
+  rails: Rail[],
+  documentHeight: number,
+): Map<Rail, AnchorInput[]> {
+  const anchorY = (i: AnchorInput): number => i.anchorMidY ?? documentHeight;
+  const sorted = [...inputs].sort(
+    (a, b) =>
+      a.priority - b.priority ||
+      anchorY(a) - anchorY(b) ||
+      (a.objectId < b.objectId ? -1 : a.objectId > b.objectId ? 1 : 0),
+  );
+  const out = new Map<Rail, AnchorInput[]>();
+  for (const r of rails) out.set(r, []);
+  sorted.forEach((input, i) => {
+    const rail = rails[i % rails.length];
+    out.get(rail)!.push(input);
+  });
+  return out;
+}
+
+/**
  * Viewport-edge flip-inward for expanded cards (Nolan, 2026-09-22 FYD
  * grill: the expanded card must never grow past the viewport edge).
  *

@@ -41,15 +41,18 @@
  * there is no scroll listener anywhere in this path. Responsive
  * breakpoint changes are covered by resize.
  *
- * Responsive policy (functional, not polish):
- * - wide desktop (>=1400px): two object rails (left + right)
- * - normal desktop (1024-1399): one preferred rail + overflow clustering
- * - tablet (768-1023): compact edge rail (40px rest)
- * - mobile (<768): the very-right overlay (Nolan 2026-09-25, supersedes
- *   the 2026-09-23 direction): document-anchored 44px doorway pills at
- *   the extreme right edge, one per anchored object, page-anchored so
- *   scrolling moves them out of view. Tap opens the mobile object
- *   sheet. No debug flag in the production path.
+ * Responsive policy (functional, not polish; Nolan 2026-09-25
+ * edge-placement directive):
+ * - desktop (>=1024px): fit-gated dual margins. A rail is used only
+ *   when the measured free margin actually fits the glyph; when both
+ *   fit, placements round-robin across left + right so the margins
+ *   flank the content. Margins are never faked; the layer never
+ *   overlaps center content.
+ * - tablet (768-1023): compact edge rail (40px rest) when it fits.
+ * - mobile (<768): NO overlay chrome. Objects render in-flow as
+ *   cards/sections via the renderer composition: visible, tappable
+ *   (44px+ targets), never hidden, never overlaid.
+ * No debug flag in the production path.
  *
  * SSR / pre-measure shell: an absolute empty layer. Zero layout impact:
  * absolute elements are out of flow, so center geometry cannot change.
@@ -60,6 +63,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import {
+  distributeBalanced,
   flipCardX,
   placeObjects,
   type AnchorInput,
@@ -74,7 +78,6 @@ import {
   PEEK_W,
   REST_D,
 } from "./ObjectCircle";
-import { MobileSheet } from "./MobileSheet";
 import { claimExpanded, requestObjectOpen, subscribeNavigateRequest } from "./expansion";
 import type { MotionTokens } from "@/fyd/sitespec/types";
 import type { AskPageContext, MarginObjectDescriptor } from "./types";
@@ -85,23 +88,61 @@ const WIDE_MIN = 1400;
 const DESKTOP_MIN = 1024;
 const TABLET_MIN = 768;
 
-type Projection = "dual" | "single" | "edge" | "mobile";
-
-function projectionForWidth(w: number): Projection {
-  if (w >= WIDE_MIN) return "dual";
-  if (w >= DESKTOP_MIN) return "single";
-  if (w >= TABLET_MIN) return "edge";
-  return "mobile";
-}
-
 /** Compact rest diameter for the tablet edge rail. */
 const EDGE_REST_D = 40;
-/** Document-edge offset of the rail per projection. */
-const RAIL_OFFSET: Record<Exclude<Projection, "mobile">, number> = {
-  dual: 24,
-  single: 12,
-  edge: 8,
-};
+
+/**
+ * Document-edge offset of the rail per width band (preserves the
+ * 2026-09-24 wide-desktop geometry: 24px at >=1400, 12px at
+ * 1024-1399, 8px on the tablet edge).
+ */
+function railOffsetForWidth(vw: number): number {
+  if (vw >= WIDE_MIN) return 24;
+  if (vw >= DESKTOP_MIN) return 12;
+  return 8;
+}
+
+/**
+ * Fit-gated rail selection (Nolan 2026-09-25 edge-placement directive).
+ * A rail is used only when the measured free margin actually fits the
+ * glyph: margins are never faked, and the layer never overlaps center
+ * content. Desktop (>=1024) uses both rails when both fit (the caller
+ * round-robins placements across them so the margins flank the
+ * content); tablet (768-1023) keeps the compact right edge rail when
+ * it fits; mobile (<768) uses no overlay rail at all: objects render
+ * in-flow as cards/sections via the renderer composition, never
+ * hidden, never overlaid. When the content column is unmeasurable,
+ * falls back to the legacy rail assignment.
+ */
+function railsForWidth(
+  vw: number,
+  leftFree: number,
+  rightFree: number,
+  measurable: boolean,
+): Rail[] {
+  if (vw < TABLET_MIN) return [];
+  if (!measurable) {
+    if (vw >= WIDE_MIN) return ["right", "left"];
+    return ["right"];
+  }
+  const restD = vw >= DESKTOP_MIN ? REST_D : EDGE_REST_D;
+  const need = railOffsetForWidth(vw) + restD;
+  if (vw >= DESKTOP_MIN) {
+    const rails: Rail[] = [];
+    if (rightFree >= need) rails.push("right");
+    if (leftFree >= need) rails.push("left");
+    return rails;
+  }
+  return rightFree >= need ? ["right"] : [];
+}
+
+/** Truthful data-projection label for the layer plane. */
+function projectionLabel(vw: number, rails: Rail[]): string {
+  if (vw < TABLET_MIN) return "mobile";
+  if (rails.length === 2) return "dual";
+  if (rails.length === 1) return vw < DESKTOP_MIN ? "edge" : "single";
+  return "none";
+}
 
 /**
  * 18:47 sparsity (Nolan 2026-09-25): objects that share one section anchor
@@ -151,6 +192,13 @@ interface DocumentLayout {
   vw: number;
   docH: number;
   anchors: Record<string, number | null>;
+  /**
+   * Content-column bounds (viewport-relative X, whole px): the union of
+   * [data-fyd-section] rects, falling back to the anchor elements.
+   * Infinity/-Infinity when nothing measurable is present.
+   */
+  contentLeft: number;
+  contentRight: number;
 }
 
 /**
@@ -180,6 +228,18 @@ function useDocumentLayout(anchorKeys: string[]): {
       raf = 0;
       const scrollY = window.scrollY;
       const anchors: Record<string, number | null> = {};
+      // Content-column bounds (viewport-relative X): the union of the
+      // section rects, so the free margins are honest. Anchors seed the
+      // bounds; the full [data-fyd-section] set overrides when present
+      // (anchors only cover sections that have margin objects).
+      let contentLeft = Infinity;
+      let contentRight = -Infinity;
+      const noteBounds = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2) return;
+        if (r.left < contentLeft) contentLeft = r.left;
+        if (r.right > contentRight) contentRight = r.right;
+      };
       for (const k of keys) {
         const el = document.querySelector(`[data-object-anchor="${CSS.escape(k)}"]`);
         if (!el) {
@@ -189,13 +249,22 @@ function useDocumentLayout(anchorKeys: string[]): {
         const r = el.getBoundingClientRect();
         // Document-space midpoint: scroll-invariant.
         anchors[k] = r.top + scrollY + r.height / 2;
+        noteBounds(el);
+      }
+      const sectionEls = document.querySelectorAll("[data-fyd-section]");
+      if (sectionEls.length > 0) {
+        contentLeft = Infinity;
+        contentRight = -Infinity;
+        sectionEls.forEach(noteBounds);
       }
       const vw = window.innerWidth;
       const docH = document.documentElement.scrollHeight;
-      const sig = `${vw}|${docH}|${keys.map((k) => anchors[k]).join(",")}`;
+      const cL = Math.round(contentLeft);
+      const cR = Math.round(contentRight);
+      const sig = `${vw}|${docH}|${cL}|${cR}|${keys.map((k) => anchors[k]).join(",")}`;
       if (sig !== lastSig) {
         lastSig = sig;
-        setLayout({ vw, docH, anchors });
+        setLayout({ vw, docH, anchors, contentLeft: cL, contentRight: cR });
       }
     };
     const schedule = () => {
@@ -352,18 +421,29 @@ export function MarginObjectLayer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const anchorKeys = React.useMemo(() => objects.map((o) => o.anchorKey), [idsKey]);
   const { layout, layerRef } = useDocumentLayout(anchorKeys);
-  const [sheetOpen, setSheetOpen] = React.useState(false);
-  const [mobileSelectedId, setMobileSelectedId] = React.useState<string | null>(null);
 
-  const projection: Projection | null = layout ? projectionForWidth(layout.vw) : null;
+  // Fit-gated rails (see railsForWidth): the actual placement rails,
+  // derived from the measured content-column margins. The label is the
+  // responsive band for the data-projection test hook.
+  const rails: Rail[] = React.useMemo(() => {
+    if (!layout) return [];
+    const measurable =
+      Number.isFinite(layout.contentLeft) &&
+      Number.isFinite(layout.contentRight) &&
+      layout.contentRight > layout.contentLeft;
+    const leftFree = measurable ? layout.contentLeft : Infinity;
+    const rightFree = measurable ? layout.vw - layout.contentRight : Infinity;
+    return railsForWidth(layout.vw, leftFree, rightFree, measurable);
+  }, [layout]);
+  const projection: string | null = layout ? projectionLabel(layout.vw, rails) : null;
   const projectionRef = React.useRef(projection);
   projectionRef.current = projection;
 
   // Relationship navigation: collapse the current card, scroll the
   // target slot into view when it is offscreen, then open it through
-  // the open-request bus (single slot, cluster member, or sheet card).
-  // Mobile projection: the sheet owns the card, so select it directly
-  // with no claim juggling and no scrolling.
+  // the open-request bus (single slot or cluster member). Mobile: no
+  // slots exist (in-flow cards own the doorway), so the open request
+  // goes straight through with no claim juggling and no scrolling.
   React.useEffect(
     () =>
       subscribeNavigateRequest((objectId) => {
@@ -406,7 +486,7 @@ export function MarginObjectLayer({
   );
 
   const placed = React.useMemo<Placed[]>(() => {
-    if (!layout || !projection || projection === "mobile") return [];
+    if (!layout || rails.length === 0) return [];
     const inputs: AnchorInput[] = spreadSharedAnchors(
       objects.map((o) => ({
         objectId: o.objectId,
@@ -419,21 +499,28 @@ export function MarginObjectLayer({
       anchorMidY: sd.spreadY,
       priority: sd.priority,
     }));
-    const restD = projection === "edge" ? EDGE_REST_D : REST_D;
-    const rails: Rail[] = projection === "dual" ? ["right", "left"] : ["right"];
-    return placeObjects(
-      inputs,
-      { viewportWidth: layout.vw, documentHeight: layout.docH },
-      {
-        restDiameter: restD,
-        minSpacing: restD + 16,
-        edgePadding: 12,
-        clusterWindow: 72,
-        rails,
-      },
-    );
+    const restD = layout.vw >= DESKTOP_MIN ? REST_D : EDGE_REST_D;
+    const vp = { viewportWidth: layout.vw, documentHeight: layout.docH };
+    const baseOpts = {
+      restDiameter: restD,
+      minSpacing: restD + 16,
+      edgePadding: 12,
+      clusterWindow: 72,
+    };
+    if (rails.length === 2) {
+      // Dual-margin directive: round-robin across rails so the left and
+      // right margins both flank the content, instead of filling the
+      // preferred rail and leaving the other empty. Per-rail placement
+      // keeps collision resolution, clustering, and the never-overlap
+      // invariant.
+      const parts = distributeBalanced(inputs, rails, layout.docH);
+      return rails.flatMap((rail) =>
+        placeObjects(parts.get(rail) ?? [], vp, { ...baseOpts, rails: [rail] }),
+      );
+    }
+    return placeObjects(inputs, vp, { ...baseOpts, rails });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout, projection, idsKey]);
+  }, [layout, rails, idsKey]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const byId = React.useMemo(() => new Map(objects.map((o) => [o.objectId, o])), [idsKey]);
@@ -482,13 +569,18 @@ export function MarginObjectLayer({
     [objects, contextObjectId],
   );
 
-  if (!layout || !projection) {
-    // SSR / pre-measure shell: absolute empty layer. Zero document
-    // impact: absolute elements are out of flow, so center geometry
-    // cannot change.
+  if (!layout || !projection || rails.length === 0) {
+    // SSR / pre-measure shell, the mobile band, and any band whose
+    // margins are too narrow to fit a glyph: absolute empty layer. Zero
+    // document impact: absolute elements are out of flow, so center
+    // geometry cannot change. On mobile the objects render in-flow as
+    // cards/sections via the renderer composition; the layer adds no
+    // overlay chrome (Nolan 2026-09-25 edge-placement directive:
+    // in-flow cards, never hidden, never overlaid).
     return (
       <div
         data-testid="object-layer"
+        data-projection={projection ?? undefined}
         aria-hidden="true"
         style={{
           position: "absolute",
@@ -504,114 +596,8 @@ export function MarginObjectLayer({
     );
   }
 
-  if (projection === "mobile") {
-    // PRODUCTION PATH (Nolan 2026-09-25, supersedes the 2026-09-23
-    // "no object chrome on mobile" direction): the very-right overlay.
-    // Doorways render as document-anchored pills at the extreme right
-    // edge, one per anchored object, spread around their section anchor.
-    // Page-anchored: scrolling moves them out of view; never
-    // viewport-glued. 44px targets, no horizontal overflow (maxWidth
-    // 100%, border-box), safe-area aware. Tap opens the mobile object
-    // sheet. No debug flag anywhere in this path.
-    const pills: { objectId: string; name: string; y: number }[] = [];
-    for (const sd of spreadSharedAnchors(
-      objects.map((o) => ({
-        objectId: o.objectId,
-        anchorKey: o.anchorKey,
-        anchorMidY: layout.anchors[o.anchorKey] ?? null,
-        priority: o.priority,
-      })),
-    )) {
-      if (typeof sd.spreadY !== "number") continue;
-      pills.push({
-        objectId: sd.objectId,
-        name: byId.get(sd.objectId)?.name ?? sd.objectId,
-        y: Math.min(Math.max(sd.spreadY, 30), Math.max(30, layout.docH - 30)),
-      });
-    }
-    pills.sort(
-      (a, b) =>
-        a.y - b.y || (a.objectId < b.objectId ? -1 : a.objectId > b.objectId ? 1 : 0),
-    );
-    return (
-      <>
-        {pills.length > 0 &&
-          createPortal(
-            <div
-              data-testid="object-layer"
-              data-projection="mobile"
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: layout.docH,
-                overflowX: "clip",
-                overflowY: "visible",
-                pointerEvents: "none",
-                zIndex: 50,
-              }}
-            >
-              {pills.map((pill) => (
-                <button
-                  key={pill.objectId}
-                  type="button"
-                  data-testid="mobile-object-pill"
-                  data-object-id={pill.objectId}
-                  onClick={() => {
-                    setMobileSelectedId(pill.objectId);
-                    setSheetOpen(true);
-                  }}
-                  aria-label={"Open object: " + pill.name}
-                  style={{
-                    position: "absolute",
-                    top: pill.y - 22,
-                    right: "max(6px, env(safe-area-inset-right, 0px))",
-                    width: 44,
-                    height: 44,
-                    minWidth: 44,
-                    minHeight: 44,
-                    maxWidth: "100%",
-                    boxSizing: "border-box",
-                    borderRadius: "50%",
-                    pointerEvents: "auto",
-                    background: "#2A1B4E",
-                    border: "2px solid #C9A227",
-                    color: "#fff",
-                    fontSize: 18,
-                    fontWeight: 700,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
-                >
-                  <span aria-hidden="true">
-                    {pill.name.trim().charAt(0).toUpperCase() || "?"}
-                  </span>
-                </button>
-              ))}
-            </div>,
-            document.body,
-          )}
-        {sheetOpen && (
-          <MobileSheet
-            objects={objects}
-            initialSelectedId={mobileSelectedId}
-            onClose={() => {
-              setSheetOpen(false);
-              setMobileSelectedId(null);
-            }}
-          />
-        )}
-      </>
-    );
-  }
-
-  const restD = projection === "edge" ? EDGE_REST_D : REST_D;
-  const offset = RAIL_OFFSET[projection];
+  const restD = layout.vw >= DESKTOP_MIN ? REST_D : EDGE_REST_D;
+  const offset = railOffsetForWidth(layout.vw);
   const slotX = (rail: Rail) => (rail === "right" ? layout.vw - offset - restD : offset);
 
   // ONE page-level document-anchored plane. Absolutely no
