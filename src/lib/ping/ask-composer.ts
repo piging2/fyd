@@ -345,6 +345,23 @@ const HOURS_WORDS = new Set([
 ]);
 
 /**
+ * Words that name the people/association intent itself (the people branch's
+ * own triggers) plus identity words the person listing answers (the recorded
+ * name). Excluded from the people branch's grounded-topic check so a general
+ * people question ("who works here?", "what is the owner's name?") is not
+ * treated as naming an ungrounded specific topic.
+ */
+const PEOPLE_TRIGGER_WORDS: ReadonlySet<string> = new Set([
+  "person", "people", "owner", "owners", "owns", "owned",
+  "founder", "founders", "staff", "team", "employee", "employees",
+  "member", "members", "employs",
+  "works", "working", "runs", "manages",
+  "associated", "associate", "associates", "association",
+  "affiliated", "affiliate", "affiliation", "connected", "linked",
+  "name", "names",
+]);
+
+/**
  * Content words of the question minus generic scaffolding. Empty means
  * the question is general ("what services are offered?"); non-empty
  * means it names a specific topic ("financing") that must match the
@@ -371,6 +388,28 @@ function serviceVocabulary(target: PingObject, relatedServices: PingObject[]): S
   for (const o of relatedServices) {
     add(o.title);
     add(o.description);
+  }
+  return vocab;
+}
+
+/** Words describing the person records on record (titles, descriptions, field values). */
+function peopleVocabulary(persons: PingObject[]): Set<string> {
+  const vocab = new Set<string>();
+  const add = (text: string | null | undefined): void => {
+    if (!text) return;
+    for (const w of text.toLowerCase().split(/[^a-z0-9]+/)) {
+      if (w.length > 2 && !GENERIC_WORDS.has(w)) vocab.add(w);
+    }
+  };
+  for (const p of persons) {
+    add(p.title);
+    add(p.description);
+    for (const [k, v] of Object.entries(p.fields)) {
+      // claimKind is epistemic metadata, not person content.
+      if (k === "claimKind") continue;
+      if (typeof v === "string") add(v);
+      else if (Array.isArray(v)) for (const s of v) if (typeof s === "string") add(s);
+    }
   }
   return vocab;
 }
@@ -646,6 +685,14 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
       });
     };
 
+    // Business-name words: defined before the people branch because the
+    // people branch's grounded-topic guard excludes them (a business name
+    // in the question is identity, never a people topic).
+    const titleWords = title
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 2);
+
     // People questions are answerable only from Person objects. A
     // description dump names nobody, so when the site data has no person
     // records the honest answer says so explicitly instead of guessing.
@@ -691,11 +738,33 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
         "employs",
       ) ||
       (hasWord(q, "who") && hasWord(q, "works", "working", "runs", "manages"));
-    if (asksPeople || asksAssociation) {
+    const persons = [target, ...ctx.relatedObjects].filter((o) =>
+      o.schema.toLowerCase().includes("person"),
+    );
+    // The person listing answers identity/association questions ("who works
+    // here?", "what is the owner's name?"). When the question names a
+    // SPECIFIC topic beyond the people triggers ("what is the owner's
+    // favorite food?") that no person record grounds, the listing would cite
+    // a person record for a question it does not answer, mislabeling the
+    // whole answer "supported": the branch skips instead, the unmatched
+    // topics join unknowns, and the question falls through to the honest
+    // fallback. Mirrors the services branch grounded-topic guard. Identity
+    // words (the business name) never count as a people topic.
+    const peopleNameWords = new Set(titleWords);
+    const peopleMatchable = topicWords(q).filter(
+      (w) => !peopleNameWords.has(w) && !PEOPLE_TRIGGER_WORDS.has(w),
+    );
+    const peopleGrounded =
+      peopleMatchable.length === 0 ||
+      peopleMatchable.some((w) => peopleVocabulary(persons).has(w));
+    // The unmatched topics join unknowns only for people-intent questions:
+    // other branches own their own topics ("phone number" is the contact
+    // branch's, never the people branch's unknown).
+    if ((asksPeople || asksAssociation) && !peopleGrounded) {
+      for (const w of peopleMatchable) noteUnknown(w);
+    }
+    if ((asksPeople || asksAssociation) && peopleGrounded) {
       const seenIds = new Set<string>();
-      const persons = [target, ...ctx.relatedObjects].filter((o) =>
-        o.schema.toLowerCase().includes("person"),
-      );
       for (const p of persons) {
         seenIds.add(p.id);
         const i = ctx.evidenceRefs.findIndex((e) => e.id === p.id);
@@ -772,10 +841,6 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
     // context cannot ground ("what is the owner blood type?"): the
     // description does not answer those, and dumping it here is filler
     // that also suppresses the refusal signal downstream.
-    const titleWords = title
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((w) => w.length > 2);
     const namesBusiness =
       hasWord(q, "business", "company", "shop", "store", "firm", "contractor") ||
       titleWords.some((w) => hasWord(q, w));
@@ -1292,8 +1357,9 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
     // Fallback: no branch had grounded content answering the question.
     // Say so explicitly with no citations, so the visitor layer surfaces
     // a refusal. The description is deliberately not dumped here: citing
-    // it would look like an answer while answering nothing.
-    return noEvidenceAnswer(ctx, question);
+    // it would look like an answer while answering nothing. Topics a branch
+    // named but could not ground ride along as unknowns (honest scoping).
+    return noEvidenceAnswer(ctx, question, [...branchUnknowns]);
   }
 
   // -- No target -------------------------------------------------------------

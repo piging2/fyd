@@ -268,3 +268,50 @@ describe("FYD-Q2: zero-disclosure HIDE", () => {
     expect(contact.answer).toContain("https://coppersmithplumbing.com");
   });
 });
+
+describe("Q-F-06: tangential people questions are never labeled supported", () => {
+  // Regression for FL-20260924-201 (live :3101): "What is the owner's
+  // favorite food?" was answered "Person on record: coppersmithplm. [11]"
+  // with answerClass "supported". The people branch treated any question
+  // containing "owner" as a people question and cited a person record for
+  // a question it does not answer.
+  test("favorite food: refusal with the unmatched topics as unknowns", () => {
+    const out = ask("What is the owner's favorite food?");
+    expect(out.refusal).toBe(true);
+    expect(out.citations).toHaveLength(0);
+    expect(out.unknowns).toContain("favorite");
+    expect(out.unknowns).toContain("food");
+    expect(out.answer).not.toContain("Person on record");
+    // Route-level reduction (answerClassFor) maps refusal / zero citations
+    // to "unknown": no citation can carry claimClass "supported".
+    expect(out.citations.every((c) => c.claimClass !== "supported")).toBe(true);
+  });
+
+  test.each([
+    "What is the owner's blood type?",
+    "What is the owner's favorite color?",
+    "When is the owner's birthday?",
+    "What does the owner like to eat?",
+    "Is the owner married?",
+    "Is the owner linked to any charities?",
+  ])("tangential %p is never supported", (question) => {
+    const out = ask(question);
+    expect(out.refusal).toBe(true);
+    expect(out.citations).toHaveLength(0);
+    expect(out.citations.every((c) => c.claimClass !== "supported")).toBe(true);
+  });
+
+  test("legitimate people questions still answer from the person record", () => {
+    for (const question of [
+      "Who owns this business?",
+      "Who works here?",
+      "Who owns Coppersmith Plumbing?",
+      "What is the owner's name?",
+    ]) {
+      const out = ask(question);
+      expect(out.refusal).toBe(false);
+      expect(out.answer).toContain("coppersmithplm");
+      expect(out.citations.length).toBeGreaterThan(0);
+    }
+  });
+});
