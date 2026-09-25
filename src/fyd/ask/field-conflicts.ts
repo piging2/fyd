@@ -49,6 +49,16 @@ export interface AskFieldConflict {
   observations: AskFieldConflictObservation[];
 }
 
+/**
+ * Locked public copy for a field withheld by an unresolved conflict
+ * (FYD-Q1). Non-ask surfaces (e.g. /sites) reuse this exact string so a
+ * visitor sees identical copy everywhere a disputed field is withheld.
+ * Plumbing only: rendering the copy on a surface belongs to that
+ * surface's lane.
+ */
+export const CONFLICT_BEING_VERIFIED_COPY =
+  "Contact information is being verified.";
+
 /** True when the conflict suppresses the field in public answers. */
 export function isUnresolvedConflict(c: AskFieldConflict): boolean {
   return c.status === "unresolved";
