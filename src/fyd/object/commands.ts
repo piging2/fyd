@@ -56,18 +56,19 @@ export function interpretTextCommand(text: string, objectId: string): TextPropos
       summary: `Move ${names.get(id)} one step ${dir} in the services list.`,
     };
   }
-  // Address presentation decision (SHOW/HIDE): placed BEFORE the service
-  // hide/show so "hide the address" is not consumed as an unknown
-  // service name. the pipeline never owns it;
-  // the owner asserts it persistently. A local presentation change, so it
-  // rides the fast proposal/undo tier.
+  // Address presentation decision (SHOW/HIDE/DEFAULT): placed BEFORE
+  // the service hide/show so "hide the address" is not consumed as an
+  // unknown service name. The pipeline never owns it; the owner asserts it
+  // persistently. MEDIUM consequence: it always goes through propose and
+  // digest-bound approval (no automatic undo); an explicit DEFAULT
+  // unwinds an explicit SHOW/HIDE through another confirmed command.
   if (
     lower.match(
       /^(?:hide|remove)\s+(?:the\s+)?(?:business\s+)?address$|^make\s+(?:the\s+)?(?:business\s+)?address\s+private$|^make\s+private\s+(?:the\s+)?(?:business\s+)?address$/,
     )
   ) {
     return {
-      command: { type: "set-address-visibility", visibility: "hidden" },
+      command: { type: "set-address-visibility", visibility: "hide" },
       summary:
         "Hide the business address from the public page. The address itself is unchanged.",
     };
@@ -78,9 +79,23 @@ export function interpretTextCommand(text: string, objectId: string): TextPropos
     )
   ) {
     return {
-      command: { type: "set-address-visibility", visibility: "public" },
+      command: { type: "set-address-visibility", visibility: "show" },
       summary:
         "Show the business address on the public page. The address itself is unchanged.",
+    };
+  }
+  // DEFAULT: the owner withdraws the explicit preference (append-only; the
+  // hide/show history stays in the log) and the conservative default
+  // applies again.
+  if (
+    lower.match(
+      /^(?:reset|default)\s+(?:the\s+)?(?:business\s+)?address(?:\s+visibility)?$|^use\s+(?:the\s+)?default\s+(?:for\s+)?(?:the\s+)?(?:business\s+)?address$/,
+    )
+  ) {
+    return {
+      command: { type: "set-address-visibility", visibility: "default" },
+      summary:
+        "Return the address to the default presentation (conservative default). The address itself is unchanged.",
     };
   }
   if ((m = lower.match(/^(hide|show)\s+(.+)$/))) {
@@ -189,17 +204,21 @@ export function interpretTextCommand(text: string, objectId: string): TextPropos
 
 /**
  * Consequence tier of an owner command (locked product law, Nolan's 155
- * grill answers): FOUR tiers, not three.
+ * grill answers, realigned 2026-09-25 per the FYD product authority
+ * directive): FOUR tiers, not three.
  *
- * - "LOW": reversible presentation change (service reorder, hide/show the
- *   optional address section, non-factual layout). Applied reversibly with
- *   undo: the approve response carries a ready-to-approve `undo` for
- *   one-step reversal. No public fact is altered. Owner-facing language:
- *   "Change the website" (presentation intent, affects the projection
- *   only).
+ * - "LOW": reversible presentation change (service reorder, non-factual
+ *   layout). Applied reversibly with undo: the approve response carries a
+ *   ready-to-approve `undo` for one-step reversal. No public fact is
+ *   altered. Owner-facing language: "Change the website" (presentation
+ *   intent, affects the projection only).
  * - "MEDIUM": factual correction and service visibility (contact
- *   correction/confirm/revert, add service, service visibility). Proposal
- *   + simple confirmation: the full propose -> digest-bound approve loop,
+ *   correction/confirm/revert, add service, service visibility, ADDRESS
+ *   VISIBILITY hide/show/default). Address visibility moved LOW -> MEDIUM
+ *   (2026-09-25): hiding or showing the address alters public factual
+ *   presentation, so it demands explicit confirmation and gets no
+ *   automatic LOW undo. Proposal + simple confirmation: the full propose
+ *   -> digest-bound approve loop,
  *   and the approval records an owner assertion (actor + timestamp). The
  *   source record is never rewritten. Owner-facing language: "Update the
  *   business" (knowledge transition: the site, Ask, search, and all
@@ -226,11 +245,21 @@ export function interpretTextCommand(text: string, objectId: string): TextPropos
  */
 export type CommandConsequenceTier = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
+/**
+ * Product-directive view (Nolan 2026-09-25): the four-tier scale maps onto
+ * three product tiers. HIGH and CRITICAL both fold into HIGH (explicit
+ * capability plus approval); see foldLegacyTier in ./consequence-tiers.
+ */
+
 export function commandConsequenceTier(cmd: OwnerCommand): CommandConsequenceTier {
   switch (cmd.type) {
     case "move-service":
-    case "set-address-visibility":
       return "LOW";
+    // Address visibility is MEDIUM, not LOW (FYD product authority
+    // directive, Nolan 2026-09-25): hide/show/default alters public factual
+    // presentation, so it needs explicit confirmation and no automatic
+    // LOW undo. The approve stage keys the ready `undo` off this tier.
+    case "set-address-visibility":
     case "set-service-visibility":
     case "set-contact-field":
     case "revert-contact-field":
@@ -279,7 +308,9 @@ export function consequenceNoteFor(tier: CommandConsequenceTier): string {
  * so the owner can reverse a website change in one approve call. Returns
  * null for commands with no exact single-command inverse (all
  * MEDIUM-tier commands): factual assertions are superseded by newer
- * assertions, not inverted; service visibility changes re-propose.
+ * assertions, not inverted; service visibility changes re-propose; and
+ * address visibility (MEDIUM since 2026-09-25) unwinds through an
+ * explicit DEFAULT in the propose/approve loop, not an automatic undo.
  */
 export function invertOwnerCommand(cmd: OwnerCommand): OwnerCommand | null {
   switch (cmd.type) {
@@ -289,10 +320,10 @@ export function invertOwnerCommand(cmd: OwnerCommand): OwnerCommand | null {
       return { type: "move-service", id: cmd.id, to };
     }
     case "set-address-visibility":
-      return {
-        type: "set-address-visibility",
-        visibility: cmd.visibility === "hidden" ? "public" : "hidden",
-      };
+      // MEDIUM since 2026-09-25: no automatic undo. An explicit preference
+      // unwinds through an explicit DEFAULT command in the propose/approve
+      // loop, never through the LOW fast-undo path.
+      return null;
     default:
       return null;
   }
@@ -326,9 +357,11 @@ export function describeCommand(
         ? "Show " + name(cmd.id) + " on the public page."
         : "Hide " + name(cmd.id) + " from the public page.";
     case "set-address-visibility":
-      return cmd.visibility === "hidden"
+      return cmd.visibility === "hide"
         ? "Undo this website change: hide the business address again."
-        : "Undo this website change: show the business address again.";
+        : cmd.visibility === "show"
+          ? "Undo this website change: show the business address again."
+          : "Undo this website change: return the address visibility to default.";
     case "set-contact-field":
       return "Update the business: record an owner correction for " + cmd.field + ".";
     case "revert-contact-field":

@@ -321,82 +321,86 @@ export function applyOwnerCommand(
       break;
     }
     case "set-address-visibility": {
-      if (cmd.visibility !== "public" && cmd.visibility !== "hidden") {
-        throw new OwnerCommandError("Visibility must be public or hidden.");
+      // SHOW / HIDE / DEFAULT (FYD product authority directive, Nolan
+      // 2026-09-25). The preference is append-only: every transition is a
+      // new event; no history is rewritten and the source observation is
+      // never touched.
+      if (
+        cmd.visibility !== "show" &&
+        cmd.visibility !== "hide" &&
+        cmd.visibility !== "default"
+      ) {
+        throw new OwnerCommandError("Visibility must be show, hide, or default.");
       }
-      const hidden = current.addressVisibility === "hidden";
-      if (cmd.visibility === "hidden") {
-        if (hidden) {
-          draft = {
-            at,
-            objectId,
-            type: "owner.confirmed-fact",
-            actor,
-            target: ADDRESS_TARGET,
-            previousBasis: { visibility: "hidden" },
-            newValue: { visibility: "hidden" },
-            evidence: {
-              kind: "owner-attestation",
-              ref: "command:set-address-visibility",
-              detail: "address was already hidden; confirmed",
-            },
-            note: "The address is already hidden; confirmed.",
-            generator: "fyd-owner@1",
-          };
-        } else {
-          draft = {
-            at,
-            objectId,
-            type: "owner.hid-fact",
-            actor,
-            target: ADDRESS_TARGET,
-            previousBasis: { visibility: "public" },
-            newValue: { hidden: true },
-            evidence: {
-              kind: "owner-attestation",
-              ref: "command:set-address-visibility",
-              detail: "owner hid the street address",
-            },
-            note: "Hid the street address.",
-            generator: "fyd-owner@1",
-          };
-        }
+      const currentPref = current.addressVisibility;
+      if (cmd.visibility === currentPref) {
+        draft = {
+          at,
+          objectId,
+          type: "owner.confirmed-fact",
+          actor,
+          target: ADDRESS_TARGET,
+          previousBasis: { visibility: currentPref },
+          newValue: { visibility: currentPref },
+          evidence: {
+            kind: "owner-attestation",
+            ref: "command:set-address-visibility",
+            detail: "address visibility was already " + currentPref + "; confirmed",
+          },
+          note: "The address visibility is already " + currentPref + "; confirmed.",
+          generator: "fyd-owner@1",
+        };
+      } else if (cmd.visibility === "hide") {
+        draft = {
+          at,
+          objectId,
+          type: "owner.hid-fact",
+          actor,
+          target: ADDRESS_TARGET,
+          previousBasis: { visibility: currentPref },
+          newValue: { visibility: "hide" },
+          evidence: {
+            kind: "owner-attestation",
+            ref: "command:set-address-visibility",
+            detail: "owner hid the street address",
+          },
+          note: "Hid the street address.",
+          generator: "fyd-owner@1",
+        };
+      } else if (cmd.visibility === "show") {
+        draft = {
+          at,
+          objectId,
+          type: "owner.restored-fact",
+          actor,
+          target: ADDRESS_TARGET,
+          previousBasis: { visibility: currentPref },
+          newValue: { visibility: "show" },
+          evidence: {
+            kind: "owner-attestation",
+            ref: "command:set-address-visibility",
+            detail: "owner chose to show the full address verbatim",
+          },
+          note: "Show the full address.",
+          generator: "fyd-owner@1",
+        };
       } else {
-        if (!hidden) {
-          draft = {
-            at,
-            objectId,
-            type: "owner.confirmed-fact",
-            actor,
-            target: ADDRESS_TARGET,
-            previousBasis: { visibility: "public" },
-            newValue: { visibility: "public" },
-            evidence: {
-              kind: "owner-attestation",
-              ref: "command:set-address-visibility",
-              detail: "address was already public; confirmed",
-            },
-            note: "The address is already public; confirmed.",
-            generator: "fyd-owner@1",
-          };
-        } else {
-          draft = {
-            at,
-            objectId,
-            type: "owner.restored-fact",
-            actor,
-            target: ADDRESS_TARGET,
-            previousBasis: { hidden: true },
-            newValue: { hidden: false },
-            evidence: {
-              kind: "owner-attestation",
-              ref: "command:set-address-visibility",
-              detail: "owner made the address public again",
-            },
-            note: "Made the address public.",
-            generator: "fyd-owner@1",
-          };
-        }
+        draft = {
+          at,
+          objectId,
+          type: "owner.defaulted-fact",
+          actor,
+          target: ADDRESS_TARGET,
+          previousBasis: { visibility: currentPref },
+          newValue: { visibility: "default" },
+          evidence: {
+            kind: "owner-attestation",
+            ref: "command:set-address-visibility",
+            detail: "owner returned the address to the conservative default",
+          },
+          note: "Returned the address visibility to default.",
+          generator: "fyd-owner@1",
+        };
       }
       break;
     }
@@ -607,13 +611,22 @@ export function parseOwnerCommand(body: unknown): OwnerCommand {
       if (typeof r.name !== "string")
         throw new OwnerCommandError("add-service needs { name }.");
       return { type: "add-service", name: r.name };
-    case "set-address-visibility":
-      if (r.visibility !== "public" && r.visibility !== "hidden") {
-        throw new OwnerCommandError(
-          "set-address-visibility needs { visibility: public|hidden }.",
-        );
+    case "set-address-visibility": {
+      // Canonical: SHOW / HIDE / DEFAULT. Deprecated aliases from the
+      // manage UI (wired before the tri-state landed): "public" behaved as
+      // the conservative default and "hidden" as an explicit hide, so they
+      // map to "default" and "hide" with behavior identical to before. The
+      // manage lane should move to show/hide/default.
+      const v = r.visibility;
+      if (v === "show" || v === "hide" || v === "default") {
+        return { type: "set-address-visibility", visibility: v };
       }
-      return { type: "set-address-visibility", visibility: r.visibility };
+      if (v === "public") return { type: "set-address-visibility", visibility: "default" };
+      if (v === "hidden") return { type: "set-address-visibility", visibility: "hide" };
+      throw new OwnerCommandError(
+        "set-address-visibility needs { visibility: show|hide|default }.",
+      );
+    }
     case "set-contact-field":
       if (!isCorrectableField(r.field) || typeof r.value !== "string") {
         throw new OwnerCommandError(

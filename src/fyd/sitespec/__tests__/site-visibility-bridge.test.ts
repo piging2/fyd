@@ -88,7 +88,7 @@ describe("site-keyed owner visibility bridge", () => {
     // What the overrides route does: owner state keyed by SITE ID.
     applyOwnerCommand(
       SITE_ID,
-      { type: "set-address-visibility", visibility: "hidden" },
+      { type: "set-address-visibility", visibility: "hide" },
       [],
       new Map(),
       { actorLabel: "bridge-test" },
@@ -138,7 +138,7 @@ describe("site-keyed owner visibility bridge", () => {
     // Decision written directly under the graph object id (not the site id).
     applyOwnerCommand(
       BIZ_ID,
-      { type: "set-address-visibility", visibility: "hidden" },
+      { type: "set-address-visibility", visibility: "hide" },
       [],
       new Map(),
       { actorLabel: "bridge-test" },

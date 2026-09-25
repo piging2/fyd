@@ -54,6 +54,7 @@ export type OwnerEventType =
   | "owner.corrected-fact"
   | "owner.hid-fact"
   | "owner.restored-fact"
+  | "owner.defaulted-fact"
   | "owner.added-fact";
 
 /**
@@ -250,7 +251,7 @@ export function reduceOwnerEvents(
       }
       case "owner.hid-fact": {
         if (e.target === ADDRESS_TARGET) {
-          o.addressVisibility = "hidden";
+          o.addressVisibility = "hide";
           // Persistent HIDE assertion carrying the full OwnerAssertion
           // contract: the pipeline never owns the presentation decision.
           const priorHide = o.addressVisibilityAssertion;
@@ -258,8 +259,8 @@ export function reduceOwnerEvents(
             subject: e.objectId,
             path: ADDRESS_TARGET,
             operation: "hide",
-            value: "hidden",
-            visibility: "hidden",
+            value: "hide",
+            visibility: "hide",
             actor: { kind: e.actor.kind, label: e.actor.label },
             at: e.at,
             supersedes: priorHide?.eventId ?? null,
@@ -280,9 +281,39 @@ export function reduceOwnerEvents(
         }
         break;
       }
+      case "owner.defaulted-fact": {
+        // DEFAULT is a recorded preference, not an absence: the owner
+        // explicitly returned the address to the conservative default
+        // (append-only; no history is deleted).
+        if (e.target === ADDRESS_TARGET) {
+          o.addressVisibility = "default";
+          const priorDefault = o.addressVisibilityAssertion;
+          o.addressVisibilityAssertion = {
+            subject: e.objectId,
+            path: ADDRESS_TARGET,
+            operation: "default",
+            value: "default",
+            visibility: "default",
+            actor: { kind: e.actor.kind, label: e.actor.label },
+            at: e.at,
+            supersedes: priorDefault?.eventId ?? null,
+            evidence: {
+              kind: e.evidence.kind,
+              ref: e.evidence.ref,
+              detail: e.evidence.detail,
+            },
+            eventId: e.id,
+          };
+        } else {
+          throw new OwnerEventError(
+            "owner.defaulted-fact does not apply to target '" + e.target + "'.",
+          );
+        }
+        break;
+      }
       case "owner.restored-fact": {
         if (e.target === ADDRESS_TARGET) {
-          o.addressVisibility = "public";
+          o.addressVisibility = "show";
           // Persistent SHOW assertion carrying the full OwnerAssertion
           // contract: the pipeline never owns the presentation decision.
           const priorShow = o.addressVisibilityAssertion;
@@ -290,8 +321,8 @@ export function reduceOwnerEvents(
             subject: e.objectId,
             path: ADDRESS_TARGET,
             operation: "show",
-            value: "public",
-            visibility: "public",
+            value: "show",
+            visibility: "show",
             actor: { kind: e.actor.kind, label: e.actor.label },
             at: e.at,
             supersedes: priorShow?.eventId ?? null,
@@ -518,7 +549,20 @@ export function migrateV1ToEvents(v1: OwnerOverrides): OwnerEventDraft[] {
       generator: FYD_OWNER_GENERATOR,
     });
   }
-  if (v1.addressVisibility === "hidden") {
+  // v1 files may carry the legacy binary ("public" | "hidden") or the
+  // tri-state values ("default" | "show" | "hide"): normalize through the
+  // same compatibility mapping as command validation ("hidden" -> "hide",
+  // "public" -> "default"). "default" needs no event (the conservative
+  // default applies).
+  const v1Visibility: unknown = (v1 as { addressVisibility?: unknown })
+    .addressVisibility;
+  const normalizedVisibility =
+    v1Visibility === "hidden"
+      ? "hide"
+      : v1Visibility === "public"
+        ? "default"
+        : v1Visibility;
+  if (normalizedVisibility === "hide") {
     drafts.push({
       at,
       objectId: v1.objectId,
@@ -529,6 +573,19 @@ export function migrateV1ToEvents(v1: OwnerOverrides): OwnerEventDraft[] {
       newValue: { hidden: true },
       evidence: stateEvidence("hidden address carried from the v1 store"),
       note: "Migrated hidden street address.",
+      generator: FYD_OWNER_GENERATOR,
+    });
+  } else if (normalizedVisibility === "show") {
+    drafts.push({
+      at,
+      objectId: v1.objectId,
+      type: "owner.restored-fact",
+      actor: MIGRATION_ACTOR,
+      target: ADDRESS_TARGET,
+      previousBasis: null,
+      newValue: { visibility: "show" },
+      evidence: stateEvidence("shown address carried from the v1 store"),
+      note: "Migrated shown street address.",
       generator: FYD_OWNER_GENERATOR,
     });
   }

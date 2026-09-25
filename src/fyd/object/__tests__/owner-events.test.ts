@@ -133,7 +133,7 @@ describe("replay determinism", () => {
     );
     applyOwnerCommand(
       "happy-place",
-      { type: "set-address-visibility", visibility: "hidden" },
+      { type: "set-address-visibility", visibility: "hide" },
       KNOWN_IDS,
       KNOWN_NAMES,
     );
@@ -253,7 +253,7 @@ describe("v1 migration", () => {
       serviceOrder: ["svc-fences", "svc-decks"],
       hiddenServices: ["svc-pergolas"],
       addedServices: [{ id: "svc-patios", name: "Patios" }],
-      addressVisibility: "hidden",
+      addressVisibility: "hide",
       fieldCorrections: {
         phone: {
           field: "phone",
@@ -274,7 +274,7 @@ describe("v1 migration", () => {
     expect(o.serviceOrder).toEqual(["svc-fences", "svc-decks"]);
     expect(o.hiddenServices).toEqual(["svc-pergolas"]);
     expect(o.addedServices).toEqual([{ id: "svc-patios", name: "Patios" }]);
-    expect(o.addressVisibility).toBe("hidden");
+    expect(o.addressVisibility).toBe("hide");
     expect(o.fieldCorrections.phone.ownerValue).toBe("+15551234567");
     expect(o.fieldCorrections.phone.sourceValue).toBe("+15550000000");
     // The human log survived migration.

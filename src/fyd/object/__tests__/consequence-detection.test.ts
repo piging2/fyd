@@ -144,13 +144,22 @@ describe("consequence tiers and owner language", () => {
     expect(consequenceNoteFor("CRITICAL")).toMatch(/Update the business/);
   });
 
-  test("command tiers: move-service and set-address-visibility are LOW", () => {
+  test("command tiers: move-service is LOW", () => {
     expect(
       commandConsequenceTier({ type: "move-service", id: "a", to: "first" } as OwnerCommand),
     ).toBe("LOW");
+  });
+
+  test("command tiers: set-address-visibility is MEDIUM (FYD product authority directive, Nolan 2026-09-25)", () => {
     expect(
-      commandConsequenceTier({ type: "set-address-visibility", visibility: "hidden" } as OwnerCommand),
-    ).toBe("LOW");
+      commandConsequenceTier({ type: "set-address-visibility", visibility: "hide" } as OwnerCommand),
+    ).toBe("MEDIUM");
+    expect(
+      commandConsequenceTier({ type: "set-address-visibility", visibility: "show" } as OwnerCommand),
+    ).toBe("MEDIUM");
+    expect(
+      commandConsequenceTier({ type: "set-address-visibility", visibility: "default" } as OwnerCommand),
+    ).toBe("MEDIUM");
   });
 
   test("command tiers: service visibility, contact, and add-service are MEDIUM", () => {
@@ -169,9 +178,11 @@ describe("consequence tiers and owner language", () => {
     expect(
       invertOwnerCommand({ type: "move-service", id: "a", to: "first" } as OwnerCommand),
     ).not.toBeNull();
+    // Address visibility is MEDIUM: no automatic undo (it unwinds via
+    // an explicit DEFAULT command, not the LOW fast-undo path).
     expect(
-      invertOwnerCommand({ type: "set-address-visibility", visibility: "hidden" } as OwnerCommand),
-    ).not.toBeNull();
+      invertOwnerCommand({ type: "set-address-visibility", visibility: "hide" } as OwnerCommand),
+    ).toBeNull();
     expect(
       invertOwnerCommand({ type: "set-service-visibility", id: "a", visible: false } as OwnerCommand),
     ).toBeNull();

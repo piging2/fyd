@@ -352,7 +352,13 @@ export function composeObjectView(
     email,
     website,
     locality,
-    addressVisibility: overrides.addressVisibility,
+    // UI-facing display contract stays two-state (Public/Hidden): an
+    // explicit SHOW surfaces as "public"; the show-vs-default
+    // distinction lives in the owner store + projection seam, not in
+    // this chip.
+    addressVisibility:
+      overrides.addressVisibility === "hide" ? "hidden" : "public",
+    addressVisibilityPreference: overrides.addressVisibility,
   };
 
   const domain = domainOf(website);

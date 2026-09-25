@@ -20,6 +20,8 @@
  * demo. Nothing here may back a production authorization decision.
  */
 
+import type { OwnerIdentity } from "./owner-identity";
+
 /** A demo actor: a label, not an identity. */
 export interface DemoActor {
   id: string;
@@ -191,4 +193,144 @@ export function evaluateAllCapabilities(
   relationship: OwnerRelationship,
 ): CapabilityVerdict[] {
   return ALL_CAPABILITIES.map((c) => evaluateCapability(actor, relationship, c));
+}
+
+/**
+ * TRACK B (2026-09-25, FYD product authority directive): the narrow typed
+ * authorization seam.
+ *
+ * The UI never decides authorization. It asks one question:
+ *
+ *   CAN THIS ACTOR PERFORM THIS ACTION ON THIS OBJECT?
+ *
+ * and an authority answers. The question shape is fixed and narrow:
+ *
+ *   ACTOR               who is asking (a label in demo; a verified identity
+ *                       reference under real auth)
+ *   IDENTITY            what identity was established, and whether anyone
+ *                       actually verified it (OwnerIdentity.verified)
+ *   OWNERSHIP/CONTROL   the control relationship the authority asserts
+ *                       between actor and resource
+ *   CAPABILITY          the capability class of the requested action
+ *   RESOURCE            the object/site the action targets
+ *   ACTION              the verb on that resource
+ *
+ * Demo mode temporarily supplies the actor/control assertion (the
+ * hard-coded demo mapping); the identity it supplies is explicitly
+ * unverified. A production implementation answers the SAME question shape
+ * from verified identity + verified control: the seam survives replacement
+ * because the question does not depend on demo specifics.
+ *
+ * This is NOT a new authority: demoAuthorizationAuthority delegates to
+ * evaluateCapability above, which remains the single demo authority.
+ * Production binds its own AuthorizationAuthority (same signature) where
+ * the demo one is bound today.
+ */
+
+/** The single question the UI asks the authority. */
+export interface AuthorizationQuestion {
+  /** ACTOR: who is asking. A label, not an identity, in demo. */
+  actor: DemoActor;
+  /**
+   * IDENTITY: what identity the bound provider resolved, and whether it
+   * was verified. Demo: the demo provider, verified: false, always.
+   */
+  identity: OwnerIdentity | null;
+  /** OWNERSHIP/CONTROL: the control relationship asserted for this ask. */
+  control: OwnerRelationship;
+  /** CAPABILITY: the capability class of the requested action. */
+  capability: OwnerCapability;
+  /** RESOURCE: the object/site the action targets. */
+  resource: { siteId: string; objectId?: string };
+  /** ACTION: the verb on the resource, e.g. "approve", "hide", "show". */
+  action: string;
+}
+
+/** The authority's answer. Never a bare boolean: the reason and the demo
+ *  marker travel with every verdict. */
+export interface AuthorizationAnswer extends CapabilityVerdict {
+  /**
+   * Always true for answers through this demo seam: marks the answer as
+   * non-production authorization in every audit trail.
+   */
+  demoScaffolding: true;
+  /**
+   * What the identity did and did not establish. Demo: "unverified".
+   */
+  identityNote: string;
+}
+
+/**
+ * An authority that answers AuthorizationQuestions. The demo authority
+ * below implements it over evaluateCapability; a production authority
+ * implements the same signature from verified identity + verified control.
+ */
+export type AuthorizationAuthority = (
+  question: AuthorizationQuestion,
+) => AuthorizationAnswer;
+
+/**
+ * The demo authority. Supplies the demo actor/control assertion and
+ * delegates the allow/deny to evaluateCapability (the single demo
+ * authority). The answer is always stamped demoScaffolding: true and the
+ * identity note always says unverified.
+ */
+export const demoAuthorizationAuthority: AuthorizationAuthority = (
+  question,
+) => {
+  const verdict = evaluateCapability(
+    question.actor,
+    question.control,
+    question.capability,
+  );
+  return {
+    ...verdict,
+    demoScaffolding: true as const,
+    identityNote:
+      question.identity === null
+        ? "demo: no identity resolved (anonymous under the demo provider)."
+        : "demo: identity '" +
+          question.identity.identityId +
+          "' via '" +
+          question.identity.method +
+          "'; verified=" +
+          String(question.identity.verified) +
+          " (the demo provider never verifies).",
+  };
+};
+
+/**
+ * Ask the authority. Defaults to the demo authority; production passes its
+ * own AuthorizationAuthority. The question shape is identical either way,
+ * which is what makes the seam survive the replacement.
+ */
+export function answerAuthorization(
+  question: AuthorizationQuestion,
+  authority: AuthorizationAuthority = demoAuthorizationAuthority,
+): AuthorizationAnswer {
+  return authority(question);
+}
+
+/**
+ * Build the demo AuthorizationQuestion for an actor on a site. The
+ * control assertion comes from the hard-coded demo mapping
+ * (resolveDemoRelationship): it verifies nothing. The identity comes from
+ * the bound identity provider (the demo provider resolves unverified).
+ */
+export function demoAuthorizationQuestion(
+  actor: DemoActor,
+  siteId: string,
+  capability: OwnerCapability,
+  action: string,
+  identity: OwnerIdentity | null,
+  objectId?: string,
+): AuthorizationQuestion {
+  return {
+    actor,
+    identity,
+    control: resolveDemoRelationship(siteId, actor),
+    capability,
+    resource: objectId === undefined ? { siteId } : { siteId, objectId },
+    action,
+  };
 }

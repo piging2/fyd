@@ -42,20 +42,38 @@
  * always the seeded demo actor, labeled as DEMO OWNER CONTEXT.
  * Authentication alone NEVER grants mutation.
  *
- * AUTHORITY GRADIENT (FYD-24H-BUILDER-DECISIONS 2026-09-22): the loop
- * reflects consequence, not one heavyweight path for everything.
+ * AUTHORITY GRADIENT (locked product law, Nolan's 155 grill answers):
+ * the loop reflects consequence: FOUR tiers, not three.
  * commandConsequenceTier classifies each OwnerCommand:
- * - "presentation" (local presentation change: reorder, show/hide): fast
- *   proposal/undo. The proposal stays digest-bound to its base state (the
- *   proven safety property), and a successful approve returns a ready
- *   `undo` (exact inverse command pre-bound to the post-apply digests),
- *   so the owner can reverse it in one approve call.
- * - "factual" (public factual change: correct, confirm, add): explicit
- *   confirmation. The full propose -> digest-bound approve loop, and the
- *   approval records an owner assertion (actor + timestamp) while the
- *   source record is never rewritten.
+ * - "LOW" (reversible presentation change: reorder, non-factual
+ *   layout): apply with undo. The proposal stays digest-bound to its base
+ *   state (the proven safety property), and a successful approve returns
+ *   a ready `undo` (exact inverse command pre-bound to the post-apply
+ *   digests), so the owner can reverse it in one approve call. No public
+ *   fact is altered. Owner-facing language: "Change the website".
+ * - "MEDIUM" (factual correction, contact presentation, service
+ *   visibility, business description, ADDRESS VISIBILITY hide/show/
+ *   default): proposal + simple confirmation (FYD product authority
+ *   directive, Nolan 2026-09-25: address hide/show is MEDIUM, not LOW).
+ *   The full propose -> digest-bound approve loop, and the approval
+ *   records an owner assertion (actor + timestamp) while the source
+ *   record is never rewritten. Owner-facing language: "Update the
+ *   business" (knowledge transition: site, Ask, search, all projections).
+ * - "HIGH" (pricing, credentials, ownership, employee identity, external
+ *   publication, messages, booking, provider mutation, financial/legal
+ *   claims): explicit authorization. Free text matching these categories
+ *   is refused at propose with the category named; nothing is drafted,
+ *   nothing is written.
+ * - "CRITICAL" (credentials, ownership transfer, financial moves, legal
+ *   commitments): strong authority + explicit confirmation + receipt.
+ *   Refused at propose in this lane; every CRITICAL decision produces a
+ *   receipt through the external-effects resolution chain:
+ *   ACTOR / INTENT / TARGET / CAPABILITY / POLICY / AUTHORITY /
+ *   EXECUTION / RECEIPT / OUTCOME.
  * Approval never confers capability: the capability gate runs on every
- * approve call regardless of tier.
+ * approve call regardless of tier. Autonomy is per action class + scope +
+ * constraints; there is no global autonomous flag and no
+ * provider-specific action authority.
  *
  * Failures are typed 400s/409s/403s; nothing is written on failure.
  */
@@ -63,11 +81,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadObjectView, knownServices } from "@/fyd/object/view";
 import {
+  buildEffectReceipt,
+  changeKindForTier,
   commandConsequenceTier,
+  consequenceNoteFor,
   describeCommand,
+  detectHighConsequenceRequest,
   interpretTextCommand,
   invertOwnerCommand,
 } from "@/fyd/object/commands";
+import { foldLegacyTier } from "@/fyd/object/consequence-tiers";
 import {
   applyOwnerCommand,
   parseOwnerCommand,
@@ -261,6 +284,64 @@ export async function POST(
     }
     const proposal = interpretTextCommand(text, objectId);
     if (!proposal) {
+      // HIGH / CRITICAL consequence: free text the interpreter does not
+      // understand as a typed command may still be an action request in a
+      // consequential category (pricing, credentials, ownership, external
+      // publication, messages, booking, provider mutation, financial/legal).
+      // These are refused at propose with the category named and a
+      // decision receipt through the external-effects resolution chain
+      // (ACTOR / INTENT / TARGET / CAPABILITY / POLICY / AUTHORITY /
+      // EXECUTION / RECEIPT / OUTCOME). Nothing is drafted, nothing is
+      // written, and no approval can be presented for them.
+      const detected = detectHighConsequenceRequest(text);
+      if (detected) {
+        const evaluation = await ctx.evaluateCapability(objectId, "owner.correct-fact");
+        const receipt = buildEffectReceipt({
+          actor: {
+            id: ctx.actor.actorId,
+            label: ctx.actor.label,
+            demo: true,
+          },
+          intentText: text.trim(),
+          category: detected.category,
+          tier: detected.tier,
+          target: { tenantId: ctx.tenantId, objectId },
+          capability: {
+            // Preserve the real capability evaluation: the refusal below is
+            // caused by POLICY (tier) and AUTHORITY (demo context), not by a
+            // capability denial. Fabricating allowed:false here would
+            // contradict the evaluation's own reason.
+            name: evaluation.capability,
+            allowed: evaluation.allowed,
+            reason: evaluation.reason,
+          },
+          policy:
+            detected.tier === "CRITICAL"
+              ? "CRITICAL: strong authority + explicit confirmation + receipt. " +
+                "This lane (DEMO OWNER CONTEXT, no verified owner identity) " +
+                "cannot satisfy strong authority."
+              : "HIGH: explicit authorization required. This lane cannot " +
+                "grant it.",
+          authorityNote:
+            "DEMO OWNER CONTEXT: the seeded demo actor, treated as " +
+            "controller by a hard-coded demo mapping. No owner identity " +
+            "was verified; nothing here may back a production " +
+            "authorization decision.",
+        });
+        return NextResponse.json(
+          {
+            ...ctx.responseLabel(),
+            ok: false,
+            code: "consequence_refused",
+            tier: detected.tier,
+            category: detected.category,
+            reason: detected.reason,
+            receipt,
+            chain: ctx.auditView(),
+          },
+          { status: 403 },
+        );
+      }
       return NextResponse.json(
         {
           ...ctx.responseLabel(),
@@ -289,6 +370,7 @@ export async function POST(
     const capabilityImpact = ctx.capabilityImpactLine(evaluation);
     const { ids, names } = knownServices(objectId);
     const preview = buildPatchPreview(objectId, command, ids, names, capabilityImpact);
+    const tier = commandConsequenceTier(command);
     return NextResponse.json({
       ...ctx.responseLabel(),
       ok: true,
@@ -296,11 +378,15 @@ export async function POST(
       actorDisclosure: actor.disclosure,
       proposal: { command, summary: proposal.summary },
       preview,
-      tier: commandConsequenceTier(command),
-      consequenceNote:
-        commandConsequenceTier(command) === "presentation"
-          ? "Local presentation change. Fast proposal/undo: the proposal stays digest-bound to its base state, and the approval response carries a ready undo you can approve in one step. No public fact is altered."
-          : "Public factual change. Explicit confirmation: approving records an owner assertion with actor and timestamp. The source record is never rewritten.",
+      tier,
+      // Product-directive stamping (Nolan 2026-09-25): the four-tier scale
+      // folds onto the LOW/MEDIUM/HIGH product tiers (HIGH+CRITICAL -> HIGH).
+      productTier: foldLegacyTier(tier),
+      // Owner-facing language law: LOW speaks as "Change the website"
+      // (presentation intent, projection only); MEDIUM speaks as "Update
+      // the business" (knowledge transition, all projections follow).
+      changeKind: changeKindForTier(tier),
+      consequenceNote: consequenceNoteFor(tier),
       digests: {
         baseStateDigest: ownerStateDigest(objectId),
         baseViewDigest: buildViewDigest(ownerProjection, objectId),
@@ -456,14 +542,15 @@ export async function POST(
       });
       const refreshedProjection = getVerifiedPublicProjectionSync(objectId, "owner");
       const view = loadObjectView(refreshedProjection, objectId);
-      // Fast proposal/undo for local presentation changes: the exact
-      // inverse command, pre-bound to the POST-APPLY digests, so the owner
-      // can reverse it in one approve call. If the state moved since, the
-      // approve stage's digest checks refuse it safely. Factual changes
-      // get no undo: assertions are superseded by newer assertions, and
-      // corrections revert through revert-contact-field.
+      // Fast proposal/undo for LOW (reversible presentation) changes: the
+      // exact inverse command, pre-bound to the POST-APPLY digests, so the
+      // owner can reverse a website change in one approve call. If the
+      // state moved since, the approve stage's digest checks refuse it
+      // safely. MEDIUM changes get no undo: assertions are superseded by
+      // newer assertions, and corrections revert through
+      // revert-contact-field.
       const tier = commandConsequenceTier(command);
-      const inverse = tier === "presentation" ? invertOwnerCommand(command) : null;
+      const inverse = tier === "LOW" ? invertOwnerCommand(command) : null;
       const undo =
         inverse === null
           ? undefined
@@ -481,6 +568,7 @@ export async function POST(
         history: overrides.history,
         approval,
         tier,
+        changeKind: changeKindForTier(tier),
         undo,
         chain: audit,
       });

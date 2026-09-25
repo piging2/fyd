@@ -33,9 +33,10 @@ import { NextResponse } from "next/server";
 import { isPrivateHost } from "@/fyd/owner-mode/gate";
 import {
   DEMO_OWNER_ACTOR,
-  evaluateCapability,
-  resolveDemoRelationship,
+  answerAuthorization,
+  demoAuthorizationQuestion,
 } from "@/fyd/owner-mode/capability";
+import { resolveOwnerIdentity } from "@/fyd/owner-mode/owner-identity";
 import { isUnsupported } from "@/fyd/customize/types";
 import {
   parseCustomizationIntent,
@@ -64,7 +65,7 @@ const NOT_REAL_AUTH =
   "DEMO OWNER MODE - not real authentication. No identity was verified; " +
   "this mode is for localhost/private-network demonstration only.";
 
-function demoDenied(req: Request) {
+async function demoDenied(req: Request, siteId: string, action: string) {
   const enabled = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1";
   const host = req.headers.get("host") ?? "";
   const privateNet = isPrivateHost(host);
@@ -83,18 +84,29 @@ function demoDenied(req: Request) {
       { status: 403 },
     );
   }
-  const verdict = evaluateCapability(
-    DEMO_OWNER_ACTOR,
-    resolveDemoRelationship("", DEMO_OWNER_ACTOR),
-    "owner.customize-approve",
+  // The typed authorization question carries the actual site resource
+  // and the requested action (inspect/approve/clear). The demo authority
+  // answers from the hard-coded demo relationship mapping plus the
+  // capability rules; the answer is stamped as demo scaffolding with an
+  // explicitly unverified identity.
+  const answer = answerAuthorization(
+    demoAuthorizationQuestion(
+      DEMO_OWNER_ACTOR,
+      siteId,
+      "owner.customize-approve",
+      action,
+      await resolveOwnerIdentity(),
+    ),
   );
-  if (!verdict.allowed) {
+  if (!answer.allowed) {
     return NextResponse.json(
       {
         ok: false,
         code: "capability_denied",
-        error: "Capability denied: " + verdict.reason,
+        error: "Capability denied: " + answer.reason,
         demoOwnerMode: enabled,
+        demoScaffolding: answer.demoScaffolding,
+        identityNote: answer.identityNote,
       },
       { status: 403 },
     );
@@ -134,7 +146,7 @@ export async function GET(req: Request) {
   // Owner-state confidentiality class: the inspect view serves
   // presentation-intent directives (approvedBy, approvedAt, eventId) and
   // hidden-section decisions. Same gate as the POST owner actions.
-  const gate = demoDenied(req);
+  const gate = await demoDenied(req, siteId, "inspect");
   if (gate) return gate;
   try {
     const site = await loadCustomizedSite(siteId);
@@ -242,6 +254,12 @@ async function handleParse(siteId: string, text: string) {
     proposal: outcome.proposal,
     reviewCard: outcome.reviewCard,
     specDigest: outcome.specDigest,
+    // Consequence stamping (FYD product authority directive, Nolan
+    // 2026-09-25): the customize lane only handles presentation-only
+    // intents (reorder, toggle, feature/reorder/deactivate, edit copy,
+    // theme token), so it is always LOW: apply plus undo. Anything
+    // consequential (HIGH class) is refused before a proposal exists.
+    consequenceTier: "LOW",
     demo: true,
   });
 }
@@ -332,7 +350,7 @@ async function handleApprove(
   clientProposal: SitePatchBody,
   requestId: string,
 ) {
-  const gate = demoDenied(req);
+  const gate = await demoDenied(req, siteId, "approve");
   if (gate) return gate;
 
   const { ledger, locks, storeDir } = writeBoundaryStore();
@@ -449,6 +467,9 @@ async function handleApprove(
         proposalDigest: r.proposalDigest,
         specDigest: r.specDigest,
         requestId,
+        // LOW consequence: presentation-intent overlay only (apply plus
+        // undo); see the parse response for the directive reference.
+        consequenceTier: "LOW",
         idempotentReplay: replayed,
         ...(replayed ? { deduped: r.deduped === true } : {}),
         ...(replayed
@@ -472,7 +493,7 @@ async function handleApprove(
 }
 
 async function handleClear(req: Request, siteId: string, intentId: string, requestId: string) {
-  const gate = demoDenied(req);
+  const gate = await demoDenied(req, siteId, "clear");
   if (gate) return gate;
 
   const { ledger, locks, storeDir } = writeBoundaryStore();

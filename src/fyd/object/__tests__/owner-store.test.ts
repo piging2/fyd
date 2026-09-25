@@ -31,7 +31,7 @@ describe("readOverrides", () => {
     const o = readOverrides("happy-place");
     expect(o.serviceOrder).toEqual([]);
     expect(o.history).toEqual([]);
-    expect(o.addressVisibility).toBe("public");
+    expect(o.addressVisibility).toBe("default");
   });
 });
 
@@ -96,14 +96,30 @@ describe("applyOwnerCommand", () => {
     );
   });
 
-  test("set-address-visibility toggles", () => {
-    const o = applyOwnerCommand(
+  test("set-address-visibility records the tri-state preference", () => {
+    const hid = applyOwnerCommand(
       "happy-place",
-      { type: "set-address-visibility", visibility: "hidden" },
+      { type: "set-address-visibility", visibility: "hide" },
       KNOWN_IDS,
       KNOWN_NAMES,
     );
-    expect(o.addressVisibility).toBe("hidden");
+    expect(hid.addressVisibility).toBe("hide");
+    // Idempotent: hiding twice confirms without changing state.
+    const hidAgain = applyOwnerCommand(
+      "happy-place",
+      { type: "set-address-visibility", visibility: "hide" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+    );
+    expect(hidAgain.addressVisibility).toBe("hide");
+    // Explicit DEFAULT withdraws the preference (append-only).
+    const back = applyOwnerCommand(
+      "happy-place",
+      { type: "set-address-visibility", visibility: "default" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+    );
+    expect(back.addressVisibility).toBe("default");
   });
 
   test("writes valid JSON to disk", () => {

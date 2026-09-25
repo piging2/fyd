@@ -91,7 +91,11 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
     setStatus("loading");
     setError("");
     try {
-      const res = await fetch("/api/fyd/objects/" + encodeURIComponent(id));
+      // Owner-lane read (Q-C-01): the owner-authorized view plus the
+      // owner history. The public object endpoint never serves history.
+      const res = await fetch(
+        "/api/fyd/objects/" + encodeURIComponent(id) + "/overrides",
+      );
       const json = (await res.json()) as {
         ok: boolean;
         view?: ObjectView;
@@ -539,39 +543,62 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
             <div className="flex items-center justify-between gap-3">
               <dt className="font-medium text-stone-500">Location visibility</dt>
               <dd>
-                <button
-                  type="button"
-                  disabled={busy}
-                  aria-pressed={view.contact.addressVisibility === "hidden"}
-                  onClick={() =>
-                    void send(
-                      {
-                        type: "set-address-visibility",
-                        visibility: view.contact.addressVisibility === "hidden" ? "public" : "hidden",
-                      },
-                      view.contact.addressVisibility === "hidden"
-                        ? "Made the location public."
-                        : "Hid the location.",
-                    )
-                  }
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium hover:bg-stone-50 disabled:opacity-50"
+                <div
+                  role="group"
+                  aria-label="Location visibility"
+                  className="inline-flex overflow-hidden rounded-lg border border-stone-300"
                 >
-                  {view.contact.addressVisibility === "hidden" ? (
-                    <>
-                      <EyeOff className="h-4 w-4" aria-hidden="true" /> Hidden
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4" aria-hidden="true" /> Public
-                    </>
-                  )}
-                </button>
+                  {(
+                    [
+                      { value: "show", label: "Show" },
+                      { value: "default", label: "Default" },
+                      { value: "hide", label: "Hide" },
+                    ] as const
+                  ).map((opt) => {
+                    const active =
+                      (view.contact.addressVisibilityPreference ?? "default") === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        disabled={busy || active}
+                        aria-pressed={active}
+                        onClick={() =>
+                          // Address visibility is a MEDIUM-consequence
+                          // presentation decision: it always goes through
+                          // propose, and the owner approves the typed
+                          // proposal on the confirmation card below.
+                          void proposeText(
+                            opt.value === "hide"
+                              ? "hide the address"
+                              : opt.value === "show"
+                                ? "show the address"
+                                : "reset the address visibility",
+                          )
+                        }
+                        className={
+                          "inline-flex min-h-[44px] items-center gap-2 px-4 py-2 text-sm font-medium disabled:opacity-50 " +
+                          (active
+                            ? "bg-stone-900 text-white"
+                            : "bg-white text-stone-700 hover:bg-stone-50")
+                        }
+                      >
+                        {opt.value === "hide" ? (
+                          <EyeOff className="h-4 w-4" aria-hidden="true" />
+                        ) : opt.value === "show" ? (
+                          <Eye className="h-4 w-4" aria-hidden="true" />
+                        ) : null}
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </dd>
             </div>
           </dl>
           <p className="mt-3 text-xs text-stone-400">
-            The location shown publicly is the coarse "{view.contact.locality ?? "unknown"}" from the
-            site. You decide whether visitors see it.
+            Show puts the full address on the public page. Hide removes it everywhere public.
+            Default shows only the coarse "{view.contact.locality ?? "unknown"}" with no street detail.
           </p>
         </Section>
 
