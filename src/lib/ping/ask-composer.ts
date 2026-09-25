@@ -765,13 +765,20 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
     }
     if ((asksPeople || asksAssociation) && peopleGrounded) {
       const seenIds = new Set<string>();
+      // Claim grouping for the 5-class contract: every person record and
+      // every incident association is a distinct direct citation behind
+      // the SAME claim (these are associated with the business), so the
+      // reducer can honestly report SUPPORTED BY MULTIPLE EVIDENCE.
+      // Per-entry classifications stay per-entry: each citation keeps its
+      // own epistemic basis via first-match lookup in buildCitations.
+      const associationsClaim = `${title} associations`;
       for (const p of persons) {
         seenIds.add(p.id);
         const i = ctx.evidenceRefs.findIndex((e) => e.id === p.id);
         pushClaim(
           `Person on record: ${p.title || p.id}.`,
           i >= 0 ? [i] : [],
-          `${p.title || p.id} is associated with ${title}`,
+          associationsClaim,
           p,
           "name",
         );
@@ -812,7 +819,7 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
         pushClaim(
           `Associated with ${title} (${predicate.replace(/_/g, " ")}): ${other.title || other.id}.`,
           [i],
-          `${other.title || other.id} is associated with ${title} via ${predicate}`,
+          associationsClaim,
           other,
           "name",
           "relationship_fact",
@@ -1041,10 +1048,18 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
             text: `Related offerings: ${named.map((o) => o.title).join("; ")}.`,
             cites,
           });
+          // Claim grouping for the 5-class contract: every named service
+          // is a distinct direct citation behind the SAME claim (the
+          // business offers these services), so the reducer can honestly
+          // report SUPPORTED BY MULTIPLE EVIDENCE. Per-service
+          // classifications stay per-entry: each citation keeps its own
+          // epistemic basis (a demo-synthetic service keeps its demo
+          // basis) via first-match lookup in buildCitations.
+          const servicesClaim = `${title} offers these services`;
           for (const s of named) {
             const refId = ctx.evidenceRefs.find((e) => e.id === s.id)?.id;
             claimClassifications.push({
-              claim: `${title} offers ${s.title}`,
+              claim: servicesClaim,
               classification: claimClassification(ctx.fieldClasses, s, "name"),
               evidenceRefIds: refId ? [refId] : [],
             });

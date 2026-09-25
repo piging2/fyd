@@ -22,7 +22,9 @@ import {
   type OwnerCommand,
 } from "../owner-store";
 import {
+  changeKindForTier,
   commandConsequenceTier,
+  consequenceNoteFor,
   describeCommand,
   interpretTextCommand,
   invertOwnerCommand,
@@ -241,21 +243,30 @@ describe("address presentation decision (SHOW/HIDE assertions)", () => {
   });
 });
 
-describe("authority gradient: consequence tiers", () => {
+describe("consequence tiers (locked: LOW / MEDIUM / HIGH / CRITICAL)", () => {
   test.each([
-    [{ type: "move-service", id: "svc-decks", to: "first" }, "presentation"],
-    [{ type: "set-service-visibility", id: "svc-decks", visible: false }, "presentation"],
-    [{ type: "set-address-visibility", visibility: "hidden" }, "presentation"],
-    [{ type: "set-contact-field", field: "phone", value: "x" }, "factual"],
-    [{ type: "revert-contact-field", field: "phone" }, "factual"],
-    [{ type: "confirm-contact-field", field: "phone" }, "factual"],
-    [{ type: "add-service", name: "Decks" }, "factual"],
+    [{ type: "move-service", id: "svc-decks", to: "first" }, "LOW"],
+    [{ type: "set-address-visibility", visibility: "hidden" }, "LOW"],
+    // Service visibility is MEDIUM per the locked tiers (factual
+    // visibility), not a reversible LOW presentation change.
+    [{ type: "set-service-visibility", id: "svc-decks", visible: false }, "MEDIUM"],
+    [{ type: "set-contact-field", field: "phone", value: "x" }, "MEDIUM"],
+    [{ type: "revert-contact-field", field: "phone" }, "MEDIUM"],
+    [{ type: "confirm-contact-field", field: "phone" }, "MEDIUM"],
+    [{ type: "add-service", name: "Decks" }, "MEDIUM"],
   ])("%p is tier %s", (command, tier) => {
     expect(commandConsequenceTier(command as OwnerCommand)).toBe(tier);
   });
+
+  test("LOW is change-website; MEDIUM is update-business (language law)", () => {
+    expect(changeKindForTier("LOW")).toBe("change-website");
+    expect(changeKindForTier("MEDIUM")).toBe("update-business");
+    expect(consequenceNoteFor("LOW")).toMatch(/Change the website/);
+    expect(consequenceNoteFor("MEDIUM")).toMatch(/Update the business/);
+  });
 });
 
-describe("authority gradient: exact inverses (fast undo)", () => {
+describe("consequence tiers: exact inverses (fast undo, LOW only)", () => {
   test.each([
     [
       { type: "move-service", id: "svc-decks", to: "first" },
@@ -266,10 +277,6 @@ describe("authority gradient: exact inverses (fast undo)", () => {
       { type: "move-service", id: "svc-decks", to: "down" },
     ],
     [
-      { type: "set-service-visibility", id: "svc-decks", visible: false },
-      { type: "set-service-visibility", id: "svc-decks", visible: true },
-    ],
-    [
       { type: "set-address-visibility", visibility: "hidden" },
       { type: "set-address-visibility", visibility: "public" },
     ],
@@ -278,35 +285,35 @@ describe("authority gradient: exact inverses (fast undo)", () => {
   });
 
   test.each([
+    { type: "set-service-visibility", id: "svc-decks", visible: false },
     { type: "set-contact-field", field: "phone", value: "x" },
     { type: "revert-contact-field", field: "phone" },
     { type: "confirm-contact-field", field: "phone" },
     { type: "add-service", name: "Decks" },
-  ])("factual %p has no exact inverse", (command) => {
+  ])("MEDIUM %p has no exact inverse", (command) => {
     expect(invertOwnerCommand(command as OwnerCommand)).toBeNull();
   });
 
-  test("undo round trip at the store level restores presentation state", () => {
+  test("undo round trip at the store level restores LOW presentation state", () => {
     const hid = applyOwnerCommand(
       "demo-confirm-10",
-      { type: "set-service-visibility", id: "svc-decks", visible: false },
+      { type: "set-address-visibility", visibility: "hidden" },
       KNOWN_IDS,
       KNOWN_NAMES,
     );
-    expect(hid.hiddenServices).toContain("svc-decks");
+    expect(hid.addressVisibility).toBe("hidden");
     const inverse = invertOwnerCommand({
-      type: "set-service-visibility",
-      id: "svc-decks",
-      visible: false,
+      type: "set-address-visibility",
+      visibility: "hidden",
     });
     expect(inverse).not.toBeNull();
-    expect(describeCommand(inverse!, KNOWN_NAMES)).toMatch(/show decks/i);
+    expect(describeCommand(inverse!, KNOWN_NAMES)).toMatch(/Undo this website change/i);
     const undone = applyOwnerCommand(
       "demo-confirm-10",
       inverse!,
       KNOWN_IDS,
       KNOWN_NAMES,
     );
-    expect(undone.hiddenServices).not.toContain("svc-decks");
+    expect(undone.addressVisibility).not.toBe("hidden");
   });
 });

@@ -17,14 +17,23 @@
  * the validated body siteId (previously: no tenant context at all). The
  * nested route is the trusted-path surface; prefer it for new callers.
  *
- * 3-class response contract: every 200 response carries
- * answerClass ("supported" | "derived" | "unknown"), every citation
- * carries claimClass ("supported" | "derived"), and the 200 body also
- * carries unknowns (string[]), suggestedActions (available actions,
- * [] when none), and proposal (draft AskProposal or null).
- * A refusal (no cited evidence) is answerClass "unknown". DERIVED_FACT / INFERENCE /
- * GENERATED_COPY claims make the answer "derived" and are explicitly
- * labeled in the citation basis.
+ * 5-class response contract: every 200 response carries
+ * answerClass (exactly one of "SUPPORTED DIRECTLY" | "SUPPORTED BY
+ * MULTIPLE EVIDENCE" | "DERIVED" | "CONFLICTED" | "UNSUPPORTED") and the
+ * coarse answerState ("KNOWN" | "CONFLICTED" | "UNKNOWN") fed by it (both
+ * layers, always present). Every citation carries claimClass
+ * ("SUPPORTED DIRECTLY" | "DERIVED" | "CONFLICTED"), and the 200 body also
+ * carries objectRefs, evidenceRefs, sourceRefs (structured, citation-backed),
+ * unknowns (string[]), suggestedActions (available actions, [] when none),
+ * and proposal (draft AskProposal or null).
+ * A refusal (no cited evidence) is answerClass "UNSUPPORTED" / answerState
+ * "UNKNOWN". Any conflict-observation cite makes the answer "CONFLICTED" /
+ * "CONFLICTED". Any derived/inferred/generated claim makes the answer
+ * "DERIVED" (still answerState "KNOWN": derived but answered, explicitly
+ * labeled). Two or more distinct SUPPORTED DIRECTLY cites behind the SAME
+ * claim make the answer "SUPPORTED BY MULTIPLE EVIDENCE". DERIVED_FACT /
+ * INFERENCE / GENERATED_COPY claims are explicitly labeled in the citation
+ * basis. The pipeline never fills business gaps from model priors.
  *
  * Object-scoped ask: the optional body objectId selects the target
  * object INSIDE the route tenant's public graph; the tenant is still
@@ -42,7 +51,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   answerAskFyd,
+  answerStateFor,
   type AnswerAskFydDeps,
+  type AskAnswerClass,
+  type AskAnswerState,
+  type AskClaimClassification,
   type AskFydCitation,
   type AskFydMode,
   type AskFydOutcome,
@@ -54,12 +67,16 @@ import {
 import { getSiteBundle, type SiteBundle } from "@/fyd/media/site-bundle";
 import type { FydOverlayReader } from "@/fyd/data/fyd-tenant-graph";
 import { applyOwnerFieldCorrections } from "@/fyd/object/owner-overlay";
+import {
+  decisionsForGraph,
+  verifyPublicProjection,
+} from "@/fyd/sitespec/public-projection";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** Answer-level class for the 3-class contract. */
-export type AskAnswerClass = "supported" | "derived" | "unknown";
+/** Answer-level class for the 5-class contract (re-exported for tests). */
+export type { AskAnswerClass, AskAnswerState };
 
 const VALID_MODES: AskFydMode[] = ["visitor", "owner"];
 
@@ -70,8 +87,10 @@ const VALID_MODES: AskFydMode[] = ["visitor", "owner"];
  * owner overlay (field corrections) over it, ABOVE the read seam. The read
  * model is the authorized graph read, so a correction the owner approved is
  * reflected in Ask FYD answers, cited as an owner override while the
- * source's value stays recorded as what the source says. Fail closed: on
- * overlay failure the raw bundle is served, never an invented value.
+ * source's value stays recorded as what the source says. The graph Ask
+ * answers from is the verified public projection (Q-C-01): the bundle
+ * never carries an unprojected graph. Fail closed: on overlay or boundary
+ * failure nothing is served, never an unprojected graph or invented value.
  *
  * The reader override exists for tests only; production always uses the
  * governed reader.
@@ -84,9 +103,22 @@ export async function loadBundleWithOwnerOverlay(
   if (!bundle) return null;
   try {
     const overlaid = applyOwnerFieldCorrections(bundle.graph, siteId);
-    return { ...bundle, graph: overlaid.graph };
+    // THE boundary (Q-C-01): Ask FYD consumes an already-authorized public
+    // projection, it never retrieves broadly and redacts afterward. Owner
+    // corrections are owner-authorized values composed BEFORE the boundary;
+    // visibility policy applies over them, so a hidden field stays hidden
+    // even when the owner corrected its value. The siteId is threaded so
+    // site-keyed owner visibility decisions resolve (Lane A). Fail closed:
+    // on boundary failure nothing is served, never the unprojected graph.
+    const decisions = decisionsForGraph(overlaid.graph, siteId);
+    const verified = verifyPublicProjection(overlaid.graph, decisions, "anonymous");
+    return {
+      ...bundle,
+      graph: verified.graph,
+      fieldVisibilityDecisions: decisions,
+    };
   } catch {
-    return bundle;
+    return null;
   }
 }
 
@@ -94,16 +126,51 @@ export async function loadBundleWithOwnerOverlay(
 const TENANT_CLAIM_KEYS = ["siteId", "tenantId", "tenant"] as const;
 
 /**
- * Reduce one answered outcome to its 3-class label. A refusal (or an answer
- * with no citations) is "unknown": the pipeline had nothing to stand on.
- * Any derived/inferred/generated claim makes the whole answer "derived".
+ * Reduce one answered outcome to its 5-class label. A refusal (or an answer
+ * with no citations) is "UNSUPPORTED": the pipeline had nothing to stand
+ * on, so the answer is honest unknown. Any CONFLICTED cite makes the whole
+ * answer "CONFLICTED" (the disagreement is surfaced, never resolved by
+ * picking a side). Any derived/inferred/generated cite makes the answer
+ * "DERIVED". "SUPPORTED BY MULTIPLE EVIDENCE" requires at least two
+ * distinct SUPPORTED DIRECTLY evidence refs behind the SAME claim
+ * (grouped via claimClassifications: evidenceRefIds per claim); a single
+ * direct cite, or direct cites behind different claims, is "SUPPORTED
+ * DIRECTLY". When no claim groupings are provided, each evidence ref is
+ * treated as its own claim (conservative: never upgrade without proof).
+ *
+ * The coarse state follows from answerStateFor (both layers, always).
  */
 export function answerClassFor(
   refusal: boolean,
   citations: AskFydCitation[],
+  claimClassifications?: AskClaimClassification[],
 ): AskAnswerClass {
-  if (refusal || citations.length === 0) return "unknown";
-  return citations.some((c) => c.claimClass === "derived") ? "derived" : "supported";
+  if (refusal || citations.length === 0) return "UNSUPPORTED";
+  if (citations.some((c) => c.claimClass === "CONFLICTED")) return "CONFLICTED";
+  if (citations.some((c) => c.claimClass === "DERIVED")) return "DERIVED";
+  // Group direct evidence refs by the claim they support.
+  const claimForRef = new Map<string, string>();
+  for (const cc of claimClassifications ?? []) {
+    for (const refId of cc.evidenceRefIds) {
+      if (!claimForRef.has(refId)) claimForRef.set(refId, cc.claim);
+    }
+  }
+  const directByClaim = new Map<string, Set<string>>();
+  for (const c of citations) {
+    if (c.claimClass !== "SUPPORTED DIRECTLY") continue;
+    // No grouping info: each ref stands alone (never upgrade without proof).
+    const claim = claimForRef.get(c.id) ?? c.id;
+    let ids = directByClaim.get(claim);
+    if (!ids) {
+      ids = new Set();
+      directByClaim.set(claim, ids);
+    }
+    ids.add(c.id);
+  }
+  for (const ids of directByClaim.values()) {
+    if (ids.size >= 2) return "SUPPORTED BY MULTIPLE EVIDENCE";
+  }
+  return "SUPPORTED DIRECTLY";
 }
 
 function tenantMismatchResponse(
@@ -293,12 +360,24 @@ export async function handleAskRequest(
         );
     }
   }
+  const answerClass = answerClassFor(
+    outcome.refusal,
+    outcome.citations,
+    outcome.claimClassifications,
+  );
   return NextResponse.json({
     ok: true,
     answer: outcome.answer,
-    answerClass: answerClassFor(outcome.refusal, outcome.citations),
+    answerClass,
+    // Coarse state, fed by the five support classes (both layers).
+    answerState: answerStateFor(answerClass),
     refusal: outcome.refusal,
     citations: outcome.citations,
+    // Structured, citation-backed refs: the objects, evidence, and sources
+    // the answer stands on. Derived from citations only; never invented.
+    objectRefs: outcome.objectRefs,
+    evidenceRefs: outcome.evidenceRefs,
+    sourceRefs: outcome.sourceRefs,
     // Carried from the internal AskAnswer: unknowns and suggestedActions
     // are [] when the composer found none; proposal is null unless the
     // answer drafted one. Nothing here is ever invented.

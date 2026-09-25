@@ -6,7 +6,7 @@
  * Covers:
  * - ask-composer classificationFromProvenance: overlay-authored ->
  *   DEMO_SYNTHETIC (never DIRECT_FACT)
- * - visitor-answer claimClassFor("DEMO_SYNTHETIC") -> "supported"
+ * - visitor-answer claimClassFor("DEMO_SYNTHETIC") -> "SUPPORTED DIRECTLY"
  *   (evidence-backed by the adding event, source labeled in the citation)
  * - visitor-answer citationFor: source "Site record (demo addition)",
  *   basis "Demo content added by the site operator..."
@@ -112,9 +112,9 @@ describe("demo content classification", () => {
   });
 
   test("claimClassFor keeps DEMO_SYNTHETIC supported with honest attribution", () => {
-    expect(claimClassFor("DEMO_SYNTHETIC")).toBe("supported");
-    expect(claimClassFor("DIRECT_FACT")).toBe("supported");
-    expect(claimClassFor("INFERENCE")).toBe("derived");
+    expect(claimClassFor("DEMO_SYNTHETIC")).toBe("SUPPORTED DIRECTLY");
+    expect(claimClassFor("DIRECT_FACT")).toBe("SUPPORTED DIRECTLY");
+    expect(claimClassFor("INFERENCE")).toBe("DERIVED");
   });
 
   test("answerAskFyd cites demo services as demo additions, not facts", () => {
@@ -140,12 +140,12 @@ describe("demo content classification", () => {
       expect(c.source).not.toContain("business website");
       expect(c.basis).toContain("Demo content added by the site operator");
       expect(c.basis).not.toBe("Recorded fact from the site data");
-      expect(c.claimClass).toBe("supported");
+      expect(c.claimClass).toBe("SUPPORTED DIRECTLY");
     }
     for (const c of outcome.citations) {
       expect(c.source).not.toBe("Site record (canonical journal)");
       expect(c.basis).not.toBe("Recorded fact from the site data");
-      expect(c.claimClass).toBe("supported");
+      expect(c.claimClass).toBe("SUPPORTED DIRECTLY");
     }
     const bases = outcome.citations.map((c) => c.basis).join(" ");
     expect(bases).toContain("Demo content added by the site operator");

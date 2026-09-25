@@ -3,14 +3,24 @@
  *
  * Why-this trust path for the edge-object experience. Answers "why does
  * FYD show this?" from the object's own provenance record via the
- * existing why-this-steps lane (whyThisStepsFor). It never invents a
- * link in the evidence chain: a missing link renders as "unknown", and
+ * focused Why This claim chain (whyThisClaimChainFor):
+ *   CLAIM -> SOURCE -> OBSERVED WHEN -> EVIDENCE ->
+ *   SUPPORT (DIRECT | DERIVED | OWNER-CONFIRMED)
+ * CLAIM is the object title (the response's claim field). It never invents
+ * a link in the evidence chain: a missing link renders as "unknown", and
  * an object with no provenance yields found:false.
  *
- * Visibility: the object must be visible to a public viewer (the same
- * publicGraph gate the site pages and the edge-object route use).
- * Invisible objects yield found:false, indistinguishable from unknown:
- * the why-this path is never a privacy bypass.
+ * Owner-facing language law: the SUPPORT detail for OWNER-CONFIRMED uses
+ * "Confirmed by you" plus the knowledge-transition wording ("you updated
+ * the business"), never blurring it with presentation intent ("change the
+ * website"). Demo-operator overlays are DIRECT with honest attribution,
+ * never mislabeled as owner-confirmed.
+ *
+ * Visibility: the object must be visible to a public viewer (the
+ * verified public projection, Q-C-01, the same boundary the site pages
+ * and the edge-object route use). Invisible objects yield found:false,
+ * indistinguishable from unknown: the why-this path is never a privacy
+ * bypass.
  *
  * Field-level queries (field=<predicate>) report the relationship's own
  * evidence reference (the edge is a claim too). The root business object
@@ -18,16 +28,18 @@
  * back to the honest object-level provenance: the source statement from
  * the existing record, never an invented observation.
  *
- * Response shape (source-compatible):
- *   { found: true, objectTitle, fieldLabel, source, observedValue,
- *     observationTime, extractionMethod }
+ * Response shape:
+ *   { found: true, claim, source, observedWhen, evidence, support,
+ *     supportDetail }
  *   { found: false, reason }
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
-import { applyPublicVisibilityGate } from "@/fyd/edge/resolve";
-import { whyThisStepsFor } from "@/fyd/object/why-this-steps";
+import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
+import {
+  whyThisClaimChainFor,
+  type WhyThisSupport,
+} from "@/fyd/object/why-this-steps";
 import type { PingObject } from "@/lib/ping/types";
 
 export const dynamic = "force-dynamic";
@@ -47,28 +59,36 @@ function stepDetail(
   return s ? s.detail : "unknown";
 }
 
+/** The SUPPORT class for one chain: the trailing token of the detail. */
+function supportOf(steps: { step: string; detail: string }[]): WhyThisSupport {
+  const detail = stepDetail(steps, "Support");
+  if (detail.startsWith("OWNER-CONFIRMED")) return "OWNER-CONFIRMED";
+  if (detail.startsWith("DERIVED")) return "DERIVED";
+  return "DIRECT";
+}
+
 function objectWhy(o: PingObject): {
   found: true;
-  objectTitle: string;
-  fieldLabel: string;
+  claim: string;
   source: string;
-  observedValue: string;
-  observationTime: string;
-  extractionMethod: string;
+  observedWhen: string;
+  evidence: string;
+  support: WhyThisSupport;
+  supportDetail: string;
 } {
-  const steps = whyThisStepsFor(o);
-  // The why lane builds SOURCE -> OBSERVED EVIDENCE -> EXTRACTION METHOD
-  // -> STATUS from the object's own provenance. The honest fallback for
-  // the root business object: object-level provenance, exactly what this
-  // lane returns, never an invented observation.
+  const steps = whyThisClaimChainFor(o);
+  // The why lane builds CLAIM (the heading) -> SOURCE -> OBSERVED WHEN ->
+  // EVIDENCE -> SUPPORT from the object's own provenance. The honest
+  // fallback for the root business object: object-level provenance,
+  // exactly what this lane returns, never an invented observation.
   return {
     found: true,
-    objectTitle: o.title,
-    fieldLabel: `The "${o.title}" entry`,
+    claim: o.title,
     source: stepDetail(steps, "Source"),
-    observedValue: stepDetail(steps, "Observed value"),
-    observationTime: stepDetail(steps, "Observation time"),
-    extractionMethod: stepDetail(steps, "Extraction method"),
+    observedWhen: stepDetail(steps, "Observed when"),
+    evidence: stepDetail(steps, "Evidence"),
+    support: supportOf(steps),
+    supportDetail: stepDetail(steps, "Support"),
   };
 }
 
@@ -82,16 +102,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       { status: 400 },
     );
   }
-  let graph;
+  let verified;
   try {
-    graph = getPingObjectGraphSync(siteId).graph;
+    verified = getVerifiedPublicProjectionSync(siteId, "anonymous");
   } catch {
     return NextResponse.json(
       { found: false, reason: "Projection unavailable." },
       { status: 503 },
     );
   }
-  const visible = applyPublicVisibilityGate(graph);
+  // The boundary already applied field visibility, traversal cuts, and the
+  // public-object filter: the graph below is the verified public projection.
+  const visible = verified.graph;
   const byId = new Map(visible.objects.map((o) => [o.id, o]));
   const target = byId.get(objectId);
   if (!target) {
@@ -117,18 +139,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
     const targetObj = byId.get(rel.object)!;
+    // A recorded relationship is DIRECT support: observed in the site
+    // data, not derived and not an owner assertion.
     return NextResponse.json({
       found: true,
-      objectTitle: targetObj.title,
-      fieldLabel: `The "${field}" relationship`,
+      claim: `The "${field}" relationship`,
       source: rel.evidenceRef || "unknown",
-      observedValue: targetObj.title,
-      observationTime: rel.createdAt || "unknown",
-      extractionMethod:
-        "relationship evidence: recorded by website ingestion (edge-level evidence reference)",
+      observedWhen: rel.createdAt ? `Observed ${rel.createdAt.slice(0, 10)}.` : "unknown",
+      evidence: `Relationship "${field}" recorded in the site data.`,
+      support: "DIRECT",
+      supportDetail:
+        "DIRECT: recorded in the site data.",
     });
   }
-  const steps = whyThisStepsFor(target);
+  const steps = whyThisClaimChainFor(target);
   if (steps.length === 0) {
     return NextResponse.json(
       { found: false, reason: "No provenance recorded for that entry." },

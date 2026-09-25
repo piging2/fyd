@@ -21,12 +21,18 @@ export const runtime = "nodejs";
  * POST /api/fyd/ask/[siteId], where the tenant comes from the route path
  * and any body-supplied tenant identity is refused on mismatch.
  *
- * Response: { ok: true, answer, answerClass, refusal, citations,
- *   unknowns, suggestedActions, proposal, tenantId }
+ * Response: { ok: true, answer, answerClass, answerState, refusal,
+ *   citations, objectRefs, evidenceRefs, sourceRefs, unknowns,
+ *   suggestedActions, proposal, tenantId }
  *   unknowns is string[]; suggestedActions is the available-actions list
  *   ([] when none); proposal is a draft AskProposal or null.
- *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
- *   Every citation carries claimClass ("supported" | "derived").
+ *   answerClass is exactly one of "SUPPORTED DIRECTLY" | "SUPPORTED BY
+ *   MULTIPLE EVIDENCE" | "DERIVED" | "CONFLICTED" | "UNSUPPORTED"
+ *   ("UNSUPPORTED" = refusal). answerState is the coarse state fed by it:
+ *   "KNOWN" | "CONFLICTED" | "UNKNOWN".
+ *   Every citation carries claimClass ("SUPPORTED DIRECTLY" | "DERIVED" |
+ *   "CONFLICTED"). objectRefs, evidenceRefs, sourceRefs are structured,
+ *   citation-backed refs; nothing here is ever invented.
  * Errors: 404 unknown site, 400 bad question or mode, 400 tenant_mismatch /
  * invalid_tenant, 503 projection unavailable (answer unknown), 500 bundle
  * invalid or unexpected internal failure. Every failure is structured JSON

@@ -71,6 +71,13 @@ export interface SitePatchCard {
   affectedObjects: { id: string; title: string }[];
   operationCount: number;
   siteSpecDigest: string;
+  /**
+   * Consequence + change kind (owner-facing language law): a site_patch
+   * is always LOW / change-website (presentation intent, projection
+   * only), never a knowledge transition.
+   */
+  consequence: "LOW";
+  changeKind: "change-website";
 }
 
 /** Ask FYD answer: the base answer plus the site-patch review card. */
