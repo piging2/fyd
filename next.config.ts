@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // SHARP_IGNORE_GLOBAL_LIBVIPS is configured in vercel.json for Vercel runtime
   // Sharp native binary loading requires this environment variable at Node.js runtime
-  // It is NOT a Next.js build-time configuration
+  // It is NOT a build-time configuration
   eslint: {
     // Disable ESLint during Next.js build due to Next 15.5.7 + eslint-config-next/Rushstack patching failure
     // ESLint will be run separately in CI with standalone configuration
@@ -51,6 +51,15 @@ const nextConfig: NextConfig = {
         source: '/services/built-ins',
         destination: '/services/finish-carpentry',
         permanent: true,
+      },
+      {
+        // FYD demo alias (2026-09-24, Nolan): /sites/coppersmith is the
+        // short name Nolan uses; the canonical tenant slug is
+        // coppersmith-plumbing. Temporary redirect so browsers do not
+        // permanently cache the alias while the demo surface evolves.
+        source: '/sites/coppersmith',
+        destination: '/sites/coppersmith-plumbing',
+        permanent: false,
       },
     ];
   },

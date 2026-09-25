@@ -19,8 +19,18 @@
  *        The reader does tenant scoping itself (event_data.siteId), so all
  *        events of the stream are returned.
  *   POST /events
- *     Body: { event_type, aggregate_id?, aggregate_type?, event_data }
- *     -> 200 { event_id }  (the accepted event's id)
+ *     Body: { event_type, aggregate_id?, aggregate_type?, event_data, request_id? }
+ *     -> 200 { event_id, deduped }  (the accepted event's id)
+ *     Write-boundary P0: when request_id (string, <=128 chars) is present
+ *     and was seen before, the gateway returns the ORIGINAL event_id with
+ *     deduped:true and appends NOTHING. This is the backstop that makes
+ *     lost-response retries and crash recovery converge: any retry that
+ *     reaches the gateway with the same request_id gets the original
+ *     event instead of a duplicate. The in-memory index is rebuilt from
+ *     the store at startup (first record wins), so dedupe survives
+ *     restarts. The check -> append -> index-update sequence is
+ *     synchronous (no awaits between), so concurrent same-request_id
+ *     POSTs cannot both append.
  *     Used by src/fyd/customize/server.ts emitOverlayEvent to journal
  *     owner-approved presentation-intent overlays.
  *   GET  /  -> 200 { ok: true, service, store, journal } (health +
@@ -86,6 +96,21 @@ function loadEvents() {
   out.sort((a, b) => String(a.timestamp || "").localeCompare(String(b.timestamp || "")));
   return out;
 }
+
+// Write-boundary P0: request_id -> event_id. The event record IS the
+// index entry (stored on the record itself), so there is no two-file
+// atomicity problem. Rebuilt from disk at startup; updated synchronously
+// on every append.
+const requestIndex = new Map();
+function rebuildRequestIndex() {
+  requestIndex.clear();
+  for (const e of loadEvents()) {
+    if (e && typeof e.request_id === "string" && e.request_id && !requestIndex.has(e.request_id)) {
+      requestIndex.set(e.request_id, e.event_id);
+    }
+  }
+}
+rebuildRequestIndex();
 
 function mintId(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${randomBytes(6).toString("hex")}`;
@@ -162,6 +187,20 @@ const server = createServer(async (req, res) => {
         send(res, 400, { error: "event_type (string) and event_data (object) are required" });
         return;
       }
+      let requestId = null;
+      if (doc.request_id !== undefined && doc.request_id !== null) {
+        if (typeof doc.request_id !== "string" || !doc.request_id.trim() || doc.request_id.length > 128) {
+          send(res, 400, { error: "request_id must be a non-empty string of at most 128 chars when present" });
+          return;
+        }
+        requestId = doc.request_id.trim();
+        const prior = requestIndex.get(requestId);
+        if (prior) {
+          // Idempotent replay: the original event, no new append.
+          send(res, 200, { event_id: prior, deduped: true });
+          return;
+        }
+      }
       const rec = {
         event_id: mintId("fyd-ovl"),
         timestamp: new Date().toISOString(),
@@ -169,10 +208,12 @@ const server = createServer(async (req, res) => {
         aggregate_id: typeof doc.aggregate_id === "string" ? doc.aggregate_id : null,
         aggregate_type: typeof doc.aggregate_type === "string" ? doc.aggregate_type : null,
         event_data,
+        request_id: requestId,
       };
       mkdirSync(dirname(STORE), { recursive: true });
       appendFileSync(STORE, JSON.stringify(rec) + "\n", "utf8");
-      send(res, 200, { event_id: rec.event_id });
+      if (requestId) requestIndex.set(requestId, rec.event_id);
+      send(res, 200, { event_id: rec.event_id, deduped: false });
       return;
     }
 

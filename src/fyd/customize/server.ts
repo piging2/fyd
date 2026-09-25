@@ -23,6 +23,7 @@ import type {
   PresentationIntentDirective,
   PresentationIntentOverlayOp,
 } from "./types";
+import { UnknownOutcomeError } from "./write-boundary";
 
 export interface CustomizedSite {
   siteId: string;
@@ -128,32 +129,76 @@ async function preflightJournal(): Promise<void> {
 
 /**
  * Emit one FYD_SITE_OVERLAY event carrying presentation-intent ops to the
- * FYD demo journal. Returns the accepted event_id. Throws on rejection:
- * an unrecorded approval is never reported as recorded.
+ * FYD demo journal. Returns the accepted event_id and whether the gateway
+ * served a previously recorded event for this request_id. Throws on
+ * rejection: an unrecorded approval is never reported as recorded.
+ *
+ * Write-boundary P0 failure semantics:
+ *  - Gateway unreachable BEFORE any POST: throws the existing
+ *    "customize: demo gateway unreachable" error. Nothing was recorded;
+ *    safe to say so (the honest 502 path).
+ *  - POST sent but the response lost, timed out, or unusable: throws
+ *    UnknownOutcomeError. The effect MAY have been recorded. Callers must
+ *    surface UNKNOWN and retry with the same requestId; the gateway
+ *    dedupes on request_id so the retry converges on the original event.
+ *    Timeout never means failed.
  */
+export interface EmitOverlayOpts {
+  /** Idempotency key, forwarded to the gateway for dedupe. */
+  requestId?: string;
+  /** POST timeout in ms. On timeout the outcome is UNKNOWN, never failed. */
+  timeoutMs?: number;
+}
+
+export interface EmitOverlayResult {
+  eventId: string;
+  /** True when the gateway served a previously recorded event for this request_id. */
+  deduped: boolean;
+}
+
 export async function emitOverlayEvent(
   siteId: string,
   ops: PresentationIntentOverlayOp[],
-): Promise<string> {
+  opts: EmitOverlayOpts = {},
+): Promise<EmitOverlayResult> {
   await preflightJournal(); // FYD-037: fail closed before any POST.
-  const envelope = {
+  const timeoutMs = opts.timeoutMs ?? 10_000;
+  const requestId = opts.requestId;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const envelope: Record<string, unknown> = {
     event_type: "FYD_SITE_OVERLAY",
     aggregate_id: "fyd-site:" + siteId,
     aggregate_type: "fyd_site",
     event_data: { siteId, ops },
   };
+  if (requestId) envelope.request_id = requestId;
   let res: Response;
   try {
     res = await fetch(gatewayUrl(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(envelope),
+      signal: controller.signal,
     });
   } catch (e) {
-    throw new Error(
-      "customize: demo gateway unreachable at " + gatewayUrl() + ": " +
-        (e instanceof Error ? e.message : String(e)),
-    );
+    // The request never reached the gateway (connection refused / DNS):
+    // nothing was recorded, so the honest 502 path still applies.
+    const cause = (e as { cause?: { code?: string } })?.cause;
+    const code = typeof cause?.code === "string" ? cause.code : "";
+    const preSend = ["ECONNREFUSED", "ENOTFOUND", "EHOSTUNREACH", "ENETUNREACH"].includes(code);
+    if (preSend) {
+      throw new Error("customize: demo gateway unreachable at " + gatewayUrl() + ": " + code);
+    }
+    // Anything else (abort/timeout, socket destroyed mid-flight): the POST
+    // may have been recorded. UNKNOWN, never failed.
+    const tag =
+      e instanceof Error && e.name === "AbortError"
+        ? "timeout after " + timeoutMs + "ms"
+        : "network error: " + (e instanceof Error ? e.message : String(e));
+    throw new UnknownOutcomeError(requestId ?? "unknown", tag);
+  } finally {
+    clearTimeout(timer);
   }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -165,7 +210,12 @@ export async function emitOverlayEvent(
   try {
     doc = await res.json();
   } catch {
-    throw new Error("customize: demo gateway returned non-JSON on event emit.");
+    // The gateway appends before responding: a 200 with an unreadable body
+    // most likely recorded the event. UNKNOWN, not failure.
+    throw new UnknownOutcomeError(
+      requestId ?? "unknown",
+      "gateway returned non-JSON on event emit",
+    );
   }
   const eid =
     doc && typeof doc === "object"
@@ -173,9 +223,31 @@ export async function emitOverlayEvent(
         (doc as Record<string, unknown>)["id"])
       : null;
   if (typeof eid !== "string" || eid.length === 0) {
-    throw new Error("customize: gateway accepted the event but returned no event_id.");
+    // Accepted (HTTP 200) but no usable event_id: UNKNOWN, not failure.
+    // Retry with the same request_id converges via gateway dedupe.
+    throw new UnknownOutcomeError(
+      requestId ?? "unknown",
+      "gateway accepted the event but returned no event_id",
+    );
   }
-  return eid;
+  const deduped =
+    doc !== null &&
+    typeof doc === "object" &&
+    (doc as Record<string, unknown>)["deduped"] === true;
+  return { eventId: eid, deduped };
+}
+
+/**
+ * Readiness probe for /readyz: the journal gateway is reachable and its
+ * live-derived identity marker matches. Never throws.
+ */
+export async function journalReadiness(): Promise<{ ready: boolean; reason?: string }> {
+  try {
+    await preflightJournal();
+    return { ready: true };
+  } catch (e) {
+    return { ready: false, reason: e instanceof Error ? e.message : String(e) };
+  }
 }
 
 export function buildDirective(
