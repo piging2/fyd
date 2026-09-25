@@ -45,12 +45,11 @@
  * - wide desktop (>=1400px): two object rails (left + right)
  * - normal desktop (1024-1399): one preferred rail + overflow clustering
  * - tablet (768-1023): compact edge rail (40px rest)
- * - mobile (<768): no object chrome at all in the customer-facing
- *   experience (2026-09-23 product direction, binding). The page is a
- *   composition of individually interactive objects; there is no
- *   object bucket, no floating tab, no drawer in primary UX.
- *   A generic object explorer survives only as an internal/debug
- *   surface behind ?objectDebug=1.
+ * - mobile (<768): the very-right overlay (Nolan 2026-09-25, supersedes
+ *   the 2026-09-23 direction): document-anchored 44px doorway pills at
+ *   the extreme right edge, one per anchored object, page-anchored so
+ *   scrolling moves them out of view. Tap opens the mobile object
+ *   sheet. No debug flag in the production path.
  *
  * SSR / pre-measure shell: an absolute empty layer. Zero layout impact:
  * absolute elements are out of flow, so center geometry cannot change.
@@ -103,6 +102,50 @@ const RAIL_OFFSET: Record<Exclude<Projection, "mobile">, number> = {
   single: 12,
   edge: 8,
 };
+
+/**
+ * 18:47 sparsity (Nolan 2026-09-25): objects that share one section anchor
+ * spread deterministically around the anchor instead of collapsing into a
+ * single cluster. Very far apart is acceptable; anchoring stays near the
+ * contextual section. Pure and deterministic: same inputs, same spread.
+ */
+const SHARED_ANCHOR_SPREAD_PX = 140;
+
+/** Exported for the ui test suite (sparsity pin, Nolan 2026-09-25). */
+export function spreadSharedAnchors<
+  T extends {
+    objectId: string;
+    anchorKey: string;
+    anchorMidY: number | null;
+    priority: number;
+  },
+>(items: T[]): (T & { spreadY: number | null })[] {
+  const groups = new Map<string, T[]>();
+  for (const it of items) {
+    const g = groups.get(it.anchorKey);
+    if (g) g.push(it);
+    else groups.set(it.anchorKey, [it]);
+  }
+  const out: (T & { spreadY: number | null })[] = [];
+  for (const [, g] of groups) {
+    g.sort(
+      (a, b) =>
+        a.priority - b.priority ||
+        (a.objectId < b.objectId ? -1 : a.objectId > b.objectId ? 1 : 0),
+    );
+    const baseY = g[0].anchorMidY;
+    g.forEach((it, idx) => {
+      out.push({
+        ...it,
+        spreadY:
+          baseY == null || it.anchorMidY == null
+            ? null
+            : baseY + (idx - (g.length - 1) / 2) * SHARED_ANCHOR_SPREAD_PX,
+      });
+    });
+  }
+  return out;
+}
 
 interface DocumentLayout {
   vw: number;
@@ -310,6 +353,7 @@ export function MarginObjectLayer({
   const anchorKeys = React.useMemo(() => objects.map((o) => o.anchorKey), [idsKey]);
   const { layout, layerRef } = useDocumentLayout(anchorKeys);
   const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [mobileSelectedId, setMobileSelectedId] = React.useState<string | null>(null);
 
   const projection: Projection | null = layout ? projectionForWidth(layout.vw) : null;
   const projectionRef = React.useRef(projection);
@@ -363,10 +407,17 @@ export function MarginObjectLayer({
 
   const placed = React.useMemo<Placed[]>(() => {
     if (!layout || !projection || projection === "mobile") return [];
-    const inputs: AnchorInput[] = objects.map((o) => ({
-      objectId: o.objectId,
-      anchorMidY: layout.anchors[o.anchorKey] ?? null,
-      priority: o.priority,
+    const inputs: AnchorInput[] = spreadSharedAnchors(
+      objects.map((o) => ({
+        objectId: o.objectId,
+        anchorKey: o.anchorKey,
+        anchorMidY: layout.anchors[o.anchorKey] ?? null,
+        priority: o.priority,
+      })),
+    ).map((sd) => ({
+      objectId: sd.objectId,
+      anchorMidY: sd.spreadY,
+      priority: sd.priority,
     }));
     const restD = projection === "edge" ? EDGE_REST_D : REST_D;
     const rails: Rail[] = projection === "dual" ? ["right", "left"] : ["right"];
@@ -454,38 +505,107 @@ export function MarginObjectLayer({
   }
 
   if (projection === "mobile") {
-    // 2026-09-23 product direction (binding): the page is a composition
-    // of individually interactive objects. No object bucket, no floating
-    // tab, no drawer in the customer-facing mobile experience. The
-    // explorer sheet survives only as an internal/debug surface behind
-    // ?objectDebug=1.
-    const debug =
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("objectDebug") === "1";
-    if (!debug) return null;
+    // PRODUCTION PATH (Nolan 2026-09-25, supersedes the 2026-09-23
+    // "no object chrome on mobile" direction): the very-right overlay.
+    // Doorways render as document-anchored pills at the extreme right
+    // edge, one per anchored object, spread around their section anchor.
+    // Page-anchored: scrolling moves them out of view; never
+    // viewport-glued. 44px targets, no horizontal overflow (maxWidth
+    // 100%, border-box), safe-area aware. Tap opens the mobile object
+    // sheet. No debug flag anywhere in this path.
+    const pills: { objectId: string; name: string; y: number }[] = [];
+    for (const sd of spreadSharedAnchors(
+      objects.map((o) => ({
+        objectId: o.objectId,
+        anchorKey: o.anchorKey,
+        anchorMidY: layout.anchors[o.anchorKey] ?? null,
+        priority: o.priority,
+      })),
+    )) {
+      if (typeof sd.spreadY !== "number") continue;
+      pills.push({
+        objectId: sd.objectId,
+        name: byId.get(sd.objectId)?.name ?? sd.objectId,
+        y: Math.min(Math.max(sd.spreadY, 30), Math.max(30, layout.docH - 30)),
+      });
+    }
+    pills.sort(
+      (a, b) =>
+        a.y - b.y || (a.objectId < b.objectId ? -1 : a.objectId > b.objectId ? 1 : 0),
+    );
     return (
       <>
-        {!sheetOpen && (
-          <div data-testid="object-layer" data-projection="mobile" className="px-4 py-6">
-            <button
-              type="button"
-              data-testid="mobile-object-tab"
-              onClick={() => {
-                claimExpanded("sheet");
-                setSheetOpen(true);
-              }}
-              aria-label={`Debug: open object explorer (${objects.length} objects).`}
-              className="flex min-h-[56px] w-full items-center justify-center gap-3 rounded-2xl px-5 py-4 font-mono text-xs text-white"
+        {pills.length > 0 &&
+          createPortal(
+            <div
+              data-testid="object-layer"
+              data-projection="mobile"
               style={{
-                background: "rgba(20,16,10,0.92)",
-                boxShadow: "0 0 0 1px rgba(232,180,90,0.55)",
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: layout.docH,
+                overflowX: "clip",
+                overflowY: "visible",
+                pointerEvents: "none",
+                zIndex: 50,
               }}
             >
-              <span>DEBUG object explorer ({objects.length})</span>
-            </button>
-          </div>
+              {pills.map((pill) => (
+                <button
+                  key={pill.objectId}
+                  type="button"
+                  data-testid="mobile-object-pill"
+                  data-object-id={pill.objectId}
+                  onClick={() => {
+                    setMobileSelectedId(pill.objectId);
+                    setSheetOpen(true);
+                  }}
+                  aria-label={"Open object: " + pill.name}
+                  style={{
+                    position: "absolute",
+                    top: pill.y - 22,
+                    right: "max(6px, env(safe-area-inset-right, 0px))",
+                    width: 44,
+                    height: 44,
+                    minWidth: 44,
+                    minHeight: 44,
+                    maxWidth: "100%",
+                    boxSizing: "border-box",
+                    borderRadius: "50%",
+                    pointerEvents: "auto",
+                    background: "#2A1B4E",
+                    border: "2px solid #C9A227",
+                    color: "#fff",
+                    fontSize: 18,
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  <span aria-hidden="true">
+                    {pill.name.trim().charAt(0).toUpperCase() || "?"}
+                  </span>
+                </button>
+              ))}
+            </div>,
+            document.body,
+          )}
+        {sheetOpen && (
+          <MobileSheet
+            objects={objects}
+            initialSelectedId={mobileSelectedId}
+            onClose={() => {
+              setSheetOpen(false);
+              setMobileSelectedId(null);
+            }}
+          />
         )}
-        {sheetOpen && <MobileSheet objects={objects} onClose={() => setSheetOpen(false)} />}
       </>
     );
   }

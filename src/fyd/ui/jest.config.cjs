@@ -14,6 +14,10 @@ module.exports = {
   testMatch: ["<rootDir>/src/fyd/ui/__tests__/*.test.{ts,tsx}"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    // margin-select imports resolveQuery from the renderer, which pulls in
+    // object-circle's CSS module (Nolan 2026-09-25, worker F). Stub it like
+    // the components lane config does.
+    "\\.css$": "<rootDir>/src/fyd/components/__tests__/css-stub.js",
   },
   transform: {
     "^.+\\.tsx?$": [

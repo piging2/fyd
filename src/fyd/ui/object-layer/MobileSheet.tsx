@@ -72,12 +72,17 @@ function IdentityAvatar({ object }: { object: MarginObjectDescriptor }) {
 
 export function MobileSheet({
   objects,
+  initialSelectedId = null,
   onClose,
 }: {
   objects: MarginObjectDescriptor[];
+  /** Object preselected when the sheet opens (very-right overlay tap). */
+  initialSelectedId?: string | null;
   onClose: () => void;
 }) {
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [selectedId, setSelectedId] = React.useState<string | null>(
+    initialSelectedId ?? null,
+  );
   const selected = objects.find((o) => o.objectId === selectedId) ?? null;
   // The sheet's workspace shares the slot-level projection fetch.
   const sheetProj = useObjectProjection(selected?.objectId ?? "");

@@ -27,6 +27,8 @@ import type { DisplayMedia } from "@/fyd/media/select";
 import { FydMotionFallback } from "@/fyd/components/fyd-motion-fallback";
 import { ObjectOverlay } from "@/fyd/components/object-overlay";
 import { edgeClientScript } from "@/fyd/edge/client";
+import { MarginObjectLayer } from "@/fyd/ui/object-layer/MarginObjectLayer";
+import { selectMarginObjects } from "@/fyd/ui/object-layer/margin-select";
 
 declare global {
   interface Window {
@@ -88,6 +90,22 @@ export function SiteClient({
     [spec, graph, siteId, heroMedia, galleryMedia],
   );
   const page = spec.pages.find((p) => p.slug === activeSlug) ?? spec.pages[0];
+  // MARGIN-1 (Nolan 2026-09-25): the page-level edge/margin object layer.
+  // graph -> eligibility -> contextual selection -> projection ->
+  // MarginObjectLayer -> browser. Deterministic eligibility first;
+  // the layer is the production feed (no debug flag in this path).
+  const marginObjects = useMemo(
+    () =>
+      page
+        ? selectMarginObjects({
+            graph,
+            page,
+            ownerId: spec.ownerObjectId,
+            siteId: siteId ?? "",
+          })
+        : [],
+    [graph, page, spec.ownerObjectId, siteId],
+  );
   // Object doorway: intercept taps/clicks on /o/ links. EDGE-1 routes them
   // into the edge object sheet (the functional doorway into the authorized
   // graph). The legacy ObjectOverlay remains only as a fallback when the
@@ -148,6 +166,9 @@ export function SiteClient({
       {siteId ? (
         <script dangerouslySetInnerHTML={{ __html: edgeClientScript(siteId) }} />
       ) : null}
+      {/* MARGIN-1: page-level margin object layer (very-right overlay on
+          mobile). Mounted always; no debug flag in the production path. */}
+      {renderable ? <MarginObjectLayer objects={marginObjects} /> : null}
       {overlayObjectId && (() => {
         const obj = graph.objects.find((o) => o.id === overlayObjectId);
         if (!obj) return null;
