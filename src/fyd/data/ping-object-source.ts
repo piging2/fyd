@@ -339,7 +339,7 @@ export async function getVerifiedPublicProjection(
   opts?: PingSourceOpts,
 ): Promise<VerifiedPublicProjection> {
   const { graph } = await getPingObjectGraph(siteId, opts);
-  return verifyPublicProjection(graph, decisionsForGraph(graph), viewerKind);
+  return verifyPublicProjection(graph, decisionsForGraph(graph, siteId), viewerKind);
 }
 
 /** Synchronous variant of getVerifiedPublicProjection. */
@@ -349,5 +349,5 @@ export function getVerifiedPublicProjectionSync(
   opts?: PingSourceOpts,
 ): VerifiedPublicProjection {
   const { graph } = getPingObjectGraphSync(siteId, opts);
-  return verifyPublicProjection(graph, decisionsForGraph(graph), viewerKind);
+  return verifyPublicProjection(graph, decisionsForGraph(graph, siteId), viewerKind);
 }

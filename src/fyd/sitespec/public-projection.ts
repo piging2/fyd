@@ -47,6 +47,7 @@ import {
   type FieldVisibilityDecision,
 } from "./field-visibility";
 import type { ObjectGraph } from "./types";
+import { SCHEMA_ROLES } from "./schema-roles";
 
 /** Boundary version. Bump when the projection composition order or rules change. */
 export const PUBLIC_PROJECTION_VERSION = "fyd.public-projection@1" as const;
@@ -170,10 +171,34 @@ export function objectDecisionsToFieldVisibility(
  * Resolve the owner visibility decisions for every object in a graph.
  * Deterministic given the owner store state; order follows graph object order.
  */
-export function decisionsForGraph(graph: ObjectGraph): FieldVisibilityDecision[] {
+export function decisionsForGraph(
+  graph: ObjectGraph,
+  siteId?: string,
+): FieldVisibilityDecision[] {
   const decisions: FieldVisibilityDecision[] = [];
+  const seenLog = new Set<string>();
   for (const obj of graph.objects) {
     decisions.push(...objectDecisionsToFieldVisibility(obj.id));
+    seenLog.add(obj.id);
+  }
+  // Site-keyed owner log bridge (privacy P0, 2026-09-25): the owner-management
+  // routes key owner state by site id (G4: the object id IS the site id), not
+  // by graph object id. A site-level visibility decision (e.g. "hide the
+  // address") is semantically about the site's business object(s). Without
+  // this bridge the decision is durable in the owner log but invisible to
+  // the public projection boundary: the owner believes the address is
+  // hidden while the public API still serves it. Re-target site-keyed
+  // decisions onto every business-role object in the graph; the
+  // zero-disclosure traversal then cuts located_at and orphaned locations.
+  if (siteId && !seenLog.has(siteId)) {
+    const businessIds = graph.objects
+      .filter((o) => SCHEMA_ROLES.business.includes(o.schema))
+      .map((o) => o.id);
+    for (const d of objectDecisionsToFieldVisibility(siteId)) {
+      for (const targetId of businessIds) {
+        decisions.push({ ...d, objectId: targetId });
+      }
+    }
   }
   return decisions;
 }
