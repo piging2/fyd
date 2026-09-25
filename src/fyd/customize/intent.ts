@@ -174,6 +174,12 @@ function targetWordsMatch(title: string, target: string): boolean {
 }
 
 function findObject(graph: ObjectGraph, target: string): { id: string; title: string } | null {
+  const t = target.trim().toLowerCase();
+  // An exact title match always wins. Without this, the shortest-title-first
+  // fuzzy sort below picks "Plumbing" for the target "emergency plumbing"
+  // even when "Emergency Plumbing" exists.
+  const exact = graph.objects.find((o) => o.title && o.title.toLowerCase() === t);
+  if (exact) return { id: exact.id, title: exact.title };
   const cands = graph.objects
     .filter((o) => o.title && targetWordsMatch(o.title, target))
     .sort((a, b) => a.title.length - b.title.length);

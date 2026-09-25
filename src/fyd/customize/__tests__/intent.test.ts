@@ -246,6 +246,25 @@ describe("resolveCustomizationIntent", () => {
     });
     expect(res.resolutionNote).toContain("Deck Construction");
   });
+  test("exact object title beats a shorter fuzzy match", () => {
+    const g = graph();
+    g.objects.push(obj("svc-3", "Plumbing"), obj("svc-4", "Emergency Plumbing"));
+    const parsed = parseCustomizationIntent("Move emergency plumbing first.");
+    expect(isUnsupported(parsed)).toBe(false);
+    if (isUnsupported(parsed)) return;
+    const res = resolveCustomizationIntent(spec(), g, parsed.intent);
+    expect(res.resolved).toBe(true);
+    if (!res.resolved) return;
+    // "Emergency Plumbing" is the exact title match for the target; the old
+    // shortest-title-first fuzzy sort picked "Plumbing" (svc-3) instead.
+    expect(res.siteIntent).toEqual({
+      kind: "reorder_object",
+      pageSlug: "home",
+      sectionId: "home:Services:1",
+      objectIds: ["svc-4", "svc-1", "svc-2", "svc-3"],
+    });
+    expect(res.resolutionNote).toContain("Emergency Plumbing");
+  });
 
   test("promote_first on an object already first is refused honestly", () => {
     const parsed = parseCustomizationIntent("Put pergola design consultations first");
