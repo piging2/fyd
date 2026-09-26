@@ -94,7 +94,7 @@ function J({ v }: { v: unknown }) {
   );
 }
 
-const TABS = ["TODAY", "AGENTS", "BUSINESSES", "WEBSITES", "TECHNOLOGY", "SEARCH"] as const;
+const TABS = ["TODAY", "AGENTS", "BUSINESSES", "WEBSITES", "TECHNOLOGY", "SEARCH", "DISPATCH"] as const;
 
 const OP_FIELDS = [
   "mission",
@@ -635,6 +635,7 @@ export default function MissionControlPage() {
           )}
         </>
       )}
+      {tab === "DISPATCH" && <DispatchPanel />}
     </main>
   );
 }
@@ -872,5 +873,347 @@ function ForwardButtons({
         </button>
       ))}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Lane D: Mission Control dispatch panel (2026-09-26).
+// [New Mission] form -> [Dispatch] -> mission detail, all projected from the
+// existing journal. UNKNOWN is first-class: timeouts and unverifiable
+// results render "OUTCOME UNKNOWN - RECONCILIATION IN PROGRESS", never FAILED.
+// ---------------------------------------------------------------------------
+
+type DispatchAgent = {
+  id: string;
+  family: string;
+  status: string;
+  allowedCapabilities: string[];
+  claim: string;
+  claim_note: string;
+};
+
+type DispatchCatalog = {
+  ok: boolean;
+  agents: DispatchAgent[];
+  tenants: string[];
+  constraints: Record<string, boolean>;
+  prompt_max: number;
+  deadlines_seconds: Record<string, number>;
+};
+
+type MissionSummary = {
+  mission_id: string;
+  run_id: string | null;
+  execution_id: string | null;
+  status: string;
+  agent: string | null;
+  tenant: string | null;
+  capability: string | null;
+  work_order_id: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+  reconciliation_state: string | null;
+  artifact_count: number;
+  event_count: number;
+};
+
+type MissionDetail = {
+  mission_id: string;
+  run_id: string | null;
+  execution_id: string | null;
+  status: string;
+  status_event_id: string | null;
+  agent: string | null;
+  tenant: string | null;
+  capability: string | null;
+  capabilities_granted: string[];
+  work_order_id: string | null;
+  context_pack_id: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+  result: { outcome: string | null; output_digest: string | null; output_chars: number | null; error: string | null };
+  reconciliation_state: string | null;
+  artifacts: { kind: string; path: string; sha256: string | null; event_id: string }[];
+  evidence: Record<string, unknown>[];
+  events: { event_id: string; event_type: string; timestamp: string; summary: string | null }[];
+};
+
+const MISSION_STATUS_BADGE: Record<string, BadgeState> = {
+  QUEUED: "OBSERVED",
+  RUNNING: "OBSERVED",
+  SUCCEEDED: "PROVEN",
+  FAILED: "CONFLICTING",
+  UNKNOWN: "UNKNOWN",
+  DENIED: "STALE",
+  CREATED: "PROTOTYPE",
+};
+
+const TERMINAL = new Set(["SUCCEEDED", "FAILED", "UNKNOWN", "DENIED"]);
+
+function DispatchPanel() {
+  const [catalog, setCatalog] = useState<DispatchCatalog | null>(null);
+  const [catalogErr, setCatalogErr] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState("");
+  const [tenant, setTenant] = useState("");
+  const [agent, setAgent] = useState("");
+  const [capability, setCapability] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [dispatchMsg, setDispatchMsg] = useState<string | null>(null);
+  const [missions, setMissions] = useState<MissionSummary[]>([]);
+  const [missionsAsOf, setMissionsAsOf] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<MissionDetail | null>(null);
+
+  const loadCatalog = useCallback(() => {
+    fetch("/api/mc/dispatch", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((c: DispatchCatalog) => {
+        if (!c.ok) { setCatalogErr("dispatch catalog unavailable"); return; }
+        setCatalog(c);
+        setTenant((t) => t || c.tenants[0] || "");
+        setAgent((a) => a || (c.agents[0]?.id ?? ""));
+      })
+      .catch(() => setCatalogErr("dispatch catalog fetch failed"));
+  }, []);
+
+  const loadMissions = useCallback(() => {
+    fetch("/api/mc/missions", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((m) => {
+        if (m.ok) {
+          setMissions(m.missions as MissionSummary[]);
+          setMissionsAsOf(m.as_of as string);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const loadDetail = useCallback((id: string) => {
+    fetch(`/api/mc/missions/${encodeURIComponent(id)}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((m) => { if (m.ok) setDetail(m.mission as MissionDetail); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => { loadCatalog(); loadMissions(); }, [loadCatalog, loadMissions]);
+
+  // Poll the selected mission while it is non-terminal; the projection is
+  // journal-backed, so refresh/poll always shows the same truth.
+  useEffect(() => {
+    if (!selectedId) { setDetail(null); return; }
+    loadDetail(selectedId);
+    const d = detail;
+    if (d && TERMINAL.has(d.status)) return;
+    const t = setInterval(() => loadDetail(selectedId), 5000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
+  const selectedAgent = catalog?.agents.find((a) => a.id === agent) ?? null;
+  const capabilities = selectedAgent?.allowedCapabilities ?? [];
+
+  useEffect(() => {
+    if (capabilities.length && !capabilities.includes(capability)) {
+      setCapability(capabilities[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agent, catalog]);
+
+  const doDispatch = useCallback(() => {
+    if (busy) return;
+    setBusy(true);
+    setDispatchMsg(null);
+    fetch("/api/mc/dispatch", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt, agent, capability, tenant }),
+    })
+      .then((r) => r.json().then((j) => ({ http: r.status, j })))
+      .then(({ http, j }) => {
+        setBusy(false);
+        if (http === 403 || j.status === "DENIED") {
+          setDispatchMsg(`DENIED (not failed): ${String(j.reason ?? j.error ?? "denied")}`);
+        } else if (j.ok) {
+          setDispatchMsg(`Dispatched: ${j.mission_id} -> ${j.status}`);
+          setSelectedId(j.mission_id as string);
+        } else {
+          setDispatchMsg(`Dispatch rejected: ${String(j.error ?? "unknown")} ${String(j.detail ?? "")}`);
+        }
+        loadMissions();
+      })
+      .catch((e) => { setBusy(false); setDispatchMsg(`Dispatch error: ${String(e)}`); });
+  }, [busy, prompt, agent, capability, tenant, loadMissions]);
+
+  const inputStyle = {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: 8,
+    border: "1px solid #3a3a4e",
+    background: "#14141c",
+    color: "#eceaf6",
+    fontSize: 13,
+    boxSizing: "border-box" as const,
+  };
+
+  return (
+    <>
+      <Card title="New Mission" health="PROVEN">
+        <p style={{ fontSize: 12, color: "#9a97b5", marginTop: 0 }}>
+          Witnessed dispatch control. Every dispatch is authorized by the existing
+          ExternalAgentAdapter, executed by the agent&apos;s proven transport, and
+          recorded as typed events in the existing journal. Projection only, no new store.
+        </p>
+        {catalogErr && <p style={{ color: "#ff8a8a", fontSize: 13 }}>{catalogErr}</p>}
+        {!catalog && !catalogErr && <p>Loading dispatch catalog...</p>}
+        {catalog && (
+          <div style={{ display: "grid", gap: 10 }}>
+            <label style={{ fontSize: 12, color: "#b9b9d6" }}>
+              Prompt (bounded, {prompt.length}/{catalog.prompt_max} chars)
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value.slice(0, catalog.prompt_max))}
+                rows={4}
+                placeholder="Real bounded prompt for the headless agent..."
+                style={{ ...inputStyle, fontFamily: "inherit", resize: "vertical" }}
+              />
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <label style={{ fontSize: 12, color: "#b9b9d6" }}>
+                Identity / Tenant
+                <select value={tenant} onChange={(e) => setTenant(e.target.value)} style={inputStyle}>
+                  {catalog.tenants.map((t) => (<option key={t} value={t}>{t}</option>))}
+                </select>
+              </label>
+              <label style={{ fontSize: 12, color: "#b9b9d6" }}>
+                Agent
+                <select value={agent} onChange={(e) => setAgent(e.target.value)} style={inputStyle}>
+                  {catalog.agents.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.id} ({a.family}, {a.claim})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label style={{ fontSize: 12, color: "#b9b9d6" }}>
+                Capabilities
+                <select value={capability} onChange={(e) => setCapability(e.target.value)} style={inputStyle}>
+                  {capabilities.map((c) => (<option key={c} value={c}>{c}</option>))}
+                </select>
+              </label>
+            </div>
+            {selectedAgent && (
+              <div style={{ fontSize: 11, color: "#6a6785" }}>
+                {selectedAgent.id}: {selectedAgent.claim_note} Deadline: {catalog.deadlines_seconds[selectedAgent.id]}s.
+                Constraints: {Object.keys(catalog.constraints).join(", ")} (fixed, fail-closed).
+              </div>
+            )}
+            <div>
+              <button
+                onClick={doDispatch}
+                disabled={busy || !prompt.trim() || !agent || !capability || !tenant}
+                style={{
+                  padding: "10px 26px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: busy ? "#3a3a4e" : "#4a3568",
+                  color: "#fff",
+                  fontWeight: 700,
+                  cursor: busy ? "wait" : "pointer",
+                  fontSize: 14,
+                }}
+              >
+                {busy ? "Dispatching..." : "Dispatch"}
+              </button>
+              {dispatchMsg && (
+                <span style={{ marginLeft: 12, fontSize: 13, color: dispatchMsg.startsWith("DENIED") ? "#ffcf7d" : "#7dffa8" }}>
+                  {dispatchMsg}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <Card title={`Missions${missionsAsOf ? ` (as of ${missionsAsOf})` : ""}`} health="PROVEN">
+        {!missions.length && <p style={{ fontSize: 13, color: "#9a97b5" }}>No missions yet. Dispatch one above.</p>}
+        {missions.map((m) => (
+          <div
+            key={m.mission_id}
+            onClick={() => setSelectedId(m.mission_id)}
+            style={{
+              border: "1px solid #2c2c3a",
+              borderRadius: 8,
+              padding: "8px 10px",
+              marginBottom: 8,
+              cursor: "pointer",
+              background: selectedId === m.mission_id ? "#1e1a2e" : "#101018",
+            }}
+          >
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <Badge h={MISSION_STATUS_BADGE[m.status] ?? "UNKNOWN"} />
+              <span style={{ fontSize: 12, fontWeight: 700 }}>{m.mission_id}</span>
+              <span style={{ fontSize: 11, color: "#9a97b5" }}>
+                {m.agent} / {m.tenant} / {m.capability}
+              </span>
+              {m.status === "UNKNOWN" && (
+                <span style={{ fontSize: 11, color: "#9a97b5", fontWeight: 700 }}>
+                  OUTCOME UNKNOWN - RECONCILIATION IN PROGRESS
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 11, color: "#6a6785", marginTop: 4 }}>
+              run {m.run_id ?? "-"} · exec {m.execution_id ?? "-"} · {m.event_count} events · {m.artifact_count} artifacts
+              {m.started_at ? ` · started ${m.started_at}` : ""}
+              {m.ended_at ? ` · ended ${m.ended_at}` : ""}
+            </div>
+          </div>
+        ))}
+        <button
+          onClick={loadMissions}
+          style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #3a3a4e", background: "#14141c", color: "#b9b9d6", cursor: "pointer", fontSize: 12 }}
+        >
+          Refresh
+        </button>
+      </Card>
+
+      {detail && (
+        <Card title={`Mission ${detail.mission_id}`} health="PROVEN">
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+            <Badge h={MISSION_STATUS_BADGE[detail.status] ?? "UNKNOWN"} />
+            <span style={{ fontWeight: 700 }}>{detail.status}</span>
+            {detail.status === "UNKNOWN" && (
+              <span style={{ fontSize: 12, color: "#9a97b5", fontWeight: 700 }}>
+                OUTCOME UNKNOWN - RECONCILIATION IN PROGRESS
+              </span>
+            )}
+            {detail.reconciliation_state && detail.status !== "UNKNOWN" && (
+              <span style={{ fontSize: 12, color: "#9a97b5" }}>{detail.reconciliation_state}</span>
+            )}
+          </div>
+          <J
+            v={{
+              agent: detail.agent,
+              run: detail.run_id,
+              execution: detail.execution_id,
+              tenant: detail.tenant,
+              capability: detail.capability,
+              capabilities_granted: detail.capabilities_granted,
+              work_order_id: detail.work_order_id,
+              context_pack_id: detail.context_pack_id,
+              started_at: detail.started_at,
+              ended_at: detail.ended_at,
+              result: detail.result,
+              reconciliation_state: detail.reconciliation_state,
+            }}
+          />
+          <h4 style={{ fontSize: 13, margin: "12px 0 6px" }}>Artifacts ({detail.artifacts.length})</h4>
+          <J v={detail.artifacts} />
+          <h4 style={{ fontSize: 13, margin: "12px 0 6px" }}>Evidence ({detail.evidence.length})</h4>
+          <J v={detail.evidence} />
+          <h4 style={{ fontSize: 13, margin: "12px 0 6px" }}>Events ({detail.events.length})</h4>
+          <J v={detail.events} />
+        </Card>
+      )}
+    </>
   );
 }
