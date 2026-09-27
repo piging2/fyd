@@ -1,0 +1,65 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`emitFydThemeCss snapshot of the full emitted block 1`] = `
+"/* lane-6 type + spacing tokens (deterministic, voice: editorial) */
+:root {
+  --fyd-font-display: Playfair Display, Georgia, serif;
+  --fyd-font-body: Geist, system-ui, sans-serif;
+  --fyd-type-display-xl: clamp(3rem, 2.2857rem + 0.2232vw, 5.5rem);
+  --fyd-type-display-xl-leading: 1.05;
+  --fyd-type-display-xl-tracking: -0.02em;
+  --fyd-type-display-xl-weight: 700;
+  --fyd-type-display: clamp(2.25rem, 1.6071rem + 0.2009vw, 4.5rem);
+  --fyd-type-display-leading: 1.15;
+  --fyd-type-display-tracking: -0.02em;
+  --fyd-type-display-weight: 700;
+  --fyd-type-h2: clamp(1.75rem, 1.3929rem + 0.1116vw, 3rem);
+  --fyd-type-h2-leading: 1.15;
+  --fyd-type-h2-tracking: -0.02em;
+  --fyd-type-h2-weight: 700;
+  --fyd-type-h3: clamp(1.25rem, 1.1786rem + 0.0223vw, 1.5rem);
+  --fyd-type-h3-leading: 1.25;
+  --fyd-type-h3-tracking: -0.01em;
+  --fyd-type-h3-weight: 700;
+  --fyd-type-lead: clamp(1.125rem, 1.0893rem + 0.0112vw, 1.25rem);
+  --fyd-type-lead-leading: 1.6;
+  --fyd-type-lead-tracking: 0;
+  --fyd-type-lead-weight: 400;
+  --fyd-type-body: 1rem;
+  --fyd-type-body-leading: 1.6;
+  --fyd-type-body-tracking: 0.01em;
+  --fyd-type-body-weight: 400;
+  --fyd-type-small: 0.875rem;
+  --fyd-type-small-leading: 1.5;
+  --fyd-type-small-tracking: 0.01em;
+  --fyd-type-small-weight: 400;
+  --fyd-type-eyebrow: 0.875rem;
+  --fyd-type-eyebrow-leading: 1.4;
+  --fyd-type-eyebrow-tracking: 0.12em;
+  --fyd-type-eyebrow-weight: 600;
+  --fyd-type-button: 1rem;
+  --fyd-type-button-leading: 1.2;
+  --fyd-type-button-tracking: 0.01em;
+  --fyd-type-button-weight: 600;
+  --fyd-measure: 65ch;
+  --fyd-measure-narrow: 60ch;
+  --fyd-space-section-major: clamp(4rem, 2.8571rem + 0.3571vw, 8rem);
+  --fyd-space-section-minor: clamp(3rem, 2.4286rem + 0.1786vw, 5rem);
+  --fyd-space-card-gap: clamp(1.25rem, 1.1786rem + 0.0223vw, 1.5rem);
+  --fyd-space-stack-eyebrow: 1rem;
+  --fyd-space-stack-description: 1.25rem;
+  --fyd-container-max: 80rem;
+  --fyd-radius-card: 0.75rem;
+  --fyd-shadow-card: 0 22px 46px -28px rgba(53, 36, 35, 0.18);
+  --fyd-shadow-card-hover: 0 30px 60px -24px rgba(53, 36, 35, 0.3);
+}
+.fyd-type-display-xl { font-size: var(--fyd-type-display-xl); line-height: var(--fyd-type-display-xl-leading); letter-spacing: var(--fyd-type-display-xl-tracking); font-weight: var(--fyd-type-display-xl-weight); font-family: var(--fyd-font-display); text-wrap: balance; }
+.fyd-type-display { font-size: var(--fyd-type-display); line-height: var(--fyd-type-display-leading); letter-spacing: var(--fyd-type-display-tracking); font-weight: var(--fyd-type-display-weight); font-family: var(--fyd-font-display); text-wrap: balance; }
+.fyd-type-h2 { font-size: var(--fyd-type-h2); line-height: var(--fyd-type-h2-leading); letter-spacing: var(--fyd-type-h2-tracking); font-weight: var(--fyd-type-h2-weight); font-family: var(--fyd-font-display); text-wrap: balance; }
+.fyd-type-h3 { font-size: var(--fyd-type-h3); line-height: var(--fyd-type-h3-leading); letter-spacing: var(--fyd-type-h3-tracking); font-weight: var(--fyd-type-h3-weight); font-family: var(--fyd-font-display); text-wrap: balance; }
+.fyd-type-lead { font-size: var(--fyd-type-lead); line-height: var(--fyd-type-lead-leading); letter-spacing: var(--fyd-type-lead-tracking); font-weight: var(--fyd-type-lead-weight); font-family: var(--fyd-font-body); text-wrap: pretty; }
+.fyd-type-body { font-size: var(--fyd-type-body); line-height: var(--fyd-type-body-leading); letter-spacing: var(--fyd-type-body-tracking); font-weight: var(--fyd-type-body-weight); font-family: var(--fyd-font-body); text-wrap: pretty; }
+.fyd-type-small { font-size: var(--fyd-type-small); line-height: var(--fyd-type-small-leading); letter-spacing: var(--fyd-type-small-tracking); font-weight: var(--fyd-type-small-weight); font-family: var(--fyd-font-body); text-wrap: pretty; }
+.fyd-type-eyebrow { font-size: var(--fyd-type-eyebrow); line-height: var(--fyd-type-eyebrow-leading); letter-spacing: var(--fyd-type-eyebrow-tracking); font-weight: var(--fyd-type-eyebrow-weight); font-family: var(--fyd-font-body); text-transform: uppercase; }
+.fyd-type-button { font-size: var(--fyd-type-button); line-height: var(--fyd-type-button-leading); letter-spacing: var(--fyd-type-button-tracking); font-weight: var(--fyd-type-button-weight); font-family: var(--fyd-font-body); }"
+`;

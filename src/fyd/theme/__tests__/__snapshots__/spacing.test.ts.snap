@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`emitSpacingCssVariables snapshot of the emitted block 1`] = `
+"--fyd-space-section-major: clamp(4rem, 2.8571rem + 0.3571vw, 8rem);
+--fyd-space-section-minor: clamp(3rem, 2.4286rem + 0.1786vw, 5rem);
+--fyd-space-card-gap: clamp(1.25rem, 1.1786rem + 0.0223vw, 1.5rem);
+--fyd-space-stack-eyebrow: 1rem;
+--fyd-space-stack-description: 1.25rem;
+--fyd-container-max: 80rem;
+--fyd-radius-card: 0.75rem;
+--fyd-shadow-card: 0 22px 46px -28px rgba(53, 36, 35, 0.18);
+--fyd-shadow-card-hover: 0 30px 60px -24px rgba(53, 36, 35, 0.3);"
+`;
