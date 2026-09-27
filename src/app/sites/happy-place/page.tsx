@@ -18,7 +18,6 @@ import { compilePublicSite } from "../_shared/spec-pipeline";
 import { generateSiteMetadata } from "../_shared/site-metadata";
 import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
 import { isDemoOwnerModeEnabled } from "@/fyd/owner-mode/gate";
-import { galleryMediaFor, heroMediaFor } from "@/fyd/media/select";
 import {
   auditSitesRenderClaims,
   logSitesRenderAudit,
@@ -47,15 +46,12 @@ export default async function HappyPlaceDemoPage({
   // with the approved presentation intent applied over it.
   // Verified public projection (Q-C-01): the graph below already passed
   // the single public projection boundary; no separate publicGraph step.
-  const { graph, spec, findings, renderable } =
+  const { graph, spec, findings, renderable, heroMedia, galleryAssets } =
     await compilePublicSite(SITE_ID);
-  // Hero media, resolved once per page load at the server render
-  // seam. Null when the owner has no acquired media.
-  const heroMedia = heroMediaFor(SITE_ID, graph, spec.ownerObjectId);
-  // Gallery media, resolved once per page load at the server render
-  // seam. Null when the owner has no gallery assets: the Gallery
-  // section renders nothing, never an empty frame.
-  const galleryAssets = galleryMediaFor(SITE_ID, graph, spec.ownerObjectId);
+  // Gallery media for the render context: null when the owner has no
+  // gallery assets, so the Gallery section renders nothing, never an
+  // empty frame. (The assets and the focal-pointed hero media resolve
+  // once in compilePublicSite, shared with the Gallery insertion gate.)
   const galleryMedia = galleryAssets.length > 0 ? galleryAssets : null;
 
   // Binding-verification observation tap (WIRE-SPEC; QA-TRUTH R-A,

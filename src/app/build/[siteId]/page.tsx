@@ -32,6 +32,7 @@ import { vectorForSite } from "@/fyd/builder/site-vectors";
 import { isRenderable, validateSiteSpec } from "@/fyd/sitespec/validator";
 import { applyPresentationIntent } from "@/fyd/customize/apply-layer";
 import { heroMediaFor } from "@/fyd/media/select";
+import { withHeroFocalPoint } from "../../sites/_shared/spec-pipeline";
 import { schemaRole } from "@/fyd/sitespec/schemas";
 import { BuildClient } from "./build-client";
 import {
@@ -111,8 +112,12 @@ export default async function BuildSitePage({
   // compiled spec. Facts (graph) and design system (theme) are untouched.
   const spec = applyPresentationIntent(base, presentationIntent, graph).spec;
   // Hero media, resolved once per page load at the server render seam.
-  // Null when the owner has no acquired media.
-  const heroMedia = heroMediaFor(siteId, graph, spec.ownerObjectId);
+  // Null when the owner has no acquired media. The manifest focal point
+  // rides along for the full-bleed hero's object-position.
+  const heroMedia = withHeroFocalPoint(
+    siteId,
+    heroMediaFor(siteId, graph, spec.ownerObjectId),
+  );
   const knownSchemas = new Set(graph.objects.map((o) => o.schema));
   const findings = validateSiteSpec(spec, knownSchemas);
   const renderable = isRenderable(findings);

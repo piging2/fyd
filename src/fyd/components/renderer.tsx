@@ -38,8 +38,18 @@ import {
 } from "../object/object-projection";
 import { FydContactLink } from "./contact-link";
 import { HeroSection } from "./hero-section";
+// RENDER-WIRE: lane-6 theme CSS emission, lane-7 motion CSS (client-safe
+// string copy), lane-7 motion primitives, and the lane-4 composition
+// vocabulary threshold. All additive imports; no renderer pipeline
+// change.
+import { emitFydThemeCssForTheme } from "../theme/index";
+import { FYD_MOTION_CSS } from "./motion-css-text";
+import { Reveal } from "../motion/reveal";
+import { BeforeAfter } from "../motion/before-after";
+import { MIN_GALLERY_ASSETS } from "../builder/composition";
 import { QuietSource } from "./quiet-source";
 import {
+  observedMonthYear,
   sourceLabelFor,
   type RenderViewerKind,
 } from "../sitespec/render-projection";
@@ -614,7 +624,18 @@ function FydMotionStyles({ theme }: { theme: FYDThemeTokens }) {
         ".fyd-section:nth-of-type(even) { background: color-mix(in srgb, var(--fyd-surface, #ffffff) 95%, var(--fyd-ink, #000000)); }",
         "}",
       ].join("\n");
-  const css = composition + "\n" + motionCss;
+  // RENDER-WIRE: lane-6 type/spacing tokens and lane-7 motion keyframes
+  // ride the per-page <style> block (SitePageView renders FydMotionStyles
+  // once per page). The page carries its own tokens: no global
+  // stylesheet dependency, no cross-tenant leakage.
+  const css =
+    composition +
+    "\n" +
+    motionCss +
+    "\n" +
+    emitFydThemeCssForTheme(theme) +
+    "\n" +
+    FYD_MOTION_CSS;
   return <style data-fyd-motion={character}>{css}</style>;
 }
 
@@ -1146,14 +1167,17 @@ function SectionShell({
 }) {
   const motion = motionTokensForTheme(theme);
   const character = characterOf(theme);
-  const char = CHARACTER_PRESENTATION[character];
   const morph =
     motion.objectTransition === "MORPH" && motion.motionIntensity !== "NONE";
   const delay =
     motionIndex !== undefined ? staggerDelayMs(motionIndex, motion) : 0;
   return (
     <section
-      className="fyd-section mx-auto w-full max-w-5xl px-4 sm:px-6"
+      // RENDER-WIRE: 1280px container (lane-6 --fyd-container-max), section
+      // rhythm 64-128px (lane-6 --fyd-space-section-major). The container and
+      // rhythm are tokens, so a tenant theme can override without layout
+      // edits. max-w-5xl is intentionally gone.
+      className="fyd-section mx-auto w-full px-4 sm:px-6"
       data-fyd-section={sectionId}
       // In-flow object anchor (2026-09-24 Phase 2): the section's
       // document spot doubles as its objects' data-object-anchor.
@@ -1170,8 +1194,9 @@ function SectionShell({
         {
           ["--fyd-surface" as string]: theme.surface,
           ["--fyd-ink" as string]: theme.ink,
-          paddingTop: char.sectionRhythmPx,
-          paddingBottom: char.sectionRhythmPx,
+          maxWidth: "var(--fyd-container-max, 80rem)",
+          paddingTop: "var(--fyd-space-section-major, 96px)",
+          paddingBottom: "var(--fyd-space-section-major, 96px)",
           animationDelay: delay ? `${delay}ms` : undefined,
           // Deterministic section identity: lets view transitions keep a
           // section's identity across generated pages when MORPH is active.
@@ -1180,24 +1205,75 @@ function SectionShell({
         } as CSSProperties
       }
     >
-      {heading && (
-        <h2
-          className="text-2xl font-semibold sm:text-3xl"
-          style={{
-            fontFamily: theme.fontDisplay,
-            color: theme.ink,
-            letterSpacing: char.headingTracking,
-          }}
-        >
-          {heading}
-        </h2>
+      {(heading || copy) && (
+        // RENDER-WIRE: lane-7 Reveal on the section entrance (content item,
+        // not the section container: the container comment above explains
+        // why the section itself never takes a transform entrance).
+        <Reveal variant="rise" index={motionIndex ?? 0}>
+          {heading && (
+            <h2 className="fyd-type-h2" style={{ color: theme.ink }}>
+              {heading}
+            </h2>
+          )}
+          {copy && (
+            <p
+              className="fyd-type-lead text-accent"
+              style={{
+                marginTop: "var(--fyd-space-stack-description, 1.25rem)",
+                maxWidth: "var(--fyd-measure, 65ch)",
+              }}
+            >
+              {copy}
+            </p>
+          )}
+        </Reveal>
       )}
-      {copy && <p className="mt-2 max-w-2xl text-base text-accent">{copy}</p>}
-      <div className="mt-6">{children}</div>
+      <div style={{ marginTop: "var(--fyd-space-stack-section, 2.5rem)" }}>
+        {children}
+      </div>
     </section>
   );
 }
 
+
+/**
+ * RENDER-WIRE hero trust row: licence and service area resolved from the
+ * graph, never invented. Licence comes from an explicit allowlist of
+ * licence-shaped owner fields through the binding verifier; service area
+ * from public location objects related to the business. Either half may be
+ * absent; the row renders only when at least one half verifies.
+ */
+const HERO_LICENCE_FIELDS = [
+  "claimed_license",
+  "license",
+  "licence",
+  "license_number",
+  "licence_number",
+  "contractor_license",
+] as const;
+
+function heroLicenceLine(ctx: RenderContext, o: PingObject): string | null {
+  for (const field of HERO_LICENCE_FIELDS) {
+    const v = boundField(ctx, o, field);
+    if (v) return v;
+  }
+  return null;
+}
+
+function heroServiceAreaLine(ctx: RenderContext, o: PingObject): string | null {
+  const names: string[] = [];
+  for (const r of ctx.graph.relationships) {
+    if (r.subject !== o.id && r.object !== o.id) continue;
+    const otherId = r.subject === o.id ? r.object : r.subject;
+    const other = ctx.graph.objects.find((x) => x.id === otherId);
+    if (!other || other.visibility !== "public") continue;
+    if (schemaRole(other.schema) !== "location") continue;
+    const t = boundTitle(ctx, other);
+    if (t && !names.includes(t)) names.push(t);
+    if (names.length >= 3) break;
+  }
+  return names.length > 0 ? names.join(", ") : null;
+}
 
 function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
@@ -1216,6 +1292,11 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   // the renderer never selects it. Null keeps the honest typographic hero.
   const hero = ctx.heroMedia ?? null;
   const character = characterOf(theme);
+  // Evidence-backed trust row: licence + service area from the graph.
+  const trustLine =
+    [heroLicenceLine(ctx, o), heroServiceAreaLine(ctx, o)]
+      .filter((part): part is string => Boolean(part))
+      .join(" \u00b7 ") || null;
   // CONTACT-owned Hero heading below: the business-identity view-transition
   // name (businessViewTransitionName(ctx.spec.ownerObjectId), stamped only
   // when MORPH is active) belongs on the h1 in the CONTACT lane's merge
@@ -1234,17 +1315,21 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
       character={character}
       viewerKind={ctx.viewerKind}
     >
-      <div className="px-4 py-16 sm:px-6 sm:py-24">
-      <div className="mx-auto max-w-5xl">
+      {/* RENDER-WIRE: the container, min-height, and photographic layers
+          belong to HeroSection (full-bleed). Children are the copy column
+          only: badge, fluid display h1, lead copy, CTAs, trust row, doorway. */}
+      <div className="max-w-3xl">
         <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} theme={theme} tone="onDark" />
-        <h1
-          className="mt-4 break-words text-4xl font-bold text-background sm:text-6xl"
-          style={{ fontFamily: theme.fontDisplay }}
-        >
+        <h1 className="fyd-type-display mt-4 break-words text-background">
           {heading}
         </h1>
         {copy ? (
-          <p className="mt-4 max-w-2xl text-lg text-background/80">{copy}</p>
+          <p
+            className="fyd-type-lead mt-4 text-background/80"
+            style={{ maxWidth: "var(--fyd-measure, 65ch)" }}
+          >
+            {copy}
+          </p>
         ) : null}
         <div className="mt-8 flex flex-wrap gap-3">
           {/* CONTACT-DISCOVERABILITY: the business phone is a hero CTA on
@@ -1289,11 +1374,14 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
             EVERY viewport: desktop previously had no business doorway at
             all, and the mobile projection must never be a static
             projection while desktop owns the object model. */}
+        {trustLine ? (
+          <p className="fyd-type-meta mt-6 text-background/70">{trustLine}</p>
+        ) : null}
         <div className="mt-6">
           <ObjectDoorway o={o} theme={theme} ctx={ctx} tone="onDark" />
         </div>
       </div>
-      </div>    </HeroSection>
+    </HeroSection>
   );
 }
 function BusinessSummary({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
@@ -1406,15 +1494,119 @@ function MobileInFlowObjects({
   );
 }
 
+/**
+ * RENDER-WIRE service rows: for 5+ services the card grid becomes a wall,
+ * so the list goes typographic. Hairline rows, one object per row, each
+ * row opens the object detail through the title link.
+ */
+function ServiceRows({
+  objects,
+  theme,
+  ctx,
+}: {
+  objects: PingObject[];
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+}) {
+  return (
+    <ul className="divide-y divide-border-soft">
+      {objects.map((o) => {
+        const title = boundTitle(ctx, o);
+        const description = boundDescription(ctx, o);
+        return (
+          <li key={o.id} className="py-5" data-motion="enter">
+            <h3 className="fyd-type-h3" style={{ color: theme.ink }}>
+              <a
+                href={`/o/${encodeURIComponent(o.id)}`}
+                className="fyd-object-title-link"
+              >
+                {title}
+              </a>
+            </h3>
+            {description ? (
+              <p className="fyd-type-body mt-1 text-accent">{description}</p>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * RENDER-WIRE service feature: one offering with a real photograph becomes
+ * a split editorial block (photo + identity + copy). No photo, no feature:
+ * the caller falls back to the card grid, never to a decorative frame.
+ */
+function ServiceFeature({
+  o,
+  theme,
+  ctx,
+}: {
+  o: PingObject;
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+}) {
+  const title = boundTitle(ctx, o);
+  const description = boundDescription(ctx, o);
+  const media = photographicMedia(ctx.objectMedia?.[o.id]);
+  const detailHref = `/o/${encodeURIComponent(o.id)}`;
+  return (
+    <article
+      className="grid gap-6 md:grid-cols-2 md:items-center"
+      data-motion="enter"
+    >
+      <div
+        className="overflow-hidden"
+        style={{ borderRadius: theme.radius === "none" ? 0 : 12 }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={media!.src}
+          alt={media!.alt ?? title}
+          className="aspect-[4/3] h-full w-full object-cover"
+          loading="lazy"
+        />
+      </div>
+      <div>
+        <h3 className="fyd-type-h3" style={{ color: theme.ink }}>
+          <a href={detailHref} className="fyd-object-title-link">
+            {title}
+          </a>
+        </h3>
+        {description ? (
+          <p className="fyd-type-body mt-3 text-accent">{description}</p>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
 function ServicesSection(props: SectionProps) {
   const { section, objects, presentation, theme, ctx, motionIndex } = props;
   const featured = presentation.featuredIds?.length
     ? objects.filter((o) => presentation.featuredIds!.includes(o.id))
     : objects;
   if (featured.length === 0) return null;
+  // RENDER-WIRE: the planner stamps compositionVariant (feature/grid/rows);
+  // absent stays the card grid. Feature requires a real photograph on the
+  // featured object, otherwise the grid is the honest fallback.
+  const variant = presentation.compositionVariant ?? "grid";
+  const featureObject =
+    variant === "feature" && featured.length === 1
+      ? photographicMedia(ctx.objectMedia?.[featured[0].id])
+        ? featured[0]
+        : null
+      : null;
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Services"} copy={presentation.copy}>
-      <CardGrid objects={featured} theme={theme} ctx={ctx} />
+      {variant === "rows" ? (
+        <ServiceRows objects={featured} theme={theme} ctx={ctx} />
+      ) : featureObject ? (
+        <ServiceFeature o={featureObject} theme={theme} ctx={ctx} />
+      ) : (
+        <CardGrid objects={featured} theme={theme} ctx={ctx} />
+      )}
     </SectionShell>
   );
 }
@@ -1599,51 +1791,146 @@ function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex
   );
 }
 
+/**
+ * RENDER-WIRE post prose grid: the desktop editorial treatment for posts
+ * (date kicker, title, description). Extracted unchanged from PostsSection
+ * so the grid composition variant reuses the exact same markup.
+ */
+function PostProseGrid({
+  objects,
+  theme,
+  ctx,
+}: {
+  objects: PingObject[];
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+}) {
+  return (
+    <div className="hidden grid-cols-1 gap-4 md:grid md:grid-cols-2">
+      {objects.map((o) => {
+        const date = boundField(ctx, o, "date");
+        const title = boundTitle(ctx, o);
+        const description = boundDescription(ctx, o);
+        return (
+          <article
+            key={o.id}
+            className="border border-border-soft p-5"
+            style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
+          >
+            {date ? (
+              <p className="text-xs uppercase tracking-wide text-accent">{date}</p>
+            ) : null}
+            {title ? (
+              <h3 className="mt-1 text-lg font-semibold" style={{ color: theme.ink }}>
+                {title}
+              </h3>
+            ) : null}
+            {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
+            <div className="mt-3">
+              <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} />
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * RENDER-WIRE archive list: the dense typographic treatment for 13+
+ * objects. One hairline row per object (date, title link), no cards.
+ */
+function ArchiveList({
+  objects,
+  theme,
+  ctx,
+  dateField,
+}: {
+  objects: PingObject[];
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+  /** Optional date-shaped field shown as the row kicker. */
+  dateField?: string;
+}) {
+  // RENDER-WIRE: with a date field the rows group under deterministic
+  // month headings (an archive browses by time); without one the flat
+  // row list renders exactly as before.
+  const groups = new Map<string, PingObject[]>();
+  for (const o of objects) {
+    const raw = dateField ? boundField(ctx, o, dateField) : null;
+    const label = raw ? observedMonthYear(raw) : "";
+    const key = label || "undated";
+    const rows = groups.get(key);
+    if (rows) rows.push(o);
+    else groups.set(key, [o]);
+  }
+  const showMonths = dateField != null;
+  return (
+    <>
+      {Array.from(groups.entries()).map(([key, rows]) => (
+        <div key={key}>
+          {showMonths ? (
+            <h3 className="fyd-type-h3 mt-8" style={{ color: theme.ink }}>
+              {key === "undated" ? "Undated" : key}
+            </h3>
+          ) : null}
+          <ul className="divide-y divide-border-soft">
+            {rows.map((o) => {
+              const date = dateField ? boundField(ctx, o, dateField) : null;
+              const title = boundTitle(ctx, o);
+              return (
+                <li key={o.id} className="flex items-baseline gap-4 py-3" data-motion="enter">
+                  {date ? (
+                    <span className="fyd-type-meta shrink-0 text-accent">{date}</span>
+                  ) : null}
+                  <a
+                    href={`/o/${encodeURIComponent(o.id)}`}
+                    className="fyd-object-title-link fyd-type-body"
+                    style={{ color: theme.ink }}
+                  >
+                    {title}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </>
+  );
+}
+
 function PostsSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   if (objects.length === 0) return null;
   // Sorting uses the raw value (deterministic ordering input, never rendered).
   const sorted = objects.slice().sort((a, b) =>
     fieldOf(b, "date").localeCompare(fieldOf(a, "date")),
   );
+  // RENDER-WIRE: the planner stamps compositionVariant (list/grid/archive);
+  // absent keeps the prose grid. The mobile in-flow projection stays on the
+  // grid variant exactly as before.
+  const variant = presentation.compositionVariant ?? "grid";
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Latest"} copy={presentation.copy}>
-      <div className="hidden grid-cols-1 gap-4 md:grid md:grid-cols-2">
-        {sorted.map((o) => {
-          const date = boundField(ctx, o, "date");
-          const title = boundTitle(ctx, o);
-          const description = boundDescription(ctx, o);
-          return (
-            <article
-              key={o.id}
-              className="border border-border-soft p-5"
-              style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
-            >
-              {date ? (
-                <p className="text-xs uppercase tracking-wide text-accent">{date}</p>
-              ) : null}
-              {title ? (
-                <h3 className="mt-1 text-lg font-semibold" style={{ color: theme.ink }}>
-                  {title}
-                </h3>
-              ) : null}
-              {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
-              <div className="mt-3">
-                <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} />
-              </div>
-            </article>
-          );
-        })}
-      </div>
-      {/* Mobile in-flow composition: post/project object cards in the
-          page flow (<768px), tappable into the object overlay. The post
-          date rides as the card kicker. Desktop keeps the prose grid. */}
-      <MobileInFlowObjects
-        objects={sorted}
-        theme={theme}
-        ctx={ctx}
-        kickerFor={(o) => boundField(ctx, o, "date")}
-        testId="inflow-posts"
-      />
+      {variant === "list" ? (
+        <FeedList objects={sorted} theme={theme} ctx={ctx} />
+      ) : variant === "archive" ? (
+        <ArchiveList objects={sorted} theme={theme} ctx={ctx} dateField="date" />
+      ) : (
+        <>
+          <PostProseGrid objects={sorted} theme={theme} ctx={ctx} />
+          {/* Mobile in-flow composition: post/project object cards in the
+              page flow (<768px), tappable into the object overlay. The post
+              date rides as the card kicker. Desktop keeps the prose grid. */}
+          <MobileInFlowObjects
+            objects={sorted}
+            theme={theme}
+            ctx={ctx}
+            kickerFor={(o) => boundField(ctx, o, "date")}
+            testId="inflow-posts"
+          />
+        </>
+      )}
     </SectionShell>
   );
 }
@@ -1751,9 +2038,16 @@ function FeedList({
 
 function ObjectFeedSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   if (objects.length === 0) return null;
+  const variant = presentation.compositionVariant ?? "list";
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Explore"} copy={presentation.copy}>
-      <FeedList objects={objects} theme={theme} ctx={ctx} />
+      {variant === "grid" ? (
+        <CardGrid objects={objects} theme={theme} ctx={ctx} />
+      ) : variant === "archive" ? (
+        <ArchiveList objects={objects} theme={theme} ctx={ctx} dateField="date" />
+      ) : (
+        <FeedList objects={objects} theme={theme} ctx={ctx} />
+      )}
     </SectionShell>
   );
 }
@@ -1769,9 +2063,18 @@ function RecentObjectsSection({ section, objects, presentation, theme, ctx, moti
           ? -1
           : 1,
     );
+  // RENDER-WIRE: list stays the default; the planner may stamp grid or
+  // archive for richer or denser object sets.
+  const variant = presentation.compositionVariant ?? "list";
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Recent"} copy={presentation.copy}>
-      <FeedList objects={sorted} theme={theme} ctx={ctx} />
+      {variant === "grid" ? (
+        <CardGrid objects={sorted} theme={theme} ctx={ctx} />
+      ) : variant === "archive" ? (
+        <ArchiveList objects={sorted} theme={theme} ctx={ctx} dateField="date" />
+      ) : (
+        <FeedList objects={sorted} theme={theme} ctx={ctx} />
+      )}
     </SectionShell>
   );
 }
@@ -2100,48 +2403,102 @@ function GalleryMediaWhyThis({
  * Gallery: the media-rich section, generated from evidence-backed media
  * objects threaded through the render context (never hand-picked).
  * Lazy-loads below-fold media with explicit width/height (no CLS) and
- * responsive sizes. Renders nothing when the graph has no gallery media.
+ * responsive sizes. Renders nothing when fewer than MIN_GALLERY_ASSETS
+ * gallery assets exist: a thin frame is a liability, not a gallery.
  */
+/**
+ * RENDER-WIRE explicit before/after pairs.
+ *
+ * The current media contract (FydMediaObject / DisplayMedia) exposes no
+ * pair identifier, so this function does NOT infer pairs from proximity,
+ * alt text, capture order, or any other heuristic: an inferred pairing
+ * would fabricate a transformation claim. Pairing activates only when the
+ * contract gains an explicit pair field; until then every asset renders
+ * as a single. The BeforeAfter rendering path below stays wired and is
+ * covered by tests with explicit pairs.
+ */
+export function pairBeforeAfter(media: DisplayMedia[]): {
+  pairs: { before: DisplayMedia; after: DisplayMedia }[];
+  singles: DisplayMedia[];
+} {
+  return { pairs: [], singles: media.slice() };
+}
+
 function GallerySection({ section, presentation, theme, ctx, motionIndex }: SectionProps) {
   const media = ctx.galleryMedia ?? [];
-  if (media.length === 0) return null;
+  // RENDER-WIRE: below the lane-4 asset minimum the gallery is a liability:
+  // the section drops instead of rendering a thin frame.
+  if (media.length < MIN_GALLERY_ASSETS) return null;
   const motion = motionTokensForTheme(theme);
   const intent = designIntentForTheme(theme);
-  return (
-    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Gallery"} copy={presentation.copy}>
-      <div
-        className="fyd-gallery-grid grid grid-cols-2 gap-3 sm:grid-cols-3"
-        data-media-treatment={intent.mediaTreatment}
-      >
-        {media.map((m, i) => (
-          <figure
-            key={m.id}
-            data-motion="enter"
-            data-motion-index={i}
-            style={{ animationDelay: staggerDelayMs(i, motion) ? `${staggerDelayMs(i, motion)}ms` : undefined }}
-          >
-            <img
-              src={m.src}
-              alt={m.alt}
-              width={m.width}
-              height={m.height}
-              loading="lazy"
-              sizes="(max-width: 640px) 50vw, 33vw"
-              style={{
+  const variant = presentation.compositionVariant ?? "grid";
+  const { pairs, singles } = pairBeforeAfter(media);
+  const radius = theme.radius === "none" ? 0 : 8;
+  const figure = (m: DisplayMedia, i: number, masonry: boolean) => (
+    <figure
+      key={m.id}
+      data-motion="enter"
+      data-motion-index={i}
+      className={masonry ? "mb-3 break-inside-avoid" : undefined}
+      style={{ animationDelay: staggerDelayMs(i, motion) ? `${staggerDelayMs(i, motion)}ms` : undefined }}
+    >
+      <img
+        src={m.src}
+        alt={m.alt}
+        width={m.width}
+        height={m.height}
+        loading="lazy"
+        sizes="(max-width: 640px) 50vw, 33vw"
+        style={
+          masonry
+            ? { width: "100%", height: "auto", display: "block", borderRadius: radius }
+            : {
                 width: "100%",
                 height: "auto",
                 display: "block",
                 aspectRatio: "4 / 3",
                 objectFit: "cover",
-                borderRadius: theme.radius === "none" ? 0 : 8,
-              }}
-            />
-            <figcaption className="mt-1">
-              <GalleryMediaWhyThis media={m} viewerKind={ctx.viewerKind} />
-            </figcaption>
-          </figure>
-        ))}
-      </div>
+                borderRadius: radius,
+              }
+        }
+      />
+      <figcaption className="mt-1">
+        <GalleryMediaWhyThis media={m} viewerKind={ctx.viewerKind} />
+      </figcaption>
+    </figure>
+  );
+  return (
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Gallery"} copy={presentation.copy}>
+      {pairs.length > 0 ? (
+        <div className="mb-6 grid gap-6" data-fyd-before-after-set>
+          {pairs.map(({ before, after }) => (
+            <div
+              key={before.id + ":" + after.id}
+              style={{ borderRadius: radius, overflow: "hidden" }}
+            >
+              <BeforeAfter
+                before={{ src: before.src, alt: before.alt }}
+                after={{ src: after.src, alt: after.alt }}
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {variant === "masonry" ? (
+        <div
+          className="fyd-gallery-masonry columns-2 gap-3 sm:columns-3"
+          data-media-treatment={intent.mediaTreatment}
+        >
+          {singles.map((m, i) => figure(m, i, true))}
+        </div>
+      ) : (
+        <div
+          className="fyd-gallery-grid grid grid-cols-2 gap-3 sm:grid-cols-3"
+          data-media-treatment={intent.mediaTreatment}
+        >
+          {singles.map((m, i) => figure(m, i, false))}
+        </div>
+      )}
     </SectionShell>
   );
 }

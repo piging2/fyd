@@ -34,7 +34,10 @@ const RENDERER = path.join(
 
 function heroH1ClassName() {
   const src = fs.readFileSync(RENDERER, "utf8");
-  // The Hero section's H1: the <h1> whose className holds text-4xl.
+  // The Hero section's H1: the <h1> whose className holds the fluid
+  // display type (fyd-type-display replaced the fixed text-4xl in the
+  // render-wire lane; the break-words safeguard below is what this
+  // test guards).
   const h1Idx = src.indexOf("<h1");
   expect(h1Idx).toBeGreaterThan(-1);
   const classMarker = 'className="';
@@ -48,7 +51,7 @@ function heroH1ClassName() {
 describe("hero H1 mobile wrap safeguard", () => {
   test("hero H1 carries break-words so unbreakable tenant names cannot overflow", () => {
     const classes = heroH1ClassName().split(/\s+/);
-    expect(classes).toContain("text-4xl");
+    expect(classes).toContain("fyd-type-display");
     expect(classes).toContain("break-words");
   });
 

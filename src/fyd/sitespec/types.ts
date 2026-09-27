@@ -13,6 +13,7 @@
  */
 
 import type { PingObject, PingRelationship } from "@/lib/ping/types";
+import type { TypeVoice, TypeVoiceSignals } from "../theme/type-scale";
 
 /** The graph the generator reasons over: browser-safe objects plus relationships. */
 export interface ObjectGraph {
@@ -311,6 +312,14 @@ export interface FYDThemeTokens {
    * normal token-override path.
    */
   designIntent?: FYDDesignIntent;
+  /**
+   * Lane-6 type-voice extension, folded in (RENDER-WIRE integration).
+   * Additive and optional: specs written before this change validate and
+   * render unchanged. The voice selects the editorial vs utilitarian
+   * type scale; signals are graph-derived and name-free.
+   */
+  typeVoice?: TypeVoice;
+  typeVoiceSignals?: TypeVoiceSignals;
 }
 
 export const DEFAULT_FYD_THEME: FYDThemeTokens = {
