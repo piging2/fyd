@@ -933,7 +933,7 @@ function traceAskFydAnswer(
     (o) => relatedIds.has(o.id) && o.visibility === "public",
   );
   const actx = buildAskFydContext({
-    viewer: { id: null, displayName: null },
+    viewer: { id: null, displayName: null, verified: false },
     target: obj,
     relatedObjects: related,
     relationships: rels,

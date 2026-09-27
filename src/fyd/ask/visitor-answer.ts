@@ -54,16 +54,12 @@ import type { SiteBundle } from "../media/site-bundle";
 import { buildAskFydContext } from "./context-builder";
 import { composeAskFyd } from "./answer";
 import { canonicalize } from "../../lib/ping/ask-composer";
-import {
-  applyFieldVisibility,
-  applyHideTraversal,
-  type FieldVisibilityDecision,
-} from "../sitespec/field-visibility";
+import { type FieldVisibilityDecision } from "../sitespec/field-visibility";
+import { projectAskContextForViewer } from "./context-projection";
 import {
   type AskFieldConflict,
   isUnresolvedConflict,
   parseConflictObservationRefId,
-  suppressConflictedFields,
 } from "./field-conflicts";
 import { resolveQuery } from "../components/renderer";
 import { selectRelatedCircles } from "../object/related";
@@ -333,30 +329,25 @@ const DEFAULT_DEPS: AnswerAskFydDeps = {
 const MAX_QUESTION_CHARS = 2000;
 
 /**
- * Project a bundle graph to what a visitor may see: owner field-visibility
- * decisions first (conservative defaults), then FYD-Q2 hide traversal and
- * FYD-Q1 conflict suppression, then only public objects and only active
- * relationships whose subject and object are both public. The input graph
- * is never mutated: owner-authorized contexts keep the full observations.
+ * Project a bundle graph to what the Ask FYD model may receive for this
+ * request's viewer. FYD-010: exactly one projection implementation
+ * lives in ./context-projection.ts; this is a thin wrapper. The Ask
+ * pipeline serves an anonymous, unverified viewer, so the viewer class
+ * is always "visitor" here. The same projection also guards
+ * buildAskFydContext's other caller (the lineage tracer). The input
+ * graph is never mutated.
  */
 function publicGraphOf(
   graph: ObjectGraph,
   decisions: FieldVisibilityDecision[],
   conflicts: AskFieldConflict[],
 ): ObjectGraph {
-  const projected = applyFieldVisibility(graph, decisions);
-  // FYD-Q2: a hidden address fact must not leak through located_at ->
-  // Location.address. The traversal is cut in the projection.
-  const traversed = applyHideTraversal(projected, decisions);
-  // FYD-Q1: an unresolved conflict suppresses the contested value, so the
-  // composer can never select a disputed value.
-  const suppressed = suppressConflictedFields(traversed, conflicts);
-  const publicObjects = suppressed.objects.filter((o) => o.visibility === "public");
-  const publicIds = new Set(publicObjects.map((o) => o.id));
-  const publicRelationships = suppressed.relationships.filter(
-    (r) => r.status === "active" && publicIds.has(r.subject) && publicIds.has(r.object),
-  );
-  return { objects: publicObjects, relationships: publicRelationships };
+  return projectAskContextForViewer(
+    graph,
+    { id: null, displayName: null, verified: false },
+    decisions,
+    conflicts,
+  ).graph;
 }
 
 /** Attribute one conflict observation to its provenance for the citation. */
@@ -656,7 +647,10 @@ export function answerAskFyd(
       : publicGraph.objects.filter((o) => o.id !== target.id);
 
   const ctx = buildAskFydContext({
-    viewer: { id: null, displayName: null },
+    // The Ask route serves anonymous visitors: no verified identity
+    // exists on this path, so the viewer classifies as "visitor"
+    // (fail closed). Owner visibility decisions still apply.
+    viewer: { id: null, displayName: null, verified: false },
     target,
     relatedObjects,
     relationships: publicGraph.relationships,
@@ -664,6 +658,7 @@ export function answerAskFyd(
     grants: [],
     siteSpec: summarizeSpec(bundle, publicGraph),
     question,
+    fieldVisibilityDecisions: input.fieldVisibilityDecisions ?? [],
     fieldConflicts: (input.fieldConflicts ?? []).filter(isUnresolvedConflict),
   });
   const ans = composeAskFyd(ctx, question);

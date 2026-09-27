@@ -13,12 +13,35 @@ import type {
 } from "../../lib/ping/types";
 import type { SiteSpecSummary } from "./site-spec";
 import type { AskFieldConflict } from "./field-conflicts";
+import type { FieldVisibilityDecision } from "../sitespec/field-visibility";
 
 export type { SiteSpecSummary };
 export type { FydGrant };
 
+/**
+ * The viewer an Ask FYD model context is built for.
+ *
+ * `verified` is true only when a bound OwnerIdentityProvider verified this
+ * viewer. Nothing in the Ask pipeline sets it today, so every current
+ * viewer classifies as "visitor" (see classifyAskViewer in
+ * ./context-projection.ts). In particular, demo and practice identities
+ * are never verified: they classify as visitors.
+ */
+export interface AskViewerIdentity {
+  id: string | null;
+  displayName: string | null;
+  verified?: boolean;
+}
+
+/**
+ * Ask FYD viewer classes. "owner" requires a verified identity; every
+ * other viewer is "visitor". There is no elevation path that does not
+ * go through verification.
+ */
+export type AskViewerClass = "owner" | "visitor";
+
 export interface AskFydContextInput {
-  viewer: { id: string | null; displayName: string | null };
+  viewer: AskViewerIdentity;
   target: PingObject | null;
   relatedObjects: PingObject[];
   relationships: PingRelationship[];
@@ -26,6 +49,12 @@ export interface AskFydContextInput {
   grants: FydGrant[];
   siteSpec: SiteSpecSummary | null;
   question: string;
+  /**
+   * Owner field-visibility decisions honored by the projection
+   * (context-projection.ts). A HIDE here drops the field from the model
+   * context even when the field name is otherwise visitor-safe.
+   */
+  fieldVisibilityDecisions?: FieldVisibilityDecision[];
   /** Declared unresolved field conflicts (FYD-Q1). Fail-closed. */
   fieldConflicts?: AskFieldConflict[];
 }
@@ -51,6 +80,8 @@ export interface AskFydContext {
   request: { question: string };
   /** Declared unresolved field conflicts (FYD-Q1). Fail-closed. */
   fieldConflicts: AskFieldConflict[];
+  /** How the viewer classified for this context (fail-closed). */
+  viewerClass: AskViewerClass;
 }
 
 /**
