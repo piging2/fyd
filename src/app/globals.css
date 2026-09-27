@@ -845,8 +845,7 @@ a {
  * LANE 6: FYD type + spacing token fallbacks (design sprint 2026-09-26).
  * Source of truth: src/fyd/theme/index.ts emitFydThemeCss(). This :root
  * block is the DEFAULT_FYD_THEME + editorial-voice emission, used only
- * as a fallback where the renderer has not injected per-theme inline
- * variables. Regenerate via: npx tsx scripts/emit-lane6-css.ts (lane 6).
+ * as a fallback where the renderer has not injected per-theme variables.
  * Do not hand-edit values here; change src/fyd/theme/* and re-emit via
  * emitFydThemeCss(DEFAULT_FYD_THEME, "editorial") from src/fyd/theme/index.ts.
  */
