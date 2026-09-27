@@ -169,9 +169,9 @@ function ctxFor(spec: FYDSiteSpec, extra: Record<string, unknown> = {}) {
   return { spec, graph: GRAPH, viewer, ...extra };
 }
 
-function galleryItem(): DisplayMedia {
+function galleryItem(i = 0): DisplayMedia {
   return {
-    id: "fyd-media-test",
+    id: `fyd-media-test-${i}`,
     role: "gallery",
     src: "/fyd-media/test/card-768w.webp",
     blurUrl: null,
@@ -184,6 +184,13 @@ function galleryItem(): DisplayMedia {
     digest: "testdigest",
     observedAt: "2026-09-22T00:00:00Z",
   };
+}
+
+// RENDER-WIRE: the lane's gallery minimum-asset contract (MIN_GALLERY_ASSETS
+// = 3) drops a Gallery with fewer than 3 assets, so render tests use a full
+// triplet.
+function galleryTriplet(): DisplayMedia[] {
+  return [galleryItem(0), galleryItem(1), galleryItem(2)];
 }
 
 describe("motion tokens", () => {
@@ -385,7 +392,7 @@ describe("gallery", () => {
     const html = renderToStaticMarkup(
       renderSection(
         gallerySection,
-        ctxFor(spec, { galleryMedia: [galleryItem()], viewerKind: "engineer" }),
+        ctxFor(spec, { galleryMedia: galleryTriplet(), viewerKind: "engineer" }),
       ) as React.ReactElement,
     );
     expect(html).toContain("/fyd-media/test/card-768w.webp");
@@ -489,7 +496,7 @@ describe("design-system compiler", () => {
     const html = renderToStaticMarkup(
       renderSection(
         spec.pages[0].sections[0],
-        ctxFor(spec, { galleryMedia: [galleryItem()] }),
+        ctxFor(spec, { galleryMedia: galleryTriplet() }),
       ) as React.ReactElement,
     );
     expect(html).toContain('data-media-treatment="edge-to-edge"');

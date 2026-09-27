@@ -5,6 +5,10 @@
  * Shape harvested from src/fyd/proceduralize/jest.config.cjs; adds a CSS
  * stub because the rail tests import build-client, which pulls in
  * object-circle's CSS module through the ObjectCircle doorway.
+ *
+ * RENDER-WIRE (design/lane-render-wire) adds the lane's suites to the
+ * same scope: render-wire (section composition variants), hero-scrim
+ * (contrast/focal math), and the motion-css sync pin.
  */
 module.exports = {
   testEnvironment: "node",
