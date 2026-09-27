@@ -1,0 +1,229 @@
+/**
+ * FYD motion primitives: choreography tokens.
+ *
+ * Design lane 07 (motion), 2026-09-26. One stylesheet owns every
+ * motion number so sections compose from tokens, not magic values.
+ *
+ * Harvested numbers:
+ * - Scroll-reveal ladder, rung 1: IntersectionObserver adds a visible
+ *   flag once; CSS transition on opacity/translate only. Trigger at
+ *   0.15 visibility or rootMargin "0px 0px -12% 0px"; translate 16-32px;
+ *   duration 400-600ms ease-out; stagger 80ms, index capped at 6 so the
+ *   last item never waits past ~480ms. (github-corpus item 4)
+ * - Clip-path reveal on scroll: inset wipe, ~750ms
+ *   cubic-bezier(0.77, 0, 0.175, 1), inner media settles 1.15 -> 1.
+ *   (design-corpus P5; github-corpus item 11)
+ * - Count-up proof strip: ~900ms, steps-style easing, tabular numerals,
+ *   fires once when the strip enters. Verified numbers only.
+ *   (design-corpus P14; github-corpus item 6)
+ * - Parallax bound: -10% / +10% max travel, desktop fine-pointer only.
+ *   (github-corpus item 6)
+ *
+ * Rejected patterns are deliberately absent: no preloaders, no scroll
+ * hijack, no auto-rotating carousels. No infinite animations anywhere.
+ */
+
+:root {
+  /* Reveal choreography */
+  --fyd-motion-duration: 500ms;
+  --fyd-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --fyd-motion-rise: 24px; /* ladder band: 16px - 32px */
+
+  /* Stagger ladder: --fyd-reveal-delay is set per item as
+     min(index, 6) * 80ms by the Reveal component. */
+  --fyd-motion-stagger: 80ms;
+  --fyd-motion-stagger-cap: 6;
+
+  /* Clip-path reveal */
+  --fyd-motion-clip-duration: 750ms;
+  --fyd-motion-clip-ease: cubic-bezier(0.77, 0, 0.175, 1);
+  --fyd-motion-clip-scale: 1.15;
+
+  /* Count-up */
+  --fyd-motion-count-duration: 900ms;
+
+  /* Parallax ceiling (tokens only; consumed by a later parallax lane) */
+  --fyd-motion-parallax-min: -10%;
+  --fyd-motion-parallax-max: 10%;
+
+  /* Reduced-motion floor: durations collapse to zero, never negative. */
+  --fyd-motion-reduced-duration: 0ms;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reveal: hidden states apply ONLY under .fyd-js, which the Reveal   */
+/* component adds to <html> on mount. No JS means no hidden content.  */
+/* ------------------------------------------------------------------ */
+
+.fyd-js [data-fyd-reveal]:not([data-visible="true"]) {
+  transition-delay: var(--fyd-reveal-delay, 0ms);
+}
+
+.fyd-js [data-fyd-reveal][data-fyd-reveal-variant="rise"]:not([data-visible="true"]) {
+  opacity: 0;
+  transform: translateY(var(--fyd-motion-rise));
+}
+
+.fyd-js [data-fyd-reveal][data-fyd-reveal-variant="fade"]:not([data-visible="true"]) {
+  opacity: 0;
+}
+
+.fyd-js [data-fyd-reveal][data-fyd-reveal-variant="clip"]:not([data-visible="true"]) {
+  clip-path: inset(0 0 100% 0);
+}
+
+.fyd-js [data-fyd-reveal][data-fyd-reveal-variant="clip"]:not([data-visible="true"]) > * {
+  transform: scale(var(--fyd-motion-clip-scale));
+}
+
+[data-fyd-reveal][data-fyd-reveal-variant="rise"],
+[data-fyd-reveal][data-fyd-reveal-variant="fade"] {
+  transition:
+    opacity var(--fyd-motion-duration) var(--fyd-motion-ease),
+    transform var(--fyd-motion-duration) var(--fyd-motion-ease);
+  transition-delay: var(--fyd-reveal-delay, 0ms);
+}
+
+[data-fyd-reveal][data-fyd-reveal-variant="clip"] {
+  transition: clip-path var(--fyd-motion-clip-duration) var(--fyd-motion-clip-ease);
+  transition-delay: var(--fyd-reveal-delay, 0ms);
+}
+
+[data-fyd-reveal][data-fyd-reveal-variant="clip"] > * {
+  transition: transform var(--fyd-motion-clip-duration) var(--fyd-motion-clip-ease);
+  transition-delay: var(--fyd-reveal-delay, 0ms);
+}
+
+[data-fyd-reveal][data-visible="true"] {
+  opacity: 1;
+  transform: none;
+  clip-path: inset(0 0 0 0);
+}
+
+/* ------------------------------------------------------------------ */
+/* Before / after slider                                               */
+/* ------------------------------------------------------------------ */
+
+.fyd-before-after {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y; /* horizontal drag owns the slider; vertical scroll stays native */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.fyd-before-after__layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.fyd-before-after__handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: currentColor;
+  cursor: ew-resize;
+  z-index: 2;
+}
+
+.fyd-before-after__handle:focus {
+  outline: none;
+}
+
+.fyd-before-after__handle:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* 44px minimum hit area on the grip, centered on the divider line. */
+.fyd-before-after__grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background: currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.fyd-before-after__grip::before,
+.fyd-before-after__grip::after {
+  content: "";
+  border: solid #fff;
+  border-width: 0 3px 3px 0;
+  display: inline-block;
+  padding: 4px;
+}
+
+.fyd-before-after__grip::before {
+  transform: rotate(135deg);
+  margin-right: -2px;
+}
+
+.fyd-before-after__grip::after {
+  transform: rotate(-45deg);
+  margin-left: -2px;
+}
+
+.fyd-before-after__label {
+  position: absolute;
+  top: 12px;
+  z-index: 1;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.fyd-before-after__label--before {
+  left: 12px;
+}
+
+.fyd-before-after__label--after {
+  right: 12px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Count-up: tabular figures so columns do not jitter mid-count.       */
+/* ------------------------------------------------------------------ */
+
+.fyd-count-up {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion: every primitive collapses to its final state.       */
+/* Ambient motion is removed. User-driven motion (the before/after     */
+/* slider) keeps working: it is input, not animation.                  */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fyd-reveal],
+  [data-fyd-reveal] > * {
+    transition: none !important;
+    transition-delay: var(--fyd-motion-reduced-duration) !important;
+    animation: none !important;
+  }
+
+  [data-fyd-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: inset(0 0 0 0) !important;
+  }
+}
