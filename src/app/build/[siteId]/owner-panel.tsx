@@ -16,6 +16,57 @@
 
 import { useState } from "react";
 import type { OwnerCommand } from "@/fyd/object/types";
+import type { RenderViewerKind } from "@/fyd/sitespec/render-projection";
+
+/**
+ * LANE-8: the ONE owner affordance. The owner projection is the visitor
+ * page plus exactly one "Customize with FYD" entry point. Lane 9 builds
+ * the conversational UX behind it; this component only reserves the
+ * entry point with an honest placeholder. The full conversational and
+ * digest machinery in OwnerPanel below is engineer-only.
+ */
+export function OwnerEntryPoint() {
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="fixed bottom-6 right-6 z-50 min-h-[44px] rounded-full px-6 py-3 text-base font-semibold shadow-lg"
+        style={{ background: "#1a1a2e", color: "#fff" }}
+        aria-label="Customize with FYD"
+      >
+        Customize with FYD
+      </button>
+    );
+  }
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Customize with FYD"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) setOpen(false);
+      }}
+    >
+      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+        <h2 className="text-xl font-semibold text-neutral-900">Customize with FYD</h2>
+        <p className="mt-3 text-sm text-neutral-700">
+          The conversational customizer is being built in the next lane.
+          This button reserves its entry point.
+        </p>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="mt-4 min-h-[44px] rounded bg-neutral-900 px-6 py-2 font-semibold text-white"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
 
 type Phase = "idle" | "proposing" | "proposed" | "approving" | "applied" | "failed";
 
@@ -44,7 +95,18 @@ function shortDigest(d: string): string {
   return d.length > 12 ? d.slice(0, 12) + "..." : d;
 }
 
-export function OwnerPanel({ siteId }: { siteId: string }) {
+export function OwnerPanel({
+  siteId,
+  viewerKind,
+}: {
+  siteId: string;
+  /**
+   * LANE-8: when "engineer", the panel also shows the raw proposal
+   * digests, event ids, and approval timestamps. Owner and other viewers
+   * see the conversational flow only.
+   */
+  viewerKind?: RenderViewerKind;
+}) {
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [text, setText] = useState("");
@@ -262,10 +324,12 @@ export function OwnerPanel({ siteId }: { siteId: string }) {
                   <dd className="text-neutral-900">{proposal.capabilityImpact}</dd>
                 </div>
               </dl>
-              <p className="mt-3 font-mono text-xs text-neutral-500">
-                base state {shortDigest(proposal.baseStateDigest)} · base view{" "}
-                {shortDigest(proposal.baseViewDigest)} · patch {shortDigest(proposal.patchDigest)}
-              </p>
+              {viewerKind === "engineer" ? (
+                <p className="mt-3 font-mono text-xs text-neutral-500">
+                  base state {shortDigest(proposal.baseStateDigest)} · base view{" "}
+                  {shortDigest(proposal.baseViewDigest)} · patch {shortDigest(proposal.patchDigest)}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-3">
               <button
@@ -297,10 +361,12 @@ export function OwnerPanel({ siteId }: { siteId: string }) {
             <p className="rounded bg-green-50 px-3 py-2 text-sm font-medium text-green-900">
               Applied. {receipt.appliedPhone ? "The phone now reads " + receipt.appliedPhone + "." : ""}
             </p>
-            <p className="font-mono text-xs text-neutral-500">
-              event {receipt.eventId ?? "n/a"} · result {shortDigest(receipt.resultDigest)} ·{" "}
-              {receipt.approvedAt}
-            </p>
+            {viewerKind === "engineer" ? (
+              <p className="font-mono text-xs text-neutral-500">
+                event {receipt.eventId ?? "n/a"} · result {shortDigest(receipt.resultDigest)} ·{" "}
+                {receipt.approvedAt}
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-3">
               {receipt.appliedField ? (
                 <button

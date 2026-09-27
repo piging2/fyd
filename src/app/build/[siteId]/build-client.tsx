@@ -1,7 +1,20 @@
 "use client";
 
 /**
- * BuildClient: the generic composition shell for /build/[siteId].
+ * LANE-8: BuildClient, the generic composition shell for /build/[siteId].
+ *
+ * Consumes ONLY the ProjectedSiteView: the page server component resolves
+ * the viewer class and projects the compiled artifacts through
+ * projectForViewer. The shell never sees raw state.
+ *
+ * Visitor: the composed page. No validator findings, no object rail,
+ * no owner entry point.
+ * Owner: the visitor page plus exactly one "Customize with FYD" entry
+ * point (OwnerEntryPoint; lane 9 builds the conversational UX behind
+ * it). The OwnerPanel conversational and digest machinery is
+ * engineer-only.
+ * Engineer: the current debug material (raw findings, the featured-object
+ * rail, the full owner panel with digest lines).
  *
  * Not SiteClient: there is no FYD demo header, no structured editor, and
  * no provenance footer here. The customer content owns the page.
@@ -14,10 +27,7 @@
  * object rail; on narrow viewports it collapses to the drawer sheet.
  * The rail never displaces content. The AskFYD mount is the spec's own
  * AskFYD section (the generator adds it to every home page), rendered by
- * the same machinery, not a second chat path. The one owner control,
- * [ Customize with FYD ], opens the conversational owner panel
- * (propose -> preview -> approve -> apply -> revert) wired to the
- * digest-bound overrides route.
+ * the same machinery, not a second chat path.
  */
 
 import { useMemo } from "react";
@@ -27,16 +37,13 @@ import { ObjectCircle } from "@/fyd/ui/object-circle";
 import { FydMotionFallback } from "@/fyd/components/fyd-motion-fallback";
 import { FydViewportProvider } from "@/fyd/components/viewport";
 import type {
-  FYDFinding,
   FYDSiteSpec,
   ObjectGraph,
   ObjectPresence,
   ViewerContext,
 } from "@/fyd/sitespec/types";
-// Type-only: the hero media is serialized DisplayMedia resolved on the
-// server; the client never touches the media store.
-import type { DisplayMedia } from "@/fyd/media/select";
-import { OwnerPanel } from "./owner-panel";
+import { OwnerEntryPoint, OwnerPanel } from "./owner-panel";
+import type { ProjectedSiteView } from "@/fyd/sitespec/render-projection";
 
 const VIEWER: ViewerContext = { viewerId: null, displayName: null };
 
@@ -58,28 +65,21 @@ export function presenceForBuild(
   return { mode: "auto", objects, rules: { collapseBelow: "lg" } };
 }
 
-export function BuildClient({
-  spec,
-  graph,
-  findings,
-  renderable,
-  siteId,
-  heroMedia = null,
-  galleryMedia = null,
-  objectMedia = {},
-}: {
-  spec: FYDSiteSpec;
-  graph: ObjectGraph;
-  findings: FYDFinding[];
-  renderable: boolean;
-  siteId?: string;
-  heroMedia?: DisplayMedia | null;
-  galleryMedia?: DisplayMedia[] | null;
-  objectMedia?: Record<string, DisplayMedia[]>;
-}) {
+export function BuildClient({ view }: { view: ProjectedSiteView }) {
+  const { spec, graph, findings, renderable, siteId, viewerKind } = view;
+  const isEngineer = viewerKind === "engineer";
   const ctx = useMemo(
-    () => ({ spec, graph, viewer: VIEWER, siteId, heroMedia, galleryMedia, objectMedia }),
-    [spec, graph, siteId, heroMedia, galleryMedia, objectMedia],
+    () => ({
+      spec,
+      graph,
+      viewer: VIEWER,
+      siteId,
+      heroMedia: view.heroMedia,
+      galleryMedia: view.galleryMedia,
+      objectMedia: view.objectMedia,
+      viewerKind,
+    }),
+    [spec, graph, siteId, view.heroMedia, view.galleryMedia, view.objectMedia, viewerKind],
   );
   const page = spec.pages[0];
   const theme = spec.themeTokens;
@@ -106,7 +106,8 @@ export function BuildClient({
       </div>
     ) : null;
 
-  // Validation status. An invalid spec never renders.
+  // Validation status. An invalid spec never renders. Non-engineers see a
+  // generic message; only engineers see the raw findings.
   if (!renderable) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6">
@@ -115,15 +116,17 @@ export function BuildClient({
           The site specification did not pass validation, so nothing is
           rendered rather than rendering something wrong.
         </p>
-        <ul className="mt-4 list-disc pl-5 text-sm">
-          {findings
-            .filter((f) => f.severity === "error")
-            .map((f, i) => (
-              <li key={i}>
-                {f.path}: {f.message}
-              </li>
-            ))}
-        </ul>
+        {isEngineer ? (
+          <ul className="mt-4 list-disc pl-5 text-sm">
+            {findings
+              .filter((f) => f.severity === "error")
+              .map((f, i) => (
+                <li key={i}>
+                  {f.path}: {f.message}
+                </li>
+              ))}
+          </ul>
+        ) : null}
       </div>
     );
   }
@@ -154,10 +157,22 @@ export function BuildClient({
           <SitePageView key={page.slug} page={page} ctx={ctx} />
         </div>
       </FydViewportProvider>
-      {presence ? (
+      {/* LANE-8: the object rail is debug material (work-order removal
+          list: "object-rail debug UI"). Engineer projection only. */}
+      {isEngineer && presence ? (
         <ObjectRail cards={cards} presence={presence} theme={theme} heading="Featured object" />
       ) : null}
-      {siteId ? <OwnerPanel siteId={siteId} /> : null}
+      {/* LANE-8: the ONE owner affordance. The engineer gets the full
+          conversational and digest machinery; the verified owner gets
+          exactly one "Customize with FYD" entry point (lane 9 builds the
+          conversational UX behind it). Visitors get neither. */}
+      {view.showOwnerEntry && siteId ? (
+        isEngineer ? (
+          <OwnerPanel siteId={siteId} viewerKind={viewerKind} />
+        ) : (
+          <OwnerEntryPoint />
+        )
+      ) : null}
     </div>
   );
 }

@@ -188,6 +188,10 @@ describe("ObjectOverlay compact experience", () => {
         graph: GRAPH,
         siteId: "coppersmith-plumbing",
         onClose: () => {},
+        // LANE-8: the full detail rendering (WhyThis drill-down, raw
+        // provenance) is the engineer projection; absent fails closed to
+        // the quiet visitor treatment.
+        viewerKind: "engineer",
       }),
     );
     // Identity + type.

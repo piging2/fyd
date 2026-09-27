@@ -14,6 +14,7 @@
  */
 
 import { EvidenceStateLabel, type EvidenceState } from "./evidence-state";
+import type { RenderViewerKind } from "../sitespec/render-projection";
 
 export interface EvidenceStep {
   /** e.g. "Object field", "Evidence", "Observation", "Source". */
@@ -27,13 +28,21 @@ export function WhyThis({
   claim,
   steps,
   className,
+  viewerKind,
 }: {
   /** The visible claim this explains, e.g. the phone number shown. */
   claim: string;
   /** Lineage from the claim back to the source. Nearest first. */
   steps: EvidenceStep[];
   className?: string;
+  /**
+   * LANE-8: when "visitor", the per-claim evidence drill-down is suppressed
+   * (the quiet Source affordance carries provenance instead). Absent
+   * preserves the previous render for debug/developer surfaces.
+   */
+  viewerKind?: RenderViewerKind;
 }) {
+  if (viewerKind === "visitor") return null;
   if (steps.length === 0) return null;
   return (
     <details className={"text-xs text-zinc-600 " + (className ?? "")}>

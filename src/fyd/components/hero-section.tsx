@@ -33,6 +33,7 @@ import {
   type Ref,
 } from "react";
 import type { DisplayMedia } from "../media/select";
+import type { RenderViewerKind } from "../sitespec/render-projection";
 import type { FYDThemeTokens } from "../sitespec/types";
 import { WhyThis, type EvidenceStep } from "../ui/why-this";
 
@@ -66,7 +67,14 @@ export function imageAlreadyFailed(
  * with empty values are omitted, and WhyThis renders nothing at all when
  * the lineage is empty.
  */
-function HeroMediaWhyThis({ media }: { media: DisplayMedia }) {
+function HeroMediaWhyThis({
+  media,
+  viewerKind,
+}: {
+  media: DisplayMedia;
+  viewerKind?: RenderViewerKind;
+}) {
+  if (viewerKind !== "engineer") return null;
   const steps: EvidenceStep[] = [];
   if (media.sourceUrl) {
     steps.push({
@@ -103,6 +111,7 @@ function HeroMediaWhyThis({ media }: { media: DisplayMedia }) {
       claim={media.alt || "Hero photo"}
       steps={steps}
       className="[&_summary]:text-white"
+      viewerKind={viewerKind}
     />
   );
 }
@@ -119,12 +128,14 @@ export function HeroPhotoBlock({
   onMediaError,
   mainRef,
   blurRef,
+  viewerKind,
 }: {
   hero: DisplayMedia | null;
   failed: boolean;
   onMediaError: () => void;
   mainRef?: Ref<HTMLImageElement>;
   blurRef?: Ref<HTMLImageElement>;
+  viewerKind?: RenderViewerKind;
 }) {
   if (!hero || failed) return null;
   return (
@@ -153,7 +164,7 @@ export function HeroPhotoBlock({
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="absolute bottom-2 right-2 rounded bg-black/55 px-2 py-1">
-        <HeroMediaWhyThis media={hero} />
+        <HeroMediaWhyThis media={hero} viewerKind={viewerKind} />
       </div>
     </div>
   );
@@ -164,11 +175,13 @@ export function HeroSection({
   theme,
   character,
   children,
+  viewerKind,
 }: {
   hero: DisplayMedia | null;
   theme: FYDThemeTokens;
   character: string;
   children: ReactNode;
+  viewerKind?: RenderViewerKind;
 }) {
   // The only client state in the hero: a failed image can never recover
   // (no retry affordance exists), so a boolean latch is sufficient. Either
@@ -215,6 +228,7 @@ export function HeroSection({
     >
       <HeroPhotoBlock
         hero={hero}
+        viewerKind={viewerKind}
         failed={mediaFailed}
         onMediaError={() => setMediaFailed(true)}
         mainRef={mainRef}

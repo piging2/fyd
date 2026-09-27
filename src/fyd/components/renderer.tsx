@@ -38,6 +38,11 @@ import {
 } from "../object/object-projection";
 import { FydContactLink } from "./contact-link";
 import { HeroSection } from "./hero-section";
+import { QuietSource } from "./quiet-source";
+import {
+  sourceLabelFor,
+  type RenderViewerKind,
+} from "../sitespec/render-projection";
 import { schemaRole, ownerRelationshipTarget } from "../sitespec/schemas";
 import {
   entranceDurationMs,
@@ -232,6 +237,13 @@ export interface RenderContext {
   graph: ObjectGraph;
   viewer: ViewerContext;
   /**
+   * LANE-8: the classified render viewer kind (visitor | owner | engineer)
+   * resolved server-side at the projection seam. Components gate debug
+   * chrome on this. Absent preserves legacy rendering for surfaces that
+   * pass no kind (debug/developer pages, older tests).
+   */
+  viewerKind?: RenderViewerKind;
+  /**
    * Public site slug (e.g. "happy-place") threaded from the page, so the
    * AskFYD widget knows which site to ask about. Optional: sections render
    * fine without it, but Ask FYD shows an honest unavailable state.
@@ -339,11 +351,21 @@ function ClaimBadge({
   objects,
   theme,
   tone,
+  viewerKind,
 }: {
   objects: PingObject[];
   theme?: FYDThemeTokens;
   tone?: "onDark";
+  /**
+   * LANE-8: the debug-semantics pill is replaced by the quiet Source
+   * affordance (progressive disclosure) for every viewer except the
+   * engineer. Absent fails closed to the quiet treatment.
+   */
+  viewerKind?: RenderViewerKind;
 }) {
+  if (viewerKind !== "engineer") {
+    return <QuietSource objects={objects} />;
+  }
   const dark = tone === "onDark" && theme != null;
   return (
     <span
@@ -790,10 +812,17 @@ function FydObjectCard({
         </p>
       ) : null}
       <div className="mt-3">
-        <ClaimBadge objects={[o]} />
+        <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} />
       </div>
-      {title ? (
-        <WhyThis claim={title} steps={whyThisClaimChainFor(o)} className="mt-2" />
+      {/* LANE-8: the per-claim WhyThis drill-down is engineer material.
+          The visitor and owner get the quiet Source affordance instead. */}
+      {ctx.viewerKind === "engineer" && title ? (
+        <WhyThis
+          claim={title}
+          steps={whyThisClaimChainFor(o)}
+          className="mt-2"
+          viewerKind={ctx.viewerKind}
+        />
       ) : null}
       {affordanceEligible(o) ? (
         <ObjectAffordance
@@ -802,7 +831,7 @@ function FydObjectCard({
           kindLabel={friendlySchemaLabel(o.schema)}
           schemaId={o.schema}
           controllerId={o.controllerId}
-          evidenceLine={affordanceEvidenceLine(o)}
+          evidenceLine={ctx.viewerKind !== "engineer" ? sourceLabelFor(o) : affordanceEvidenceLine(o)}
           theme={theme}
         />
       ) : null}
@@ -1199,10 +1228,15 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   // resolves all hero data; HeroSection owns only the failure state, and the
   // text/actions block below stays server-rendered children.
   return (
-    <HeroSection hero={hero} theme={theme} character={character}>
+    <HeroSection
+      hero={hero}
+      theme={theme}
+      character={character}
+      viewerKind={ctx.viewerKind}
+    >
       <div className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-5xl">
-        <ClaimBadge objects={objects} theme={theme} tone="onDark" />
+        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} theme={theme} tone="onDark" />
         <h1
           className="mt-4 break-words text-4xl font-bold text-background sm:text-6xl"
           style={{ fontFamily: theme.fontDisplay }}
@@ -1273,7 +1307,7 @@ function BusinessSummary({ section, objects, presentation, theme, ctx, motionInd
       heading={presentation.heading ?? (title ? "About " + title : undefined)}
       copy={presentation.copy ?? boundDescription(ctx, o)}
     >
-      <ClaimBadge objects={objects} />
+      <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} />
       {/* Mobile in-flow composition: the business object itself as a
           tappable card in the page flow (<768px). Desktop keeps the
           prose summary unchanged. */}
@@ -1427,7 +1461,7 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
         })}
       </ul>
       <div className="mt-3">
-        <ClaimBadge objects={objects} />
+        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} />
       </div>
       {/* Mobile in-flow composition: Location object cards in the page
           flow (<768px), replacing the pill list. Desktop unchanged. */}
@@ -1539,7 +1573,7 @@ function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex
                     kindLabel={friendlySchemaLabel(o.schema)}
                     schemaId={o.schema}
                     controllerId={o.controllerId}
-                    evidenceLine={affordanceEvidenceLine(o)}
+                    evidenceLine={ctx.viewerKind !== "engineer" ? sourceLabelFor(o) : affordanceEvidenceLine(o)}
                     theme={theme}
                   />
                 ) : null}
@@ -1594,7 +1628,7 @@ function PostsSection({ section, objects, presentation, theme, ctx, motionIndex 
               ) : null}
               {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
               <div className="mt-3">
-                <ClaimBadge objects={[o]} />
+                <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} />
               </div>
             </article>
           );
@@ -1693,7 +1727,7 @@ function FeedList({
                 </div>
                 {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
                 <div className="mt-3">
-                  <ClaimBadge objects={[o]} />
+                  <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} />
                 </div>
               </div>
             </div>
@@ -1704,7 +1738,7 @@ function FeedList({
                 kindLabel={friendlySchemaLabel(o.schema)}
                 schemaId={o.schema}
                 controllerId={o.controllerId}
-                evidenceLine={affordanceEvidenceLine(o)}
+                evidenceLine={ctx.viewerKind !== "engineer" ? sourceLabelFor(o) : affordanceEvidenceLine(o)}
                 theme={theme}
               />
             ) : null}
@@ -1784,7 +1818,7 @@ function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
         ) : null}
       </ul>
       <div className="mt-3">
-        <ClaimBadge objects={objects} />
+        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} />
       </div>
     </SectionShell>
   );
@@ -1853,7 +1887,7 @@ function SocialProofSection({ section, objects, presentation, theme, ctx, motion
           >
             {t}
             <div className="mt-2 not-italic">
-              <ClaimBadge objects={objects} />
+              <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} />
             </div>
           </blockquote>
         ))}
@@ -1914,7 +1948,7 @@ function IdentityCardSection({ section, objects, presentation, theme, ctx, motio
           ) : null}
           {description ? <p className="mt-1 text-sm text-accent">{description}</p> : null}
         </div>
-        <ClaimBadge objects={objects} />
+        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} />
       </div>
     </SectionShell>
   );
@@ -2025,7 +2059,15 @@ export function galleryEligible(ctx: RenderContext): boolean {
  * drill-down fed ONLY with the media's own provenance fields, mirroring
  * the hero photo treatment. No invented copy.
  */
-function GalleryMediaWhyThis({ media }: { media: DisplayMedia }) {
+function GalleryMediaWhyThis({
+  media,
+  viewerKind,
+}: {
+  media: DisplayMedia;
+  viewerKind?: RenderViewerKind;
+}) {
+  // LANE-8: the media provenance drill-down is engineer material.
+  if (viewerKind !== "engineer") return null;
   const steps: EvidenceStep[] = [];
   if (media.sourceUrl) {
     steps.push({ step: "Photo source", detail: media.sourceUrl, state: "observed" });
@@ -2045,7 +2087,13 @@ function GalleryMediaWhyThis({ media }: { media: DisplayMedia }) {
       state: "inferred",
     });
   }
-  return <WhyThis claim={media.alt || "Gallery photo"} steps={steps} />;
+  return (
+    <WhyThis
+      claim={media.alt || "Gallery photo"}
+      steps={steps}
+      viewerKind={viewerKind}
+    />
+  );
 }
 
 /**
@@ -2089,7 +2137,7 @@ function GallerySection({ section, presentation, theme, ctx, motionIndex }: Sect
               }}
             />
             <figcaption className="mt-1">
-              <GalleryMediaWhyThis media={m} />
+              <GalleryMediaWhyThis media={m} viewerKind={ctx.viewerKind} />
             </figcaption>
           </figure>
         ))}

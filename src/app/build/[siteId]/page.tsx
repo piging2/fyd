@@ -10,13 +10,22 @@
  * generic BuildClient composition shell: page content in the center,
  * ObjectRail in the margin, Ask FYD from the spec own sections.
  *
+ * LANE-8: the graph reaches the planner ONLY through the branded public
+ * projection boundary (getVerifiedPublicProjection, anonymous): the raw
+ * source graph never reaches page construction. The compiled artifacts
+ * are then projected through projectForViewer for the resolved viewer
+ * class before the client shell sees them.
+ *
  * Unknown site ids 404. An invalid spec never renders (renderable gate).
  * No customer fact is hardcoded here: names, sections, and objects all
  * come from the projection through the spec.
  */
 
 import { notFound } from "next/navigation";
-import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+import {
+  getPingObjectGraph,
+  getVerifiedPublicProjection,
+} from "@/fyd/data/ping-object-source";
 import { verifyObjectGraph } from "@/fyd/builder/object-builder";
 import { planSite } from "@/fyd/builder/planner";
 import { vectorForSite } from "@/fyd/builder/site-vectors";
@@ -25,6 +34,11 @@ import { applyPresentationIntent } from "@/fyd/customize/apply-layer";
 import { heroMediaFor } from "@/fyd/media/select";
 import { schemaRole } from "@/fyd/sitespec/schemas";
 import { BuildClient } from "./build-client";
+import {
+  classifyRenderViewer,
+  projectForViewer,
+} from "@/fyd/sitespec/render-projection";
+import { resolveViewerClaim } from "@/fyd/sitespec/render-viewer-server";
 
 function ownerName(
   graph: { objects: { schema: string; visibility: string; title: string }[] },
@@ -43,9 +57,13 @@ export async function generateMetadata({
   params: Promise<{ siteId: string }>;
 }) {
   const { siteId } = await params;
-  const projection = await getPingObjectGraph(siteId).catch(() => null);
-  if (!projection) return { title: "Site not found" };
-  const name = ownerName(projection.graph, siteId);
+  // LANE-8: metadata reads through the verified public projection, not
+  // the raw source graph. The business name comes from public objects.
+  const verified = await getVerifiedPublicProjection(siteId, "anonymous").catch(
+    () => null,
+  );
+  if (!verified) return { title: "Site not found" };
+  const name = ownerName(verified.graph, siteId);
   return {
     title: name,
     description: "A site composed by FYD from the business object graph.",
@@ -54,27 +72,35 @@ export async function generateMetadata({
 
 export default async function BuildSitePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ siteId: string }>;
+  searchParams?: Promise<{ fyd_advanced?: string | string[] }>;
 }) {
   const { siteId } = await params;
   // Fail closed on unknown sites: getPingObjectGraph throws when the
   // projection is missing, which becomes a 404, never a 500 with fiction.
   const projection = await getPingObjectGraph(siteId).catch(() => null);
   if (!projection) notFound();
-  const { graph, meta, presentationIntent } = projection;
-  // OBJECT BUILDER boundary: the graph is verified and attested before
-  // the website builder plans anything from it. The tenant context is the
-  // site id, so a cross-tenant graph cannot reach the planner.
+  const { meta, presentationIntent } = projection;
+  // LANE-8: THE public read funnel (Q-C-01). The planner, the spec
+  // compiler, and the renderer consume ONLY the verified public
+  // projection's graph. The raw source graph never reaches them.
+  const verifiedPublic = await getVerifiedPublicProjection(siteId, "anonymous");
+  const graph = verifiedPublic.graph;
+  // OBJECT BUILDER boundary: the source projection is verified and
+  // attested before the website builder plans anything. The tenant
+  // context is the site id, so a cross-tenant graph cannot reach the
+  // planner.
   const verified = verifyObjectGraph({ tenantId: siteId }, projection);
-  // WEBSITE BUILDER: deterministic planning from the verified graph with
-  // this tenant composition operating point. The planner never
+  // WEBSITE BUILDER: deterministic planning from the verified public
+  // graph with this tenant composition operating point. The planner never
   // manufactures business facts: every section comes from the data-driven
   // generator, and every generated copy slot is evidence-bound and
   // verified before the spec is returned.
   const planned = planSite({
     ctx: { tenantId: siteId },
-    graph: verified.graph,
+    graph,
     vector: vectorForSite(siteId),
     generatedAt: meta.generatedAt,
     eventSequences: meta.eventSequences ?? undefined,
@@ -91,16 +117,19 @@ export default async function BuildSitePage({
   const findings = validateSiteSpec(spec, knownSchemas);
   const renderable = isRenderable(findings);
 
+  // LANE-8: the viewer projection seam. Same state, different authorized
+  // projections; the default is the visitor projection.
+  const viewerKind = classifyRenderViewer(
+    await resolveViewerClaim(await searchParams),
+  );
+  const view = projectForViewer(
+    { spec, graph, findings, renderable, siteId, heroMedia },
+    viewerKind,
+  );
+
   return (
     <main className="min-h-screen bg-background">
-      <BuildClient
-        spec={spec}
-        graph={graph}
-        findings={findings}
-        renderable={renderable}
-        siteId={siteId}
-        heroMedia={heroMedia}
-      />
+      <BuildClient view={view} />
     </main>
   );
 }

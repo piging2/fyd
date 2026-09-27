@@ -18,6 +18,11 @@ import { notFound } from "next/navigation";
 import { BuildClient } from "@/app/build/[siteId]/build-client";
 import type { ObjectGraph, FYDSiteSpec, FYDFinding } from "@/fyd/sitespec/types";
 import type { DisplayMedia } from "@/fyd/media/select";
+import {
+  classifyRenderViewer,
+  projectForViewer,
+} from "@/fyd/sitespec/render-projection";
+import { resolveViewerClaim } from "@/fyd/sitespec/render-viewer-server";
 
 export const dynamic = "force-dynamic";
 
@@ -59,12 +64,25 @@ async function loadJob(jobId: string): Promise<JobPayload | null> {
   }
 }
 
-export default async function BuildMyFydJobPage({ params }: { params: Promise<{ jobId: string }> }) {
+export default async function BuildMyFydJobPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ jobId: string }>;
+  searchParams?: Promise<{ fyd_advanced?: string | string[] }>;
+}) {
   const { jobId } = await params;
   if (!/^live-[0-9a-f]{12}$/.test(jobId)) notFound();
   const job = await loadJob(jobId);
   if (!job) notFound();
   const { report } = job;
+
+  // LANE-8: the viewer projection seam. The demo-owner mode flag never
+  // widens the default visitor projection; only a verified identity or
+  // the deliberate engineer grant changes the class.
+  const viewerKind = classifyRenderViewer(
+    await resolveViewerClaim(await searchParams),
+  );
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
@@ -127,18 +145,24 @@ export default async function BuildMyFydJobPage({ params }: { params: Promise<{ 
         )}
       </section>
 
-      {!report.error && job.spec && (
-        <section className="mt-8">
-          <BuildClient
-            spec={job.spec}
-            graph={job.graph}
-            findings={job.findings}
-            renderable={job.renderable}
-            heroMedia={job.heroMedia}
-            galleryMedia={job.galleryMedia}
-          />
-        </section>
-      )}
+      {!report.error && job.spec && (() => {
+        const view = projectForViewer(
+          {
+            spec: job.spec,
+            graph: job.graph,
+            findings: job.findings,
+            renderable: job.renderable,
+            heroMedia: job.heroMedia,
+            galleryMedia: job.galleryMedia,
+          },
+          viewerKind,
+        );
+        return (
+          <section className="mt-8">
+            <BuildClient view={view} />
+          </section>
+        );
+      })()}
     </main>
   );
 }

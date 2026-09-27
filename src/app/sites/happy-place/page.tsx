@@ -1,12 +1,14 @@
 /**
  * FYD Social generated-site demo: Happy Place Carpentry.
  *
- * A procedural clone proof: the page below is compiled from the site's
- * PING-backed object graph (canonical projection written by the PING-side
- * dump, overlays applied from PING events) through generateSiteSpec, then
- * rendered from the declarative spec. No hand-layout for this company exists
- * anywhere in the pipeline, and no customer fact is hardcoded in this file:
- * the graph, the spec compile pins, and the metadata all come from PING.
+ * LANE-8: the page resolves the viewer class server-side and projects the
+ * compiled artifacts through projectForViewer before the client shell ever
+ * sees them. The client shell consumes ONLY the projection. The claim is
+ * resolved server-side (verified owner identity, or the deliberate
+ * engineer grant: ?fyd_advanced=1 plus the server-side grant); unknown,
+ * demo, practice, and unverified shapes fail closed to visitor. Demo owner
+ * mode mounts on the engineer projection only:
+ * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 never widens the default visitor page.
  *
  * The spec is validated before render. An invalid spec never renders.
  */
@@ -21,6 +23,11 @@ import {
   auditSitesRenderClaims,
   logSitesRenderAudit,
 } from "@/fyd/sitespec/sites-render-audit";
+import {
+  classifyRenderViewer,
+  projectForViewer,
+} from "@/fyd/sitespec/render-projection";
+import { resolveViewerClaim } from "@/fyd/sitespec/render-viewer-server";
 
 const SITE_ID = "happy-place";
 
@@ -31,7 +38,11 @@ export async function generateMetadata() {
   return generateSiteMetadata(SITE_ID);
 }
 
-export default async function HappyPlaceDemoPage() {
+export default async function HappyPlaceDemoPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ fyd_advanced?: string | string[] }>;
+}) {
   // Shared render pipeline: base spec compiled from the PING-backed graph
   // with the approved presentation intent applied over it.
   // Verified public projection (Q-C-01): the graph below already passed
@@ -58,18 +69,30 @@ export default async function HappyPlaceDemoPage() {
     // The audit must never break the render path.
   }
 
+  // LANE-8: the viewer projection seam. Same state, different authorized
+  // projections; the default is the visitor projection.
+  const viewerKind = classifyRenderViewer(
+    await resolveViewerClaim(await searchParams),
+  );
+  const view = projectForViewer(
+    {
+      spec,
+      graph,
+      findings,
+      renderable,
+      siteId: SITE_ID,
+      heroMedia,
+      galleryMedia,
+    },
+    viewerKind,
+  );
+
   return (
     <main className="min-h-screen bg-background">
-      <SiteClient
-        spec={spec}
-        graph={graph}
-        findings={findings}
-        renderable={renderable}
-        siteId={SITE_ID}
-        heroMedia={heroMedia}
-        galleryMedia={galleryMedia}
-      />
-      <DemoOwnerMode siteId={SITE_ID} enabled={isDemoOwnerModeEnabled()} />
+      <SiteClient view={view} />
+      {viewerKind === "engineer" ? (
+        <DemoOwnerMode siteId={SITE_ID} enabled={isDemoOwnerModeEnabled()} />
+      ) : null}
     </main>
   );
 }

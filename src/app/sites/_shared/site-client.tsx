@@ -1,11 +1,19 @@
 /**
- * Client shell for the FYD Social generated-site demo.
+ * LANE-8: client shell for the FYD Social generated-site demo pages.
  *
- * Page tabs render from spec.navigation (never hardcoded). The structured
- * editor below the site offers the lightweight customizations only:
- * reorder sections, hide/show, featured-object selection, proposed copy
- * edits, basic design tokens. Every change becomes a site_patch proposal
- * with a digest; copy and token edits stay drafts until approved.
+ * The shell consumes ONLY the ProjectedSiteView: the page server component
+ * resolves the viewer class and projects the compiled artifacts through
+ * projectForViewer, and this shell renders the projection. It never sees
+ * raw state, validator findings (unless engineer), or demo-owner
+ * constructs.
+ *
+ * Visitor: business content only, plus the quiet Source footer. No demo
+ * framing, no validator/provenance debug, no structured editor.
+ * Owner: the visitor page plus the single "Customize with FYD" entry point
+ * (OwnerPanel; lane 9 builds the conversational UX behind it).
+ * Engineer: the current debug material (structured editor, validator
+ * notes, provenance sentence) behind the deliberate ?fyd_advanced=1 +
+ * server-grant surface.
  */
 
 "use client";
@@ -15,20 +23,18 @@ import { SitePageView, resolveQuery } from "@/fyd/components/renderer";
 import { getComponentDef } from "@/fyd/components/registry";
 import { applySitePatch, proposeSitePatch, type SiteIntent, type SitePatchBody } from "@/fyd/proceduralize/patch";
 import type {
-  FYDFinding,
   FYDSiteSpec,
   FYDThemeTokens,
   ObjectGraph,
   ViewerContext,
 } from "@/fyd/sitespec/types";
-// Type-only: the hero and gallery media are serialized DisplayMedia
-// resolved on the server; the client never touches the media store.
-import type { DisplayMedia } from "@/fyd/media/select";
 import { FydMotionFallback } from "@/fyd/components/fyd-motion-fallback";
 import { ObjectOverlay } from "@/fyd/components/object-overlay";
 import { edgeClientScript } from "@/fyd/edge/client";
 import { MarginObjectLayer } from "@/fyd/ui/object-layer/MarginObjectLayer";
 import { selectMarginObjects } from "@/fyd/ui/object-layer/margin-select";
+import { OwnerEntryPoint, OwnerPanel } from "../../build/[siteId]/owner-panel";
+import type { ProjectedSiteView } from "@/fyd/sitespec/render-projection";
 
 declare global {
   interface Window {
@@ -44,7 +50,7 @@ const VIEWER: ViewerContext = { viewerId: null, displayName: null };
  * The acceptance-sequence parenthetical appears only when the spec carries
  * an eventSequences pair; it is never hardcoded. Fail closed on display:
  * absent provenance data omits the parenthetical rather than printing a
- * placeholder or a wrong number.
+ * placeholder or a wrong number. ENGINEER ONLY: never on the visitor page.
  */
 function provenanceSentence(spec: FYDSiteSpec): string {
   const provenance = spec.provenance;
@@ -60,23 +66,17 @@ function provenanceSentence(spec: FYDSiteSpec): string {
   );
 }
 
-export function SiteClient({
-  spec: initialSpec,
-  graph,
-  findings,
-  renderable,
-  siteId,
-  heroMedia = null,
-  galleryMedia = null,
-}: {
-  spec: FYDSiteSpec;
-  graph: ObjectGraph;
-  findings: FYDFinding[];
-  renderable: boolean;
-  siteId?: string;
-  heroMedia?: DisplayMedia | null;
-  galleryMedia?: DisplayMedia[] | null;
-}) {
+export function SiteClient({ view }: { view: ProjectedSiteView }) {
+  const {
+    spec: initialSpec,
+    graph,
+    findings,
+    renderable,
+    siteId,
+    heroMedia,
+    galleryMedia,
+    viewerKind,
+  } = view;
   const [spec, setSpec] = useState(initialSpec);
   const [activeSlug, setActiveSlug] = useState(
     initialSpec.navigation[0]?.pageSlug ?? "home",
@@ -85,9 +85,20 @@ export function SiteClient({
   const [patchError, setPatchError] = useState<string | null>(null);
   const [overlayObjectId, setOverlayObjectId] = useState<string | null>(null);
 
+  const isEngineer = viewerKind === "engineer";
+
   const ctx = useMemo(
-    () => ({ spec, graph, viewer: VIEWER, siteId, heroMedia, galleryMedia }),
-    [spec, graph, siteId, heroMedia, galleryMedia],
+    () => ({
+      spec,
+      graph,
+      viewer: VIEWER,
+      siteId,
+      heroMedia,
+      galleryMedia,
+      objectMedia: view.objectMedia,
+      viewerKind,
+    }),
+    [spec, graph, siteId, heroMedia, galleryMedia, viewerKind, view.objectMedia],
   );
   const page = spec.pages.find((p) => p.slug === activeSlug) ?? spec.pages[0];
   // MARGIN-1 (Nolan 2026-09-25): the page-level edge/margin object layer.
@@ -178,21 +189,19 @@ export function SiteClient({
             graph={graph}
             siteId={siteId ?? ""}
             onClose={() => setOverlayObjectId(null)}
+            viewerKind={viewerKind}
           />
         );
       })()}
-      {/* FYD Social demo header. Product surface says FYD Social. */}
+      {/* Site header. Product surface: the FYD Social kicker and the page
+          tabs. No demo framing ("Generated site demo" / "Procedural clone
+          proof" never render on any projection). The hero section owns the
+          business h1. */}
       <header className="border-b border-border-soft bg-background">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-accent">
-              FYD Social
-            </p>
-            <h1 className="text-xl font-bold">Generated site demo</h1>
-          </div>
-          <span className="rounded-full bg-surface px-3 py-1 text-xs font-medium text-accent">
-            Procedural clone proof
-          </span>
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">
+            FYD Social
+          </p>
         </div>
         <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 pb-3 sm:px-6" aria-label="Generated pages">
           {spec.navigation.map((n) => (
@@ -212,92 +221,132 @@ export function SiteClient({
         </nav>
       </header>
 
-      {/* Validation status. An invalid spec never renders. */}
+      {/* Validation status. An invalid spec never renders. Non-engineers
+          see a generic message; only engineers see the raw findings. */}
       {!renderable ? (
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-          <h2 className="text-lg font-semibold text-red-700">Spec failed validation</h2>
-          <ul className="mt-3 list-disc pl-5 text-sm">
-            {findings
-              .filter((f) => f.severity === "error")
-              .map((f, i) => (
-                <li key={i}>
-                  {f.path}: {f.message}
-                </li>
-              ))}
-          </ul>
+          <h2 className="text-lg font-semibold">Site preview unavailable</h2>
+          {isEngineer ? (
+            <ul className="mt-3 list-disc pl-5 text-sm">
+              {findings
+                .filter((f) => f.severity === "error")
+                .map((f, i) => (
+                  <li key={i}>
+                    {f.path}: {f.message}
+                  </li>
+                ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-accent">
+              This site preview is temporarily unavailable. Please check back
+              later.
+            </p>
+          )}
         </div>
       ) : (
         page && <SitePageView key={page.slug + JSON.stringify(spec.themeTokens)} page={page} ctx={ctx} />
       )}
 
-      {/* Provenance footer. */}
+      {/* Source footer. Quiet progressive disclosure for every viewer
+          class: source, observed date, direct/derived status. Debug
+          provenance (ingestion vocabulary, acceptance sequences, validator
+          notes) is engineer-only. */}
       <footer className="border-t border-border-soft bg-surface">
         <div className="mx-auto max-w-5xl px-4 py-6 text-sm text-accent sm:px-6">
-          <p>{provenanceSentence(spec)}</p>
-          {findings.filter((f) => f.severity !== "error").length > 0 && (
-            <details className="mt-2">
-              <summary className="cursor-pointer underline">
-                Validator notes ({findings.filter((f) => f.severity !== "error").length})
-              </summary>
-              <ul className="mt-2 list-disc pl-5">
-                {findings
-                  .filter((f) => f.severity !== "error")
-                  .map((f, i) => (
-                    <li key={i}>
-                      [{f.severity}] {f.path}: {f.message}
-                    </li>
-                  ))}
-              </ul>
-            </details>
+          <details className="fyd-page-source">
+            <summary className="cursor-pointer underline decoration-dotted underline-offset-2">
+              Source
+            </summary>
+            <div className="mt-2 space-y-1">
+              <p>Source: {view.source.sourceLabel}</p>
+              <p>Observed: {view.source.observedLabel}</p>
+              <p>{view.source.honestyNote}</p>
+            </div>
+          </details>
+          {isEngineer && (
+            <>
+              <p className="mt-4">{provenanceSentence(spec)}</p>
+              {findings.filter((f) => f.severity !== "error").length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer underline">
+                    Validator notes ({findings.filter((f) => f.severity !== "error").length})
+                  </summary>
+                  <ul className="mt-2 list-disc pl-5">
+                    {findings
+                      .filter((f) => f.severity !== "error")
+                      .map((f, i) => (
+                        <li key={i}>
+                          [{f.severity}] {f.path}: {f.message}
+                        </li>
+                      ))}
+                  </ul>
+                </details>
+              )}
+            </>
           )}
         </div>
       </footer>
 
-      {/* Structured editor. */}
-      <section className="border-t-4 border-primary bg-background">
-        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-          <h2 className="text-2xl font-semibold">Customize this site</h2>
-          <p className="mt-2 max-w-2xl text-sm text-accent">
-            Structured editing only: reorder sections, hide or show them, pick
-            featured objects, propose copy edits, tune basic design tokens.
-            Every change becomes a proposal with a digest. Copy and token edits
-            stay drafts until the digest is approved.
-          </p>
-          {page && (
-            <EditorPanel
-              spec={spec}
-              graph={graph}
-              pageSlug={page.slug}
-              onIntent={runIntent}
-            />
-          )}
-          {patchError && (
-            <p className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
-              {patchError}
+      {/* LANE-8: the ONE owner affordance. The engineer gets the full
+          conversational and digest machinery; the verified owner gets
+          exactly one "Customize with FYD" entry point (lane 9 builds the
+          conversational UX behind it). Visitors get neither. */}
+      {view.showOwnerEntry && siteId ? (
+        isEngineer ? (
+          <OwnerPanel siteId={siteId} viewerKind={viewerKind} />
+        ) : (
+          <OwnerEntryPoint />
+        )
+      ) : null}
+
+      {/* Structured editor. ENGINEER ONLY: the raw customization machinery
+          is debug material, never on the visitor or owner page. */}
+      {isEngineer && (
+        <section className="border-t-4 border-primary bg-background">
+          <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+            <h2 className="text-2xl font-semibold">Customize this site</h2>
+            <p className="mt-2 max-w-2xl text-sm text-accent">
+              Structured editing only: reorder sections, hide or show them, pick
+              featured objects, propose copy edits, tune basic design tokens.
+              Every change becomes a proposal with a digest. Copy and token edits
+              stay drafts until the digest is approved.
             </p>
-          )}
-          {proposal && (
-            <div className="mt-4 rounded border border-border-soft bg-surface p-4">
-              <h3 className="font-semibold">Proposed change</h3>
-              <pre className="mt-2 overflow-x-auto rounded bg-primary p-3 text-xs text-primary-foreground">
-                {JSON.stringify(proposal, null, 2)}
-              </pre>
-              <p className="mt-2 text-xs text-accent">
-                Digest: <code className="break-all">{proposal.proposalDigest}</code>
+            {page && (
+              <EditorPanel
+                spec={spec}
+                graph={graph}
+                pageSlug={page.slug}
+                onIntent={runIntent}
+              />
+            )}
+            {patchError && (
+              <p className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                {patchError}
               </p>
-              <p className="mt-1 text-xs text-accent">
-                Draft only. Approving applies it to this demo preview.
-              </p>
-              <button
-                onClick={approveProposal}
-                className="mt-3 rounded bg-honey px-5 py-2 text-sm font-semibold text-honey-foreground"
-              >
-                Approve and apply to preview
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
+            )}
+            {proposal && (
+              <div className="mt-4 rounded border border-border-soft bg-surface p-4">
+                <h3 className="font-semibold">Proposed change</h3>
+                <pre className="mt-2 overflow-x-auto rounded bg-primary p-3 text-xs text-primary-foreground">
+                  {JSON.stringify(proposal, null, 2)}
+                </pre>
+                <p className="mt-2 text-xs text-accent">
+                  Digest: <code className="break-all">{proposal.proposalDigest}</code>
+                </p>
+                <p className="mt-1 text-xs text-accent">
+                  Draft only. Approving applies it to this demo preview.
+                </p>
+                <button
+                  onClick={approveProposal}
+                  className="mt-3 rounded bg-honey px-5 py-2 text-sm font-semibold text-honey-foreground"
+                >
+                  Approve and apply to preview
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

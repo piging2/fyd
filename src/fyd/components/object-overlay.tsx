@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import { WhyThis } from "../ui/why-this";
+import { QuietSource } from "./quiet-source";
+import type { RenderViewerKind } from "../sitespec/render-projection";
 import { whyThisClaimChainFor } from "../object/why-this-steps";
 import { verifyPresentationBinding } from "../sitespec/graph";
 import { coarsenAddress } from "../sitespec/field-visibility";
@@ -15,6 +17,12 @@ interface ObjectOverlayProps {
   graph: ObjectGraph;
   siteId: string;
   onClose: () => void;
+  /**
+   * LANE-8: when "visitor", the Evidence section shows the quiet Source
+   * affordance instead of the WhyThis drill-down and the raw provenance
+   * box. Absent preserves the debug surface.
+   */
+  viewerKind?: RenderViewerKind;
 }
 
 /**
@@ -153,7 +161,7 @@ export function overlayRelationships(
  * Scroll preservation: saves window.scrollY on mount, restores on unmount.
  * The page behind does not scroll while the overlay is open.
  */
-export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayProps) {
+export function ObjectOverlay({ object, graph, siteId, onClose, viewerKind }: ObjectOverlayProps) {
   const savedScroll = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -327,10 +335,14 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
         {/* Evidence / WHY THIS */}
         <div style={{ marginBottom: "16px" }} data-testid="overlay-evidence">
           <div style={sectionLabel}>Evidence</div>
-          {whySteps.length > 0 ? (
-            <WhyThis claim={object.title} steps={whySteps} />
-          ) : null}
-          {provenance && (
+          {viewerKind !== "engineer" ? (
+            <QuietSource objects={[object]} />
+          ) : (
+            whySteps.length > 0 ? (
+              <WhyThis claim={object.title} steps={whySteps} viewerKind={viewerKind} />
+            ) : null
+          )}
+          {viewerKind === "engineer" && provenance && (
             <div
               style={{
                 fontSize: "13px",

@@ -86,6 +86,10 @@ function heroCtx(heroMedia: DisplayMedia | null): RenderContext {
     viewer: { viewerId: null, displayName: null },
     siteId: "test-site",
     heroMedia,
+    // LANE-8: these tests verify the hero's full provenance rendering
+    // (claim pill, WhyThis drill-down), which is the engineer projection;
+    // absent fails closed to the quiet visitor treatment.
+    viewerKind: "engineer",
   };
 }
 

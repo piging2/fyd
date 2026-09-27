@@ -18,7 +18,7 @@ const OUT_DIR = "/tmp/fyd-render";
 const CSS_PATH = "/tmp/fyd-site.css";
 
 describe("render to static HTML", () => {
-  test("every page renders with content, claim badges, and FYD Social branding", () => {
+  test("every page renders with content, quiet source affordance, and FYD Social branding", () => {
     const spec = generateSiteSpec(HAPPY_PLACE_RICH_GRAPH, {
       generatedAt: "2026-09-21T12:00:00.000Z",
       eventSequences: [65, 83],
@@ -63,7 +63,10 @@ ${body}
       if (page.slug === "home" || page.slug === "about") {
         expect(body).toContain("Happy Place");
       }
-      expect(body).toContain("Website statement");
+      // LANE-8: the claim-badge pill is replaced by the quiet Source
+      // affordance for every non-engineer viewer (absent fails closed).
+      expect(body).toContain("Source</summary>");
+      expect(body).not.toContain("Website statement");
     }
 
     const home = fs.readFileSync(path.join(OUT_DIR, "home.html"), "utf8");

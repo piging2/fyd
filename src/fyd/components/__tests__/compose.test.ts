@@ -380,8 +380,13 @@ describe("gallery", () => {
 
   test("renders images with lazy loading, dimensions, and provenance", () => {
     const spec = specFor(theme(), [gallerySection]);
+    // LANE-8: the media provenance drill-down (source URL, rights basis,
+    // digest) is engineer material; the test declares that viewer.
     const html = renderToStaticMarkup(
-      renderSection(gallerySection, ctxFor(spec, { galleryMedia: [galleryItem()] })) as React.ReactElement,
+      renderSection(
+        gallerySection,
+        ctxFor(spec, { galleryMedia: [galleryItem()], viewerKind: "engineer" }),
+      ) as React.ReactElement,
     );
     expect(html).toContain("/fyd-media/test/card-768w.webp");
     expect(html).toContain('loading="lazy"');
