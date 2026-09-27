@@ -67,6 +67,15 @@ export interface FYDPresentation {
    * applying objectOrder). Never a fact: only a display decision.
    */
   hiddenObjectIds?: string[];
+  /**
+   * Composition variant selected by the builder's composition compiler
+   * from measured graph signals (object/media counts). Presentation
+   * only, never a fact. Vocabulary is per component family:
+   * Services: "feature" | "grid" | "rows"; Gallery: "grid" | "masonry";
+   * Posts / RecentObjects / ObjectFeed: "list" | "grid" | "archive".
+   * Absent: the renderer's default for the component.
+   */
+  compositionVariant?: string;
 }
 
 export interface FYDSection {

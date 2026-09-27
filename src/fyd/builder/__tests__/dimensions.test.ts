@@ -6,12 +6,15 @@ import {
   COPPERSMITH_VECTOR,
   NAMED_PRESET_VECTORS,
   PING_DOGFOOD_VECTOR,
+  layoutCharacterForVector,
   nearestPresetName,
   policyForVector,
   quantizeVector,
   validateVector,
   type ArchetypeVector,
 } from "../dimensions";
+import { signalsForGraph } from "../signals";
+import { tradeGraph } from "./fixtures";
 
 const ROOFER: ArchetypeVector = {
   urgency: 0.3,
@@ -96,7 +99,45 @@ describe("archetype dimensions", () => {
     expect(copper.presenceMode).toBe("auto");
     expect(dogfood.density).toBe("compact");
     expect(copper.density).not.toBe("compact");
-    expect(dogfood.ctaEmphasis).not.toBe(copper.ctaEmphasis);
+    // layoutCharacter is derived from the vector and stamped on theme
+    // tokens (the renderer lane owns its visual effect).
+    expect(dogfood.layoutCharacter).toBe("TECHNICAL");
+    expect(copper.layoutCharacter).toBe("CRAFT");
+    expect(dogfood.layoutCharacter).not.toBe(copper.layoutCharacter);
+  });
+
+  test("layoutCharacterForVector: derivation order is fixed", () => {
+    expect(layoutCharacterForVector(EMERGENCY_PLUMBER)).toBe("CRAFT");
+    expect(layoutCharacterForVector(PING_DOGFOOD_VECTOR)).toBe("TECHNICAL");
+    expect(layoutCharacterForVector(COPPERSMITH_VECTOR)).toBe("CRAFT");
+    expect(layoutCharacterForVector(ROOFER)).toBe("EDITORIAL");
+    // Technical depth wins over people-first.
+    expect(
+      layoutCharacterForVector({ ...EMERGENCY_PLUMBER, technical_depth: 0.9 }),
+    ).toBe("TECHNICAL");
+  });
+
+  test("measured media manifest adds the gallery delta; ordering stays vector-pure", () => {
+    const vector = { ...COPPERSMITH_VECTOR };
+    const plain = policyForVector(vector);
+    const media = signalsForGraph(tradeGraph(), {
+      galleryAssets: 9,
+      heroAsset: true,
+      photographicObjectIds: [],
+    });
+    const enriched = policyForVector(vector, media);
+    // Gallery boost: 2 * media_density + 2 * sat(9, 8) = +1.059.
+    expect(
+      (enriched.sectionBoosts["Gallery"] ?? 0) - (plain.sectionBoosts["Gallery"] ?? 0),
+    ).toBeCloseTo(1.059, 3);
+    // Without signals the delta is 0: pure function of the vector.
+    expect(JSON.stringify(plain)).toBe(JSON.stringify(policyForVector(vector)));
+    // Signals never change non-media boosts or the policy surface, so
+    // measured signals cannot collapse strategy ordering differences.
+    expect(enriched.sectionBoosts["Services"]).toBe(plain.sectionBoosts["Services"]);
+    expect(enriched.density).toBe(plain.density);
+    expect(enriched.layoutCharacter).toBe(plain.layoutCharacter);
+    expect(enriched.presenceMode).toBe(plain.presenceMode);
   });
 
   test("named presets are vocabulary: nearest name is stable", () => {

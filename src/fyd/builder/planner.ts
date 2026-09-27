@@ -11,10 +11,12 @@
  *
  * Pipeline:
  *   verified graph -> generateSiteSpec (base, data-driven sections)
- *     -> eligibility filter (defensive) -> dimension-vector composition
- *        (section order, density, tokens, presence) -> owner-intent
- *        filters -> generated presentation (verified) -> dependency
- *        manifest + confidence records -> planned site
+ *     -> signal measurement -> pure composition transform (section
+ *        variants from measured counts; never invents sections) ->
+ *        eligibility filter (defensive) -> dimension-vector ordering,
+ *        density cap, tokens, presence -> owner-intent filters ->
+ *        generated presentation (verified) -> dependency manifest +
+ *        confidence records -> planned site
  *
  * Semantic determinism: the same (ObjectGraph, OwnerIntent, vector,
  * planner version, design tokens, viewer class) yields the same semantic
@@ -44,6 +46,12 @@ import {
   validateVector,
   type ArchetypeVector,
 } from "./dimensions";
+import { composeSections } from "./composition";
+import {
+  SIGNAL_COMPILER_VERSION,
+  signalsForGraph,
+  type CompositionMediaInput,
+} from "./signals";
 import { deriveEligibility } from "./eligibility";
 import {
   normalizeOwnerIntent,
@@ -95,6 +103,7 @@ const BASE_COMPONENT_ORDER = [
   "ObjectFeed",
   "RecentObjects",
   "ObjectGrid",
+  "Gallery",
   "Contact",
   "Links",
   "CTA",
@@ -107,7 +116,10 @@ const BASE_COMPONENT_ORDER = [
  * Must-win components: the density cap may drop optional sections, never
  * these. Graph-backed essentials (what the business is, what it offers,
  * how to reach it) plus the site capabilities (CTA, AskFYD) plus the
- * featured-object doorway (ObjectRail). Fully generic: no tenant logic.
+ * featured-object doorway (ObjectRail). ObjectRail is must-win only when
+ * the graph has featureable objects (decided per plan in planSite);
+ * otherwise it must not consume a must-win density slot. Fully generic:
+ * no tenant logic.
  */
 const MUST_WIN_COMPONENTS = new Set([
   "Hero",
@@ -128,10 +140,19 @@ export interface SitePlannerInput {
   vector: ArchetypeVector;
   ownerIntent?: Partial<OwnerIntent> | null;
   designTokens?: FYDThemeTokens;
-  /** Volatile stamp; excluded from the semantic digest. */
-  generatedAt?: string;
+  /**
+   * Volatile stamp; excluded from the semantic digest. REQUIRED: the
+   * planner never reads the wall clock and fails closed on absence.
+   */
+  generatedAt: string;
   /** Acceptance-sequence window of the ingestion events, when known. */
   eventSequences?: [number, number];
+  /**
+   * Optional measured media summary (the media-selection chain's output,
+   * supplied by the caller). Absent: media-driven composition rules stay
+   * neutral and Gallery sections are dropped below the asset minimum.
+   */
+  media?: CompositionMediaInput;
   /** Carried for provenance; the graph must already be verified. */
   attestation?: GraphAttestation | null;
 }
@@ -292,7 +313,17 @@ export function planSite(input: SitePlannerInput): PlannedSite {
   validateVector(vector);
   const intent = normalizeOwnerIntent(input.ownerIntent);
   const graph = input.graph;
-  const generatedAt = input.generatedAt ?? new Date().toISOString();
+  // Fail closed: no wall-clock fallback. Callers must stamp generatedAt.
+  // The type requires it; this runtime check refuses non-TS callers that
+  // pass undefined/null/empty at the boundary.
+  if (typeof input.generatedAt !== "string" || input.generatedAt === "") {
+    const err = new Error(
+      "planSite: generatedAt is required (the planner never reads the wall clock)",
+    ) as Error & { code: string };
+    err.code = "GENERATED_AT_MISSING";
+    throw err;
+  }
+  const generatedAt = input.generatedAt;
 
   // Base: the existing data-driven generator. Sections exist only when
   // their data exists; the planner never invents sections.
@@ -303,9 +334,31 @@ export function planSite(input: SitePlannerInput): PlannedSite {
   const owner = ownerOf(graph);
   const ownerId = owner?.id ?? base.ownerObjectId;
 
-  // Eligibility: defensive filter over the generator's output.
+  // Composition compiler, stage 1: measure the graph. The 8-dimension
+  // operating point is computed from real graph signals (service count
+  // and cardinality, media richness, relationship cardinality, business
+  // type signals); the caller's vector stays the policy's operating
+  // point, and the signals drive section variants plus signal deltas.
+  const signals = signalsForGraph(graph, input.media);
+  const policy = policyForVector(vector, signals);
+
+  // Composition compiler, stage 2: pure section transform. Variants are
+  // selected from measured counts; sections are never invented and facts
+  // never change. Runs before eligibility filtering; the planner
+  // restamps section ids after, so ids stay deterministic.
+  const photoIds = new Set((input.media?.photographicObjectIds ?? []).slice().sort());
+  const composed = composeSections(base.pages, signals, (query) => {
+    const bound = resolveQueryObjects(graph, query, ownerId);
+    return {
+      count: bound.length,
+      photoObjectIds: bound.map((o) => o.id).filter((id) => photoIds.has(id)),
+    };
+  });
+
+  // Eligibility: defensive filter over the composed sections.
   const eligibility = deriveEligibility(graph);
   const manifest = emptyManifest(SITE_PLANNER_VERSION, tenantId);
+  for (const note of composed.notes) manifest.notes.push(note);
 
   // Owner intent: operating constraints remove components. Unknown
   // constraints are recorded, never applied.
@@ -315,10 +368,14 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     manifest.notes.push("unknown operating constraint recorded, not applied: \"" + u + "\"");
   }
 
-  const policy = policyForVector(vector);
+  // ObjectRail is must-win only when the graph actually has
+  // featureable objects; otherwise it must not consume a must-win
+  // density slot.
+  const mustWin = new Set(MUST_WIN_COMPONENTS);
+  if (eligibility.counts.featureable === 0) mustWin.delete("ObjectRail");
 
   const plannedPages: FYDPage[] = [];
-  for (const page of base.pages) {
+  for (const page of composed.pages) {
     // Filter: eligible components only, minus intent-removed.
     let sections = page.sections.filter((s) => {
       if (removedByIntent.has(s.component)) {
@@ -350,10 +407,8 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     // never must-wins. Must-win sections keep their composed order and
     // fill first; remaining capacity fills with optional sections in
     // composed order. Deterministic: both classes keep the sort above.
-    const mustWins = sections.filter((s) => MUST_WIN_COMPONENTS.has(s.component));
-    const optionals = sections.filter(
-      (s) => !MUST_WIN_COMPONENTS.has(s.component),
-    );
+    const mustWins = sections.filter((s) => mustWin.has(s.component));
+    const optionals = sections.filter((s) => !mustWin.has(s.component));
     sections = [...mustWins, ...optionals]
       .slice(0, policy.maxSectionsPerPage)
       .map((s, i) => ({
@@ -432,6 +487,7 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     typography: policy.typography,
     media: { ...(baseTokens.media ?? {}), treatment: policy.mediaTreatment },
     radius: policy.radius,
+    layoutCharacter: policy.layoutCharacter,
   };
 
   // Dependency manifest + confidence: one binding per surviving section.
@@ -483,9 +539,11 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     .slice()
     .sort((a, b) => (a.bindingId < b.bindingId ? -1 : a.bindingId > b.bindingId ? 1 : 0));
   manifest.notes.push(
-    "composition: vector=" + JSON.stringify(vector) +
-      " policy=" + policy.density + "/" + policy.mediaTreatment +
-      "/cta-" + policy.ctaEmphasis + "/presence-" + policy.presenceMode,
+    "composition: signals=" + SIGNAL_COMPILER_VERSION +
+      " vector=" + JSON.stringify(vector) +
+      " policy=" + policy.density + "/" + policy.layoutCharacter +
+      "/presence-" + policy.presenceMode +
+      " reasons=" + signals.reasons.join("; "),
   );
 
   const navigation = plannedPages.map((p) => ({ label: p.navLabel, pageSlug: p.slug }));

@@ -47,8 +47,6 @@ import {
   type FYDSchemaRole,
 } from "../sitespec/schemas";
 import { resolveWebsiteUrl } from "../sitespec/graph";
-import { applyArchetype } from "../archetypes/apply";
-import type { ArchetypeProfile } from "../archetypes/profiles";
 import { galleryMediaFor } from "../media/select";
 
 export const GENERATOR_VERSION = "1.1.0";
@@ -67,12 +65,6 @@ export interface GeneratorOptions {
    * customer-specific branching anywhere in the generator.
    */
   siteId?: string;
-  /**
-   * Optional archetype profile for composition. Absent: today output,
-   * byte-identical. Present: applyArchetype composes the spec
-   * deterministically (archetype, theme, section order, objectPresence).
-   */
-  profile?: ArchetypeProfile;
 }
 
 interface Grouped {
@@ -342,7 +334,5 @@ export function generateSiteSpec(graph: ObjectGraph, opts: GeneratorOptions): FY
       note: "Generated from website-ingestion graph objects. All claims are website_statement, not verified fact.",
     },
   };
-  // Optional archetype composition: an absent profile leaves today output
-  // byte-identical; a present profile composes deterministically.
-  return opts.profile ? applyArchetype(spec, opts.profile, graph) : spec;
+  return spec;
 }

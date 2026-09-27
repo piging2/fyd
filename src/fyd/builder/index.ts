@@ -46,6 +46,7 @@
  *    inside planSite; consumers can rely on it without re-checking.
  */
 
+export { DEFAULT_VECTOR, vectorForSite } from "./site-vectors";
 export { SITE_PLANNER_VERSION, planSite } from "./planner";
 export type { SitePlannerInput, PlannedSite } from "./planner";
 export {
@@ -66,12 +67,17 @@ export {
   COPPERSMITH_VECTOR,
   NAMED_PRESET_VECTORS,
   PING_DOGFOOD_VECTOR,
+  layoutCharacterForVector,
   nearestPresetName,
   policyForVector,
   quantizeVector,
   validateVector,
 } from "./dimensions";
-export type { ArchetypeDimension, ArchetypeVector, CompositionPolicy } from "./dimensions";
+export type { ArchetypeDimension, ArchetypeVector, SitePolicy } from "./dimensions";
+export { COMPOSITION_VERSION, MIN_GALLERY_ASSETS, composeSections } from "./composition";
+export type { ComposedSections, SectionInspection } from "./composition";
+export { SIGNAL_COMPILER_VERSION, signalsForGraph } from "./signals";
+export type { CompositionMediaInput, GraphSignals, SignalCounts } from "./signals";
 export { EXTERNAL_IDENTITY_SCHEMA, deriveEligibility } from "./eligibility";
 export type { EligibilityCounts, EligibilityReport } from "./eligibility";
 export {

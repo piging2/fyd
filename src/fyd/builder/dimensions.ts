@@ -22,7 +22,8 @@
  * dimensions tests.
  */
 
-import type { FYDSiteArchetype } from "../sitespec/types";
+import type { FYDSiteArchetype, FYDLayoutCharacter } from "../sitespec/types";
+import type { GraphSignals } from "./signals";
 
 /** All eight dimensions, in canonical order. Every value is in [0, 1]. */
 export interface ArchetypeVector {
@@ -84,7 +85,10 @@ function vec(v: Partial<ArchetypeVector> & Record<ArchetypeDimension, number>): 
 }
 
 /**
- * The two tenant operating points for this lane.
+ * LEGACY test fixture, not a production default. Production vectors are
+ * measured from the graph by signalsForGraph (see ./signals.ts); this
+ * hand-authored point survives only for tests (and one other lane's
+ * dogfood test) that need a fixed knowledge-heavy consultancy vector.
  *
  * PING/FYD (dogfood/control): a knowledge-heavy technical consultancy.
  * Low urgency, expert audience, proof-heavy.
@@ -101,6 +105,11 @@ export const PING_DOGFOOD_VECTOR: ArchetypeVector = vec({
 });
 
 /**
+ * LEGACY test fixture, not a production default. Production vectors are
+ * measured from the graph by signalsForGraph (see ./signals.ts); this
+ * hand-authored point survives only for tests that need a fixed
+ * emergency-trade vector.
+ *
  * Coppersmith (private demo): an emergency-capable local trade.
  * High urgency, hyperlocal, trust-first.
  */
@@ -177,22 +186,59 @@ export function nearestPresetName(v: ArchetypeVector): FYDSiteArchetype {
  * derived deterministically. Section priority is a per-component boost
  * table; the planner subtracts boosts from a fixed base order and stable-
  * sorts, so the same vector always yields the same section order.
+ *
+ * layoutCharacter is derived from the vector (never hand-pinned) and
+ * stamped onto theme tokens: the renderer lane owns its visual effect.
+ * mediaTreatment is derived the same way and stamped for the
+ * ui/object-layer design compiler (its cross-lane contract).
  */
-export interface CompositionPolicy {
+export interface SitePolicy {
   /** Component name -> priority boost (higher = earlier). */
   sectionBoosts: Record<string, number>;
   density: "compact" | "comfortable" | "spacious";
   typography: { base: number; ratio: number };
   mediaTreatment: "documentary" | "polished" | "schematic";
-  ctaEmphasis: "high" | "medium" | "low";
+  layoutCharacter: FYDLayoutCharacter;
   presenceMode: "auto" | "rail" | "drawer";
   collapseBelow: string;
   maxSectionsPerPage: number;
   radius: "sm" | "md" | "lg";
 }
 
-export function policyForVector(input: ArchetypeVector): CompositionPolicy {
+/** Saturating curve: 0 at 0, 0.5 at n=k, approaches 1. Local copy: this
+ * module cannot import ./signals at runtime (signals imports this
+ * module for quantize/validate). */
+function sat(n: number, k: number): number {
+  return n / (n + k);
+}
+
+/**
+ * Derive the layout character from the vector. Order matters: technical
+ * depth wins first (expert audiences get schematic density), then
+ * people-first, then urgent+local (the craft trades), then proof-heavy
+ * professionalism; everything else is editorial.
+ */
+export function layoutCharacterForVector(v: ArchetypeVector): FYDLayoutCharacter {
+  if (v.technical_depth >= 0.65) return "TECHNICAL";
+  if (v.human_prominence >= 0.6) return "CREATOR";
+  if (v.urgency >= 0.6 && v.locality >= 0.6) return "CRAFT";
+  if (v.trust_requirement >= 0.7 && v.evidence_density >= 0.6) return "PROFESSIONAL";
+  return "EDITORIAL";
+}
+
+/**
+ * Derive the composition policy from an archetype vector. Pure and total:
+ * every vector maps to exactly one policy, deterministically.
+ *
+ * signals (from signalsForGraph) is optional. Supplied, two measured
+ * deltas apply: gallery richness boosts Gallery (imagery-forward
+ * composition), and catalog relationship depth boosts the catalog
+ * components beyond what the raw service count already encodes. Absent,
+ * the deltas are 0 and the policy is a pure function of the vector.
+ */
+export function policyForVector(input: ArchetypeVector, signals?: GraphSignals): SitePolicy {
   const v = quantizeVector(input);
+  validateVector(v);
   const b: Record<string, number> = {};
   const add = (component: string, boost: number) => {
     b[component] = Math.round(((b[component] ?? 0) + boost) * 1000) / 1000;
@@ -220,11 +266,19 @@ export function policyForVector(input: ArchetypeVector): CompositionPolicy {
   add("ObjectGrid", 2 * v.media_density);
   add("ObjectFeed", 1.5 * v.media_density);
   add("Posts", 1 * v.media_density);
-  // service_complexity: the catalog is the site.
+  // service_complexity: the catalog is the site. Catalog relationship
+  // depth (measured offers/provides edges) already feeds the
+  // service_complexity dimension itself; the ordering boost stays a pure
+  // function of the vector so measured signals cannot collapse the
+  // strategy-differentiation invariant (strategies must order differently).
   add("Services", 3 * v.service_complexity);
   add("Products", 1.5 * v.service_complexity);
   // locality: where the business operates.
   add("Locations", 3 * v.locality);
+  // Gallery: measured media richness drives imagery-forward composition.
+  // The media manifest is optional; without it the delta is 0.
+  const galleryDelta = signals ? 2 * sat(signals.counts.galleryAssets, 8) : 0;
+  add("Gallery", 2 * v.media_density + galleryDelta);
   // evidence_density: claims backed by visible proof.
   add("SocialProof", 2 * v.evidence_density);
   add("Posts", 1.5 * v.evidence_density);
@@ -240,7 +294,6 @@ export function policyForVector(input: ArchetypeVector): CompositionPolicy {
         : { base: 16, ratio: 1.2 };
   const mediaTreatment =
     v.technical_depth >= 0.65 ? "schematic" : v.media_density >= 0.65 ? "polished" : "documentary";
-  const ctaEmphasis = v.urgency >= 0.65 ? "high" : v.trust_requirement >= 0.65 ? "medium" : "low";
   const presenceMode =
     v.human_prominence >= 0.6 ? "rail" : v.technical_depth >= 0.65 ? "drawer" : "auto";
 
@@ -249,7 +302,7 @@ export function policyForVector(input: ArchetypeVector): CompositionPolicy {
     density,
     typography,
     mediaTreatment,
-    ctaEmphasis,
+    layoutCharacter: layoutCharacterForVector(v),
     presenceMode,
     collapseBelow: "lg",
     maxSectionsPerPage: 6 + Math.round(6 * v.service_complexity),

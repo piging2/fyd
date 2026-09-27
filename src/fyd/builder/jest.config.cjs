@@ -9,6 +9,7 @@ module.exports = {
   testMatch: ["<rootDir>/src/fyd/builder/__tests__/*.test.ts"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "\\.css$": "<rootDir>/src/fyd/components/__tests__/css-stub.js",
   },
   transform: {
     "^.+\\.tsx?$": [

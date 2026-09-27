@@ -14,7 +14,7 @@ import {
   type SiteStrategyName,
 } from "../strategies";
 import { inferStrategy } from "../infer-strategy";
-import { strategyForSite, STRATEGY_PINS } from "../strategy-for-site";
+import { strategyForSite } from "../strategy-for-site";
 import { vectorForSite } from "../site-vectors";
 import { normalizeOwnerIntent } from "../owner-intent";
 import { getComponentDef } from "../../components/registry";
@@ -250,19 +250,18 @@ describe("inferStrategy", () => {
 });
 
 describe("strategyForSite", () => {
-  test("pins respected: pin beats graph inference", () => {
-    // tradeGraph infers TRADES, but the ping-fyd pin says TECHNOLOGY.
-    expect(strategyForSite("ping-fyd", tradeGraph()).name).toBe("TECHNOLOGY");
+  test("no pins: graph inference is the default, even for known site ids", () => {
+    // tradeGraph infers TRADES; no tenant pin may short-circuit that.
+    // (Falsifier F1: hand-authored pins used to force TECHNOLOGY/TRADES.)
+    expect(strategyForSite("ping-fyd", tradeGraph()).name).toBe("TRADES");
     expect(strategyForSite("coppersmith-plumbing", tradeGraph()).name).toBe("TRADES");
-    expect(STRATEGY_PINS["ping-fyd"]).toBe("TECHNOLOGY");
-    expect(STRATEGY_PINS["coppersmith-plumbing"]).toBe("TRADES");
   });
 
   test("unpinned site falls through to inference", () => {
     expect(strategyForSite("some-new-site", tradeGraph()).name).toBe("TRADES");
   });
 
-  test("owner override wins over pins and inference", () => {
+  test("owner override wins over inference", () => {
     const s = strategyForSite("coppersmith-plumbing", tradeGraph(), { strategy: "KNOWLEDGE_WORKER" });
     expect(s.name).toBe("KNOWLEDGE_WORKER");
     expect(s).toBe(SITE_STRATEGIES.KNOWLEDGE_WORKER);
@@ -281,10 +280,28 @@ describe("strategyForSite", () => {
     expect(strategyForSite("no-such-site").name).toBe("KNOWLEDGE_WORKER");
   });
 
-  test("vectorForSite delegates to the strategy layer", () => {
-    expect(vectorForSite("ping-fyd")).toEqual(SITE_STRATEGIES.TECHNOLOGY.vector);
-    expect(vectorForSite("coppersmith-plumbing")).toEqual(SITE_STRATEGIES.TRADES.vector);
-    expect(vectorForSite("unknown-site")).toEqual(SITE_STRATEGIES.KNOWLEDGE_WORKER.vector);
+  test("vectorForSite measures the graph by default; strategy layer is the fallback", () => {
+    // Explicit graph: the measured signal vector, not a hand-authored preset.
+    const measured = vectorForSite("ping-fyd", tradeGraph());
+    expect(measured).not.toEqual(SITE_STRATEGIES.TECHNOLOGY.vector);
+    expect(measured.urgency).toBeCloseTo(0.35, 3);
+    // Owner override still selects the named preset explicitly.
+    expect(vectorForSite("x", null, { strategy: "TRADES" })).toEqual(
+      SITE_STRATEGIES.TRADES.vector,
+    );
+    // No graph and no projection on disk: the neutral strategy fallback.
+    // Never throws, never invents. The projection dir is pointed at an
+    // empty directory so the test is independent of Pig disk state.
+    const prev = process.env.FYD_PROJECTION_DIR;
+    process.env.FYD_PROJECTION_DIR = "/tmp/lane4-empty-projections";
+    try {
+      expect(vectorForSite("unknown-site")).toEqual(
+        SITE_STRATEGIES.KNOWLEDGE_WORKER.vector,
+      );
+    } finally {
+      if (prev === undefined) delete process.env.FYD_PROJECTION_DIR;
+      else process.env.FYD_PROJECTION_DIR = prev;
+    }
   });
 });
 
