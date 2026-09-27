@@ -161,8 +161,8 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "altText": "coppersmith logo black n copper, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -219,8 +219,12 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "altText": "hvac heat, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -266,8 +270,8 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "altText": "RInnai edited, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -313,8 +317,8 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "altText": "Rheem edited, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -360,8 +364,8 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "altText": "Burnham edited, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -407,8 +411,8 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "altText": "Breezair edited, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -454,8 +458,8 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "altText": "AOSmith edited, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -511,8 +515,12 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "altText": "Kohler Tournant, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -558,8 +566,12 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "altText": "Trinsic 9159TV DST B1, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -605,8 +617,12 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "altText": "Trinsic 9659T DST B1, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -652,8 +668,8 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "altText": "coppersmith new logo white, Coppersmith Plumbing - HVAC - Mechanical",
+      "altTextSource": "generated",
       "visibility": "public"
     }
   ]

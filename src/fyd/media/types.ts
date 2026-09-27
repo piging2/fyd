@@ -141,6 +141,14 @@ export interface FydMediaObject {
   variants: MediaVariant[];
   /** Object ids this media depicts or is associated with. */
   depicts: string[];
+  /**
+   * Optional focal point for responsive art direction (fractions of width /
+   * height, 0..1; e.g. {x: 0.5, y: 0.27} keeps a centered-top subject
+   * visible when a hero is cropped to portrait). Generic: no pixel
+   * offsets, no per-image renderer conditionals. Renderers convert to
+   * object-position percentages.
+   */
+  focalPoint?: { x: number; y: number };
   altText: string | null;
   altTextSource: "source" | "generated" | "none";
   visibility: "public";

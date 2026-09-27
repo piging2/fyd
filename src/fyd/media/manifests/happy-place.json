@@ -108,8 +108,12 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "altText": "Happy Place Carpentry project photo 1, Happy Place Carpentry LLC",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -165,8 +169,12 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "altText": "Happy Place Carpentry project photo 2, Happy Place Carpentry LLC",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -222,8 +230,12 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "altText": "Happy Place Carpentry project photo 3, Happy Place Carpentry LLC",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -279,8 +291,12 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "altText": "Happy Place Carpentry project photo 4, Happy Place Carpentry LLC",
+      "altTextSource": "generated",
       "visibility": "public"
     },
     {
@@ -336,8 +352,12 @@
         }
       ],
       "depicts": [],
-      "altText": null,
-      "altTextSource": "none",
+      "focalPoint": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "altText": "Happy Place Carpentry project photo 5, Happy Place Carpentry LLC",
+      "altTextSource": "generated",
       "visibility": "public"
     }
   ]
