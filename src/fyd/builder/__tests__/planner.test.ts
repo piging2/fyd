@@ -395,4 +395,34 @@ describe("relationship-driven composition", () => {
     expect(diff.pagesOnlyInA).toContain("about");
     expect(diff.materialReasons).toContain("different page sets");
   });
+
+  test("overlay-touched owner: slots cite the current evidence ref, never the superseded base ref", () => {
+    const graph = tradeGraph();
+    const owner = graph.objects.find((o) => o.id === "biz-trade")!;
+    const baseRef = owner.provenance!.ref;
+    const latestRef = "ping-event:fyd-ovl-test-001";
+    // Simulate journal overlays touching the owner after the base ingestion,
+    // exactly like happy-place.json's updatedRefs in production data.
+    owner.provenance = {
+      ...owner.provenance!,
+      updatedRefs: ["ping-event:fyd-seed-ovl-007", latestRef],
+    };
+    // Before the fix this threw BindingVerificationError: the planner stamped
+    // the base ref while the verifier demanded the current ref (unsatisfiable).
+    const planned = planSite({ ctx: CTX, graph, vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
+    // Every slot binding on the owner cites the current (latest) ref.
+    const slotRefs = new Set<string | null>();
+    for (const slot of planned.generatedPresentation.slots) {
+      for (const b of slot.bindings) {
+        if (b.objectId === owner.id) slotRefs.add(b.claimRef);
+      }
+    }
+    expect(slotRefs.size).toBeGreaterThan(0);
+    for (const r of slotRefs) expect(r).toBe(latestRef);
+    // The verified render model agrees: no atom cites the superseded base ref.
+    for (const atom of planned.verifiedRenderModel!.atoms) {
+      const ref = (atom as { evidenceRef?: unknown }).evidenceRef;
+      if (typeof ref === "string") expect(ref).not.toBe(baseRef);
+    }
+  });
 });
