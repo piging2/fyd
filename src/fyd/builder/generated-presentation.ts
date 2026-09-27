@@ -25,6 +25,7 @@
 
 import type { PingObject } from "@/lib/ping/types";
 import type { ObjectGraph } from "../sitespec/types";
+import { currentEvidenceRef } from "../sitespec/binding-verifier";
 
 /** One factual predicate inside generated copy, bound to an object field. */
 export interface CopyBinding {
@@ -201,11 +202,11 @@ export function verifyGeneratedPresentation(
             "\" on \"" + b.objectId + "\": the copy is not grounded in its bindings.",
         );
       }
-      const actualRef = o.provenance?.ref ?? null;
+      const actualRef = currentEvidenceRef(o) || null;
       if (b.claimRef !== actualRef) {
         at(
           "claim-mismatch",
-          "binding claim ref does not match the object's provenance ref.",
+          "binding claim ref does not match the object's current evidence ref.",
         );
       }
       if (o.visibility !== "public") {

@@ -38,6 +38,7 @@ import {
   type ObjectPresence,
 } from "../sitespec/types";
 import { SCHEMA_ROLES, ownerRelationshipTarget } from "../sitespec/schemas";
+import { currentEvidenceRef } from "../sitespec/binding-verifier";
 import { requireTenantContext, type TenantContext } from "../tenant/tenant-context";
 import {
   nearestPresetName,
@@ -281,7 +282,7 @@ function fieldText(o: PingObject, field: string): string {
 /**
  * The emitted spec's factual binding set: every generated-copy slot
  * binding as a PresentationBinding. The planner's slots bind object fields
- * whose claimRef matched the object's provenance ref (checked by
+ * whose claimRef matched the object's current evidence ref (checked by
  * assertGeneratedPresentationVerified); the BindingVerifier re-checks the
  * full seam (object field + evidence ref + owner assertions) so the
  * renderer path cannot be handed an unverified spec.
@@ -429,10 +430,10 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     const locality = fieldText(owner, "locality").trim();
     const tagline = locality !== "" ? owner.title + " -- " + locality : owner.title;
     const bindings = [
-      { objectId: owner.id, field: "title", claimRef: owner.provenance?.ref ?? null },
+      { objectId: owner.id, field: "title", claimRef: currentEvidenceRef(owner) || null },
     ];
     if (locality !== "") {
-      bindings.push({ objectId: owner.id, field: "locality", claimRef: owner.provenance?.ref ?? null });
+      bindings.push({ objectId: owner.id, field: "locality", claimRef: currentEvidenceRef(owner) || null });
     }
     // DIRECT_FACT: the tagline interpolates ONLY bound object fields, so
     // every binding must resolve or the spec is refused.
@@ -505,10 +506,10 @@ export function planSite(input: SitePlannerInput): PlannedSite {
       const classification: BindingClassification = isHeroCopy ? "generated" : "direct";
       const objectField = isHeroCopy ? "slot:hero-tagline" : objectFieldFor(s.query);
       const claimRef = isHeroCopy
-        ? (owner?.provenance?.ref ?? null)
-        : (first?.provenance?.ref ??
-          owner?.provenance?.ref ??
-          input.attestation?.digest ??
+        ? (currentEvidenceRef(owner) || null)
+        : (currentEvidenceRef(first) ||
+          currentEvidenceRef(owner) ||
+          input.attestation?.digest ||
           null);
       const factBasis = first ?? owner;
       const conf = factBasis

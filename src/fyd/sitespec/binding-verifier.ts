@@ -596,7 +596,7 @@ function evidenceRefLineage(obj: PingObject | undefined): string[] {
  * The object's current evidence ref: the latest update ref when the
  * object has been updated, else the base provenance ref.
  */
-function currentEvidenceRef(obj: PingObject | undefined): string {
+export function currentEvidenceRef(obj: PingObject | undefined | null): string {
   let current = obj?.provenance?.ref ?? "";
   for (const r of obj?.provenance?.updatedRefs ?? []) current = r;
   return current;
