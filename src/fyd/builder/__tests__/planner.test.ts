@@ -38,7 +38,7 @@ describe("planSite", () => {
   });
 
   test("the planner never manufactures facts: no ungrounded sections", () => {
-    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR });
+    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
     const components = planned.spec.pages.flatMap((p) => p.sections.map((s) => s.component));
     for (const c of components) {
       expect(planned.eligibility.eligible[c]).toBe(true);
@@ -50,7 +50,7 @@ describe("planSite", () => {
   });
 
   test("CTA and ObjectRail are planned on the trade-graph home page", () => {
-    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR });
+    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
     const home = planned.spec.pages.find((p) => p.slug === "home")!;
     const components = home.sections.map((s) => s.component);
     // CTA is a site capability: on every generated home page.
@@ -94,12 +94,12 @@ describe("planSite", () => {
   });
 
   test("planned spec validates against the SiteSpec schema", () => {
-    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR });
+    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
     expect(() => validateSiteSpec(planned.spec)).not.toThrow();
   });
 
   test("confidence law holds: presentationConfidence <= factConfidence everywhere", () => {
-    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR });
+    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
     for (const c of planned.confidence) {
       expect(c.presentationConfidence).toBeLessThanOrEqual(c.factConfidence);
     }
@@ -113,6 +113,7 @@ describe("planSite", () => {
       ctx: CTX,
       graph: tradeGraph(),
       vector: COPPERSMITH_VECTOR,
+      generatedAt: STAMP_A,
       ownerIntent: { prohibitedPositioning: ["valley"] },
     });
     // "valley" appears in the business description; the generated tagline
@@ -127,6 +128,7 @@ describe("planSite", () => {
       ctx: CTX,
       graph: tradeGraph(),
       vector: COPPERSMITH_VECTOR,
+      generatedAt: STAMP_A,
       ownerIntent: { operatingConstraints: ["no-posts"] },
     });
     const components = planned.spec.pages.flatMap((p) => p.sections.map((s) => s.component));
@@ -142,6 +144,7 @@ describe("planSite", () => {
       ctx: CTX,
       graph: tradeGraph(),
       vector: COPPERSMITH_VECTOR,
+      generatedAt: STAMP_A,
       ownerIntent: { operatingConstraints: ["no-singing-in-the-shower"] },
     });
     const components = planned.spec.pages.flatMap((p) => p.sections.map((s) => s.component));
@@ -166,7 +169,7 @@ describe("planSite", () => {
   });
 
   test("manifest forward/reverse walks cover every binding", () => {
-    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR });
+    const planned = planSite({ ctx: CTX, graph: tradeGraph(), vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
     const sections = planned.spec.pages.flatMap((p) => p.sections.map((s) => s.id));
     expect(planned.manifest.bindings.map((b) => b.bindingId).sort()).toEqual(sections.sort());
     // Every binding walks forward to its component and reverse to an object field.
@@ -178,7 +181,7 @@ describe("planSite", () => {
   });
 
   test("planner version is stamped on the spec and manifest", () => {
-    const planned = planSite({ ctx: CTX, graph: knowledgeGraph(), vector: PING_DOGFOOD_VECTOR });
+    const planned = planSite({ ctx: CTX, graph: knowledgeGraph(), vector: PING_DOGFOOD_VECTOR, generatedAt: STAMP_A });
     expect(planned.spec.generator.name).toBe("fyd-site-generator");
     expect(planned.spec.generator.version).toBe(SITE_PLANNER_VERSION);
     expect(planned.manifest.plannerVersion).toBe(SITE_PLANNER_VERSION);
@@ -187,11 +190,99 @@ describe("planSite", () => {
 
   test("missing tenant context refuses before any planning", () => {
     try {
-      planSite({ ctx: {} as never, graph: tradeGraph(), vector: COPPERSMITH_VECTOR });
+      planSite({ ctx: {} as never, graph: tradeGraph(), vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
       throw new Error("planSite did not refuse");
     } catch (err) {
       expect((err as { code?: string }).code).toBe("TENANT_CONTEXT_MISSING");
     }
+  });
+
+  test("missing generatedAt refuses at runtime, never reads the wall clock", () => {
+    try {
+      planSite({
+        ctx: CTX,
+        graph: tradeGraph(),
+        vector: COPPERSMITH_VECTOR,
+        generatedAt: undefined as never,
+      });
+      throw new Error("planSite did not refuse");
+    } catch (err) {
+      expect((err as { code?: string }).code).toBe("GENERATED_AT_MISSING");
+    }
+  });
+});
+
+describe("composition compiler integration", () => {
+  const plan = (graph = tradeGraph()) =>
+    planSite({ ctx: CTX, graph, vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
+
+  const servicesSection = (graph = tradeGraph()) =>
+    plan(graph)
+      .spec.pages.flatMap((p) => p.sections)
+      .find((s) => s.component === "Services");
+
+  test("Services variant is stamped from measured cardinality (2 -> grid)", () => {
+    expect(servicesSection()?.presentation.compositionVariant).toBe("grid");
+  });
+
+  test("Services variant switches to rows at >= 5 bound services", () => {
+    const graph = tradeGraph();
+    for (let i = 0; i < 4; i++) {
+      const id = "svc-x-" + i;
+      graph.objects.push(makeObject(id, "ping.social.service@1", { title: "Extra " + i }));
+      graph.relationships.push(makeRelationship("rel-x-" + i, "biz-trade", "provides", id));
+    }
+    expect(servicesSection(graph)?.presentation.compositionVariant).toBe("rows");
+  });
+
+  test("layoutCharacter is stamped on theme tokens", () => {
+    expect(plan().spec.themeTokens.layoutCharacter).toBe("CRAFT");
+  });
+
+  test("manifest records the signal compiler and its measured counts", () => {
+    const planned = plan();
+    expect(
+      planned.manifest.notes.some((n) => n.includes("signals=fyd-signal-compiler@1")),
+    ).toBe(true);
+    expect(planned.manifest.notes.some((n) => n.includes("2 public services"))).toBe(true);
+  });
+
+  test("ObjectRail must-win is conditional on featureable objects", () => {
+    // tradeGraph has featureable objects: ObjectRail is eligible and,
+    // as a must-win, survives planning.
+    const planned = plan();
+    expect(planned.eligibility.counts.featureable).toBeGreaterThan(0);
+    const components = planned.spec.pages.flatMap((p) =>
+      p.sections.map((s) => s.component),
+    );
+    expect(components).toContain("ObjectRail");
+    // Owner-only graph: nothing featureable, so ObjectRail is neither
+    // eligible nor must-win; the planner never invents it.
+    const bare = planSite({
+      ctx: CTX,
+      graph: {
+        objects: [
+          makeObject("biz-bare", "ping.social.business@1", {
+            title: "Bare Business",
+            fields: { phone: "555-0000" },
+          }),
+        ],
+        relationships: [],
+      },
+      vector: COPPERSMITH_VECTOR,
+      generatedAt: STAMP_A,
+    });
+    expect(bare.eligibility.counts.featureable).toBe(0);
+    const bareComponents = bare.spec.pages.flatMap((p) =>
+      p.sections.map((s) => s.component),
+    );
+    expect(bareComponents).not.toContain("ObjectRail");
+  });
+
+  test("composition variants are deterministic across runs", () => {
+    const a = plan().canonicalSpecJson;
+    const b = plan().canonicalSpecJson;
+    expect(a).toBe(b);
   });
 });
 

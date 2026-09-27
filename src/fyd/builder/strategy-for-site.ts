@@ -4,9 +4,15 @@
  * Precedence, highest first:
  *   1. ownerIntent.strategy, when set to a known strategy name
  *      (the owner's word beats inference);
- *   2. STRATEGY_PINS[siteId], the explicit tenant pin;
- *   3. inferStrategy(graph).candidate, deterministic schema-role counting;
- *   4. KNOWLEDGE_WORKER, the neutral default (no graph supplied).
+ *   2. inferStrategy(graph).candidate, deterministic schema-role counting;
+ *   3. KNOWLEDGE_WORKER, the neutral default (no graph supplied).
+ *
+ * There are no tenant pins: hand-authored per-site overrides short-circuit
+ * inference and silently win over measured graph signals (falsifier F1).
+ * Callers that need the composition operating point should prefer
+ * vectorForSite(siteId, graph) in ./site-vectors, which measures the
+ * 8-dimension vector from the graph via ./signals instead of selecting a
+ * hand-authored preset.
  *
  * Never throws: unknown site ids, missing graphs, and invalid owner
  * overrides all resolve to a real strategy. Deterministic: the same
@@ -23,18 +29,6 @@ import { inferStrategy } from "./infer-strategy";
 import type { ObjectGraph } from "../sitespec/types";
 import type { OwnerIntent } from "./owner-intent";
 
-/**
- * Explicit tenant -> strategy pins. These are operating parameters, not
- * customer JSX: they name which named strategy a tenant composes under.
- * ping-fyd is the dogfood technology consultancy; coppersmith-plumbing is
- * the local trade demo. Unknown tenants fall through to inference, never
- * to a 404.
- */
-export const STRATEGY_PINS: Record<string, SiteStrategyName> = {
-  "ping-fyd": "TECHNOLOGY",
-  "coppersmith-plumbing": "TRADES",
-};
-
 /** The composition strategy for a site. Never throws. */
 export function strategyForSite(
   siteId: string,
@@ -45,12 +39,10 @@ export function strategyForSite(
   if (isSiteStrategyName(override)) {
     return SITE_STRATEGIES[override];
   }
-  const pin = STRATEGY_PINS[siteId];
-  if (pin !== undefined) {
-    return SITE_STRATEGIES[pin];
-  }
   if (graph) {
     return SITE_STRATEGIES[inferStrategy(graph).candidate];
   }
   return SITE_STRATEGIES.KNOWLEDGE_WORKER;
 }
+
+export type { SiteStrategyName };
