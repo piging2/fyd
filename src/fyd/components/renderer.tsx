@@ -54,6 +54,19 @@ import {
   type RenderViewerKind,
 } from "../sitespec/render-projection";
 import { schemaRole, ownerRelationshipTarget } from "../sitespec/schemas";
+// Public-copy purity authority: single shared implementation in
+// sitespec/public-copy.ts (planner and renderer both use it). Imported for
+// local use and re-exported so the renderer's public API is unchanged.
+import {
+  isProvenanceNarration,
+  isUsablePublicTitle,
+} from "../sitespec/public-copy";
+export {
+  hasUsablePublicCopy,
+  isHandleFragmentTitle,
+  isProvenanceNarration,
+  isUsablePublicTitle,
+} from "../sitespec/public-copy";
 import {
   entranceDurationMs,
   motionTokensForTheme,
@@ -362,6 +375,7 @@ function ClaimBadge({
   theme,
   tone,
   viewerKind,
+  ctx,
 }: {
   objects: PingObject[];
   theme?: FYDThemeTokens;
@@ -372,8 +386,16 @@ function ClaimBadge({
    * engineer. Absent fails closed to the quiet treatment.
    */
   viewerKind?: RenderViewerKind;
+  /** Render context, for the binding-verified usable-content gate. */
+  ctx: RenderContext;
 }) {
   if (viewerKind !== "engineer") {
+    // Data-absent rule (polish lane, 2026-09-26): the quiet Source
+    // affordance needs something to source. When the objects carry no
+    // usable public content (unbound / narration / handle-fragment
+    // titles), the disclosure renders nothing. The check runs on the
+    // binding-verified title, the same authority as the section gates.
+    if (!objects.some((o) => isUsablePublicTitle(boundTitle(ctx, o), o.schema))) return null;
     return <QuietSource objects={objects} />;
   }
   const dark = tone === "onDark" && theme != null;
@@ -833,7 +855,7 @@ function FydObjectCard({
         </p>
       ) : null}
       <div className="mt-3">
-        <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} />
+        <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} ctx={ctx} />
       </div>
       {/* LANE-8: the per-claim WhyThis drill-down is engineer material.
           The visitor and owner get the quiet Source affordance instead. */}
@@ -845,8 +867,14 @@ function FydObjectCard({
           viewerKind={ctx.viewerKind}
         />
       ) : null}
+      {/* Visitor-projection purity (polish lane, 2026-09-26): platform-brand
+          chrome (FydMark / the object affordance) is an owner/engineer
+          surface. The component itself is the fail-closed authority: it
+          renders only for viewerKind "owner"/"engineer", so visitor cards
+          (and any context that passes no kind) render no ObjectAffordance. */}
       {affordanceEligible(o) ? (
         <ObjectAffordance
+          viewerKind={ctx.viewerKind}
           objectId={o.id}
           title={title ?? null}
           kindLabel={friendlySchemaLabel(o.schema)}
@@ -934,7 +962,11 @@ export function ObjectDoorway({
         }}
       />
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "16rem" }}>
-        {kindLabel}: {title}
+        {/* Public-projection purity (polish lane, 2026-09-26): the visible
+            label is the object's own title. The kind rides only in the
+            aria-label above: visitors read the business's words, not the
+            graph's vocabulary ("Business: ..."). */}
+        {title}
       </span>
       <span aria-hidden="true" style={{ opacity: 0.7 }}>
         {"->"}
@@ -968,6 +1000,22 @@ export function ObjectDoorway({
 // ---------------------------------------------------------------------------
 
 /**
+ * Data-absent rule (polish lane, 2026-09-26): an object has usable public
+ * content when its bound title is usable. Sections whose objects ALL lack
+ * a usable title are omitted by their section component (People,
+ * ObjectRail, and the card sections below). The title is the object's
+ * public identity; a handle fragment with a narration description
+ * ("coppersmithplm" / "Person described in the website's structured
+ * data.") is not content, it is ingestion residue.
+ */
+export function sectionHasUsableContent(
+  ctx: RenderContext,
+  objects: PingObject[],
+): boolean {
+  return objects.some((o) => isUsablePublicTitle(boundTitle(ctx, o), o.schema));
+}
+
+/**
  * Verified factual field read. Returns the value only when the binding
  * verifies against the STRONG BindingVerifier (LANE-CLAIM H4/R-H4);
  * undefined means the caller must OMIT the value, never guess.
@@ -993,9 +1041,13 @@ function boundTitle(ctx: RenderContext, o: PingObject): string | undefined {
   return boundField(ctx, o, "title");
 }
 
-/** Verified description read (object-level factual identity). */
+/** Verified description read (object-level factual identity). Never binds
+ * provenance narration as public copy: a narration match falls back to
+ * title-only (returns undefined). */
 function boundDescription(ctx: RenderContext, o: PingObject): string | undefined {
-  return boundField(ctx, o, "description");
+  const d = boundField(ctx, o, "description");
+  if (d !== undefined && isProvenanceNarration(d)) return undefined;
+  return d;
 }
 
 /** Owner website URL gated to a safe navigable href. Never a raw string. */
@@ -1195,8 +1247,16 @@ function SectionShell({
           ["--fyd-surface" as string]: theme.surface,
           ["--fyd-ink" as string]: theme.ink,
           maxWidth: "var(--fyd-container-max, 80rem)",
-          paddingTop: "var(--fyd-space-section-major, 96px)",
-          paddingBottom: "var(--fyd-space-section-major, 96px)",
+          // Polish lane (2026-09-26): content-poor sections (no heading,
+          // no copy) do not earn the full major section rhythm. They
+          // collapse to the minor section token so thin sections stop
+          // reading as empty gaps. The tokens stay tenant-overridable.
+          paddingTop: heading?.trim() || copy?.trim()
+            ? "var(--fyd-space-section-major, 96px)"
+            : "var(--fyd-space-section-minor, 48px)",
+          paddingBottom: heading?.trim() || copy?.trim()
+            ? "var(--fyd-space-section-major, 96px)"
+            : "var(--fyd-space-section-minor, 48px)",
           animationDelay: delay ? `${delay}ms` : undefined,
           // Deterministic section identity: lets view transitions keep a
           // section's identity across generated pages when MORPH is active.
@@ -1220,7 +1280,9 @@ function SectionShell({
               className="fyd-type-lead text-accent"
               style={{
                 marginTop: "var(--fyd-space-stack-description, 1.25rem)",
-                maxWidth: "var(--fyd-measure, 65ch)",
+                // Polish lane (2026-09-26): the measure never exceeds the
+                // column; long tokens wrap anywhere instead of overflowing.
+                maxWidth: "min(var(--fyd-measure, 65ch), 100%)",
               }}
             >
               {copy}
@@ -1278,15 +1340,14 @@ function heroServiceAreaLine(ctx: RenderContext, o: PingObject): string | null {
 function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
-  const website = safeWebsite(ctx);
   const heading = presentation.heading ?? boundTitle(ctx, o);
   const copy = presentation.copy ?? boundDescription(ctx, o);
   // Contact discoverability: a tenant with no website still gets a
   // one-glance primary action. The phone is a ContactMethod projection:
   // binding-verified (same verifier as the Contact section) and gated
-  // through the safe-link gate. The button opens the FYD contact flow
-  // (value + provenance + the real Call action inside) instead of a
-  // direct tel: link. An unverifiable or unsafe number renders no button.
+  // through the safe-link gate. Polish lane (2026-09-26): the button is a
+  // direct tel: anchor (the FydContactLink primary action), never behind a
+  // disclosure. An unverifiable or unsafe number renders no button.
   const phoneMethod = contactMethod(ctx, o, "phone", correctionFor(o, "phone"));
   // Media is threaded through RenderContext from the server render seam;
   // the renderer never selects it. Null keeps the honest typographic hero.
@@ -1319,14 +1380,18 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
           belong to HeroSection (full-bleed). Children are the copy column
           only: badge, fluid display h1, lead copy, CTAs, trust row, doorway. */}
       <div className="max-w-3xl">
-        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} theme={theme} tone="onDark" />
+        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} theme={theme} tone="onDark" ctx={ctx} />
         <h1 className="fyd-type-display mt-4 break-words text-background">
           {heading}
         </h1>
         {copy ? (
           <p
             className="fyd-type-lead mt-4 text-background/80"
-            style={{ maxWidth: "var(--fyd-measure, 65ch)" }}
+            // Polish lane (2026-09-26): the lead must never escape the copy
+            // column on narrow viewports (mid-word clip at 390px). The
+            // 65ch measure is capped to the column, and long tokens wrap
+            // anywhere instead of overflowing.
+            style={{ maxWidth: "min(var(--fyd-measure, 65ch), 100%)", overflowWrap: "anywhere" }}
           >
             {copy}
           </p>
@@ -1340,25 +1405,17 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
               dial affordance to website.kind === "safe" and hid it behind
               md:hidden, which is exactly why no phone was visible in the
               desktop hero. Decoupled here: any tenant with a binding-verified
-              phone method gets the button, website or not. It opens the FYD
-              contact flow (value + provenance + the real Call action inside),
-              never a raw tel: link. */}
+              phone method gets the button, website or not. Polish lane
+              (2026-09-26): the phone renders as a direct tel: anchor (the
+              FydContactLink primary action), never behind a disclosure. */}
           {phoneMethod ? (
             <FydContactLink method={phoneMethod} theme={theme} variant="button" />
           ) : null}
-          {website.kind === "safe" ? (
-            <a
-              href={website.href}
-              className="rounded px-6 py-3 font-semibold"
-              style={{
-                background: theme.accent,
-                color: theme.accentForeground,
-                borderRadius: theme.radius === "full" ? 9999 : 8,
-              }}
-            >
-              Visit website
-            </a>
-          ) : null}
+          {/* Polish lane (2026-09-26): no "Visit website" on the visitor
+              surface. A visitor is already ON the business site; a
+              self-referential off-site hop is not a conversion action.
+              Conversion intent (estimate/quote/call) belongs to the CTA
+              section when the graph backs it. */}
           <a
             href="#ask"
             className="rounded border px-6 py-3 font-semibold text-background"
@@ -1395,7 +1452,7 @@ function BusinessSummary({ section, objects, presentation, theme, ctx, motionInd
       heading={presentation.heading ?? (title ? "About " + title : undefined)}
       copy={presentation.copy ?? boundDescription(ctx, o)}
     >
-      <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} />
+      <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} ctx={ctx} />
       {/* Mobile in-flow composition: the business object itself as a
           tappable card in the page flow (<768px). Desktop keeps the
           prose summary unchanged. */}
@@ -1471,7 +1528,12 @@ function MobileInFlowObjects({
   /** Test hook for the mobile composition block. */
   testId: string;
 }) {
-  if (objects.length === 0) return null;
+  // Data-absent rule (polish lane, 2026-09-26): objects without usable
+  // public content (unbound / narration / handle-fragment titles) are
+  // filtered from the row individually, matching the planner's query
+  // narrowing. An all-unusable block renders nothing, never empty cards.
+  const usable = objects.filter((o) => isUsablePublicTitle(boundTitle(ctx, o), o.schema));
+  if (usable.length === 0) return null;
   return (
     <div
       className="mt-6 md:hidden"
@@ -1479,7 +1541,7 @@ function MobileInFlowObjects({
       data-inflow-composition="mobile"
     >
       <div className="grid grid-cols-1 gap-4">
-        {objects.map((o, i) => (
+        {usable.map((o, i) => (
           <FydObjectCard
             key={o.id}
             o={o}
@@ -1587,7 +1649,7 @@ function ServicesSection(props: SectionProps) {
   const featured = presentation.featuredIds?.length
     ? objects.filter((o) => presentation.featuredIds!.includes(o.id))
     : objects;
-  if (featured.length === 0) return null;
+  if (!sectionHasUsableContent(ctx, featured)) return null;
   // RENDER-WIRE: the planner stamps compositionVariant (feature/grid/rows);
   // absent stays the card grid. Feature requires a real photograph on the
   // featured object, otherwise the grid is the honest fallback.
@@ -1613,7 +1675,10 @@ function ServicesSection(props: SectionProps) {
 
 function ProductsSection(props: SectionProps) {
   const { section, objects, presentation, theme, ctx, motionIndex } = props;
-  if (objects.length === 0) return null;
+  // Data-absent rule (polish lane, 2026-09-26): a section whose objects
+  // all lack usable public content (unbound / narration / handle-
+  // fragment titles) renders nothing, never a row of empty cards.
+  if (!sectionHasUsableContent(ctx, objects)) return null;
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Products"} copy={presentation.copy}>
       <CardGrid objects={objects} theme={theme} ctx={ctx} />
@@ -1622,7 +1687,10 @@ function ProductsSection(props: SectionProps) {
 }
 
 function LocationsSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
-  if (objects.length === 0) return null;
+  // Data-absent rule (polish lane, 2026-09-26): a section whose objects
+  // all lack usable public content (unbound / narration / handle-
+  // fragment titles) renders nothing, never a row of empty cards.
+  if (!sectionHasUsableContent(ctx, objects)) return null;
   return (
     <SectionShell
       theme={theme}
@@ -1653,7 +1721,7 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
         })}
       </ul>
       <div className="mt-3">
-        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} />
+        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} ctx={ctx} />
       </div>
       {/* Mobile in-flow composition: Location object cards in the page
           flow (<768px), replacing the pill list. Desktop unchanged. */}
@@ -1668,7 +1736,10 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
 }
 
 function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
-  if (objects.length === 0) return null;
+  // Data-absent rule (polish lane, 2026-09-26): a section whose objects
+  // all lack usable public content (unbound / narration / handle-
+  // fragment titles) renders nothing, never a row of empty cards.
+  if (!sectionHasUsableContent(ctx, objects)) return null;
   // Structural differentiation from the graph: when person objects have
   // photographic media, they render as a people strip (portrait-led);
   // otherwise the honest card grid. No hand-built sections either way.
@@ -1760,6 +1831,7 @@ function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex
                 ) : null}
                 {affordanceEligible(o) ? (
                   <ObjectAffordance
+                    viewerKind={ctx.viewerKind}
                     objectId={o.id}
                     title={title ?? null}
                     kindLabel={friendlySchemaLabel(o.schema)}
@@ -1827,7 +1899,7 @@ function PostProseGrid({
             ) : null}
             {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
             <div className="mt-3">
-              <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} />
+              <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} ctx={ctx} />
             </div>
           </article>
         );
@@ -1901,7 +1973,10 @@ function ArchiveList({
 }
 
 function PostsSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
-  if (objects.length === 0) return null;
+  // Data-absent rule (polish lane, 2026-09-26): a section whose objects
+  // all lack usable public content (unbound / narration / handle-
+  // fragment titles) renders nothing, never a row of empty cards.
+  if (!sectionHasUsableContent(ctx, objects)) return null;
   // Sorting uses the raw value (deterministic ordering input, never rendered).
   const sorted = objects.slice().sort((a, b) =>
     fieldOf(b, "date").localeCompare(fieldOf(a, "date")),
@@ -1937,7 +2012,10 @@ function PostsSection({ section, objects, presentation, theme, ctx, motionIndex 
 
 function ObjectGridSection(props: SectionProps) {
   const { section, objects, presentation, theme, ctx, motionIndex } = props;
-  if (objects.length === 0) return null;
+  // Data-absent rule (polish lane, 2026-09-26): a section whose objects
+  // all lack usable public content (unbound / narration / handle-
+  // fragment titles) renders nothing, never a row of empty cards.
+  if (!sectionHasUsableContent(ctx, objects)) return null;
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Browse"} copy={presentation.copy}>
       <CardGrid objects={objects} theme={theme} ctx={ctx} />
@@ -2014,12 +2092,13 @@ function FeedList({
                 </div>
                 {description ? <p className="mt-2 text-sm text-accent">{description}</p> : null}
                 <div className="mt-3">
-                  <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} />
+                  <ClaimBadge objects={[o]} viewerKind={ctx.viewerKind} ctx={ctx} />
                 </div>
               </div>
             </div>
             {affordanceEligible(o) ? (
               <ObjectAffordance
+                viewerKind={ctx.viewerKind}
                 objectId={o.id}
                 title={title ?? null}
                 kindLabel={friendlySchemaLabel(o.schema)}
@@ -2037,7 +2116,10 @@ function FeedList({
 }
 
 function ObjectFeedSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
-  if (objects.length === 0) return null;
+  // Data-absent rule (polish lane, 2026-09-26): a section whose objects
+  // all lack usable public content (unbound / narration / handle-
+  // fragment titles) renders nothing, never a row of empty cards.
+  if (!sectionHasUsableContent(ctx, objects)) return null;
   const variant = presentation.compositionVariant ?? "list";
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Explore"} copy={presentation.copy}>
@@ -2053,7 +2135,10 @@ function ObjectFeedSection({ section, objects, presentation, theme, ctx, motionI
 }
 
 function RecentObjectsSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
-  if (objects.length === 0) return null;
+  // Data-absent rule (polish lane, 2026-09-26): a section whose objects
+  // all lack usable public content (unbound / narration / handle-
+  // fragment titles) renders nothing, never a row of empty cards.
+  if (!sectionHasUsableContent(ctx, objects)) return null;
   const sorted = objects
     .slice()
     .sort((a, b) =>
@@ -2079,7 +2164,7 @@ function RecentObjectsSection({ section, objects, presentation, theme, ctx, moti
   );
 }
 
-function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
+function ContactSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
   // Owner-corrected fields are read with the owner_authored
@@ -2089,39 +2174,53 @@ function ContactSection({ objects, presentation, theme, ctx }: SectionProps) {
   const phoneCorrection = correctionFor(o, "phone");
   const emailCorrection = correctionFor(o, "email");
   // ContactMethod projections: binding-verified, safety-gated. Each
-  // renders as the FYD contact affordance (value + provenance + the real
-  // tel:/mailto: action inside the flow), never as a top-level link.
-  // An unverifiable or unsafe number/email is not a method: no output.
+  // renders as the FydContactLink primary action: a direct tel:/mailto:
+  // anchor beside a secondary provenance disclosure. An unverifiable or
+  // unsafe number/email is not a method: no output.
   const phoneMethod = contactMethod(ctx, o, "phone", phoneCorrection);
   const emailMethod = contactMethod(ctx, o, "email", emailCorrection);
   const website = safeWebsite(ctx);
   const showWebsite = website.kind === "safe";
   if (!phoneMethod && !emailMethod && !showWebsite) return null;
+  // Polish lane (2026-09-26): the contact section is a composed block,
+  // not floating raw links. Field labels name each row; the website link
+  // shows its host (never a bare href); the heading is always visible
+  // (empty-string presentation headings must not erase it).
+  const heading = presentation.heading?.trim() ? presentation.heading : "Contact";
   return (
-    <SectionShell theme={theme} heading={presentation.heading ?? "Contact"} copy={presentation.copy}>
-      <ul className="flex flex-col gap-2 text-base">
+    <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={heading} copy={presentation.copy}>
+      <dl className="grid gap-4 text-base sm:grid-cols-3">
         {phoneMethod ? (
-          <li>
-            <FydContactLink method={phoneMethod} theme={theme} variant="row" />
-            {phoneCorrection ? <CorrectionNote correction={phoneCorrection} theme={theme} /> : null}
-          </li>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-widest text-accent">Phone</dt>
+            <dd className="mt-1">
+              <FydContactLink method={phoneMethod} theme={theme} variant="row" />
+              {phoneCorrection ? <CorrectionNote correction={phoneCorrection} theme={theme} /> : null}
+            </dd>
+          </div>
         ) : null}
         {emailMethod ? (
-          <li>
-            <FydContactLink method={emailMethod} theme={theme} variant="row" />
-            {emailCorrection ? <CorrectionNote correction={emailCorrection} theme={theme} /> : null}
-          </li>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-widest text-accent">Email</dt>
+            <dd className="mt-1">
+              <FydContactLink method={emailMethod} theme={theme} variant="row" />
+              {emailCorrection ? <CorrectionNote correction={emailCorrection} theme={theme} /> : null}
+            </dd>
+          </div>
         ) : null}
         {showWebsite && website.kind === "safe" ? (
-          <li>
-            <a href={website.href} className="underline inline-block min-h-[44px] py-2" style={{ color: theme.ink }}>
-              {website.href}
-            </a>
-          </li>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-widest text-accent">Website</dt>
+            <dd className="mt-1">
+              <a href={website.href} className="underline inline-block min-h-[44px] py-2" style={{ color: theme.ink }}>
+                {hostOf(website.href)}
+              </a>
+            </dd>
+          </div>
         ) : null}
-      </ul>
+      </dl>
       <div className="mt-3">
-        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} />
+        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} ctx={ctx} />
       </div>
     </SectionShell>
   );
@@ -2190,7 +2289,7 @@ function SocialProofSection({ section, objects, presentation, theme, ctx, motion
           >
             {t}
             <div className="mt-2 not-italic">
-              <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} />
+              <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} ctx={ctx} />
             </div>
           </blockquote>
         ))}
@@ -2199,9 +2298,77 @@ function SocialProofSection({ section, objects, presentation, theme, ctx, motion
   );
 }
 
+/**
+ * Graph-backed conversion intent (polish lane, 2026-09-26): the primary
+ * CTA prefers a legitimate estimate/quote destination when the graph backs
+ * one. Candidates are public service objects carrying a service_href field
+ * (a DIRECT_FACT from website ingestion) whose path names an estimate or
+ * quote intent. The href is read through the binding verifier and resolved
+ * with resolveSafeLink ("navigate") against the business's verified website
+ * as the explicit base URL: relative links only resolve with that safe
+ * base, absolute links must be safe on their own, and anything else yields
+ * no intent. Selection is deterministic (id order, first qualifying
+ * candidate). Nothing is invented: no qualifying href in the graph means
+ * no estimate CTA, and the label names the intent found in the URL, never
+ * a claim about the business. Generic: no tenant, URL, or customer
+ * conditions.
+ */
+function estimateIntentFor(
+  ctx: RenderContext,
+): { href: string; label: string } | null {
+  const base = boundWebsite(ctx);
+  if (!base) return null;
+  const candidates = ctx.graph.objects
+    .filter(
+      (c) =>
+        c.visibility === "public" &&
+        c.schema === "ping.social.service@1" &&
+        typeof c.fields["service_href"] === "string" &&
+        (c.fields["service_href"] as string).trim() !== "",
+    )
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  for (const c of candidates) {
+    const raw = boundField(ctx, c, "service_href");
+    if (raw === undefined) continue;
+    let path: string;
+    try {
+      path = new URL(raw, base).pathname.toLowerCase();
+    } catch {
+      continue;
+    }
+    const intent = /estimate/.test(path)
+      ? "estimate"
+      : /quote/.test(path)
+        ? "quote"
+        : null;
+    if (!intent) continue;
+    const safe = resolveSafeLink(raw, "navigate", { baseUrl: base });
+    if (safe.kind !== "safe") continue;
+    return {
+      href: safe.href,
+      label: intent === "quote" ? "Request a quote" : "Get an estimate",
+    };
+  }
+  return null;
+}
+
 function CTASection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const o = objects[0];
-  const website = o ? safeWebsite(ctx) : { kind: "non_navigable" as const };
+  // Polish lane (2026-09-26): the visitor CTA is the business's real
+  // conversion intent, never a self-referential "Visit website". Selection
+  // prefers a graph-backed estimate/quote intent when the graph backs one,
+  // then the binding-verified phone method, then the verified email method;
+  // when the graph backs no conversion intent the slot is omitted entirely
+  // (nothing invented). The contact link renders the direct tel:/mailto:
+  // anchor (FydContactLink primary action) beside its secondary provenance
+  // disclosure.
+  const estimate = o ? estimateIntentFor(ctx) : null;
+  const conversion = estimate
+    ? null
+    : o
+      ? (contactMethod(ctx, o, "phone", correctionFor(o, "phone")) ??
+         contactMethod(ctx, o, "email", correctionFor(o, "email")))
+      : null;
   return (
     <section className="w-full px-4 py-12 sm:px-6" style={{ background: theme.surface }}>
       <div className="mx-auto max-w-5xl text-center">
@@ -2209,15 +2376,17 @@ function CTASection({ section, objects, presentation, theme, ctx, motionIndex }:
           {presentation.heading ?? "Start the conversation"}
         </h2>
         {presentation.copy && <p className="mt-2 text-accent">{presentation.copy}</p>}
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          {website.kind === "safe" ? (
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          {estimate ? (
             <a
-              href={website.href}
-              className="rounded px-6 py-3 font-semibold"
+              href={estimate.href}
+              className="inline-block rounded px-6 py-3 font-semibold"
               style={{ background: theme.accent, color: theme.accentForeground, borderRadius: theme.radius === "full" ? 9999 : 8 }}
             >
-              Visit website
+              {estimate.label}
             </a>
+          ) : conversion ? (
+            <FydContactLink method={conversion} theme={theme} variant="button" />
           ) : null}
           <a
             href="#ask"
@@ -2251,7 +2420,7 @@ function IdentityCardSection({ section, objects, presentation, theme, ctx, motio
           ) : null}
           {description ? <p className="mt-1 text-sm text-accent">{description}</p> : null}
         </div>
-        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} />
+        <ClaimBadge objects={objects} viewerKind={ctx.viewerKind} ctx={ctx} />
       </div>
     </SectionShell>
   );
@@ -2304,6 +2473,10 @@ function boundOwnerTitle(ctx: RenderContext): string {
  */
 function ObjectRailSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const bound = objects.filter((o) => boundTitle(ctx, o) !== undefined);
+  // Data-absent rule (polish lane, 2026-09-26): a rail whose objects all
+  // lack usable public content (handle-fragment titles, narration
+  // descriptions) renders nothing.
+  if (!sectionHasUsableContent(ctx, bound)) return null;
   const featured = richestObject(bound, ctx.spec.ownerObjectId);
   if (!featured) return null;
   const name = boundTitle(ctx, featured) as string;
@@ -2333,14 +2506,20 @@ function ObjectRailSection({ section, objects, presentation, theme, ctx, motionI
         cards={cards}
         presence={presence}
         theme={theme}
-        heading={presentation.heading ?? "Featured object"}
+        // Public-projection purity (polish lane, 2026-09-26): no invented
+        // fallback heading. No heading means no presentation heading: the
+        // rail renders the featured object, not a "Featured object" pill.
+        heading={presentation.heading}
       />
     </section>
   );
 }
 
 function GenericObjectCardSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
-  if (objects.length === 0) return null;
+  // Data-absent rule (polish lane, 2026-09-26): a section whose objects
+  // all lack usable public content (unbound / narration / handle-
+  // fragment titles) renders nothing, never a row of empty cards.
+  if (!sectionHasUsableContent(ctx, objects)) return null;
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "More"} copy={presentation.copy}>
       <CardGrid objects={objects} theme={theme} ctx={ctx} />

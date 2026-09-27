@@ -8,8 +8,10 @@
  * website gate and drops the viewport gate: phoneMethod is already
  * binding-verified and safety-gated through contactMethodFor, so an
  * unverifiable or unsafe number renders nothing and nothing is invented.
- * The affordance opens the FYD contact flow (value + provenance + the real
- * Call action inside), never a raw tel: link at top level.
+ * Polish lane (2026-09-26): the affordance IS the direct tel: anchor now
+ * (direct conversion as the primary action); a secondary adjacent
+ * "Why this number?" disclosure carries the provenance. The self-referential
+ * "Visit website" hero CTA is gone: the visitor is already on the website.
  *
  * Run: npx jest --config src/fyd/components/jest.config.cjs hero-contact
  */
@@ -72,36 +74,37 @@ describe("hero contact discoverability", () => {
     expect(hero).not.toContain("md:hidden");
   });
 
-  test("CTA order is Call, then Visit website, then Ask FYD", () => {
+  test("CTA order is Call, then Ask FYD (no self-referential Visit website)", () => {
     const hero = heroMarkup(renderHome(HAPPY_PLACE_RICH_GRAPH));
     const callAt = hero.indexOf(`Call ${PHONE}`);
-    const visitAt = hero.indexOf("Visit website");
     const askAt = hero.indexOf("Ask FYD");
     expect(callAt).toBeGreaterThan(-1);
-    expect(visitAt).toBeGreaterThan(-1);
     expect(askAt).toBeGreaterThan(-1);
-    expect(callAt).toBeLessThan(visitAt);
-    expect(visitAt).toBeLessThan(askAt);
+    expect(callAt).toBeLessThan(askAt);
+    // The visitor is already on the website: no self-referential CTA.
+    expect(hero).not.toContain("Visit website");
   });
 
-  test("the only tel: in the hero lives inside the contact flow", () => {
+  test("the hero tel: is the direct primary anchor, outside any disclosure", () => {
     const hero = heroMarkup(renderHome(HAPPY_PLACE_RICH_GRAPH));
-    const flowAt = hero.indexOf('data-fyd-contact-flow="phone"');
     const telAt = hero.indexOf('href="tel:');
-    expect(flowAt).toBeGreaterThan(-1);
     expect(telAt).toBeGreaterThan(-1);
-    // The dial action sits inside the FYD contact flow; no tel: href
-    // exists at top level on the generated surface.
-    expect(telAt).toBeGreaterThan(flowAt);
+    // Exactly one tel: in the hero: the direct Call action.
     expect(hero.indexOf('href="tel:', telAt + 1)).toBe(-1);
+    // The value is the anchor text (direct conversion).
+    expect(hero).toContain(">Call " + PHONE + "</a>");
+    // The Why-disclosure sits beside it carrying provenance, never
+    // wrapping the action.
+    const detailsAt = hero.indexOf("<details");
+    expect(detailsAt).toBeGreaterThan(-1);
+    expect(hero).toContain("Why this number?");
   });
 
   test("no binding-verified phone renders no phone CTA (nothing invented)", () => {
     const hero = heroMarkup(renderHome(stripPhone(HAPPY_PLACE_RICH_GRAPH)));
     expect(hero).not.toContain('data-fyd-contact="phone"');
     expect(hero).not.toContain(PHONE);
-    // The remaining CTAs still render.
-    expect(hero).toContain("Visit website");
+    // The remaining CTA still renders.
     expect(hero).toContain("Ask FYD");
   });
 

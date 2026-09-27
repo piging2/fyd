@@ -8,8 +8,11 @@
  *   2. Keep only acquired assets (the rights gate: reference-only assets
  *      can never surface).
  *   3. Prefer the hero-role asset; else the best other photographic
- *      asset. Logos are NEVER hero candidates: a logo is brand
- *      identity, not a photographic hero.
+ *      asset BY COMPOSITION FITNESS (polish lane 2026-09-26): hero-slot
+ *      aspect fit first, then measured mean luminance (near-black frames
+ *      deprioritized), then resolution as a tiebreak. Ingest order is not
+ *      a composition decision. Logos are NEVER hero candidates: a logo is
+ *      brand identity, not a photographic hero.
  *   4. Null when the object has no photographic acquired media: the
  *      Hero stays typographic, never an invented image.
  *
@@ -22,8 +25,9 @@
  */
 
 import { renderToStaticMarkup } from "react-dom/server";
-import { writeFileSync, unlinkSync } from "node:fs";
+import { writeFileSync, unlinkSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import sharp from "sharp";
 import { heroMediaFor, listObjectMedia, type DisplayMedia } from "../select";
 import { renderSection, type RenderContext } from "../../components/renderer";
 import {
@@ -98,8 +102,8 @@ function renderHero(heroMedia: DisplayMedia | null): string {
 }
 
 describe("heroMediaFor selection rule (real pipeline manifests)", () => {
-  test("happy-place: demo-authorized media selects the first photographic asset, never an invented image", () => {
-    const hero = heroMediaFor("happy-place", testGraph(), "biz-test-1");
+  test("happy-place: composition fitness selects the best photographic asset, never an invented image", async () => {
+    const hero = await heroMediaFor("happy-place", testGraph(), "biz-test-1");
     expect(hero).not.toBeNull();
     expect(hero!.id.startsWith("fyd-media-")).toBe(true);
     expect(hero!.role).not.toBe("logo");
@@ -107,10 +111,15 @@ describe("heroMediaFor selection rule (real pipeline manifests)", () => {
     // FYD-served derivative, never a hotlink.
     expect(hero!.src.startsWith("/fyd-media/")).toBe(true);
     expect(hero!.src.startsWith("http")).toBe(false);
+    // Composition fitness, not ingest order: the manifest's five assets
+    // are all 768x1024 portraits, so the measured-brightest frame wins
+    // (the old ingest-order pick was the dark pipe frame the 2026-09-26
+    // falsifier caught in the banner).
+    expect(hero!.id).toBe("fyd-media-93a3c6b3011dcc76");
   });
 
-  test("coppersmith-plumbing: the hero-role asset wins", () => {
-    const hero = heroMediaFor("coppersmith-plumbing", testGraph(), "biz-test-1");
+  test("coppersmith-plumbing: the hero-role asset wins", async () => {
+    const hero = await heroMediaFor("coppersmith-plumbing", testGraph(), "biz-test-1");
     expect(hero).not.toBeNull();
     expect(hero!.id).toBe("fyd-media-db347abf5ab76b99");
     expect(hero!.role).toBe("hero");
@@ -120,15 +129,15 @@ describe("heroMediaFor selection rule (real pipeline manifests)", () => {
     expect(hero!.src.startsWith("http")).toBe(false);
   });
 
-  test("selection is deterministic: same inputs, same result", () => {
+  test("selection is deterministic: same inputs, same result", async () => {
     const graph = testGraph();
-    const a = heroMediaFor("coppersmith-plumbing", graph, "biz-test-1");
-    const b = heroMediaFor("coppersmith-plumbing", graph, "biz-test-1");
+    const a = await heroMediaFor("coppersmith-plumbing", graph, "biz-test-1");
+    const b = await heroMediaFor("coppersmith-plumbing", graph, "biz-test-1");
     expect(a).toEqual(b);
   });
 
-  test("unknown site selects null (missing data is not a failure)", () => {
-    expect(heroMediaFor("no-such-site", testGraph(), "biz-test-1")).toBeNull();
+  test("unknown site selects null (missing data is not a failure)", async () => {
+    expect(await heroMediaFor("no-such-site", testGraph(), "biz-test-1")).toBeNull();
   });
 });
 
@@ -247,21 +256,112 @@ function withFixtureManifest(media: any[], fn: () => void): void {
   }
 }
 
+/** Async variant: the selector under test is async (luminance via sharp). */
+async function withFixtureManifestAsync(
+  media: any[],
+  fn: () => Promise<void>,
+): Promise<void> {
+  const manifest = {
+    siteId: FIXTURE_SITE,
+    generatedAt: TS,
+    generator: "fyd-media@2",
+    ingestRunId: "test-ingest-run",
+    pipelineVersion: "fyd-media@2",
+    observations: [],
+    media,
+  };
+  const path = join(
+    process.cwd(),
+    "src",
+    "fyd",
+    "media",
+    "manifests",
+    FIXTURE_SITE + ".json",
+  );
+  writeFileSync(path, JSON.stringify(manifest));
+  try {
+    await fn();
+  } finally {
+    unlinkSync(path);
+  }
+}
+
+/**
+ * Fitness fixture: a photographic asset whose display variant has the
+ * given dimensions, with an optional blur variant at the given
+ * same-origin URL (the luminance probe reads the file under /public).
+ */
+function fitnessMedia(
+  id: string,
+  width: number,
+  height: number,
+  blurUrl: string | null,
+): any {
+  const variants: any[] = [
+    {
+      name: "thumbnail",
+      width,
+      height,
+      format: "webp",
+      url: "/fyd-media/fixture/" + id + "/thumbnail.webp",
+      bytes: 1000,
+      digest: "f".repeat(64),
+      derivedFrom: "f".repeat(64),
+    },
+  ];
+  if (blurUrl) {
+    variants.push({
+      name: "blur10",
+      width: 10,
+      height: 10,
+      format: "png",
+      url: blurUrl,
+      bytes: 100,
+      digest: "b".repeat(64),
+      derivedFrom: "f".repeat(64),
+    });
+  }
+  return {
+    id,
+    schema: "ping.social.media@1",
+    title: "Fixture " + id,
+    mediaType: "image",
+    roles: ["gallery"],
+    rightsSource: "public-demo-source",
+    rightsBasis: "fixture rights basis",
+    lifecycle: "published",
+    provenance: {
+      sourceUrl: "https://example.com/" + id + ".jpg",
+      sourcePage: "https://example.com/",
+      observedAt: TS,
+    },
+    digest: "f".repeat(64),
+    originalFormat: "jpeg",
+    width,
+    height,
+    variants,
+    depicts: [],
+    altText: "Alt " + id,
+    altTextSource: "source",
+    visibility: "public",
+  };
+}
+
 describe("heroMediaFor never returns a logo-role asset", () => {
-  test("logo-only object: null, the caller renders its typographic hero", () => {
-    withFixtureManifest([fixtureMedia("m-logo", ["logo"])], () => {
-      expect(heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1")).toBeNull();
+  test("logo-only object: null, the caller renders its typographic hero", async () => {
+    await withFixtureManifestAsync([fixtureMedia("m-logo", ["logo"])], async () => {
+      expect(await heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1")).toBeNull();
     });
   });
 
-  test("hero + logo: the hero-role asset wins", () => {
-    withFixtureManifest(
+  test("hero + logo: the hero-role asset wins", async () => {
+    await withFixtureManifestAsync(
       [
         fixtureMedia("m-logo", ["logo"]),
         fixtureMedia("m-hero", ["hero", "gallery"]),
       ],
-      () => {
-        const hero = heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1");
+      async () => {
+        const hero = await heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1");
         expect(hero).not.toBeNull();
         expect(hero!.id).toBe("m-hero");
         expect(hero!.role).toBe("hero");
@@ -269,12 +369,12 @@ describe("heroMediaFor never returns a logo-role asset", () => {
     );
   });
 
-  test("gallery + logo (no hero): the gallery asset wins, never the logo", () => {
-    withFixtureManifest(
+  test("gallery + logo (no hero): the gallery asset wins, never the logo", async () => {
+    await withFixtureManifestAsync(
       [fixtureMedia("m-logo", ["logo"]), fixtureMedia("m-gallery", ["gallery"])],
-      () => {
+      async () => {
         // The sort still leads with the logo: the old code would return it.
-        const hero = heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1");
+        const hero = await heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1");
         expect(hero).not.toBeNull();
         expect(hero!.id).toBe("m-gallery");
         expect(hero!.role).not.toBe("logo");
@@ -288,6 +388,112 @@ describe("heroMediaFor never returns a logo-role asset", () => {
       () => {
         const all = listObjectMedia(FIXTURE_SITE, testGraph(), "biz-test-1");
         expect(all.map((d) => d.id)).toEqual(["m-logo", "m-gallery"]);
+      },
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Polish lane (2026-09-26): fallback hero composition-fitness ranking.
+// No hero-role asset: the selector ranks by measurable fitness (16/9
+// aspect fit, measured mean luminance, resolution tiebreak) instead of
+// ingest order.
+// ---------------------------------------------------------------------------
+
+describe("fallback hero composition-fitness ranking", () => {
+  test("prefers 16:9 landscape over portrait regardless of ingest order", async () => {
+    await withFixtureManifestAsync(
+      [
+        // Portrait listed first: ingest order must not win.
+        fitnessMedia("m-portrait", 600, 800, null),
+        fitnessMedia("m-landscape", 1600, 900, null),
+      ],
+      async () => {
+        const hero = await heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1");
+        expect(hero).not.toBeNull();
+        expect(hero!.id).toBe("m-landscape");
+      },
+    );
+  });
+
+  test("resolution breaks ties when aspect and luminance are equal", async () => {
+    await withFixtureManifestAsync(
+      [
+        fitnessMedia("m-small", 1600, 900, null),
+        fitnessMedia("m-large", 2400, 1350, null),
+      ],
+      async () => {
+        const hero = await heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1");
+        expect(hero).not.toBeNull();
+        expect(hero!.id).toBe("m-large");
+      },
+    );
+  });
+
+  test("deprioritizes near-black frames with equal aspect and resolution", async () => {
+    // Real 10px blur files under /public: the luminance probe measures
+    // actual bytes (sharp), not manifest claims.
+    const dir = join(process.cwd(), "public", "fyd-media", "__test-fitness");
+    mkdirSync(dir, { recursive: true });
+    const darkPath = join(dir, "black.png");
+    const brightPath = join(dir, "bright.png");
+    await sharp({
+      create: { width: 10, height: 10, channels: 3, background: { r: 2, g: 2, b: 2 } },
+    })
+      .png()
+      .toFile(darkPath);
+    await sharp({
+      create: { width: 10, height: 10, channels: 3, background: { r: 200, g: 200, b: 200 } },
+    })
+      .png()
+      .toFile(brightPath);
+    try {
+      await withFixtureManifestAsync(
+        [
+          // Near-black listed first: fitness must outrank ingest order.
+          fitnessMedia("m-dark", 1600, 900, "/fyd-media/__test-fitness/black.png"),
+          fitnessMedia("m-bright", 1600, 900, "/fyd-media/__test-fitness/bright.png"),
+        ],
+        async () => {
+          const hero = await heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1");
+          expect(hero).not.toBeNull();
+          expect(hero!.id).toBe("m-bright");
+        },
+      );
+    } finally {
+      unlinkSync(darkPath);
+      unlinkSync(brightPath);
+    }
+  });
+
+  test("unreadable blurs degrade to aspect+resolution ranking, never failure", async () => {
+    await withFixtureManifestAsync(
+      [
+        fitnessMedia("m-ghost", 1600, 900, "/fyd-media/__test-fitness/missing.png"),
+        fitnessMedia("m-real", 2400, 1350, null),
+      ],
+      async () => {
+        const hero = await heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1");
+        expect(hero).not.toBeNull();
+        // m-real wins on resolution; m-ghost's missing blur must not
+        // throw or poison the ranking.
+        expect(hero!.id).toBe("m-real");
+      },
+    );
+  });
+
+  test("fitness ranking is deterministic across runs", async () => {
+    await withFixtureManifestAsync(
+      [
+        fitnessMedia("m-a", 600, 800, null),
+        fitnessMedia("m-b", 1600, 900, null),
+        fitnessMedia("m-c", 1200, 900, null),
+      ],
+      async () => {
+        const a = await heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1");
+        const b = await heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1");
+        expect(a?.id).toBe("m-b");
+        expect(b?.id).toBe("m-b");
       },
     );
   });

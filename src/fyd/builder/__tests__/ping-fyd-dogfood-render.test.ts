@@ -42,7 +42,7 @@ async function composePingFyd() {
     projection.presentationIntent,
     verified.graph,
   ).spec;
-  const heroMedia = heroMediaFor(SITE_ID, verified.graph, spec.ownerObjectId);
+  const heroMedia = await heroMediaFor(SITE_ID, verified.graph, spec.ownerObjectId);
   const knownSchemas = new Set(verified.graph.objects.map((o) => o.schema));
   const findings = validateSiteSpec(spec, knownSchemas);
   return { projection, verified, strategy, spec, heroMedia, findings };

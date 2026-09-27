@@ -134,7 +134,7 @@ describe("pipeline happy path (no network)", () => {
       const path = manifestPath();
       writeFileSync(path, JSON.stringify(manifest));
       try {
-        const hero = heroMediaFor(SITE, testGraph(), "biz-test-1");
+        const hero = await heroMediaFor(SITE, testGraph(), "biz-test-1");
         expect(hero).not.toBeNull();
         expect(hero!.id).toBe(media.id);
         expect(hero!.digest).toBe(digest);

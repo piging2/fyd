@@ -153,7 +153,7 @@ describe("demo-authorized acquisition: happy-place (Nolan 2026-09-25)", () => {
     }
   });
 
-  test("happy-place: only demo-authorized media surfaces through any selector", () => {
+  test("happy-place: only demo-authorized media surfaces through any selector", async () => {
     const graph = getVerifiedPublicProjectionSync(HAPPY.site, "anonymous").graph;
     const media = listObjectMedia(HAPPY.site, graph, HAPPY.business);
     expect(media.length).toBeGreaterThan(0);
@@ -161,7 +161,7 @@ describe("demo-authorized acquisition: happy-place (Nolan 2026-09-25)", () => {
       expect(d.src.startsWith("/fyd-media/")).toBe(true);
       expect(d.rightsSource).toBe("public-demo-source");
     }
-    const hero = heroMediaFor(HAPPY.site, graph, HAPPY.business);
+    const hero = await heroMediaFor(HAPPY.site, graph, HAPPY.business);
     expect(hero).not.toBeNull();
     expect(hero!.src.startsWith("/fyd-media/")).toBe(true);
     expect(hero!.role).not.toBe("logo");
@@ -201,9 +201,9 @@ describe("coppersmith end to end: object view media + circle adapter", () => {
     }
   });
 
-  test("heroMediaFor picks the hero-role derivative, never a logo", () => {
+  test("heroMediaFor picks the hero-role derivative, never a logo", async () => {
     const graph = getVerifiedPublicProjectionSync(COPPER.site, "anonymous").graph;
-    const hero = heroMediaFor(COPPER.site, graph, COPPER.business);
+    const hero = await heroMediaFor(COPPER.site, graph, COPPER.business);
     expect(hero).not.toBeNull();
     expect(hero!.role).toBe("hero");
     expect(hero!.src.startsWith("/fyd-media/")).toBe(true);

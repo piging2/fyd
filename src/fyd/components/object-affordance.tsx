@@ -21,6 +21,7 @@
 
 import type { PingObject } from "@/lib/ping/types";
 import type { FYDThemeTokens } from "../sitespec/types";
+import type { RenderViewerKind } from "../sitespec/render-projection";
 import { capabilityOptionsForSchema, schemaRole } from "../sitespec/schemas";
 
 /**
@@ -88,6 +89,7 @@ export function ObjectAffordance({
   schemaId,
   controllerId,
   theme,
+  viewerKind,
 }: {
   /** Stable object id: the detail link and the preview key off it. */
   objectId: string;
@@ -102,7 +104,18 @@ export function ObjectAffordance({
   /** Controller id, for viewer-dependent capability options. */
   controllerId: string;
   theme: FYDThemeTokens;
+  /**
+   * Polish lane (2026-09-26): the affordance is an owner/engineer
+   * surface. It renders ONLY for the owner and engineer viewer kinds
+   * and fails closed otherwise: "visitor", and an absent viewerKind
+   * (which the projection seam defaults to the visitor projection),
+   * render nothing. The renderer call sites also gate, but the
+   * component enforces the invariant itself so a future call site that
+   * forgets the kind cannot leak platform chrome onto the visitor page.
+   */
+  viewerKind?: RenderViewerKind;
 }) {
+  if (viewerKind !== "owner" && viewerKind !== "engineer") return null;
   if (!title) return null;
   // G4: actions come from the capability authority, not from this
   // component. The affordance is a preview surface, so no contact context

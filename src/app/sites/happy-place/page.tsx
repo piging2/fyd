@@ -46,7 +46,7 @@ export default async function HappyPlaceDemoPage({
   // with the approved presentation intent applied over it.
   // Verified public projection (Q-C-01): the graph below already passed
   // the single public projection boundary; no separate publicGraph step.
-  const { graph, spec, findings, renderable, heroMedia, galleryAssets } =
+  const { graph, spec, findings, renderable, heroMedia, galleryAssets, ownerLogo } =
     await compilePublicSite(SITE_ID);
   // Gallery media for the render context: null when the owner has no
   // gallery assets, so the Gallery section renders nothing, never an
@@ -79,6 +79,7 @@ export default async function HappyPlaceDemoPage({
       siteId: SITE_ID,
       heroMedia,
       galleryMedia,
+      ownerLogo,
     },
     viewerKind,
   );

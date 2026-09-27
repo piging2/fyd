@@ -100,6 +100,13 @@ export interface CompiledPublicSite {
    * one asset list. Empty when the owner has no gallery assets.
    */
   galleryAssets: DisplayMedia[];
+  /**
+   * Polish lane (2026-09-26): the owner's logo-role media for the visitor
+   * header wordmark, resolved once at this seam. Null when the manifest
+   * has no logo for the owner: the wordmark renders as text. Never a
+   * hero/gallery asset: a logo is brand identity, not photography.
+   */
+  ownerLogo: DisplayMedia | null;
 }
 
 /**
@@ -303,9 +310,14 @@ export async function compilePublicSite(
   // seam. The focal point rides on the hero media for the hero component.
   const heroMedia = withHeroFocalPoint(
     siteId,
-    heroMediaFor(siteId, graph, spec.ownerObjectId),
+    await heroMediaFor(siteId, graph, spec.ownerObjectId),
   );
   const galleryAssets = galleryMediaFor(siteId, graph, ownerId);
+  // Polish lane (2026-09-26): the logo-role asset for the visitor header
+  // wordmark. listObjectMedia leads with the logo role; the first logo
+  // wins, null when the manifest carries none for the owner.
+  const ownerLogo =
+    listObjectMedia(siteId, graph, ownerId).find((d) => d.role === "logo") ?? null;
   const knownSchemas = new Set(graph.objects.map((o) => o.schema));
   const findings = validateSiteSpec(spec, knownSchemas);
   return {
@@ -317,5 +329,6 @@ export async function compilePublicSite(
     withheldConflictedFields,
     heroMedia,
     galleryAssets,
+    ownerLogo,
   };
 }

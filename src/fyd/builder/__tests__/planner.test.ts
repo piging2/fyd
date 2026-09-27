@@ -425,4 +425,90 @@ describe("relationship-driven composition", () => {
       if (typeof ref === "string") expect(ref).not.toBe(baseRef);
     }
   });
+
+  describe("hero tagline deduplication (polish lane)", () => {
+    function heroTagline(graph: ObjectGraph) {
+      const planned = planSite({ ctx: CTX, graph, vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
+      return planned.generatedPresentation.slots.find((s) => s.slotId === "hero-tagline");
+    }
+
+    test("locality-only lead when the hero H1 is the owner title", () => {
+      const slot = heroTagline(tradeGraph());
+      expect(slot).toBeDefined();
+      // The H1 already names the business: the lead is the locality alone,
+      // never "Acme Plumbing -- Grand Junction, Colorado".
+      expect(slot!.text).toBe("Grand Junction, Colorado");
+      expect(slot!.text).not.toContain("Acme Plumbing");
+    });
+
+    test("no locality: no tagline slot at all (no name-only duplicate lead)", () => {
+      const graph = tradeGraph();
+      const owner = graph.objects.find((o) => o.id === "biz-trade")!;
+      delete (owner.fields as Record<string, unknown>)["locality"];
+      const slot = heroTagline(graph);
+      // A name-only lead would duplicate the H1 exactly: omit the slot.
+      expect(slot).toBeUndefined();
+    });
+  });
+
+  describe("planner-level public-copy purity (polish lane)", () => {
+    const HANDLE_PERSON = "ping.social.person@1";
+
+    function plan(graph: ObjectGraph) {
+      return planSite({ ctx: CTX, graph, vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
+    }
+
+    function withHandlePerson(graph: ObjectGraph): ObjectGraph {
+      const clone = JSON.parse(JSON.stringify(graph)) as ObjectGraph;
+      clone.objects.push(
+        makeObject("person-handle", HANDLE_PERSON, {
+          title: "acmeplumbingco",
+          description: "Person described in the website's structured data.",
+          fields: { name: "acmeplumbingco", claimKind: "website_statement" },
+        }),
+      );
+      clone.relationships.push(
+        makeRelationship("rel-handle", "person-handle", "works_for", "biz-trade"),
+      );
+      return clone;
+    }
+
+    test("handle-only person is narrowed out of mixed sections via a reference query", () => {
+      // tradeGraph already has a real person (Jo Rivera): the People
+      // section resolves mixed content, so the planner keeps the section
+      // but rewrites its query to the usable subset.
+      const planned = plan(withHandlePerson(tradeGraph()));
+      const people = planned.spec.pages
+        .flatMap((p) => p.sections)
+        .filter((s) => s.component === "People");
+      expect(people.length).toBeGreaterThan(0);
+      const narrowed = people.filter((s) => s.query.kind === "reference");
+      expect(narrowed.length).toBeGreaterThan(0);
+      for (const s of narrowed) {
+        expect(s.query.kind).toBe("reference");
+        if (s.query.kind === "reference") {
+          expect(s.query.objectIds).not.toContain("person-handle");
+          expect(s.query.objectIds).toContain("person-jo");
+        }
+      }
+      expect(
+        planned.manifest.notes.some((n) => n.includes("narrowed")),
+      ).toBe(true);
+    });
+
+    test("section with only handle/narration content is omitted at plan time", () => {
+      const graph = tradeGraph();
+      // Remove the real person so the only person left is the handle.
+      const clone = JSON.parse(JSON.stringify(graph)) as ObjectGraph;
+      clone.objects = clone.objects.filter((o) => o.id !== "person-jo");
+      const planned = plan(withHandlePerson(clone));
+      const people = planned.spec.pages
+        .flatMap((p) => p.sections)
+        .filter((s) => s.component === "People");
+      expect(people).toEqual([]);
+      expect(
+        planned.manifest.notes.some((n) => n.includes("no usable public copy")),
+      ).toBe(true);
+    });
+  });
 });

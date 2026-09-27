@@ -261,22 +261,22 @@ describe("selection outcomes on both sites' real manifests", () => {
     }
   });
 
-  test("hero selection: coppersmith hero-role asset wins; happy-place falls back to photography", () => {
-    const ch = heroMediaFor("coppersmith-plumbing", testGraph(), "biz-test-1");
+  test("hero selection: coppersmith hero-role asset wins; happy-place falls back to photography", async () => {
+    const ch = await heroMediaFor("coppersmith-plumbing", testGraph(), "biz-test-1");
     expect(ch).not.toBeNull();
     expect(ch!.id).toBe("fyd-media-db347abf5ab76b99");
     expect(ch!.role).toBe("hero");
     expect(ch!.alt.trim().length).toBeGreaterThan(0);
 
-    const hh = heroMediaFor("happy-place", testGraph(), "biz-test-1");
+    const hh = await heroMediaFor("happy-place", testGraph(), "biz-test-1");
     expect(hh).not.toBeNull();
     expect(hh!.role).not.toBe("logo");
     expect(hh!.alt.trim().length).toBeGreaterThan(0);
   });
 
-  test("heroMediaFor never returns a logo on either site", () => {
+  test("heroMediaFor never returns a logo on either site", async () => {
     for (const site of ["happy-place", "coppersmith-plumbing"]) {
-      const h = heroMediaFor(site, testGraph(), "biz-test-1");
+      const h = await heroMediaFor(site, testGraph(), "biz-test-1");
       if (h) expect(h.role).not.toBe("logo");
     }
   });

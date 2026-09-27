@@ -39,6 +39,7 @@ import {
 } from "../sitespec/types";
 import { SCHEMA_ROLES, ownerRelationshipTarget } from "../sitespec/schemas";
 import { currentEvidenceRef } from "../sitespec/binding-verifier";
+import { hasUsablePublicCopy } from "../sitespec/public-copy";
 import { requireTenantContext, type TenantContext } from "../tenant/tenant-context";
 import {
   nearestPresetName,
@@ -393,6 +394,46 @@ export function planSite(input: SitePlannerInput): PlannedSite {
       }
       return ok;
     });
+    // Public-copy purity, planner level (polish lane, 2026-09-26): omit
+    // narration-only and handle-only objects and sections at plan time, so
+    // the emitted spec agrees with what the renderer will show. A section
+    // whose objects ALL lack usable public copy (handle-fragment titles,
+    // provenance narration) is dropped; a section with mixed content keeps
+    // only the usable objects via a reference query, so render-time query
+    // resolution returns exactly the planned set. Static sections carry no
+    // query objects and are unaffected. Generic: no tenant or customer
+    // conditions. The renderer keeps its own usable-content gates as the
+    // backstop (binding verification can still refuse a title at render).
+    sections = sections.flatMap((s) => {
+      if (s.query.kind === "static") return [s];
+      const bound = resolveQueryObjects(graph, s.query, ownerId);
+      const usable = bound.filter(hasUsablePublicCopy);
+      if (usable.length === 0) {
+        manifest.notes.push(
+          "section \"" + s.id + "\" omitted: no usable public copy",
+        );
+        return [];
+      }
+      if (usable.length < bound.length) {
+        manifest.notes.push(
+          "section \"" +
+            s.id +
+            "\" narrowed: " +
+            (bound.length - usable.length) +
+            " object(s) without usable public copy omitted",
+        );
+        return [
+          {
+            ...s,
+            query: {
+              kind: "reference",
+              objectIds: usable.map((o) => o.id),
+            } as FYDQuery,
+          },
+        ];
+      }
+      return [s];
+    });
     // Order: dimension-vector composition policy. Stable sort by
     // (baseRank - boost, original index): the same vector always yields
     // the same order.
@@ -425,28 +466,52 @@ export function planSite(input: SitePlannerInput): PlannedSite {
 
   // Generated presentation: the hero tagline slot, bound to owner fields.
   // Template interpolates ONLY bound fields; the verifier refuses anything else.
-  const slots: GeneratedCopySlot[] = [];
-  if (owner) {
-    const locality = fieldText(owner, "locality").trim();
-    const tagline = locality !== "" ? owner.title + " -- " + locality : owner.title;
-    const bindings = [
-      { objectId: owner.id, field: "title", claimRef: currentEvidenceRef(owner) || null },
-    ];
-    if (locality !== "") {
-      bindings.push({ objectId: owner.id, field: "locality", claimRef: currentEvidenceRef(owner) || null });
-    }
-    // DIRECT_FACT: the tagline interpolates ONLY bound object fields, so
-    // every binding must resolve or the spec is refused.
-    slots.push({ slotId: "hero-tagline", sectionId: "", text: tagline, bindings, copyClass: "DIRECT_FACT" });
-  }
-  const generatedPresentation: GeneratedPresentation = { version: 1, slots };
-
-  // Attach the tagline to the first Hero section, if one survived.
+  // Discover the hero sections first: the tagline must not duplicate the
+  // hero H1 (presentation.heading ?? the bound owner title).
   const heroSections: FYDSection[] = [];
   for (const page of plannedPages) {
     for (const s of page.sections) if (s.component === "Hero") heroSections.push(s);
   }
   heroSections.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const slots: GeneratedCopySlot[] = [];
+  if (owner) {
+    const locality = fieldText(owner, "locality").trim();
+    const heroH1 = heroSections[0]?.presentation.heading?.trim() || owner.title;
+    // Polish lane (2026-09-26): the hero H1 is the business name, so a
+    // "Name -- Locality" lead repeats the H1's name (the 390px falsifier
+    // read "Happy Place Carpentry LLC -- Adair Village, OR, US" under an
+    // identical H1). Emit the locality alone instead. With no locality
+    // the slot is omitted entirely and the hero falls back to the bound
+    // business description: a name-only lead would duplicate the H1
+    // exactly. Generic: no tenant or customer conditions.
+    if (locality !== "" && heroH1 !== owner.title) {
+      slots.push({
+        slotId: "hero-tagline",
+        sectionId: "",
+        text: owner.title + " -- " + locality,
+        bindings: [
+          { objectId: owner.id, field: "title", claimRef: currentEvidenceRef(owner) || null },
+          { objectId: owner.id, field: "locality", claimRef: currentEvidenceRef(owner) || null },
+        ],
+        copyClass: "DIRECT_FACT",
+      });
+    } else if (locality !== "") {
+      slots.push({
+        slotId: "hero-tagline",
+        sectionId: "",
+        text: locality,
+        bindings: [
+          { objectId: owner.id, field: "locality", claimRef: currentEvidenceRef(owner) || null },
+        ],
+        copyClass: "DIRECT_FACT",
+      });
+    }
+    // DIRECT_FACT: the tagline interpolates ONLY bound object fields, so
+    // every binding must resolve or the spec is refused.
+  }
+  const generatedPresentation: GeneratedPresentation = { version: 1, slots };
+
+  // Attach the tagline to the first Hero section, if one survived.
   if (heroSections[0] && slots[0]) {
     slots[0].sectionId = heroSections[0].id;
     heroSections[0].presentation = { ...heroSections[0].presentation, copy: slots[0].text };

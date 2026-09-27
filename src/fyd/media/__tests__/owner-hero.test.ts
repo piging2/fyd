@@ -119,24 +119,51 @@ function withFixtureManifest(media: any[], fn: () => void): void {
   }
 }
 
+/**
+ * Async variant: resolveHeroMedia (and the selector under it) is async
+ * (luminance via sharp). The sync wrapper cannot await the inner work,
+ * so async tests must use this.
+ */
+async function withFixtureManifestAsync(
+  media: any[],
+  fn: () => Promise<void>,
+): Promise<void> {
+  const manifest = {
+    siteId: FIXTURE_SITE,
+    generatedAt: TS,
+    generator: "fyd-media@2",
+    ingestRunId: "test-ingest-run-owner-hero",
+    pipelineVersion: "fyd-media@2",
+    observations: [],
+    media,
+  };
+  const path = fixtureManifestPath();
+  writeFileSync(path, JSON.stringify(manifest));
+  try {
+    await fn();
+  } finally {
+    unlinkSync(path);
+  }
+}
+
 const FULL = [fixtureMedia("m-hero", ["hero", "gallery"]), fixtureMedia("m-gallery", ["gallery"]), fixtureMedia("m-logo", ["logo"])];
 
 describe("resolveHeroMedia", () => {
-  test("no owner id: basis auto, identical to the automatic selector", () => {
-    withFixtureManifest(FULL, () => {
+  test("no owner id: basis auto, identical to the automatic selector", async () => {
+    await withFixtureManifestAsync(FULL, async () => {
       const graph = testGraph();
-      const r = resolveHeroMedia(FIXTURE_SITE, graph, "biz-test-1", null);
+      const r = await resolveHeroMedia(FIXTURE_SITE, graph, "biz-test-1", null);
       expect(r.basis).toBe("auto");
       expect(r.ownerSelectedId).toBeNull();
-      expect(r.media).toEqual(heroMediaFor(FIXTURE_SITE, graph, "biz-test-1"));
+      expect(r.media).toEqual(await heroMediaFor(FIXTURE_SITE, graph, "biz-test-1"));
       expect(r.note.length).toBeGreaterThan(0);
     });
   });
 
-  test("owner picks a gallery asset: the owner's pick outranks auto", () => {
-    withFixtureManifest(FULL, () => {
+  test("owner picks a gallery asset: the owner's pick outranks auto", async () => {
+    await withFixtureManifestAsync(FULL, async () => {
       // Auto would pick m-hero (hero-role); the owner picks m-gallery.
-      const r = resolveHeroMedia(FIXTURE_SITE, testGraph(), "biz-test-1", "m-gallery");
+      const r = await resolveHeroMedia(FIXTURE_SITE, testGraph(), "biz-test-1", "m-gallery");
       expect(r.basis).toBe("owner");
       expect(r.ownerSelectedId).toBe("m-gallery");
       expect(r.media).not.toBeNull();
@@ -145,17 +172,17 @@ describe("resolveHeroMedia", () => {
     });
   });
 
-  test("owner picks the hero asset: basis owner", () => {
-    withFixtureManifest(FULL, () => {
-      const r = resolveHeroMedia(FIXTURE_SITE, testGraph(), "biz-test-1", "m-hero");
+  test("owner picks the hero asset: basis owner", async () => {
+    await withFixtureManifestAsync(FULL, async () => {
+      const r = await resolveHeroMedia(FIXTURE_SITE, testGraph(), "biz-test-1", "m-hero");
       expect(r.basis).toBe("owner");
       expect(r.media!.id).toBe("m-hero");
     });
   });
 
-  test("owner picks a logo: fallback to auto, never a logo hero", () => {
-    withFixtureManifest(FULL, () => {
-      const r = resolveHeroMedia(FIXTURE_SITE, testGraph(), "biz-test-1", "m-logo");
+  test("owner picks a logo: fallback to auto, never a logo hero", async () => {
+    await withFixtureManifestAsync(FULL, async () => {
+      const r = await resolveHeroMedia(FIXTURE_SITE, testGraph(), "biz-test-1", "m-logo");
       expect(r.basis).toBe("owner-fallback");
       expect(r.ownerSelectedId).toBe("m-logo");
       expect(r.media).not.toBeNull();
@@ -164,34 +191,34 @@ describe("resolveHeroMedia", () => {
     });
   });
 
-  test("stale owner id: fallback to auto with a diagnostic note", () => {
-    withFixtureManifest(FULL, () => {
-      const r = resolveHeroMedia(FIXTURE_SITE, testGraph(), "biz-test-1", "fyd-media-deadbeefdeadbeef");
+  test("stale owner id: fallback to auto with a diagnostic note", async () => {
+    await withFixtureManifestAsync(FULL, async () => {
+      const r = await resolveHeroMedia(FIXTURE_SITE, testGraph(), "biz-test-1", "fyd-media-deadbeefdeadbeef");
       expect(r.basis).toBe("owner-fallback");
-      expect(r.media).toEqual(heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1"));
+      expect(r.media).toEqual(await heroMediaFor(FIXTURE_SITE, testGraph(), "biz-test-1"));
       expect(r.note).toContain("could not be honored");
     });
   });
 
-  test("unknown site with owner id: null media, owner-fallback", () => {
-    const r = resolveHeroMedia("no-such-site", testGraph(), "biz-test-1", "m-hero");
+  test("unknown site with owner id: null media, owner-fallback", async () => {
+    const r = await resolveHeroMedia("no-such-site", testGraph(), "biz-test-1", "m-hero");
     expect(r.basis).toBe("owner-fallback");
     expect(r.media).toBeNull();
   });
 
-  test("logo-only site: owner picks the logo -> null media, owner-fallback", () => {
-    withFixtureManifest([fixtureMedia("m-logo", ["logo"])], () => {
-      const r = resolveHeroMedia(FIXTURE_SITE, testGraph(), "biz-test-1", "m-logo");
+  test("logo-only site: owner picks the logo -> null media, owner-fallback", async () => {
+    await withFixtureManifestAsync([fixtureMedia("m-logo", ["logo"])], async () => {
+      const r = await resolveHeroMedia(FIXTURE_SITE, testGraph(), "biz-test-1", "m-logo");
       expect(r.basis).toBe("owner-fallback");
       expect(r.media).toBeNull();
     });
   });
 
-  test("deterministic: same inputs, same resolution", () => {
-    withFixtureManifest(FULL, () => {
+  test("deterministic: same inputs, same resolution", async () => {
+    await withFixtureManifestAsync(FULL, async () => {
       const graph = testGraph();
-      const a = resolveHeroMedia(FIXTURE_SITE, graph, "biz-test-1", "m-gallery");
-      const b = resolveHeroMedia(FIXTURE_SITE, graph, "biz-test-1", "m-gallery");
+      const a = await resolveHeroMedia(FIXTURE_SITE, graph, "biz-test-1", "m-gallery");
+      const b = await resolveHeroMedia(FIXTURE_SITE, graph, "biz-test-1", "m-gallery");
       expect(a).toEqual(b);
     });
   });

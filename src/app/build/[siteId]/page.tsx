@@ -116,7 +116,7 @@ export default async function BuildSitePage({
   // rides along for the full-bleed hero's object-position.
   const heroMedia = withHeroFocalPoint(
     siteId,
-    heroMediaFor(siteId, graph, spec.ownerObjectId),
+    await heroMediaFor(siteId, graph, spec.ownerObjectId),
   );
   const knownSchemas = new Set(graph.objects.map((o) => o.schema));
   const findings = validateSiteSpec(spec, knownSchemas);

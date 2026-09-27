@@ -105,6 +105,11 @@ export interface ProjectForViewerInput {
   heroMedia?: DisplayMedia | null;
   galleryMedia?: DisplayMedia[] | null;
   objectMedia?: Record<string, DisplayMedia[]>;
+  /**
+   * Polish lane (2026-09-26): the owner's logo-role media for the visitor
+   * header wordmark. Null when the manifest has none: text wordmark.
+   */
+  ownerLogo?: DisplayMedia | null;
 }
 
 /**
@@ -141,6 +146,11 @@ export interface ProjectedSiteView {
   heroMedia: DisplayMedia | null;
   galleryMedia: DisplayMedia[] | null;
   objectMedia?: Record<string, DisplayMedia[]>;
+  /**
+   * Polish lane (2026-09-26): the owner's logo-role media for the visitor
+   * header wordmark. Null when the manifest has none: text wordmark.
+   */
+  ownerLogo: DisplayMedia | null;
   /** Quiet Source affordance data. Rendered for every viewer class. */
   source: PageSourceLine;
   /**
@@ -258,6 +268,7 @@ export function projectForViewer(
     heroMedia: input.heroMedia ?? null,
     galleryMedia: input.galleryMedia ?? null,
     objectMedia: input.objectMedia,
+    ownerLogo: input.ownerLogo ?? null,
     source: pageSourceLine(input.spec),
     showOwnerEntry: viewerKind !== "visitor",
     ownerConsole:

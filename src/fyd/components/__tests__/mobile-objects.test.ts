@@ -9,9 +9,15 @@
  * compact object experience (identity/type, facts, relationships,
  * evidence/WHY THIS, capabilities, Ask FYD, Open).
  *
- * These run the REAL projection path:
- *   COPPERSMITH fixture -> generateSiteSpec -> buildRenderContext ->
+ * These run the REAL projection path (the same pipeline that serves the
+ * public pages):
+ *   COPPERSMITH fixture -> planSite -> buildRenderContext ->
  *   renderToStaticMarkup(SitePageView)
+ *
+ * Polish lane (2026-09-26): planSite omits narration-only and handle-only
+ * objects/sections at plan time, so the section queries the invariant
+ * enumerates already exclude them. The invariant's refined form: every
+ * object the PLANNER resolves into a section carries a doorway.
  *
  * The doorway is the anti-flattening primitive: if an object appears in
  * the graph and resolves into a section but its identity disappears into
@@ -32,7 +38,8 @@ import {
   overlayFacts,
   overlayRelationships,
 } from "../object-overlay";
-import { generateSiteSpec } from "../../proceduralize/generator";
+import { planSite } from "../../builder/planner";
+import { COPPERSMITH_VECTOR } from "../../builder/dimensions";
 import { COPPERSMITH_GRAPH } from "../../proceduralize/__fixtures__/coppersmith-graph";
 import type { ObjectGraph, ViewerContext } from "../../sitespec/types";
 import type { PingObject } from "@/lib/ping/types";
@@ -44,8 +51,17 @@ function doorwayHref(id: string): string {
   return `/o/${encodeURIComponent(id)}`;
 }
 
+function plannedSpec() {
+  return planSite({
+    ctx: { tenantId: "coppersmith-test" },
+    graph: GRAPH,
+    vector: COPPERSMITH_VECTOR,
+    generatedAt: "2026-09-24T00:00:00Z",
+  }).spec;
+}
+
 function renderPage(slug: string): string {
-  const spec = generateSiteSpec(GRAPH, { generatedAt: "2026-09-24T00:00:00Z" });
+  const spec = plannedSpec();
   const ctx = buildRenderContext(spec, GRAPH, VIEWER);
   const page = spec.pages.find((p) => p.slug === slug);
   if (!page) throw new Error(`no page ${slug}`);
@@ -54,7 +70,7 @@ function renderPage(slug: string): string {
 
 /** Distinct object ids resolved across every section of one page. */
 function pageObjectIds(slug: string): string[] {
-  const spec = generateSiteSpec(GRAPH, { generatedAt: "2026-09-24T00:00:00Z" });
+  const spec = plannedSpec();
   const page = spec.pages.find((p) => p.slug === slug);
   if (!page) throw new Error(`no page ${slug}`);
   const ids = new Set<string>();
@@ -107,7 +123,7 @@ describe("mobile objects: doorway invariant", () => {
 
 describe("ObjectDoorway", () => {
   test("renders nothing when the title binding does not verify", () => {
-    const spec = generateSiteSpec(GRAPH, { generatedAt: "2026-09-24T00:00:00Z" });
+    const spec = plannedSpec();
     const ctx = buildRenderContext(spec, GRAPH, VIEWER);
     const orphan: PingObject = {
       id: "orphan-1",
