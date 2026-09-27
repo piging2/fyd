@@ -5,9 +5,11 @@
  * 1. contactMethodFor: a verified value becomes a ContactMethod with a
  *    safety-gated actionUri; an unverifiable or unsafe value is not a
  *    method (null), so the surface renders nothing for it.
- * 2. FydContactLink: a verified method renders the FYD affordance (the
- *    value as a disclosure toggle), NOT a top-level tel:/mailto: anchor.
- *    The tel:/mailto: href exists exactly once, INSIDE the contact flow.
+ * 2. FydContactLink: a verified method renders the DIRECT tel:/mailto:
+ *    anchor as the primary action (polish lane 2026-09-26 reversal of the
+ *    disclosure-first treatment). A secondary adjacent <details>
+ *    disclosure ("Why this number?" / "Why this email?") carries the
+ *    provenance; it never wraps the primary action.
  * 3. ProvenanceLine: progressive disclosure renders the compact
  *    "Observed X · N sources" line; tap expands the full lineage.
  *
@@ -104,7 +106,7 @@ describe("contactMethodFor", () => {
 });
 
 describe("FydContactLink", () => {
-  test("verified phone renders the FYD affordance, not a top-level tel: link", () => {
+  test("verified phone renders the direct tel: anchor as the primary action", () => {
     const html = renderToStaticMarkup(
       React.createElement(FydContactLink, {
         method: phoneMethod(),
@@ -112,22 +114,14 @@ describe("FydContactLink", () => {
         variant: "row",
       }),
     );
-    // The affordance marker: the flow wrapper, keyed by method kind.
+    // The affordance marker: the wrapper, keyed by method kind.
     expect(html).toContain('data-fyd-contact="phone"');
-    // The value is the toggle (inside <summary>), not an anchor.
-    expect(html).toContain("<summary");
-    const summaryOpen = html.indexOf("<summary");
-    const summaryClose = html.indexOf("</summary>");
-    expect(summaryOpen).toBeGreaterThan(-1);
-    expect(summaryClose).toBeGreaterThan(summaryOpen);
-    const summaryHtml = html.slice(summaryOpen, summaryClose);
-    expect(summaryHtml).toContain(PHONE);
-    expect(summaryHtml).not.toContain("href=");
-    // No top-level tel: link: the value never renders as >PHONE</a>.
-    expect(html).not.toContain(">" + PHONE + "</a>");
+    // The value IS the anchor: direct conversion, no toggle in between.
+    expect(html).toContain('href="tel:' + PHONE + '"');
+    expect(html).toContain(">" + PHONE + "</a>");
   });
 
-  test("tel: lives exactly once, inside the contact flow", () => {
+  test("tel: lives exactly once, outside the Why-disclosure", () => {
     const html = renderToStaticMarkup(
       React.createElement(FydContactLink, {
         method: phoneMethod(),
@@ -137,15 +131,34 @@ describe("FydContactLink", () => {
     );
     const occurrences = html.split('href="tel:' + PHONE + '"').length - 1;
     expect(occurrences).toBe(1);
+    // The disclosure is a SECONDARY affordance beside the action: the
+    // tel: href must not sit inside the <details> element.
+    const detailsOpen = html.indexOf("<details");
+    const detailsClose = html.indexOf("</details>");
     const hrefIdx = html.indexOf('href="tel:' + PHONE + '"');
-    const flowIdx = html.indexOf('data-fyd-contact-flow="phone"');
-    const flowClose = html.indexOf("</details>", hrefIdx);
-    expect(flowIdx).toBeGreaterThan(-1);
-    expect(hrefIdx).toBeGreaterThan(flowIdx);
-    expect(flowClose).toBeGreaterThan(hrefIdx);
+    expect(detailsOpen).toBeGreaterThan(-1);
+    expect(hrefIdx < detailsOpen || hrefIdx > detailsClose).toBe(true);
   });
 
-  test("email method renders the mailto: action inside the flow", () => {
+  test("the Why-disclosure carries provenance, never the action", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FydContactLink, {
+        method: phoneMethod(),
+        theme: DEFAULT_FYD_THEME,
+        variant: "row",
+      }),
+    );
+    expect(html).toContain("Why this number?");
+    const detailsOpen = html.indexOf("<details");
+    const detailsClose = html.indexOf("</details>");
+    const detailsHtml = html.slice(detailsOpen, detailsClose);
+    // Provenance inside the disclosure...
+    expect(detailsHtml).toContain("Observed example.com");
+    // ...but no tel: anchor inside it.
+    expect(detailsHtml).not.toContain('href="tel:');
+  });
+
+  test("email method renders the direct mailto: anchor", () => {
     const method = contactMethodFor("email", EMAIL, phoneEvidence());
     if (!method) throw new Error("expected an email method");
     const html = renderToStaticMarkup(
@@ -157,9 +170,8 @@ describe("FydContactLink", () => {
     );
     expect(html).toContain('data-fyd-contact="email"');
     expect(html).toContain('href="mailto:' + EMAIL + '"');
-    expect(html).not.toContain(">" + EMAIL + "</a>");
-    // The flow's real action carries the email verb.
-    expect(html).toContain("Send email");
+    expect(html).toContain(">" + EMAIL + "</a>");
+    expect(html).toContain("Why this email?");
   });
 
   test("button variant keeps the hero's primary-action copy", () => {

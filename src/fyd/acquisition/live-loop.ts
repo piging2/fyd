@@ -626,7 +626,7 @@ export async function runLiveLoop(opts: LiveLoopOptions): Promise<LiveLoopResult
   }
 
   const ownerObjectId = planned.spec.ownerObjectId;
-  const heroMedia = heroMediaFor(tenantId, renderGraph, ownerObjectId);
+  const heroMedia = await heroMediaFor(tenantId, renderGraph, ownerObjectId);
   const galleryAssets = galleryMediaFor(tenantId, renderGraph, ownerObjectId);
   const schemas: Record<string, number> = {};
   for (const o of renderGraph.objects) schemas[o.schema] = (schemas[o.schema] ?? 0) + 1;

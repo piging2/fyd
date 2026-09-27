@@ -1,24 +1,27 @@
 /**
  * FYD contact link: the generic contact affordance for generated sites.
  *
- * Nolan's first-line directive: phone numbers and emails on generated FYD
- * sites must link to FYD, not be dead text. A ContactMethod therefore never
- * renders as a top-level tel:/mailto: anchor. It renders as an FYD
- * affordance (the value itself, as a disclosure toggle) that opens the FYD
- * contact flow: an evidence-backed surface showing the value, a compact
- * provenance line with progressive disclosure (tap to expand the full
- * evidence lineage), and the real Call / Send email action INSIDE the
- * flow. No tel:/mailto: href exists outside a contact flow on the
- * generated surface.
+ * Polish lane (2026-09-26), reversing the 2026-09-24 contact-invisibility
+ * lane: a ContactMethod renders as a REAL top-level tel:/mailto: anchor
+ * (the primary action), with a secondary "Why this number?"/"Why this
+ * email?" details disclosure beside it carrying the provenance. The
+ * disclosure never wraps the primary action. The 2026-09-24 rule ("never
+ * renders as a top-level tel:/mailto: anchor; the value is a disclosure
+ * toggle that opens the FYD contact flow") hid the dial action behind a
+ * toggle and is explicitly superseded: on a phone the anchor must dial.
  *
- * Seam decision (CONTACT lane, 2026-09-22): the flow is an inline
- * <details>/<summary> disclosure, not a JS popover/sheet and not a
- * redirect into Ask FYD. It works on generated /build sites in every
- * serving mode (including static HTML export), needs no hydration, has
- * no motion (reduced-motion safe by construction), and matches the
- * existing evidence chrome (WhyThis is already details-based). The
- * native disclosure marker is kept: it is the platform's honest "this
- * opens" signal.
+ * The ContactFlow component below is unchanged: it still renders the
+ * value + provenance + the real Call/Send email action for the
+ * owner/engineer object-layer surfaces (WorkspaceSheet) that embed it.
+ *
+ * Seam decision (CONTACT lane, 2026-09-22): the disclosure is an inline
+ * <details>/<summary>, not a JS popover/sheet and not a redirect into Ask
+ * FYD. It works on generated /build sites in every serving mode
+ * (including static HTML export), needs no hydration, has no motion
+ * (reduced-motion safe by construction), and matches the existing
+ * evidence chrome (WhyThis is already details-based). The native
+ * disclosure marker is kept: it is the platform's honest "this opens"
+ * signal.
  *
  * Generic: zero customer-specific JSX. Reusable from the Hero, the
  * Contact section, service cards, and the object Card/Node lane
@@ -204,11 +207,20 @@ export function FydContactLink({
   theme: FYDThemeTokens;
   variant?: "row" | "button";
 }) {
+  // Polish lane (2026-09-26): the primary action is the real tel:/mailto:
+  // anchor, never a disclosure toggle. The details disclosure is a
+  // SECONDARY affordance beside it ("Why this number?" / "Why this
+  // email?") carrying the provenance; it never wraps the primary action.
+  // This reverses the 2026-09-24 contact-invisibility lane's
+  // disclosure-first treatment (recorded here so the reversal is
+  // explicit, not silent).
+  const whyLabel = method.kind === "phone" ? "Why this number?" : "Why this email?";
   return (
-    <details data-fyd-contact={method.kind} className="fyd-contact">
+    <span data-fyd-contact={method.kind} className="fyd-contact inline-flex flex-wrap items-center gap-x-3 gap-y-1">
       {variant === "button" ? (
-        <summary
-          className="inline-block cursor-pointer rounded px-6 py-3 font-semibold"
+        <a
+          href={method.actionUri}
+          className="inline-block rounded px-6 py-3 font-semibold"
           style={{
             background: theme.accent,
             color: theme.accentForeground,
@@ -216,16 +228,24 @@ export function FydContactLink({
           }}
         >
           {ACTION_VERB[method.kind]} {method.value}
-        </summary>
+        </a>
       ) : (
-        <summary
-          className="inline-block min-h-[44px] cursor-pointer py-2 underline"
+        <a
+          href={method.actionUri}
+          className="inline-block min-h-[44px] py-2 underline"
           style={{ color: theme.ink }}
         >
           {method.value}
-        </summary>
+        </a>
       )}
-      <ContactFlow method={method} theme={theme} />
-    </details>
+      <details className="text-xs text-accent">
+        <summary className="cursor-pointer underline decoration-dotted underline-offset-2">
+          {whyLabel}
+        </summary>
+        <div className="mt-1">
+          <ProvenanceLine evidence={method.evidence} />
+        </div>
+      </details>
+    </span>
   );
 }

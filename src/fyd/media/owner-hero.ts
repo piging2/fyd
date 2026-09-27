@@ -45,13 +45,13 @@ export interface HeroResolution {
  *   object's `id`, e.g. "fyd-media-<16 hex>"), or null/undefined when the
  *   owner has not selected one.
  */
-export function resolveHeroMedia(
+export async function resolveHeroMedia(
   siteId: string,
   graph: ObjectGraph,
   objectId: string,
   ownerHeroId: string | null | undefined,
-): HeroResolution {
-  const auto = heroMediaFor(siteId, graph, objectId);
+): Promise<HeroResolution> {
+  const auto = await heroMediaFor(siteId, graph, objectId);
   if (!ownerHeroId) {
     return {
       media: auto,

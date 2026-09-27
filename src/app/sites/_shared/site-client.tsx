@@ -76,6 +76,7 @@ export function SiteClient({ view }: { view: ProjectedSiteView }) {
     heroMedia,
     galleryMedia,
     viewerKind,
+    ownerLogo,
   } = view;
   const [spec, setSpec] = useState(initialSpec);
   const [activeSlug, setActiveSlug] = useState(
@@ -178,8 +179,13 @@ export function SiteClient({ view }: { view: ProjectedSiteView }) {
         <script dangerouslySetInnerHTML={{ __html: edgeClientScript(siteId) }} />
       ) : null}
       {/* MARGIN-1: page-level margin object layer (very-right overlay on
-          mobile). Mounted always; no debug flag in the production path. */}
-      {renderable ? <MarginObjectLayer objects={marginObjects} /> : null}
+          mobile). Polish lane (2026-09-26): the visitor projection mounts
+          no margin layer. The margin objects are an owner/engineer
+          surface; visitors get the business only. Absent viewerKind keeps
+          the legacy mounted behavior for surfaces that pass no kind. */}
+      {renderable && viewerKind !== "visitor" ? (
+        <MarginObjectLayer objects={marginObjects} />
+      ) : null}
       {overlayObjectId && (() => {
         const obj = graph.objects.find((o) => o.id === overlayObjectId);
         if (!obj) return null;
@@ -193,15 +199,40 @@ export function SiteClient({ view }: { view: ProjectedSiteView }) {
           />
         );
       })()}
-      {/* Site header. Product surface: the FYD Social kicker and the page
-          tabs. No demo framing ("Generated site demo" / "Procedural clone
-          proof" never render on any projection). The hero section owns the
-          business h1. */}
+      {/* Site header. Polish lane (2026-09-26): the header carries the
+          BUSINESS wordmark (owner display name; logo media when the
+          manifest has one), never the platform kicker. The "FYD Social"
+          kicker moves to the quiet provenance footer. The page tabs are
+          the site's own navigation and stay. The hero section owns the
+          business h1. No demo framing ("Generated site demo" /
+          "Procedural clone proof" never render on any projection). */}
       <header className="border-b border-border-soft bg-background">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent">
-            FYD Social
-          </p>
+          <div className="flex min-w-0 items-center gap-2">
+            {ownerLogo ? (
+              <img
+                src={ownerLogo.src}
+                alt=""
+                width={ownerLogo.width}
+                height={ownerLogo.height}
+                className="h-8 w-auto shrink-0"
+              />
+            ) : null}
+            {(() => {
+              const ownerName =
+                graph.objects
+                  .find((o) => o.id === spec.ownerObjectId)
+                  ?.title?.trim() || null;
+              // Fail closed: no usable owner name, no wordmark text (the
+              // logo may still carry the brand). Never invent a name.
+              if (!ownerName) return null;
+              return (
+                <p className="truncate text-lg font-bold">
+                  {ownerName}
+                </p>
+              );
+            })()}
+          </div>
         </div>
         <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 pb-3 sm:px-6" aria-label="Generated pages">
           {spec.navigation.map((n) => (
@@ -263,6 +294,9 @@ export function SiteClient({ view }: { view: ProjectedSiteView }) {
               <p>{view.source.honestyNote}</p>
             </div>
           </details>
+          {/* Polish lane (2026-09-26): the platform kicker lives here now,
+              quiet in the provenance footer, never in the visitor header. */}
+          <p className="mt-4 text-xs text-accent">FYD Social</p>
           {isEngineer && (
             <>
               <p className="mt-4">{provenanceSentence(spec)}</p>

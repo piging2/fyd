@@ -19,6 +19,9 @@ import { attachMediaToGraph, mediaForObject } from "./attach";
 import { getPipelineManifest } from "./bundle-media";
 import { resolveSafeLink } from "../sitespec/safe-link";
 import { isGalleryEligible } from "./richness";
+import { readFileSync } from "node:fs";
+import { join, normalize } from "node:path";
+import sharp from "sharp";
 import {
   isAcquirable,
   type FydMediaObject,
@@ -148,25 +151,122 @@ export function listObjectMedia(
 }
 
 /**
- * The hero media for an object: hero-role asset first, then other
- * photographic roles. NEVER a logo-role asset: a logo is brand identity,
- * not a photographic hero, and must never be stretched into a banner.
- * Null when the object has no photographic acquired media (the caller
- * renders its typographic fallback).
+ * The hero media for an object: hero-role asset first, then the
+ * composition-fitness fallback. NEVER a logo-role asset: a logo is brand
+ * identity, not a photographic hero, and must never be stretched into a
+ * banner. Null when the object has no photographic acquired media (the
+ * caller renders its typographic fallback).
  *
  * Scope: the sort in select() still leads galleries with logos (the
  * object view wants the brand mark first); this filter is hero-only.
+ *
+ * Async: the fallback ranking measures mean luminance from each
+ * candidate's tiny blur derivative (sharp, server-only). A missing or
+ * unreadable blur degrades to aspect+resolution ranking, never to a
+ * failure.
  */
-export function heroMediaFor(
+export async function heroMediaFor(
   siteId: string,
   graph: ObjectGraph,
   objectId: string,
-): DisplayMedia | null {
+): Promise<DisplayMedia | null> {
   const all = select(siteId, graph, objectId, true);
   // DisplayMedia.role is the asset's first role; the ingest roleFor()
   // mints "logo" only as a sole role, so a first-role check is complete.
   const photographic = all.filter((d) => d.role !== "logo");
-  return photographic.find((d) => d.role === "hero") ?? photographic[0] ?? null;
+  const explicit = photographic.find((d) => d.role === "hero");
+  if (explicit) return explicit;
+  return rankFallbackHero(photographic);
+}
+
+/**
+ * Polish lane (2026-09-26): composition-fitness ranking for the fallback
+ * hero (no explicit hero-role asset). Ingest order is not a composition
+ * decision: the manifest's first asset was the dark pipe-frame that the
+ * 2026-09-26 falsifier caught stretched into the HPP banner.
+ *
+ * Fitness is measurable, in this order:
+ * 1. Hero-slot aspect fit: the slot is full-bleed landscape (16/9
+ *    target). Candidates closer to the target aspect win; portrait
+ *    frames are penalized hard (a 3:4 phone photo is not a banner).
+ * 2. Mean luminance sufficient for overlaid type, measured from the
+ *    candidate's tiny blur derivative: near-black frames (< 0.12 mean
+ *    relative luminance) are deprioritized hard.
+ * 3. Resolution as a tiebreak-scale nudge only: larger frames carry more
+ *    detail full-bleed, but size never outranks composition.
+ *
+ * Deterministic: same manifest bytes -> same ranking (id is the final
+ * tiebreak). A missing or unreadable blur degrades that candidate to
+ * aspect+resolution ranking; luminance is a bonus signal, never a gate.
+ */
+const HERO_TARGET_ASPECT = 16 / 9;
+/** Mean relative luminance below this is a near-black frame. */
+const NEAR_BLACK_LUMINANCE = 0.12;
+
+/** WCAG relative luminance of one sRGB pixel. */
+function srgbLuminance(r: number, g: number, b: number): number {
+  const lin = (c: number) => {
+    const s = c / 255;
+    return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+/**
+ * Mean relative luminance of the candidate's tiny blur derivative.
+ * Null when the blur is absent, off-disk, or undecodable: the caller
+ * ranks on aspect+resolution instead. Memoized per blur URL (the
+ * pipeline mints content-addressed URLs, so a URL change means new
+ * bytes).
+ */
+const luminanceMemo = new Map<string, number | null>();
+
+async function meanBlurLuminance(blurUrl: string | null): Promise<number | null> {
+  if (!blurUrl || !blurUrl.startsWith("/") || blurUrl.startsWith("//")) return null;
+  const hit = luminanceMemo.get(blurUrl);
+  if (hit !== undefined) return hit;
+  let lum: number | null = null;
+  try {
+    const publicDir = normalize(join(process.cwd(), "public"));
+    const disk = normalize(join(publicDir, blurUrl.slice(1)));
+    // Path-traversal guard: the blur must resolve under /public.
+    if (disk === publicDir || disk.startsWith(publicDir + "/")) {
+      const raw = await sharp(readFileSync(disk)).resize(1, 1, { fit: "inside" }).raw().toBuffer();
+      if (raw.length >= 3) lum = srgbLuminance(raw[0], raw[1], raw[2]);
+    }
+  } catch {
+    lum = null;
+  }
+  luminanceMemo.set(blurUrl, lum);
+  return lum;
+}
+
+async function rankFallbackHero(candidates: DisplayMedia[]): Promise<DisplayMedia | null> {
+  if (candidates.length === 0) return null;
+  const scored = await Promise.all(
+    candidates.map(async (d) => {
+      const w = Math.max(1, d.width);
+      const h = Math.max(1, d.height);
+      const aspect = w / h;
+      // Aspect fit: 1.0 at the 16/9 target, decaying with log distance.
+      const aspectFit = 1 / (1 + Math.abs(Math.log2(aspect / HERO_TARGET_ASPECT)));
+      // Portrait frames are not banners.
+      const orientationFactor = aspect >= 1 ? 1 : 0.4;
+      const lum = await meanBlurLuminance(d.blurUrl);
+      // Near-black frames cannot carry overlaid type: deprioritize hard.
+      // Unmeasured blurs rank neutrally (0.8): luminance is a bonus
+      // signal, never a gate.
+      const luminanceFactor =
+        lum === null ? 0.8 : lum < NEAR_BLACK_LUMINANCE ? 0.05 : 0.6 + 0.4 * lum;
+      // Resolution tiebreak only: it must never outrank composition.
+      const resolutionNudge = 1 + Math.log10(w * h) / 100;
+      return { d, score: aspectFit * orientationFactor * luminanceFactor * resolutionNudge };
+    }),
+  );
+  scored.sort(
+    (a, b) => b.score - a.score || (a.d.id < b.d.id ? -1 : a.d.id > b.d.id ? 1 : 0),
+  );
+  return scored[0]?.d ?? null;
 }
 
 /**
