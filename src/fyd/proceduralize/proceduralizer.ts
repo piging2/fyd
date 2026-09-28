@@ -40,7 +40,7 @@ import {
 /** A source the proceduralizer may acquire. */
 export interface SourceRecord {
   url: string;
-  sourceType: "json-ld" | "opengraph" | "html-meta" | "rss" | "atom" | "sitemap" | "html";
+  sourceType: "json-ld" | "microdata" | "opengraph" | "html-meta" | "rss" | "atom" | "sitemap" | "html";
   discoveredAt: string;
 }
 
@@ -140,6 +140,7 @@ export function visibilityForField(name: string): Visibility {
 /** Source priority for RESOLVE: machine-readable truth first. */
 const SOURCE_PRIORITY: SourceRecord["sourceType"][] = [
   "json-ld",
+  "microdata",
   "opengraph",
   "html-meta",
   "rss",
