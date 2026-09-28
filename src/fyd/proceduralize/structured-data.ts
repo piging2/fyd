@@ -33,6 +33,7 @@
 import jsonld, { type JsonLdDocument } from "jsonld";
 import type { FactClass, ParsedFact, Visibility } from "./proceduralizer";
 import { sha256Hex } from "./sha256";
+import { extractMicrodata } from "./microdata";
 
 // ---------------------------------------------------------------------------
 // Vendored from src/fyd/resolve/spike/normalize.ts (spike-1, verbatim).
@@ -69,6 +70,12 @@ export interface StructuredDataBlock {
   raw: string;
   parsed?: unknown;
   error?: string;
+  /**
+   * Extraction syntax that produced this block. Absent means "json-ld":
+   * every block the stage produced before the microdata harvest was
+   * JSON-LD, so existing callers and records are unaffected.
+   */
+  syntax?: "json-ld" | "microdata";
 }
 
 export function discoverStructuredData(html: string): StructuredDataBlock[] {
@@ -89,6 +96,19 @@ export function discoverStructuredData(html: string): StructuredDataBlock[] {
         error: err instanceof Error ? err.message : "JSON parse error",
       });
     }
+    index++;
+  }
+  // Harvest 2026-09-28: additive microdata extraction, appended AFTER the
+  // JSON-LD blocks with continuing indices. ld+json-only pages produce
+  // byte-identical output to before this patch.
+  for (const item of extractMicrodata(html)) {
+    blocks.push({
+      index,
+      ok: true,
+      raw: item.raw,
+      parsed: item.parsed,
+      syntax: "microdata",
+    });
     index++;
   }
   return blocks;
@@ -448,6 +468,9 @@ export async function extractStructuredData(
   ctx: StructuredContext,
 ): Promise<StructuredExtraction> {
   const blocks = discoverStructuredData(html);
+  const syntaxByBlock = new Map<number, "json-ld" | "microdata">(
+    blocks.map((b) => [b.index, b.syntax ?? "json-ld"]),
+  );
   const { nodes, unsupported } = await expandJsonLdBlocks(blocks);
   const entities = entityCandidates(nodes);
 
@@ -498,7 +521,7 @@ export async function extractStructuredData(
           facts.push({
             name: mapped,
             value: literals.length === 1 ? literals[0] : literals,
-            sourceType: "json-ld",
+            sourceType: syntaxByBlock.get(e.blockIndex) ?? "json-ld",
             inferred: false,
             factClass: "DIRECT_FACT" satisfies FactClass,
             visibility,
