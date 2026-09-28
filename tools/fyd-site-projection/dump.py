@@ -313,8 +313,8 @@ def query_overlays_jsonl(site):
     offset = 0
     limit = 10000
     while True:
-        url = ("%s/events/FYD_SITE_OVERLAY?limit=%d&offset=%d"
-               % (JOURNAL_GATEWAY_URL, limit, offset))
+        url = ("%s/events/FYD_SITE_OVERLAY?limit=%d&offset=%d&tenant=%s"
+               % (JOURNAL_GATEWAY_URL, limit, offset, site))
         try:
             req = urllib.request.Request(url, method="GET")
             with urllib.request.urlopen(req, timeout=30) as resp:
