@@ -1193,7 +1193,12 @@ export function project(
   // -- Candidates that died inside structured extraction (G3): folded into
   //    the same ledger so no drop is silent anywhere in the pipeline.
   for (const d of opts.refDrops ?? []) {
-    dropRel(d.subjectKey, d.predicate, d.refNodeId, d.outcome, d.reason,
+    // VOCABULARY_QUARANTINED is a structured-extraction outcome; the
+    // pipeline drop ledger records it as UNSUPPORTED (the reason string
+    // keeps the quarantine detail). No meaning is lost: the ledger never
+    // carried per-outcome semantics beyond the typed reason.
+    const outcome = d.outcome === "VOCABULARY_QUARANTINED" ? "UNSUPPORTED" : d.outcome;
+    dropRel(d.subjectKey, d.predicate, d.refNodeId, outcome, d.reason,
       `proceduralizer:structured-ref:${d.property}`);
   }
 
@@ -1280,6 +1285,8 @@ function mergeStructuredExtractions(
   const relationships: StructuredRelation[] = [];
   const refDrops: StructuredExtraction["refDrops"] = [];
   const unsupported: StructuredExtraction["unsupported"] = [];
+  const reconciliation: StructuredExtraction["reconciliation"] = [];
+  const seenQueueKeys = new Set<string>();
   const seenEntities = new Map<string, EntityCandidate>();
   const seenNodeIds = new Set<string>();
   const stats = {
@@ -1295,6 +1302,12 @@ function mergeStructuredExtractions(
     relationships.push(...e.relationships);
     refDrops.push(...e.refDrops);
     unsupported.push(...e.unsupported);
+    for (const r of e.reconciliation) {
+      if (!seenQueueKeys.has(r.queueKey)) {
+        seenQueueKeys.add(r.queueKey);
+        reconciliation.push(r);
+      }
+    }
     for (const ent of e.entities) {
       if (!seenEntities.has(ent.key)) seenEntities.set(ent.key, ent);
     }
@@ -1329,7 +1342,10 @@ function mergeStructuredExtractions(
     const kb = b.subjectKey + "|" + b.property + "|" + b.refNodeId;
     return ka < kb ? -1 : ka > kb ? 1 : 0;
   });
-  return { facts, relationships, refDrops, entities, unsupported, stats };
+  reconciliation.sort((a, b) =>
+    a.queueKey < b.queueKey ? -1 : a.queueKey > b.queueKey ? 1 : 0,
+  );
+  return { facts, relationships, refDrops, entities, unsupported, reconciliation, stats };
 }
 
 export async function runExtractionPipeline(
