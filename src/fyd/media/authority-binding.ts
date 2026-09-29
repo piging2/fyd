@@ -25,7 +25,7 @@
  * what the blob authority returned for the uploaded bytes.
  */
 
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../../lib/ping/digest";
 import type {
   Media,
   MediaRole,
@@ -98,9 +98,6 @@ export class MediaBindingError extends Error {
 const HEX64 = /^[0-9a-f]{64}$/;
 const REMOTE_URL = /^https?:\/\//i;
 
-function sha256Hex(input: Buffer | string): string {
-  return createHash("sha256").update(input).digest("hex");
-}
 
 /** The authority's constitutional check, mirrored: a digest that is just sha256(id) is synthetic identity. */
 function isSyntheticContentHash(id: string, digest: string): boolean {

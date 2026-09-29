@@ -47,7 +47,7 @@
  */
 
 import { lookup } from "node:dns/promises";
-import { createHash } from "node:crypto";
+import { sha256Hex } from "@/lib/ping/digest";
 import { join } from "node:path";
 import { isPublicIp, type SafeFetchDeps } from "@/fyd/net/safe-fetch";
 import {
@@ -203,9 +203,6 @@ const AUTHORIZED_MEDIA_HOSTS: Record<string, { businessSlug: string }> = {
   "coppersmithplumbing.com": { businessSlug: "coppersmith" },
 };
 
-function sha256Hex(s: string | Buffer): string {
-  return createHash("sha256").update(s).digest("hex");
-}
 
 /** L0 policy gate for the DISCOVER stage: shape + DNS-public check. Fast, no content fetch. */
 async function policyGate(rawUrl: string, deps?: SafeFetchDeps): Promise<URL> {

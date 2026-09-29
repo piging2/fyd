@@ -26,7 +26,7 @@
  */
 
 import { lookup } from "node:dns/promises";
-import { createHash } from "node:crypto";
+import { sha256Hex } from "@/lib/ping/digest";
 import { parse as parseHtml } from "node-html-parser";
 import {
   isPublicIp,
@@ -53,9 +53,6 @@ export interface LiveAcquiredObservation extends AcquiredObservation {
   html: string;
 }
 
-function sha256Hex(input: string | Buffer): string {
-  return createHash("sha256").update(input).digest("hex");
-}
 
 function registrableDomain(hostname: string): string {
   const bare = hostname.toLowerCase().replace(/^\[|\]$/g, "");

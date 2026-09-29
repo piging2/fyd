@@ -29,7 +29,7 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { createHash } from "node:crypto";
+import { sha256Hex } from "@/lib/ping/digest";
 import { runLiveLoop, type LiveLoopResult } from "@/fyd/acquisition/live-loop";
 import {
   StaticAcquisitionAdapter,
@@ -89,9 +89,6 @@ function check(name: string, pass: boolean, detail: string): void {
   console.log((pass ? "PASS " : "FAIL ") + name + (detail ? " | " + detail : ""));
 }
 
-function sha256Hex(input: string | Buffer): string {
-  return createHash("sha256").update(input).digest("hex");
-}
 
 interface EvidenceEntryRecord {
   name: string;
