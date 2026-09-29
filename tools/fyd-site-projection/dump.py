@@ -75,6 +75,12 @@ import urllib.request
 
 DUMPER_VERSION = "fyd-projection-dump@1.2.2"
 REPO = "/home/nolan/projects/ping"
+# The website (convergence) tree this script lives in. REPO above is
+# the frozen PING tree, which carries no ping-fyd fixture; the ping-fyd
+# fixture resolves against this tree instead (derived from this file
+# location so the dump keeps working if the tree moves).
+CONVERGENCE_REPO = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT_DIR = "/home/nolan/ping/var/fyd-projections"
 
 # Overlay journal selection. "main" (default) reads overlays from the 8080
@@ -181,8 +187,9 @@ SITES = {
         # frozen PING tree: the frozen tree carries no ping-fyd fixture. This
         # is the same fixture the ask seam pins
         # (src/fyd/data/fyd-tenant-graph.ts FYD_TENANT_PINS["ping-fyd"]).
-        "fixture": "/home/nolan/projects/ping-fyd-converged"
-                    "/src/fyd/proceduralize/__fixtures__/ping-fyd-graph.ts",
+        "fixture": os.path.join(
+            CONVERGENCE_REPO,
+            "src/fyd/proceduralize/__fixtures__/ping-fyd-graph.ts"),
         "generatedAt": "2026-09-21T00:00:00.000Z",
         "eventSequences": None,
     },
