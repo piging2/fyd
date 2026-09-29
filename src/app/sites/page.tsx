@@ -10,7 +10,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Container, Section, SectionHeading } from "@/components/section";
-import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+import { getVerifiedPublicProjection } from "@/fyd/data/ping-object-source";
 
 export const metadata: Metadata = {
   title: "FYD demo sites | PING",
@@ -34,7 +34,7 @@ function ownerName(
 export default async function SitesIndexPage() {
   const sites = await Promise.all(
     DEMO_SITES.map(async (siteId) => {
-      const { graph } = await getPingObjectGraph(siteId);
+      const { graph } = await getVerifiedPublicProjection(siteId, "anonymous");
       return { siteId, name: ownerName(graph, siteId) };
     }),
   );

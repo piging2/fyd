@@ -65,7 +65,7 @@
 
 import { createServer } from "node:http";
 import { readFileSync, appendFileSync, existsSync, mkdirSync } from "node:fs";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -76,6 +76,19 @@ const STORE =
   process.env.FYD_JOURNAL_STORE ||
   join(HERE, "..", "..", "data", "fyd-journal", "events.jsonl");
 const MAX_BODY = 1024 * 1024;
+
+// Write-side tenant-smuggling fix (Q-P0-06 finding #2): POST /events
+// requires server-side caller verification. The gateway and its one
+// trusted writer (the :3100 FYD site server's emitOverlayEvent) share a
+// bearer token via FYD_JOURNAL_WRITE_TOKEN. A body-supplied tenant_id is
+// never journaled as the event's tenant without the caller proving the
+// token first; the loopback binding stays as defense in depth. Fail
+// closed: with no token configured, writes are refused (typed 503) rather
+// than silently falling back to unauthenticated appends. Deploy note:
+// set FYD_JOURNAL_WRITE_TOKEN for the gateway process AND send
+// `Authorization: Bearer <token>` from the trusted writer before restart,
+// or legitimate overlay emits will be denied.
+const WRITE_TOKEN = process.env.FYD_JOURNAL_WRITE_TOKEN || "";
 
 // FYD-037: the journal asserts its own identity on GET /. Live-derived
 // from the runtime store path at startup (never a static string): two
@@ -234,6 +247,23 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && path === "/events") {
+      // Caller verification runs BEFORE any body parsing or store touch:
+      // an unverified caller gets a typed DENY with zero writes.
+      const authz = req.headers.authorization || "";
+      const presented = authz.startsWith("Bearer ") ? authz.slice(7) : "";
+      const verified =
+        WRITE_TOKEN.length > 0 &&
+        presented.length === WRITE_TOKEN.length &&
+        timingSafeEqual(Buffer.from(presented, "utf8"), Buffer.from(WRITE_TOKEN, "utf8"));
+      if (!verified) {
+        send(res, WRITE_TOKEN ? 401 : 503, {
+          error: WRITE_TOKEN ? "write_auth_denied" : "write_auth_not_configured",
+          detail: WRITE_TOKEN
+            ? "POST /events requires Authorization: Bearer <FYD_JOURNAL_WRITE_TOKEN>"
+            : "write credential not configured; writes are refused until FYD_JOURNAL_WRITE_TOKEN is set",
+        });
+        return;
+      }
       const raw = await readBody(req);
       let doc;
       try {

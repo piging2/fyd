@@ -2,10 +2,16 @@
  * H3 lane: DEMO OWNER MODE panel.
  *
  * "use client" because the attestation walkthrough is interactive demo
- * state (button -> gate -> verdict). Renders NOTHING unless the 
+ * state (button -> gate -> verdict). Renders NOTHING unless the
  * prop is true; the server resolves the dev-only gate (./gate.ts) once per
  * request and passes the resolved boolean down. The client never reads the
  * environment for this decision (hydration #418, 2026-09-25).
+ *
+ * MOUNT CONTRACT (PROD-1, 2026-09-27): this panel mounts ONLY on explicit
+ * owner routes (e.g. /dev/objects). It must NEVER be mounted on public
+ * routes (/sites/*, /o/*): the gate is the absence of a mount, and the
+ * env flag being on does not authorize one. If you are adding a mount,
+ * you are adding it to an owner route.
  *
  * The banner is deliberately conspicuous: striped hazard border and the
  * exact words "DEMO OWNER MODE - not real authentication". Nothing about

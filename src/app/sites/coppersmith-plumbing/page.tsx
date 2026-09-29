@@ -14,9 +14,10 @@
 
 import { SiteClient } from "../_shared/site-client";
 import { compilePublicSite } from "../_shared/spec-pipeline";
-import { generateSiteMetadata } from "../_shared/site-metadata";
-import { DemoOwnerMode } from "@/fyd/owner-mode/demo-owner-mode";
-import { isDemoOwnerModeEnabled } from "@/fyd/owner-mode/gate";
+import {
+  generateSiteMetadata,
+  resolveSiteDisplayName,
+} from "../_shared/site-metadata";
 import { galleryMediaFor, heroMediaFor } from "@/fyd/media/select";
 import {
   auditSitesRenderClaims,
@@ -59,6 +60,11 @@ export default async function CoppersmithDemoPage() {
     // The audit must never break the render path.
   }
 
+  // PROD-1 (2026-09-27): PUBLIC ROUTE. Owner chrome is never mounted
+  // here, even with NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1: no DemoOwnerMode
+  // panel (it lives only on explicit owner routes such as /dev/objects),
+  // no customize console (ownerConsole defaults off), and the header's
+  // first <h1> is the binding-verified business name.
   return (
     <main className="min-h-screen bg-background">
       <SiteClient
@@ -69,8 +75,8 @@ export default async function CoppersmithDemoPage() {
         siteId={SITE_ID}
         heroMedia={heroMedia}
         galleryMedia={galleryMedia}
+        siteName={resolveSiteDisplayName(graph)}
       />
-      <DemoOwnerMode siteId={SITE_ID} enabled={isDemoOwnerModeEnabled()} />
     </main>
   );
 }

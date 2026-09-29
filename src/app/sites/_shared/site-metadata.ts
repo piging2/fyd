@@ -35,6 +35,34 @@ function ownerObject(graph: ObjectGraph) {
 }
 
 /**
+ * PROD-1 (2026-09-27): the public site chrome's first <h1> must be the
+ * business name, never a demo label. Single resolution seam shared by
+ * the metadata and the visible header: the business's own
+ * binding-verified title, falling back to explicitly generator-labeled
+ * copy when the binding cannot verify. The fallback never claims facts
+ * about the business.
+ */
+export function resolveSiteDisplayName(graph: ObjectGraph): string {
+  const owner = ownerObject(graph);
+  // Binding-verified owner text (FYD product authority directive,
+  // 2026-09-25: the BindingVerifier owns ENFORCEMENT, truth stays
+  // upstream). The business's own title may be published only when the
+  // binding verifies against the strong BindingVerifier (direct: object
+  // field + evidence ref + fresh website-derived provenance;
+  // owner-authored: a recorded owner assertion matching the value). An
+  // unverified name is never published as the business's words.
+  if (!owner) return "FYD Social generated site";
+  const assertions = ownerAssertionsFromGraph(graph);
+  const verifiedTitle =
+    resolveBoundFieldVerified(
+      graph,
+      { objectId: owner.id, field: "title", classification: "direct" },
+      assertions,
+    )?.trim() || undefined;
+  return verifiedTitle ?? "FYD Social generated site";
+}
+
+/**
  * Per-site metadata for a generated business page. Derived entirely from
  * the site's own projection at render time; nothing is hardcoded per site.
  */
@@ -43,25 +71,7 @@ export async function generateSiteMetadata(siteId: string): Promise<Metadata> {
   // public graph, never the raw source graph.
   const { graph } = await getVerifiedPublicProjection(siteId, "anonymous");
   const owner = ownerObject(graph);
-  // Binding-verified owner text (FYD product authority directive,
-  // 2026-09-25: the BindingVerifier owns ENFORCEMENT, truth stays
-  // upstream). The <title>, meta description, and social tags are factual
-  // render bindings: they may publish the business's own
-  // title/description only when the binding verifies against the strong
-  // BindingVerifier (direct: object field + evidence ref + fresh
-  // website-derived provenance; owner-authored: a recorded owner
-  // assertion matching the value). An unverified name/description is
-  // never published as the business's words. The fallback is
-  // explicitly generator-labeled presentation copy (GENERATED class),
-  // never a factual claim about the business.
   const assertions = ownerAssertionsFromGraph(graph);
-  const verifiedTitle = owner
-    ? resolveBoundFieldVerified(
-        graph,
-        { objectId: owner.id, field: "title", classification: "direct" },
-        assertions,
-      )?.trim() || undefined
-    : undefined;
   const verifiedDescription = owner
     ? resolveBoundFieldVerified(
         graph,
@@ -69,7 +79,9 @@ export async function generateSiteMetadata(siteId: string): Promise<Metadata> {
         assertions,
       )?.trim() || undefined
     : undefined;
-  const name = verifiedTitle ?? "FYD Social generated site";
+  // The visible header shares this exact seam (resolveSiteDisplayName)
+  // so the <title> and the first <h1> can never disagree.
+  const name = resolveSiteDisplayName(graph);
   // The business's own description from its object graph. Never PING's.
   // Falls back to a plain generator-labeled line when the source object
   // carries no verifiable description; the fallback never claims facts
