@@ -22,8 +22,10 @@
  * Failures are typed and honest: 400 (bad request / unsupported /
  * unresolved), 403 (no demo-owner mode, capability denied, public host),
  * 404 (site not found), 409 (stale digest — the spec moved since the
- * proposal was drafted; idempotency_conflict — request_id reused with a
- * different payload), 422 (target missing from current evidence),
+ * proposal was drafted; stale_approval / precondition_changed — the base
+ * state, proposal digest, or authority context moved between approval and
+ * execution, so nothing was applied; idempotency_conflict — request_id
+ * reused with a different payload), 422 (target missing from current evidence),
  * 502 (journal unreachable — nothing was recorded),
  * 504 (unknown_outcome — the journal may have recorded it; retry with the
  * same request_id to resolve; never treat as failed).
@@ -45,8 +47,11 @@ import {
 import { proposeFromSiteIntent } from "@/fyd/customize/propose";
 import {
   buildDirective,
+  directiveRefsFromBlock,
   emitOverlayEvent,
+  layeredSpecDigest,
   loadCustomizedSite,
+  StaleGuardError,
 } from "@/fyd/customize/server";
 import {
   canonicalPayloadDigest,
@@ -58,6 +63,7 @@ import {
   type WriteOutcome,
 } from "@/fyd/customize/write-boundary";
 import type { SitePatchBody } from "@/fyd/proceduralize/patch";
+import { regenerateSiteProjection } from "@/fyd/projection/regen-trigger";
 
 export const dynamic = "force-dynamic";
 
@@ -297,6 +303,15 @@ interface ApproveDerived {
   siteIntent: Parameters<typeof buildDirective>[1];
   fresh: SitePatchBody;
   specDigest: string;
+  /** Flaw D: base-state digest captured at approval (derive) time. */
+  baseSpecDigest: string;
+  /**
+   * H2: layered drift key captured at derive time (base + the journaled
+   * directive set the owner reviewed, in journal order). A concurrent
+   * approve/clear between derive and execute trips STALE_APPROVAL at
+   * execute time instead of silently rebasing the approved mutation.
+   */
+  layeredSpecDigest: string;
 }
 
 function journalFailureResponse(actionNoun: string, requestId: string, e: unknown) {
@@ -441,7 +456,16 @@ async function handleApprove(
         }
         return {
           ok: true,
-          derived: { siteIntent: resolved.siteIntent, fresh, specDigest: proposed.specDigest },
+          derived: {
+            siteIntent: resolved.siteIntent,
+            fresh,
+            specDigest: proposed.specDigest,
+            baseSpecDigest: site.baseSpecDigest,
+            layeredSpecDigest: layeredSpecDigest(
+              site.baseSpecDigest,
+              directiveRefsFromBlock(site.presentationIntent),
+            ),
+          },
         };
       },
       execute: async (derived) => {
@@ -449,6 +473,22 @@ async function handleApprove(
         const { eventId, deduped } = await emitOverlayEvent(siteId, [op], {
           requestId,
           timeoutMs: 10_000,
+          // Flaw D: the approval was granted against derived.baseSpecDigest
+          // (captured in derive above). Re-verify immediately before the
+          // journal write; a moved base, a moved journaled directive set
+          // (H2: concurrent approve/clear), a rebased proposal, or a
+          // swapped authority throws STALE_APPROVAL / PRECONDITION_CHANGED
+          // with no execution and no write.
+          staleGuard: {
+            baseSpecDigest: derived.baseSpecDigest,
+            layeredSpecDigest: derived.layeredSpecDigest,
+            specDigest: derived.specDigest,
+            proposalDigests: [derived.fresh.proposalDigest],
+            authority: {
+              approvedBy: op.approval.approvedBy,
+              approvedAt: op.approval.approvedAt,
+            },
+          },
         });
         return {
           eventId,
@@ -462,6 +502,21 @@ async function handleApprove(
       },
     });
   } catch (e) {
+    // Flaw D: the stale-state guard tripped between approval and the
+    // journal write. Nothing was executed and nothing was written; the
+    // owner must re-run parse and approve the regenerated proposal.
+    if (e instanceof StaleGuardError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: e.code,
+          error: e.message,
+          demo: true,
+          requestId,
+        },
+        { status: 409 },
+      );
+    }
     return journalFailureResponse("approval", requestId, e);
   }
 
@@ -476,12 +531,25 @@ async function handleApprove(
     case "committed": {
       const r = outcome.result;
       const replayed = outcome.kind === "replayed";
+      // Approve -> served projection: the journal write above is canonical
+      // truth. Re-run the projection dump so the served page converges on
+      // the approved change, then verify the event landed in the new
+      // projection. Approval stays committed regardless of the outcome;
+      // the response reports regen honestly instead of claiming the page
+      // changed before it is proven.
+      const regen = await regenerateSiteProjection(siteId, r.eventId);
       return NextResponse.json({
         ok: true,
         siteId,
         intentId: r.intentId,
         eventId: r.eventId,
         proposalDigest: r.proposalDigest,
+        regen: {
+          ok: regen.ok,
+          verified: regen.verified,
+          latencyMs: regen.latencyMs,
+          ...(regen.error ? { error: regen.error } : {}),
+        },
         specDigest: r.specDigest,
         requestId,
         // LOW consequence: presentation-intent overlay only (apply plus
@@ -495,9 +563,14 @@ async function handleApprove(
               note:
                 "Directive journaled as a presentation-intent overlay (proposal " +
                 (r.proposalDigest ?? "").slice(0, 16) +
-                "...). Re-run the projection dump: " +
-                "the regenerated page must show the approved section order from the " +
-                "review card. The proposal was drafted against spec digest " +
+                "...). Projection regeneration " +
+                (regen.ok && regen.verified
+                  ? "verified: the served page now shows the approved change from the review card. "
+                  : "DID NOT VERIFY (" +
+                    (regen.error ?? "event not in new projection") +
+                    "); the approval is journaled and durable, but re-run the projection " +
+                    "dump manually before trusting the served page. ") +
+                "The proposal was drafted against spec digest " +
                 (r.specDigest ?? "").slice(0, 16) +
                 ".... " +
                 NOT_REAL_AUTH,
@@ -551,18 +624,33 @@ async function handleClear(req: Request, siteId: string, intentId: string, reque
     case "committed": {
       const r = outcome.result;
       const replayed = outcome.kind === "replayed";
+      // Clear -> served projection: same convergence contract as approve.
+      const regen = await regenerateSiteProjection(siteId, r.eventId);
       return NextResponse.json({
         ok: true,
         siteId,
         intentId: r.intentId,
         eventId: r.eventId,
         requestId,
+        regen: {
+          ok: regen.ok,
+          verified: regen.verified,
+          latencyMs: regen.latencyMs,
+          ...(regen.error ? { error: regen.error } : {}),
+        },
         idempotentReplay: replayed,
         ...(replayed
           ? {}
           : {
               note:
-                "Directive removal journaled. Re-run the projection dump to render. " + NOT_REAL_AUTH,
+                "Directive removal journaled. Projection regeneration " +
+                (regen.ok && regen.verified
+                  ? "verified: the served page now shows the baseline. "
+                  : "DID NOT VERIFY (" +
+                    (regen.error ?? "event not in new projection") +
+                    "); the removal is journaled and durable, but re-run the projection " +
+                    "dump manually before trusting the served page. ") +
+                NOT_REAL_AUTH,
             }),
         demo: true,
         demoOwnerMode: true,
