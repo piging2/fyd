@@ -39,7 +39,7 @@
  * means.
  */
 
-import { createHash } from "node:crypto";
+import { sha256Hex } from "@/lib/ping/digest";
 import { canonicalize } from "@/lib/ping/ask-composer";
 import {
   getPingObjectReader,
@@ -124,9 +124,6 @@ export function getFydTenantIds(): string[] {
   return Object.keys(FYD_TENANT_PINS);
 }
 
-function sha256Hex(s: string): string {
-  return createHash("sha256").update(s, "utf8").digest("hex");
-}
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);

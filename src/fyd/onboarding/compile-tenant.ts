@@ -32,7 +32,7 @@
  * answers: DOES THIS MAKE ANOTHER OUTPUT CHEAPER LATER?
  */
 
-import { createHash } from "node:crypto";
+import { sha256Hex } from "@/lib/ping/digest";
 import {
   existsSync,
   mkdirSync,
@@ -123,9 +123,6 @@ export interface BuildFailure {
   stage: StageName | null;
 }
 
-function sha256Hex(s: string): string {
-  return createHash("sha256").update(s, "utf8").digest("hex");
-}
 
 function compilerDir(deps: CompileTenantDeps): string {
   return join(deps.projectionDir, "_compiler");

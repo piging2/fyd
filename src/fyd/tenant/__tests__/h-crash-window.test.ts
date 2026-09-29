@@ -68,6 +68,10 @@ const GATEWAY = resolve(
   "../../../../tools/fyd-journal-gateway/server.mjs",
 );
 
+// Synthetic write credential for the spawned gateway (Mission K contract:
+// POST /events requires Authorization: Bearer <FYD_JOURNAL_WRITE_TOKEN>).
+const WRITE_TOKEN = "fyd-journal-test-write-token";
+
 async function freePort(): Promise<number> {
   const s = createServer();
   await new Promise<void>((r) => s.listen(0, "127.0.0.1", r));
@@ -91,6 +95,7 @@ async function startGateway(store: string): Promise<Gw> {
       FYD_JOURNAL_PORT: String(port),
       FYD_JOURNAL_HOST: "127.0.0.1",
       FYD_JOURNAL_STORE: store,
+      FYD_JOURNAL_WRITE_TOKEN: WRITE_TOKEN,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -125,7 +130,10 @@ async function postEvent(
 ): Promise<{ status: number; json: Record<string, unknown> }> {
   const res = await fetch(base + "/events", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      Authorization: `Bearer ${WRITE_TOKEN}`,
+    },
     body: JSON.stringify(body),
   });
   return { status: res.status, json: (await res.json()) as Record<string, unknown> };

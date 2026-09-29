@@ -46,10 +46,12 @@ describe("whyThisStepsFor", () => {
       "Status",
     ]);
     expect(steps[0].detail).toBe("https://www.coppersmithplumbing.com/");
-    expect(steps[1].detail).toContain(
-      "website-ingestion:https://www.coppersmithplumbing.com/",
+    // PROD-6: plain language, no "Provenance ref" jargon, date-only.
+    expect(steps[1].detail).toBe(
+      "Website content captured from https://www.coppersmithplumbing.com/. Observed 2026-09-21.",
     );
-    expect(steps[1].detail).toContain("2026-09-21T13:50:00Z");
+    expect(steps[1].detail).not.toContain("Provenance ref");
+    expect(steps[1].detail).not.toContain("2026-09-21T13:50:00Z");
     expect(steps[2].detail).toContain("Website ingestion");
     expect(steps[3].state).toBe("unverified");
     expect(steps[3].detail).toContain("Website statement");
@@ -73,7 +75,8 @@ describe("whyThisStepsFor", () => {
     const steps = whyThisStepsFor(o);
     expect(steps).toHaveLength(4);
     expect(steps[3].state).toBe("unknown");
-    expect(steps[3].detail).toContain("unknown");
+    // PROD-6: plain language, no "unknown:" label prefix.
+    expect(steps[3].detail).toBe("No claim kind recorded for this object.");
   });
 
   test("overlay-authored provenance names the demo overlay", () => {

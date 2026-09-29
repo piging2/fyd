@@ -38,7 +38,7 @@
  * so the audit trail distinguishes anonymous projections from owner ones.
  */
 
-import { createHash } from "node:crypto";
+import { sha256Hex } from "@/lib/ping/digest";
 import { canonicalize } from "@/lib/ping/ask-composer";
 import { readOverrides } from "../object/owner-store";
 import {
@@ -129,9 +129,6 @@ export function isVerifiedPublicProjection(
   );
 }
 
-function sha256Hex(input: string): string {
-  return createHash("sha256").update(input, "utf8").digest("hex");
-}
 
 /**
  * Convert durable owner visibility state for one object into canonical

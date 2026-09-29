@@ -105,7 +105,11 @@ import {
   getVerifiedPublicProjectionSync,
 } from "@/fyd/data/ping-object-source";
 import { readOverrides } from "@/fyd/object/owner-store";
-import { findBusinessObject, rawFieldValue } from "@/fyd/object/owner-overlay";
+import {
+  detectOrphanedCorrections,
+  findBusinessObject,
+  rawFieldValue,
+} from "@/fyd/object/owner-overlay";
 import { TenantContextError } from "@/fyd/tenant/tenant-context";
 import type { OwnerCommand } from "@/fyd/object/types";
 import {
@@ -205,11 +209,19 @@ export async function GET(
     );
   }
   const history = readOverrides(objectId).history;
+  // PROD-8: corrections active in the journal that apply to nothing in
+  // the current graph. The customize panel renders these as warnings;
+  // they are never silently dropped. Read-only: the journal is untouched.
+  const orphanedCorrections = detectOrphanedCorrections(
+    projection.graph,
+    objectId,
+  );
   return NextResponse.json({
     ...ctx.responseLabel(),
     ok: true,
     view,
     history,
+    orphanedCorrections,
     siteId: objectId,
   });
 }

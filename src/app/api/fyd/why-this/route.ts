@@ -149,7 +149,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       evidence: `Relationship "${field}" recorded in the site data.`,
       support: "DIRECT",
       supportDetail:
-        "DIRECT: recorded in the site data.",
+        "Recorded in the site data.",
     });
   }
   const steps = whyThisClaimChainFor(target);

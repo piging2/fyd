@@ -63,15 +63,30 @@ function sourceDetail(o: PingObject): { detail: string; state: EvidenceState } {
     };
   }
   // website-derived: the ref carries a "website-ingestion:<url>" shape.
-  const prefixed = ref.match(/^([a-z0-9_-]+):(.*)$/i);
-  const url = prefixed ? prefixed[2] : ref;
-  return { detail: url || "unknown", state: "observed" };
+  return { detail: refUrl(ref) || "unknown", state: "observed" };
 }
 
+/**
+ * Plain-language evidence sentence (PROD-6, 2026-09-27): what the claim is
+ * evidenced by, with no "Provenance ref" jargon. The full record ref stays
+ * in the DOM as data-provenance-ref on the disclosure for verification.
+ */
 function evidenceDetail(o: PingObject): string {
   const prov = o.provenance;
-  const when = prov.derivedAt ? ` Observed ${prov.derivedAt}.` : "";
-  return `Provenance ref "${prov.ref}".${when}`;
+  const when = prov.derivedAt ? ` Observed ${prov.derivedAt.slice(0, 10)}.` : "";
+  if (prov.kind === "canonical-journal") {
+    return `Recorded in the PING journal as event ${prov.ref}.${when}`;
+  }
+  if (prov.kind === "overlay-authored") {
+    return `Added by a demo operator.${when}`;
+  }
+  return `Website content captured from ${refUrl(prov.ref) || "unknown"}.${when}`;
+}
+
+/** The bare URL inside a "website-ingestion:<url>" style ref. */
+function refUrl(ref: string): string {
+  const prefixed = ref.match(/^([a-z0-9_-]+):(.*)$/i);
+  return prefixed ? prefixed[2] : ref;
 }
 
 function methodDetail(o: PingObject): {
@@ -80,7 +95,7 @@ function methodDetail(o: PingObject): {
 } {
   const method = METHOD_FOR_KIND[o.provenance.kind];
   if (!method) {
-    return { detail: "unknown: no extraction method recorded for this object." };
+    return { detail: "No extraction method recorded for this object." };
   }
   return { detail: method, state: "inferred" };
 }
@@ -98,7 +113,7 @@ function statusStep(o: PingObject): { detail: string; state: EvidenceState } {
   return (
     mapped ?? {
       state: "unknown" as EvidenceState,
-      detail: "unknown: no claim kind recorded for this object.",
+      detail: "No claim kind recorded for this object.",
     }
   );
 }
@@ -149,7 +164,7 @@ export function whyThisStepsFor(o: PingObject): EvidenceStep[] {
  *
  * - OWNER-CONFIRMED: the claim kind is an actual owner assertion
  *   (owner-authored content or an owner override/correction). Wording:
- *   "Confirmed by you". The detail uses the owner-facing language law:
+ *   "Confirmed by you", with no SUPPORT-class label prefix. The detail uses the owner-facing language law:
  *   the owner updated the business, so the value changed everywhere FYD
  *   answers (the site, Ask, search, and all projections).
  * - DERIVED: DERIVED_FACT / INFERENCE / GENERATED_COPY: FYD-derived from
@@ -228,7 +243,7 @@ function observedWhenDetail(o: PingObject): {
   if (typeof derivedAt === "string" && derivedAt.length >= 10) {
     return { detail: `Observed ${derivedAt.slice(0, 10)}.`, state: "observed" };
   }
-  return { detail: "unknown: no observation date recorded.", state: "unknown" };
+  return { detail: "No observation date recorded.", state: "unknown" };
 }
 
 /** The EVIDENCE link: what the claim is evidenced by, from provenance. */
@@ -246,15 +261,15 @@ function claimEvidenceDetail(o: PingObject): {
   }
   if (kind === "overlay-authored") {
     return {
-      detail: `Demo addition recorded under ref "${prov.ref}".`,
+      detail: "Added by a demo operator. The addition is logged for verification.",
       state: "inferred",
     };
   }
   // website-derived: the ref carries a "website-ingestion:<url>" shape.
-  const prefixed = prov.ref.match(/^([a-z0-9_-]+):(.*)$/i);
-  const url = prefixed ? prefixed[2] : prov.ref;
+  // The full ref stays in the DOM as data-provenance-ref for verification.
+  const url = refUrl(prov.ref);
   return {
-    detail: `Website content captured from ${url || "unknown"} (ref "${prov.ref}").`,
+    detail: `Website content captured from ${url || "unknown"}.`,
     state: "observed",
   };
 }
@@ -267,38 +282,34 @@ function supportStep(o: PingObject): { detail: string; state: EvidenceState } {
       return {
         state: "observed",
         detail:
-          "OWNER-CONFIRMED: confirmed by you. You updated the business, " +
+          "Confirmed by you. You updated the business, " +
           "so this value changed everywhere FYD answers: the site, Ask, " +
           "search, and all projections.",
       };
     case "DERIVED":
       return {
         state: "inferred",
-        detail:
-          "DERIVED: worked out by FYD from the records below, not " +
-          "directly observed.",
+        detail: "Worked out by FYD from the records below, not directly observed.",
       };
     default: {
       const kind = o.provenance.kind;
       if (kind === "website-derived") {
         return {
           state: "unverified",
-          detail:
-            "DIRECT: found on your website. The site's own words, not " +
-            "independently verified.",
+          detail: "Found on your website. The site's own words, not independently verified.",
         };
       }
       if (kind === "overlay-authored") {
         return {
           state: "inferred",
           detail:
-            "DIRECT: added by a demo operator. Not the website's own " +
+            "Added by a demo operator. Not the website's own " +
             "words, and not an owner confirmation.",
         };
       }
       return {
         state: "observed",
-        detail: "DIRECT: recorded in the site data.",
+        detail: "Recorded in the site data.",
       };
     }
   }

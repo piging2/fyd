@@ -135,14 +135,47 @@ describe("route-level tenant isolation", () => {
     expect(JSON.stringify(body)).not.toContain(SECRET_B);
   });
 
-  test("ask: legacy flat route with no siteId fails closed", async () => {
+  test("ask: legacy flat route with no siteId is refused with a typed deprecation error", async () => {
     const res = await handleAskRequest(
       null,
       postRequest("http://localhost/api/fyd/ask", {
         question: "What is the phone number?",
       }),
     );
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body.code).toBe("flat_route_deprecated");
+    expect(String(body.trustedRoute)).toContain("/api/fyd/ask/");
+    expect(res.headers.get("location")).toBeNull();
+    expect(JSON.stringify(body)).not.toContain(SECRET_B);
+  });
+
+  test("ask: legacy flat route with a body siteId redirects to the trusted path and serves nothing", async () => {
+    const res = await handleAskRequest(
+      null,
+      postRequest("http://localhost/api/fyd/ask", {
+        siteId: "site-b",
+        question: "What is the phone number?",
+      }),
+    );
+    expect(res.status).toBe(308);
+    expect(res.headers.get("location")).toBe("/api/fyd/ask/site-b");
+    // The redirect carries no body: no answer, no objects, no citations.
+    expect(await res.text()).toBe("");
+  });
+
+  test("ask: legacy flat route ignores a query-string siteId", async () => {
+    const res = await handleAskRequest(
+      null,
+      postRequest("http://localhost/api/fyd/ask?siteId=site-b", {
+        question: "What is the phone number?",
+      }),
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body.code).toBe("flat_route_deprecated");
+    expect(res.headers.get("location")).toBeNull();
+    expect(JSON.stringify(body)).not.toContain(SECRET_B);
   });
 
   test("overrides POST: mismatched body tenant claim is refused and nothing is written", async () => {
