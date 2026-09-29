@@ -73,7 +73,7 @@ import sys
 import tempfile
 import urllib.request
 
-DUMPER_VERSION = "fyd-projection-dump@1.2.1"
+DUMPER_VERSION = "fyd-projection-dump@1.2.2"
 REPO = "/home/nolan/projects/ping"
 OUT_DIR = "/home/nolan/ping/var/fyd-projections"
 
@@ -172,7 +172,8 @@ SITES = {
 }
 
 QUERY_JS = r"""
-const {Client}=require('/app/node_modules/pg');
+// pg lives with the gateway app, not at /app/node_modules
+const {Client}=require('/app/gateway/node_modules/pg');
 (async()=>{
  const c=new Client({host:process.env.POSTGRES_HOST,
   port:parseInt(process.env.POSTGRES_PORT||'5432',10),
@@ -275,6 +276,10 @@ def query_overlays_demo_pg(site):
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as f:
         f.write(js)
         js_path = f.name
+    # 0600 (tempfile default) breaks `docker exec ... node` in
+    # ping-gateway: the cp'd file is unreadable by the container's nodejs
+    # user. The probe holds no secrets; 0644 keeps the copy readable.
+    os.chmod(js_path, 0o644)
     try:
         env = dict(os.environ,
                    POSTGRES_HOST=DEMO_PG["host"],
@@ -386,6 +391,10 @@ def query_overlays(site):
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as f:
         f.write(QUERY_JS)
         js_path = f.name
+    # 0600 (tempfile default) breaks `docker exec ... node` in
+    # ping-gateway: the cp'd file is unreadable by the container's nodejs
+    # user. The probe holds no secrets; 0644 keeps the copy readable.
+    os.chmod(js_path, 0o644)
     cname = "fyd-overlay-query-%d.js" % os.getpid()
     try:
         cp = subprocess.run(
