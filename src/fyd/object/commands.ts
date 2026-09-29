@@ -203,8 +203,16 @@ export function interpretTextCommand(text: string, objectId: string): TextPropos
   // contract as contact corrections: the approve stage records the
   // service's current description alongside the owner's value, so the
   // correction is never a silent overwrite of the source record.
-  if ((m = lower.match(/^(?:correct|change|update|set)\s+(?:the\s+)?description\s+(?:of|for)\s+(.+?)\s+to\s+(.+)$/))) {
-    const id = findServiceId(m[1], names);
+  // Match the ORIGINAL text case-insensitively: the captured owner
+  // value must keep the owner's exact words (lowercasing Y would
+  // corrupt the asserted fact). Only the service-name lookup is
+  // lowercased.
+  if (
+    (m = text
+      .trim()
+      .match(/^(?:correct|change|update|set)\s+(?:the\s+)?description\s+(?:of|for)\s+(.+?)\s+to\s+(.+)$/i))
+  ) {
+    const id = findServiceId(m[1].toLowerCase(), names);
     if (!id) return null;
     const value = m[2].trim();
     if (!value) return null;
@@ -213,8 +221,12 @@ export function interpretTextCommand(text: string, objectId: string): TextPropos
       summary: `Record an owner correction for the description of ${names.get(id)}: "${value}". The current description stays recorded as what the source says.`,
     };
   }
-  if ((m = lower.match(/^(?:revert|undo|remove)\s+(?:the\s+)?description\s+(?:of|for)\s+(.+?)(?:\s+correction)?$/))) {
-    const id = findServiceId(m[1], names);
+  if (
+    (m = text
+      .trim()
+      .match(/^(?:revert|undo|remove)\s+(?:the\s+)?description\s+(?:of|for)\s+(.+?)(?:\s+correction)?$/i))
+  ) {
+    const id = findServiceId(m[1].toLowerCase(), names);
     if (!id) return null;
     return {
       command: { type: "revert-service-description", serviceId: id },
