@@ -21,6 +21,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { NextRequest } from "next/server";
 import { POST } from "../route";
+import { buildPatchPreview } from "../patch-loop";
+import { readOverrides } from "@/fyd/object/owner-store";
 
 jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: async () => null }));
 
@@ -344,5 +346,52 @@ describe("propose -> approve digest binding", () => {
     // The basis text is the honest contract: owner attests, source unchanged.
     expect(corr?.basis).toContain("Owner correction");
     expect(corr?.basis).toContain("source record is unchanged");
+  });
+});
+
+describe("patch-loop preview: service description corrections", () => {
+  const SVC_ID = "website-business-6fa5ebd99d72c4cb-service-3263502c8175";
+  const SOURCE_X = "Small problems usually tell you about a bigger one. Fix them early and they're repairs. Wait too long and they become replacements.";
+  const OWNER_Y = "We fix small problems before they become big ones.";
+  const NAMES = new Map([[SVC_ID, "Repairs"]]);
+
+  test("set-service-description preview: before is the source value, after is the owner value", () => {
+    const preview = buildPatchPreview(
+      "happy-place",
+      { type: "set-service-description", serviceId: SVC_ID, value: OWNER_Y },
+      [SVC_ID],
+      NAMES,
+      "demo",
+    );
+    expect(preview).not.toBeNull();
+    expect(preview!.before).toContain(SOURCE_X);
+    expect(preview!.after).toContain(OWNER_Y);
+    expect(preview!.evidenceImpact).toContain("owner.corrected-fact");
+    expect(preview!.evidenceImpact).toContain(SOURCE_X);
+  });
+
+  test("set-service-description preview: before is the existing owner value when one exists", () => {
+    const overrides = readOverrides("happy-place");
+    expect(overrides.fieldCorrections["service-field:" + SVC_ID]).toBeUndefined();
+    const preview = buildPatchPreview(
+      "happy-place",
+      { type: "set-service-description", serviceId: SVC_ID, value: OWNER_Y },
+      [SVC_ID],
+      NAMES,
+      "demo",
+    );
+    expect(preview!.before).toContain("Description of Repairs:");
+  });
+
+  test("revert-service-description preview is null without an existing correction", () => {
+    expect(
+      buildPatchPreview(
+        "happy-place",
+        { type: "revert-service-description", serviceId: SVC_ID },
+        [SVC_ID],
+        NAMES,
+        "demo",
+      ),
+    ).toBeNull();
   });
 });

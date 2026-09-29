@@ -542,23 +542,36 @@ export async function POST(
         );
       }
       const { ids, names } = knownServices(objectId);
-      // Contact corrections and confirmations need two things only the
-      // server can attach honestly: (1) the SOURCE's current value, read
-      // from the raw projection (overlay off) at approval time, so the
-      // record keeps SOURCE SAYS X even if the source changes later (a
-      // confirmation records it for drift detection); (2) the authority
+      // Contact corrections, service description corrections, and
+      // confirmations need two things only the server can attach honestly:
+      // (1) the SOURCE's current value, read from the raw projection
+      // (overlay off) at approval time, so the record keeps SOURCE SAYS X
+      // even if the source changes later (a confirmation records it for
+      // drift detection); (2) the authority
       // label the correction is recorded under. In demo mode this is the
       // seeded demo actor from the OwnerContext: an explicit non-identity,
       // never a verified identity. The chain audit above labels it demo
       // scaffolding; this field is the seam where real owner identity
       // will attach.
       let opts: { sourceValue?: string | null; actorLabel?: string } | undefined;
-      if (command.type === "set-contact-field" || command.type === "confirm-contact-field") {
+      if (
+        command.type === "set-contact-field" ||
+        command.type === "confirm-contact-field" ||
+        command.type === "set-service-description"
+      ) {
         let sourceValue: string | null = null;
         try {
           const rawGraph = getPingObjectGraphSync(objectId, { ownerOverlay: false }).graph;
-          const business = findBusinessObject(rawGraph);
-          if (business) sourceValue = rawFieldValue(business, command.field);
+          if (command.type === "set-service-description") {
+            // The SOURCE's current description for this service: read off
+            // the raw projection at approval time, so the record keeps
+            // SOURCE SAYS X even if the source changes later.
+            const service = rawGraph.objects.find((o) => o.id === command.serviceId);
+            if (service) sourceValue = rawFieldValue(service, "description");
+          } else {
+            const business = findBusinessObject(rawGraph);
+            if (business) sourceValue = rawFieldValue(business, command.field);
+          }
         } catch {
           sourceValue = null;
         }

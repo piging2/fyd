@@ -467,6 +467,59 @@ export function applyOwnerCommand(
       };
       break;
     }
+    case "set-service-description": {
+      // The owner attests a corrected description for one service object.
+      // The source record is NOT rewritten: the correction is stored as
+      // its own owner.corrected-fact event keyed "service-field:<id>" with
+      // the source's value at this moment preserved as previous basis. The
+      // read model composes ownerValue over the service description at
+      // serve time (see src/fyd/object/owner-overlay.ts).
+      if (!known.has(cmd.serviceId))
+        throw new OwnerCommandError("Unknown service.");
+      const value = cmd.value.trim();
+      if (!value) throw new OwnerCommandError("A value is required.");
+      if (value.length > 2000)
+        throw new OwnerCommandError(
+          "The description is too long (2000 characters maximum).",
+        );
+      const target = serviceFieldTarget(cmd.serviceId);
+      const sourceValue = opts?.sourceValue ?? null;
+      const prior = current.fieldCorrections[target]?.ownerValue ?? null;
+      const name = knownServiceNames.get(cmd.serviceId) ?? cmd.serviceId;
+      const correction: OwnerFieldCorrection = {
+        field: "description",
+        targetObjectId: cmd.serviceId,
+        label: "Description",
+        sourceValue,
+        ownerValue: value,
+        correctedAt: at,
+        actorLabel: actor.label,
+        basis:
+          "Owner correction: the owner says this is the description of '" +
+          name +
+          "'. The source record is unchanged.",
+      };
+      draft = {
+        at,
+        objectId,
+        type: "owner.corrected-fact",
+        actor,
+        target,
+        previousBasis: { priorOwnerValue: prior, sourceValue },
+        newValue: correction,
+        evidence: sourceSnapshotEvidence(sourceValue),
+        note:
+          "Corrected the description of '" +
+          name +
+          "': the site lists " +
+          (sourceValue ?? "no description") +
+          "; the owner says '" +
+          value +
+          "'.",
+        generator: "fyd-owner@1",
+      };
+      break;
+    }
     case "revert-service-description": {
       if (!known.has(cmd.serviceId))
         throw new OwnerCommandError("Unknown service.");

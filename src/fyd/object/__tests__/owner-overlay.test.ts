@@ -491,3 +491,142 @@ describe("PROD-8: orphaned-correction detection", () => {
     }
   });
 });
+
+describe("service description correction composition", () => {
+  const SVC = "svc-decks";
+  const SOURCE_DESC = "We build decks from pressure-treated lumber.";
+  const OWNER_DESC = "We build custom cedar decks, permitted and inspected.";
+
+  function serviceObject(id: string, description: string): PingObject {
+    return {
+      id,
+      schema: "ping.social.service@1",
+      controllerId: "web:happy-place",
+      visibility: "public",
+      title: "Decks",
+      description: "A demo service.",
+      fields: { description },
+      createdAt: "2026-09-21T00:00:00Z",
+      updatedAt: "2026-09-21T00:00:00Z",
+      provenance: {
+        kind: "website-derived",
+        ref: "website-ingestion:https://happy-place-platform.vercel.app/services/decks",
+        derivedAt: "2026-09-21T13:50:00Z",
+      },
+    };
+  }
+
+  function graphWithService(description: string, includeService = true): ObjectGraph {
+    const objects: PingObject[] = [businessObject(SOURCE_PHONE)];
+    if (includeService) objects.push(serviceObject(SVC, description));
+    return { objects, relationships: [] };
+  }
+
+  function serviceById(graph: ObjectGraph): PingObject {
+    return graph.objects.find((o) => o.id === SVC) as PingObject;
+  }
+
+  function correctDescription(sourceValue: string | null): void {
+    applyOwnerCommand(
+      SITE,
+      { type: "set-service-description", serviceId: SVC, value: OWNER_DESC },
+      [SVC],
+      new Map([[SVC, "Decks"]]),
+      { sourceValue, actorLabel: "Demo Owner (seeded, unverified)" },
+    );
+  }
+
+  function correctPhone(sourceValue: string | null): void {
+    applyOwnerCommand(
+      SITE,
+      { type: "set-contact-field", field: "phone", value: OWNER_PHONE },
+      [],
+      new Map(),
+      { sourceValue, actorLabel: "Demo Owner (seeded, unverified)" },
+    );
+  }
+
+  test("owner description wins on the service object, resolved by id", () => {
+    correctDescription(SOURCE_DESC);
+    const { graph, applied } = applyOwnerFieldCorrections(graphWithService(SOURCE_DESC), SITE);
+    const svc = serviceById(graph);
+    expect(rawFieldValue(svc, "description")).toBe(OWNER_DESC);
+    // The business object is untouched: contact corrections still own it.
+    expect(rawFieldValue(findBusinessObject(graph)!, "phone")).toBe(SOURCE_PHONE);
+    expect(applied).toHaveLength(1);
+    expect(applied[0].sourceValue).toBe(SOURCE_DESC);
+    const c = ownerCorrectionForObject(svc, "description")!;
+    expect(c.ownerValue).toBe(OWNER_DESC);
+    expect(c.targetObjectId).toBe(SVC);
+    expect(c.field).toBe("description");
+  });
+
+  test("the source service object is never mutated", () => {
+    correctDescription(SOURCE_DESC);
+    const source = graphWithService(SOURCE_DESC);
+    const before = JSON.stringify(source);
+    applyOwnerFieldCorrections(source, SITE);
+    expect(JSON.stringify(source)).toBe(before);
+    expect(rawFieldValue(serviceById(source), "description")).toBe(SOURCE_DESC);
+  });
+
+  test("source re-observation does not erase the owner value; drift is flagged", () => {
+    correctDescription(SOURCE_DESC);
+    const { graph } = applyOwnerFieldCorrections(graphWithService("A changed description."), SITE);
+    const svc = serviceById(graph);
+    // Owner still wins.
+    expect(rawFieldValue(svc, "description")).toBe(OWNER_DESC);
+    // But the drift is visible, not silent.
+    const c = ownerCorrectionForObject(svc, "description")!;
+    expect(c.sourceDrifted).toBe(true);
+    expect(c.sourceValue).toBe(SOURCE_DESC); // the record keeps what the source said THEN
+  });
+
+  test("no drift flag when the source description is unchanged", () => {
+    correctDescription(SOURCE_DESC);
+    const { graph } = applyOwnerFieldCorrections(graphWithService(SOURCE_DESC), SITE);
+    expect(ownerCorrectionForObject(serviceById(graph), "description")!.sourceDrifted).toBe(false);
+  });
+
+  test("missing service orphans with the service-description-orphaned reason", () => {
+    correctDescription(SOURCE_DESC);
+    const { graph, applied, orphaned } = applyOwnerFieldCorrections(
+      graphWithService(SOURCE_DESC, false),
+      SITE,
+    );
+    expect(applied).toEqual([]);
+    expect(orphaned).toHaveLength(1);
+    expect(orphaned[0].reason).toBe("service-description-orphaned");
+    expect(orphaned[0].target).toBe("service-field:" + SVC);
+    // The business object is still served normally.
+    expect(rawFieldValue(findBusinessObject(graph)!, "phone")).toBe(SOURCE_PHONE);
+  });
+
+  test("revert restores the CURRENT source description", () => {
+    correctDescription(SOURCE_DESC);
+    let { graph } = applyOwnerFieldCorrections(graphWithService(SOURCE_DESC), SITE);
+    expect(rawFieldValue(serviceById(graph), "description")).toBe(OWNER_DESC);
+    applyOwnerCommand(
+      SITE,
+      { type: "revert-service-description", serviceId: SVC },
+      [SVC],
+      new Map(),
+    );
+    ({ graph } = applyOwnerFieldCorrections(graphWithService(SOURCE_DESC), SITE));
+    expect(rawFieldValue(serviceById(graph), "description")).toBe(SOURCE_DESC);
+    expect(ownerCorrectionForObject(serviceById(graph), "description")).toBeNull();
+  });
+
+  test("contact and service corrections compose together, on their own targets", () => {
+    correctPhone(SOURCE_PHONE);
+    correctDescription(SOURCE_DESC);
+    const { graph, applied, orphaned } = applyOwnerFieldCorrections(
+      graphWithService(SOURCE_DESC),
+      SITE,
+    );
+    expect(orphaned).toEqual([]);
+    expect(applied).toHaveLength(2);
+    expect(rawFieldValue(findBusinessObject(graph)!, "phone")).toBe(OWNER_PHONE);
+    expect(rawFieldValue(serviceById(graph), "description")).toBe(OWNER_DESC);
+  });
+});

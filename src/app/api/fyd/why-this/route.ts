@@ -28,16 +28,27 @@
  * back to the honest object-level provenance: the source statement from
  * the existing record, never an invented observation.
  *
+ * Correction-aware: when the object carries composed owner
+ * corrections, the response also includes a `corrections` array; each
+ * entry is { fact, sourceSays, ownerSays, governs: "owner", why,
+ * correctedAt, actorLabel, sourceDrifted, chain } where chain is the
+ * owner-asserted SOURCE -> OBSERVED WHEN -> EVIDENCE -> SUPPORT built
+ * from the SAME evidence identity (the object's provenance for X, the
+ * correction record for Y). Empty when the object carries no
+ * corrections.
+ *
  * Response shape:
  *   { found: true, claim, source, observedWhen, evidence, support,
- *     supportDetail }
+ *     supportDetail, corrections }
  *   { found: false, reason }
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
 import {
+  correctionsWhyThisFor,
   whyThisClaimChainFor,
+  type CorrectionWhyThis,
   type WhyThisSupport,
 } from "@/fyd/object/why-this-steps";
 import type { PingObject } from "@/lib/ping/types";
@@ -75,12 +86,20 @@ function objectWhy(o: PingObject): {
   evidence: string;
   support: WhyThisSupport;
   supportDetail: string;
+  corrections: CorrectionWhyThis[];
 } {
   const steps = whyThisClaimChainFor(o);
   // The why lane builds CLAIM (the heading) -> SOURCE -> OBSERVED WHEN ->
   // EVIDENCE -> SUPPORT from the object's own provenance. The honest
   // fallback for the root business object: object-level provenance,
   // exactly what this lane returns, never an invented observation.
+  //
+  // The correction-aware block answers the owner-correction questions
+  // directly: WHAT DID THE SOURCE SAY? WHAT DID THE OWNER SAY? WHICH
+  // VALUE CURRENTLY CONTROLS THE GENERATED PRESENCE? WHY? Each block is
+  // a projection of the same evidence identity: the object's own
+  // provenance for X, the owner correction record for Y. Source evidence
+  // is never rewritten to make the correction look source-derived.
   return {
     found: true,
     claim: o.title,
@@ -89,6 +108,7 @@ function objectWhy(o: PingObject): {
     evidence: stepDetail(steps, "Evidence"),
     support: supportOf(steps),
     supportDetail: stepDetail(steps, "Support"),
+    corrections: correctionsWhyThisFor(o),
   };
 }
 

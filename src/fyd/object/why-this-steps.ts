@@ -18,7 +18,11 @@
  * schema-specific branches, no lookups beyond the object itself.
  */
 
-import type { PingObject, ObjectProvenanceKind } from "@/lib/ping/types";
+import type {
+  OwnerFieldCorrection,
+  PingObject,
+  ObjectProvenanceKind,
+} from "@/lib/ping/types";
 import type { EvidenceState } from "../ui/evidence-state";
 import type { EvidenceStep } from "../ui/why-this";
 
@@ -342,4 +346,134 @@ export function whyThisClaimChainFor(o: PingObject): EvidenceStep[] {
     { step: "Evidence", detail: evidence.detail, state: evidence.state },
     { step: "Support", detail: support.detail, state: support.state },
   ];
+}
+
+// ---------------------------------------------------------------------------
+// The correction-aware Why This: SOURCE SAYS X / OWNER SAYS Y.
+// ---------------------------------------------------------------------------
+//
+// For one rendered fact the owner has corrected, the answer must be:
+// WHAT DID THE SOURCE SAY? WHAT DID THE OWNER SAY? WHICH VALUE CURRENTLY
+// CONTROLS THE GENERATED PRESENCE? WHY? The chain reuses the SAME
+// evidence identity that survived Ask: the object's own provenance record
+// (the website-ingestion ref) is the SOURCE link for X, and the
+// OwnerFieldCorrection record the owner overlay composes onto the object
+// is the OWNER link for Y. The correction never rewrites the source
+// evidence; it supersedes it for presentation, and the response says so.
+//
+// Pure function of (PingObject, OwnerFieldCorrection): no lookups beyond
+// the composed object, never a fabricated link.
+
+/**
+ * The correction-aware response block for one corrected fact: what the
+ * source said, what the owner said, which value governs, and why.
+ */
+export interface CorrectionWhyThis {
+  /** Fact address, e.g. "contact:phone" or "service-field:<id>:description". */
+  fact: string;
+  /** What the source projection said when the correction was recorded. */
+  sourceSays: string | null;
+  /** What the owner says. This is the value that currently controls. */
+  ownerSays: string;
+  /** The value that currently controls the generated presence. */
+  governs: "owner";
+  /** Why the owner value controls: the correction's basis sentence. */
+  why: string;
+  /** ISO timestamp of the correction. */
+  correctedAt: string;
+  /** Authority label for the actor that recorded the correction. */
+  actorLabel: string;
+  /** Read-model derivation: the source has since moved under the owner value. */
+  sourceDrifted: boolean;
+  /** The owner-asserted chain: SOURCE -> OBSERVED WHEN -> EVIDENCE -> SUPPORT. */
+  chain: EvidenceStep[];
+}
+
+/** The fact address for an attached correction record. */
+function correctionFactAddress(c: OwnerFieldCorrection): string {
+  if (c.field === "description" && c.targetObjectId) {
+    return "service-field:" + c.targetObjectId + ":description";
+  }
+  return "contact:" + c.field;
+}
+
+/**
+ * Build the correction-aware Why This block for one corrected fact.
+ * The Source link binds X to the object's own provenance (the same
+ * website-ingestion identity Ask cites); the Evidence link is the owner
+ * correction record itself; Support is OWNER-CONFIRMED.
+ */
+export function correctionWhyThisFor(
+  correction: OwnerFieldCorrection,
+  o: PingObject,
+): CorrectionWhyThis {
+  const sourceUrl = refUrl(o.provenance.ref) || "unknown";
+  const at = correction.correctedAt.slice(0, 10);
+  const x =
+    correction.sourceValue === null
+      ? null
+      : "The site's own words at correction time: '" +
+        correction.sourceValue +
+        "'.";
+  const sourceDetailText =
+    x === null
+      ? "The source had no value recorded when the owner corrected it. Captured from " +
+        sourceUrl +
+        "."
+      : x + " Captured from " + sourceUrl + ".";
+  const chain: EvidenceStep[] = [
+    {
+      step: "Source",
+      detail: sourceDetailText,
+      state: x === null ? "unknown" : "observed",
+    },
+    {
+      step: "Observed when",
+      detail:
+        "The owner correction was recorded " + at + ". " +
+        "The source value above is the source's value AT THAT TIME, preserved on the record, " +
+        "not the source's current value.",
+      state: "observed",
+    },
+    {
+      step: "Evidence",
+      detail:
+        "Owner correction recorded " +
+        at +
+        " by " +
+        correction.actorLabel +
+        ". " +
+        correction.basis,
+      state: "observed",
+    },
+    {
+      step: "Support",
+      detail:
+        "Confirmed by you. You updated the business, so this value changed everywhere " +
+        "FYD answers: the site, Ask, search, and all projections.",
+      state: "observed",
+    },
+  ];
+  return {
+    fact: correctionFactAddress(correction),
+    sourceSays: correction.sourceValue,
+    ownerSays: correction.ownerValue,
+    governs: "owner",
+    why: correction.basis,
+    correctedAt: correction.correctedAt,
+    actorLabel: correction.actorLabel,
+    sourceDrifted: correction.sourceDrifted === true,
+    chain,
+  };
+}
+
+/**
+ * The correction-aware blocks for every owner correction composed onto
+ * this object, in attached order. Empty when the object carries none.
+ */
+export function correctionsWhyThisFor(o: PingObject): CorrectionWhyThis[] {
+  const list = (o as { ownerFieldCorrections?: OwnerFieldCorrection[] })
+    .ownerFieldCorrections;
+  if (!Array.isArray(list) || list.length === 0) return [];
+  return list.map((c) => correctionWhyThisFor(c, o));
 }

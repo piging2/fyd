@@ -35,7 +35,11 @@ import type {
   PingObject,
 } from "../../lib/ping/types";
 import { readOverrides } from "./owner-store";
-import { SERVICE_ORDER_TARGET, serviceTarget } from "./owner-events";
+import {
+  SERVICE_ORDER_TARGET,
+  serviceFieldTarget,
+  serviceTarget,
+} from "./owner-events";
 
 /**
  * The public business object of a site graph. Fail-closed: returns the
@@ -140,7 +144,8 @@ export interface OrphanedCorrection {
     | "no-business-object"
     | "ambiguous-target"
     | "service-order-orphaned"
-    | "service-visibility-orphaned";
+    | "service-visibility-orphaned"
+    | "service-description-orphaned";
   /** Human-readable detail for owner surfaces and logs. */
   detail: string;
 }
@@ -196,6 +201,13 @@ function driftValuesEqual(a: string | null, b: string | null): boolean {
  * this field with this value, so the correction is fully effective (the
  * view shows the owner value). Only the missing/ambiguous TARGET OBJECT
  * orphans a field correction, never an unknown field name.
+ *
+ * Service description corrections (field "description", targetObjectId
+ * set) are composed onto the service object resolved BY ID, not onto
+ * the business object: the description belongs to the service. Drift is
+ * read off the service's live description; a missing or non-public
+ * service orphans the correction with reason
+ * "service-description-orphaned".
  */
 export function applyOwnerFieldCorrections(
   graph: ObjectGraph,
@@ -204,37 +216,31 @@ export function applyOwnerFieldCorrections(
   const overrides = readOverrides(siteId);
   const corrections = Object.values(overrides.fieldCorrections ?? {});
   if (corrections.length === 0) return { graph, applied: [], orphaned: [] };
-  const candidates = businessCandidates(graph);
-  if (candidates.length !== 1) {
-    const reason =
-      candidates.length === 0 ? "no-business-object" : "ambiguous-target";
-    const detail =
-      reason === "no-business-object"
-        ? "No public business object on the refreshed graph; the correction is retained in the owner store, not applied."
-        : `${candidates.length} public business objects on the refreshed graph; refusing to guess which one the correction belongs to.`;
-    return {
-      graph,
-      applied: [],
-      orphaned: corrections.map((correction) => ({
-        correction,
-        target: "contact:" + correction.field,
-        reason,
-        detail,
-      })),
-    };
-  }
-  const business = candidates[0];
 
-  // Capture SOURCE SAYS X before composing anything over it.
-  const composed: PingObject = {
-    ...business,
-    fields: cloneFields(business.fields ?? {}),
+  // Contact corrections resolve the single public business object;
+  // service description corrections resolve their target service by id.
+  const isServiceDescription = (c: OwnerFieldCorrection): boolean =>
+    c.field === "description" && typeof c.targetObjectId === "string";
+  const businessCorrections = corrections.filter((c) => !isServiceDescription(c));
+  const serviceCorrections = corrections.filter(isServiceDescription);
+
+  const applied: OwnerFieldCorrection[] = [];
+  const orphaned: OrphanedCorrection[] = [];
+  // Composed copies, keyed by object id. Never mutates the input graph.
+  const composed = new Map<string, PingObject>();
+  const take = (obj: PingObject): PingObject => {
+    let c = composed.get(obj.id);
+    if (!c) {
+      c = { ...obj, fields: cloneFields(obj.fields ?? {}) };
+      composed.set(obj.id, c);
+    }
+    return c;
   };
-  const attached: OwnerFieldCorrection[] = [];
-  for (const correction of corrections) {
-    const currentSource = rawFieldValue(business, correction.field);
-    composed.fields[correction.field] = correction.ownerValue;
-    attached.push({
+  const composeOnto = (obj: PingObject, correction: OwnerFieldCorrection): void => {
+    const currentSource = rawFieldValue(obj, correction.field);
+    const target = take(obj);
+    target.fields[correction.field] = correction.ownerValue;
+    const attached: OwnerFieldCorrection = {
       ...correction,
       // Derived per read, never persisted: true when the source was
       // re-observed after the correction and now says something
@@ -242,20 +248,75 @@ export function applyOwnerFieldCorrections(
       // Comparison is normalization-symmetric (driftValuesEqual): a
       // whitespace / bidi-mark re-emission is not drift.
       sourceDrifted: !driftValuesEqual(currentSource, correction.sourceValue),
-    });
-  }
-  // Preserve any corrections already attached (there should be none on a
-  // raw projection, but never silently drop evidence).
-  composed.ownerFieldCorrections = [
-    ...(business.ownerFieldCorrections ?? []),
-    ...attached,
-  ];
+    };
+    // Preserve any corrections already attached (there should be none on a
+    // raw projection, but never silently drop evidence).
+    target.ownerFieldCorrections = [
+      ...(target.ownerFieldCorrections ?? []),
+      attached,
+    ];
+    applied.push(attached);
+  };
 
-  const objects = graph.objects.map((o) => (o === business ? composed : o));
+  // Contact corrections: exactly one public business object must match
+  // the findBusinessObject predicate. Zero matches (the refresh
+  // re-derived the business object as non-public) or several (the refresh
+  // emitted a parent brand plus the local listing) no longer fail
+  // silently: the corrections are returned in `orphaned` with a reason,
+  // so surfaces can render "owner correction pending review" instead of
+  // showing raw source values as if the owner had never spoken.
+  if (businessCorrections.length > 0) {
+    const candidates = businessCandidates(graph);
+    if (candidates.length !== 1) {
+      const reason =
+        candidates.length === 0 ? "no-business-object" : "ambiguous-target";
+      const detail =
+        reason === "no-business-object"
+          ? "No public business object on the refreshed graph; the correction is retained in the owner store, not applied."
+          : `${candidates.length} public business objects on the refreshed graph; refusing to guess which one the correction belongs to.`;
+      for (const correction of businessCorrections) {
+        orphaned.push({ correction, target: "contact:" + correction.field, reason, detail });
+      }
+    } else {
+      const business = candidates[0];
+      // Capture SOURCE SAYS X before composing anything over it.
+      for (const correction of businessCorrections) composeOnto(business, correction);
+    }
+  }
+
+  // Service description corrections: by-id resolution against the
+  // refreshed graph. The business-object ambiguity above does not block
+  // them: the correction names its target service directly. A service
+  // that is gone (deleted, unlinked, or no longer public) is orphaned
+  // with its own reason; the owner layer keeps the correction.
+  if (serviceCorrections.length > 0) {
+    const byId = new Map(graph.objects.map((o) => [o.id, o]));
+    for (const correction of serviceCorrections) {
+      const service = byId.get(correction.targetObjectId as string);
+      if (!service || service.visibility !== "public") {
+        orphaned.push({
+          correction,
+          target: serviceFieldTarget(correction.targetObjectId as string),
+          reason: "service-description-orphaned",
+          detail:
+            "The service '" +
+            correction.targetObjectId +
+            "' is not on the refreshed graph (deleted, unlinked, or no longer public); " +
+            "the description correction is retained in the owner store, not applied.",
+        });
+        continue;
+      }
+      // Capture SOURCE SAYS X (the service's live description) before
+      // composing anything over it.
+      composeOnto(service, correction);
+    }
+  }
+
+  const objects = graph.objects.map((o) => composed.get(o.id) ?? o);
   return {
     graph: { objects, relationships: graph.relationships },
-    applied: attached,
-    orphaned: [],
+    applied,
+    orphaned,
   };
 }
 
