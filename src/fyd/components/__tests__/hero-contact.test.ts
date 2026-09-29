@@ -72,10 +72,10 @@ describe("hero contact discoverability", () => {
     expect(hero).not.toContain("md:hidden");
   });
 
-  test("CTA order is Call, then Visit website, then Ask FYD", () => {
+  test("CTA order is Call, then Visit <domain>, then Ask FYD", () => {
     const hero = heroMarkup(renderHome(HAPPY_PLACE_RICH_GRAPH));
     const callAt = hero.indexOf(`Call ${PHONE}`);
-    const visitAt = hero.indexOf("Visit website");
+    const visitAt = hero.indexOf("Visit happy-place-platform.vercel.app");
     const askAt = hero.indexOf("Ask FYD");
     expect(callAt).toBeGreaterThan(-1);
     expect(visitAt).toBeGreaterThan(-1);
@@ -101,7 +101,7 @@ describe("hero contact discoverability", () => {
     expect(hero).not.toContain('data-fyd-contact="phone"');
     expect(hero).not.toContain(PHONE);
     // The remaining CTAs still render.
-    expect(hero).toContain("Visit website");
+    expect(hero).toContain("Visit happy-place-platform.vercel.app");
     expect(hero).toContain("Ask FYD");
   });
 

@@ -184,7 +184,6 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
   const detailHref = `/o/${encodeURIComponent(object.id)}`;
   const askHref = `/o/${encodeURIComponent(object.id)}#ask`;
 
-  const provenance = object.provenance;
   const schemaLabel = object.schema.replace("ping.social.", "").replace("@1", "");
   const facts = overlayFacts(object, graph);
   const relationships = overlayRelationships(object, graph);
@@ -325,30 +324,19 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
         )}
 
         {/* Evidence / WHY THIS */}
-        <div style={{ marginBottom: "16px" }} data-testid="overlay-evidence">
+        {/* PROD-6 repair (2026-09-27): the raw provenance ref lives only in
+            the data-provenance-ref attribute below for debugging, never as
+            visible text. The WhyThis chain already states the source in
+            plain language. */}
+        <div
+          style={{ marginBottom: "16px" }}
+          data-testid="overlay-evidence"
+          data-provenance-ref={object.provenance?.ref}
+        >
           <div style={sectionLabel}>Evidence</div>
           {whySteps.length > 0 ? (
             <WhyThis claim={object.title} steps={whySteps} />
           ) : null}
-          {provenance && (
-            <div
-              style={{
-                fontSize: "13px",
-                color: "#666",
-                background: "#f5f5f5",
-                borderRadius: "8px",
-                padding: "12px",
-                marginTop: whySteps.length > 0 ? "12px" : 0,
-              }}
-            >
-              <strong>Source:</strong> {provenance.kind}
-              {provenance.ref && (
-                <span style={{ display: "block", marginTop: "4px", wordBreak: "break-all" }}>
-                  {provenance.ref}
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Capabilities / actions */}

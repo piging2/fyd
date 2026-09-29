@@ -34,7 +34,7 @@ import {
 } from "react";
 import type { DisplayMedia } from "../media/select";
 import type { FYDThemeTokens } from "../sitespec/types";
-import { WhyThis, type EvidenceStep } from "../ui/why-this";
+import { WhyThis, mediaWhyThisSteps } from "../ui/why-this";
 
 /**
  * Selection rule for hero media, kept as a pure export for node-based unit
@@ -62,46 +62,18 @@ export function imageAlreadyFailed(
 
 /**
  * Contextual provenance for the hero photo: the generic WhyThis drill-down
- * fed ONLY with the media's own provenance fields. No invented copy; steps
- * with empty values are omitted, and WhyThis renders nothing at all when
- * the lineage is empty.
+ * fed ONLY with the media's own provenance fields, in plain language
+ * (PROD-5/PROD-6). No invented copy; steps with empty values are omitted,
+ * and WhyThis renders nothing at all when the lineage is empty. The raw
+ * technical values (digest, observedAt) live in non-visible data-media-*
+ * attributes on the photo block; the visible caption is the photo's human
+ * description (media.alt), rendered by HeroPhotoBlock.
  */
 function HeroMediaWhyThis({ media }: { media: DisplayMedia }) {
-  const steps: EvidenceStep[] = [];
-  if (media.sourceUrl) {
-    steps.push({
-      step: "Photo source",
-      detail: media.sourceUrl,
-      state: "observed",
-    });
-  }
-  if (media.rightsBasis) {
-    steps.push({
-      step: "Rights basis",
-      detail: media.rightsBasis,
-      // Policy inference, not an observation: classifyRights is a URL
-      // heuristic with no authorization evidence (QA-TRUTH F-002).
-      state: "inferred",
-    });
-  }
-  if (media.observedAt) {
-    steps.push({
-      step: "Observed",
-      detail: media.observedAt,
-      state: "observed",
-    });
-  }
-  if (media.digest) {
-    steps.push({
-      step: "Content digest",
-      detail: media.digest.slice(0, 16) + "...",
-      state: "inferred",
-    });
-  }
   return (
     <WhyThis
       claim={media.alt || "Hero photo"}
-      steps={steps}
+      steps={mediaWhyThisSteps(media)}
       className="[&_summary]:text-white"
     />
   );
@@ -127,10 +99,19 @@ export function HeroPhotoBlock({
   blurRef?: Ref<HTMLImageElement>;
 }) {
   if (!hero || failed) return null;
+  // PROD-5 (2026-09-27): the visible caption is the photo's human
+  // description, never rights-basis/digest/timestamp metadata. The raw
+  // technical values stay in the DOM as non-visible data-media-*
+  // attributes for verification.
+  const caption = hero.alt?.trim() ? hero.alt.trim() : null;
   return (
     <div
       className="relative h-64 w-full overflow-hidden sm:h-80"
       data-hero-media={hero.id}
+      data-media-source-url={hero.sourceUrl || undefined}
+      data-media-rights-basis={hero.rightsBasis || undefined}
+      data-media-digest={hero.digest || undefined}
+      data-media-observed-at={hero.observedAt || undefined}
     >
       {hero.blurUrl ? (
         <img
@@ -152,6 +133,11 @@ export function HeroPhotoBlock({
         onError={onMediaError}
         className="absolute inset-0 h-full w-full object-cover"
       />
+      {caption ? (
+        <div className="absolute bottom-2 left-2 max-w-[65%] rounded bg-black/55 px-2 py-1">
+          <p className="text-xs text-white">{caption}</p>
+        </div>
+      ) : null}
       <div className="absolute bottom-2 right-2 rounded bg-black/55 px-2 py-1">
         <HeroMediaWhyThis media={hero} />
       </div>

@@ -18,7 +18,7 @@ import { AskFydWidget } from "./ask-fyd-widget";
 import { ObjectRail, pingObjectToView, richestObject } from "./object-rail";
 import { ObjectCard } from "../object/card";
 import { ObjectCircle } from "../ui/object-circle";
-import { WhyThis, type EvidenceStep } from "../ui/why-this";
+import { WhyThis, mediaWhyThisSteps, type EvidenceStep } from "../ui/why-this";
 import { whyThisClaimChainFor } from "../object/why-this-steps";
 import {
   ownerAssertionsFromGraph,
@@ -793,7 +793,12 @@ function FydObjectCard({
         <ClaimBadge objects={[o]} />
       </div>
       {title ? (
-        <WhyThis claim={title} steps={whyThisClaimChainFor(o)} className="mt-2" />
+        <WhyThis
+          claim={title}
+          steps={whyThisClaimChainFor(o)}
+          className="mt-2"
+          dataAttributes={{ "data-provenance-ref": o.provenance.ref }}
+        />
       ) : null}
       {affordanceEligible(o) ? (
         <ObjectAffordance
@@ -906,7 +911,7 @@ export function ObjectDoorway({
 // H4/R-H4 reconciliation). This is the verifier wired into the actual
 // projection path, not a sidecar.
 //
-// Labels, action text ("Visit website", "Ask FYD"), section headings that
+// Labels, action text ("Visit <domain>", "Ask FYD"), section headings that
 // come from presentation (generated copy), and structural text are not
 // factual claims and do not go through the verifier.
 //
@@ -1227,6 +1232,9 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
           {phoneMethod ? (
             <FydContactLink method={phoneMethod} theme={theme} variant="button" />
           ) : null}
+          {/* WEBSITE-CTA-DEDUP (PROD-11): the hero is the single website
+              CTA on the site page. Label names the domain instead of a
+              generic call to action; CTASection renders no website button. */}
           {website.kind === "safe" ? (
             <a
               href={website.href}
@@ -1237,7 +1245,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
                 borderRadius: theme.radius === "full" ? 9999 : 8,
               }}
             >
-              Visit website
+              Visit {hostOf(website.href)}
             </a>
           ) : null}
           <a
@@ -1378,8 +1386,34 @@ function ServicesSection(props: SectionProps) {
     ? objects.filter((o) => presentation.featuredIds!.includes(o.id))
     : objects;
   if (featured.length === 0) return null;
+  // PROD-2 (2026-09-27): a services section whose copy invites contact
+  // ("get in touch") must carry a real contact action in the section.
+  // The phone is the owner object's ContactMethod projection:
+  // binding-verified and safety-gated through contactMethodFor, never
+  // invented; no verifiable phone means no button. Rendered as a direct
+  // tel: link: for urgent repairs a disclosure tap before dialing is the
+  // wrong friction. Generic: zero customer-specific code.
+  const owner = ctx.graph.objects.find((o) => o.id === ctx.spec.ownerObjectId);
+  const phoneMethod = owner
+    ? contactMethod(ctx, owner, "phone", correctionFor(owner, "phone"))
+    : null;
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Services"} copy={presentation.copy}>
+      {phoneMethod ? (
+        <div className="mt-4" data-fyd-section-call={section.id}>
+          <a
+            href={phoneMethod.actionUri}
+            className="inline-flex min-h-[44px] items-center rounded px-6 py-3 font-semibold"
+            style={{
+              background: theme.accent,
+              color: theme.accentForeground,
+              borderRadius: theme.radius === "full" ? 9999 : 8,
+            }}
+          >
+            Call {phoneMethod.value}
+          </a>
+        </div>
+      ) : null}
       <CardGrid objects={featured} theme={theme} ctx={ctx} />
     </SectionShell>
   );
@@ -1863,8 +1897,6 @@ function SocialProofSection({ section, objects, presentation, theme, ctx, motion
 }
 
 function CTASection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
-  const o = objects[0];
-  const website = o ? safeWebsite(ctx) : { kind: "non_navigable" as const };
   return (
     <section className="w-full px-4 py-12 sm:px-6" style={{ background: theme.surface }}>
       <div className="mx-auto max-w-5xl text-center">
@@ -1873,15 +1905,7 @@ function CTASection({ section, objects, presentation, theme, ctx, motionIndex }:
         </h2>
         {presentation.copy && <p className="mt-2 text-accent">{presentation.copy}</p>}
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          {website.kind === "safe" ? (
-            <a
-              href={website.href}
-              className="rounded px-6 py-3 font-semibold"
-              style={{ background: theme.accent, color: theme.accentForeground, borderRadius: theme.radius === "full" ? 9999 : 8 }}
-            >
-              Visit website
-            </a>
-          ) : null}
+          {/* PROD-11: no website CTA here; the hero owns it. Ask FYD only. */}
           <a
             href="#ask"
             className="rounded border px-6 py-3 font-semibold"
@@ -2022,30 +2046,20 @@ export function galleryEligible(ctx: RenderContext): boolean {
 
 /**
  * Contextual provenance for a gallery photo: the generic WhyThis
- * drill-down fed ONLY with the media's own provenance fields, mirroring
- * the hero photo treatment. No invented copy.
+ * drill-down fed ONLY with the media's own provenance fields, in plain
+ * language (PROD-5/PROD-6), mirroring the hero photo treatment. No
+ * invented copy. The raw technical values (digest, observedAt) live in
+ * non-visible data-media-* attributes on the figure; the visible caption
+ * is the photo's human description (media.alt), rendered by
+ * GallerySection.
  */
 function GalleryMediaWhyThis({ media }: { media: DisplayMedia }) {
-  const steps: EvidenceStep[] = [];
-  if (media.sourceUrl) {
-    steps.push({ step: "Photo source", detail: media.sourceUrl, state: "observed" });
-  }
-  if (media.rightsBasis) {
-    // Policy inference, not an observation: classifyRights is a URL
-    // heuristic with no authorization evidence (QA-TRUTH F-002).
-    steps.push({ step: "Rights basis", detail: media.rightsBasis, state: "inferred" });
-  }
-  if (media.observedAt) {
-    steps.push({ step: "Observed", detail: media.observedAt, state: "observed" });
-  }
-  if (media.digest) {
-    steps.push({
-      step: "Content digest",
-      detail: media.digest.slice(0, 16) + "...",
-      state: "inferred",
-    });
-  }
-  return <WhyThis claim={media.alt || "Gallery photo"} steps={steps} />;
+  return (
+    <WhyThis
+      claim={media.alt || "Gallery photo"}
+      steps={mediaWhyThisSteps(media)}
+    />
+  );
 }
 
 /**
@@ -2070,6 +2084,10 @@ function GallerySection({ section, presentation, theme, ctx, motionIndex }: Sect
             key={m.id}
             data-motion="enter"
             data-motion-index={i}
+            data-media-source-url={m.sourceUrl || undefined}
+            data-media-rights-basis={m.rightsBasis || undefined}
+            data-media-digest={m.digest || undefined}
+            data-media-observed-at={m.observedAt || undefined}
             style={{ animationDelay: staggerDelayMs(i, motion) ? `${staggerDelayMs(i, motion)}ms` : undefined }}
           >
             <img
@@ -2089,6 +2107,11 @@ function GallerySection({ section, presentation, theme, ctx, motionIndex }: Sect
               }}
             />
             <figcaption className="mt-1">
+              {m.alt?.trim() ? (
+                <p className="text-sm" style={{ color: theme.ink }}>
+                  {m.alt.trim()}
+                </p>
+              ) : null}
               <GalleryMediaWhyThis media={m} />
             </figcaption>
           </figure>
