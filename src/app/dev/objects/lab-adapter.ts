@@ -20,6 +20,12 @@ import type { ObjectGraph } from "@/fyd/sitespec/types";
 import { schemaRole } from "@/fyd/sitespec/schemas";
 import type { PingObject } from "@/lib/ping/types";
 import { loadObjectView } from "@/fyd/object/view";
+import {
+  detectOrphanedCorrections,
+  type OrphanedCorrection,
+} from "@/fyd/object/owner-overlay";
+
+export type { OrphanedCorrection };
 import type { VerifiedPublicProjection } from "@/fyd/sitespec/public-projection";
 import type {
   ObjectCapability,
@@ -166,11 +172,18 @@ export function genericObjectView(obj: PingObject): ObjectView {
 export interface LabData {
   typeGroups: LabTypeGroup[];
   views: Record<string, ObjectView>;
+  /**
+   * PROD-8: owner corrections that are active in the journal but apply to
+   * nothing in the current graph. The lab must render these as warnings;
+   * they are never silently dropped.
+   */
+  orphanedCorrections: OrphanedCorrection[];
 }
 
 export function buildLabData(
   verified: VerifiedPublicProjection,
   graph: ObjectGraph,
+  siteId: string,
 ): LabData {
   const groups = new Map<LabTypeName, LabObjectSummary[]>();
   const views: Record<string, ObjectView> = {};
@@ -198,5 +211,9 @@ export function buildLabData(
         g.objects.length > 0 ||
         (LAB_TYPE_ORDER as readonly string[]).includes(g.type),
     );
-  return { typeGroups, views };
+  // The owner store is keyed by site slug (e.g. "happy-place"), not by
+  // graph object id: detection runs against the same key the owner
+  // journal uses.
+  const orphanedCorrections = detectOrphanedCorrections(graph, siteId);
+  return { typeGroups, views, orphanedCorrections };
 }

@@ -145,7 +145,11 @@ export default async function ObjectsLabPage({
   }
 
   const { graph, meta } = await getPingObjectGraph(siteId);
-  const { typeGroups, views } = buildLabData(verified, graph);
+  const { typeGroups, views, orphanedCorrections } = buildLabData(
+    verified,
+    graph,
+    siteId,
+  );
   const labMeta: LabMeta = {
     dumpedAt: meta.dumpedAt,
     dumperVersion: meta.dumperVersion,
@@ -162,6 +166,7 @@ export default async function ObjectsLabPage({
       meta={labMeta}
       typeGroups={typeGroups}
       views={views}
+      orphanedCorrections={orphanedCorrections}
       initialType={initialType}
       initialProjection={initialProjection}
       initialViewport={initialViewport}

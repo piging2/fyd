@@ -41,6 +41,7 @@ import type {
   LabObjectSummary,
   LabTypeGroup,
   LabTypeName,
+  OrphanedCorrection,
 } from "./lab-adapter";
 
 export type ProjectionKind = "Circle" | "Card" | "Node";
@@ -74,6 +75,12 @@ interface LabClientProps {
   meta: LabMeta;
   typeGroups: LabTypeGroup[];
   views: Record<string, ObjectView>;
+  /**
+   * PROD-8: owner corrections active in the journal that apply to nothing
+   * in the current graph. Rendered as an always-visible warning banner;
+   * never silently dropped.
+   */
+  orphanedCorrections: OrphanedCorrection[];
   initialType?: LabTypeName;
   initialProjection?: ProjectionKind;
   initialViewport?: ViewportPreset;
@@ -240,6 +247,7 @@ export function ObjectsLabClient({
   meta,
   typeGroups,
   views,
+  orphanedCorrections,
   initialType,
   initialProjection,
   initialViewport,
@@ -418,6 +426,26 @@ export function ObjectsLabClient({
               production actions.
             </p>
             <DemoOwnerMode siteId={siteId} enabled={demoOwnerModeEnabled} />
+          </div>
+        )}
+
+        {orphanedCorrections.length > 0 && (
+          <div
+            data-testid="orphan-warning"
+            role="alert"
+            className="mt-4 rounded-lg border-2 border-amber-600 bg-amber-50 p-4"
+          >
+            <p className="text-sm font-bold uppercase tracking-widest text-amber-900">
+              Owner correction needs attention
+            </p>
+            {orphanedCorrections.map((o, i) => (
+              <p key={i} className="mt-2 text-sm text-amber-900">
+                {o.detail}
+                <span className="mt-1 block font-mono text-xs text-amber-700">
+                  target: {o.target} · reason: {o.reason}
+                </span>
+              </p>
+            ))}
           </div>
         )}
 
