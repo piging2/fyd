@@ -180,7 +180,11 @@ function ProposalCard({
         {Object.entries(proposal.changes).map(([k, v]) => (
           <div key={k} className="flex flex-wrap gap-x-2">
             <dt className="font-medium text-accent/60">{k}:</dt>
-            <dd className="min-w-0 flex-1 break-words text-accent/90">{v}</dd>
+            <dd className="min-w-0 flex-1 break-words text-accent/90">
+              {/* PROD-4 (repaired): machine-valued change entries (e.g. the
+                  raw replyTo id) render their display label, never the id. */}
+              {proposal.displayChangeLabels?.[k] ?? v}
+            </dd>
           </div>
         ))}
       </dl>

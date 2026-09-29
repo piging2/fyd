@@ -37,7 +37,7 @@
  * the context assembly.
  */
 
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../../lib/ping/digest";
 import { canonicalize } from "../../lib/ping/ask-composer";
 
 export const CONTEXT_PACKET_VERSION = "ask-context-packet@2";
@@ -48,9 +48,6 @@ export const CLAIM_BINDING_VERSION = "claim-binding@1";
 // Canonical serialization (sha256-canonical-json-v1, FYD envelope pin)
 // ---------------------------------------------------------------------------
 
-function sha256Hex(s: string): string {
-  return createHash("sha256").update(s, "utf8").digest("hex");
-}
 
 function byteLen(s: string): number {
   return Buffer.byteLength(s, "utf8");

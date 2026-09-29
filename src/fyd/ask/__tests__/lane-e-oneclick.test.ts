@@ -131,7 +131,7 @@ describe("LANE E one-click proof (synthetic tenant, zero wiring)", () => {
     expect(where.answer).toContain("Moab");
 
     const emergency = ask("Do you offer emergency service?");
-    expect(emergency.answer).toContain("No emergency service is on record");
+        expect(emergency.answer).toContain("does not offer emergency service");
     expect(emergency.unknowns).toContain("emergency");
 
     const coverage = ask("What don't you know?");

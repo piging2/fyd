@@ -409,7 +409,7 @@ describe("FYD-010: the answer path never surfaces canaries", () => {
     // zero citations, and the refusal carries no canary either.
     const out = ask(makeBundle(canaryGraph()), "What is the meaning of life?");
     assertOk(out);
-    expect(out.answer).toContain("I do not have evidence for that");
+        expect(out.answer).toContain("I cannot answer that: nothing in the site record covers it");
     expect(out.citations).toEqual([]);
     expectNoCanaries(JSON.stringify(out));
   });

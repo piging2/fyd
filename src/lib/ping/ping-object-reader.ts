@@ -44,7 +44,7 @@ import type {
 } from "./types";
 import { planActions as planActionsPure } from "./action-planner";
 import { grantsForViewer, isSiteCapableSchema } from "./grants";
-import { buildAskContext, composeAnswer, verifyProposalDigest } from "./ask-composer";
+import { buildAskContext, composeAnswer, stripInternalIds, verifyProposalDigest } from "./ask-composer";
 import { compareRanked, rankScore } from "./feed-rank";
 import { getWebsiteObjects, getWebsiteRelationships } from "./website-objects";
 import {
@@ -1290,7 +1290,40 @@ class GatewayPingObjectReader implements PingObjectReader {
       relationships: rel,
       plan,
     });
-    return composeAnswer(ctx, question);
+    const ans = composeAnswer(ctx, question);
+    // PROD-4 (repaired PROD-3+4-REPAIR): this path returns the composer
+    // answer directly, so it applies the same id-strip post-processing as
+    // the visitor pipeline: no raw internal ids in user-facing text.
+    // Known ids resolve to their object titles; anything unrecognized
+    // becomes "the site record". Structured refs stay intact.
+    const idLabels = new Map<string, string>();
+    const titleOf = (o: { id: string; title: string }): void => {
+      const t = o.title.trim();
+      if (t.length > 0 && !idLabels.has(o.id)) idLabels.set(o.id, t);
+    };
+    if (target) titleOf(target);
+    for (const o of related) titleOf(o);
+    for (const o of objects) titleOf(o);
+    return {
+      ...ans,
+      answer: stripInternalIds(ans.answer, idLabels),
+      // The visitor layer maps evidenceRefs to stripped citation labels;
+      // this path exposes evidenceRefs directly, so their labels get the
+      // same strip. Structured ref ids and details stay intact.
+      evidenceRefs: ans.evidenceRefs.map((e) => ({ ...e, label: stripInternalIds(e.label, idLabels) })),
+      // PROD-3+4-REPAIR-R2: claim labels ride the ...ans spread
+      // unstripped; the API claims surface must never carry raw ids, so
+      // claim strings get the same strip. Structured evidenceRefIds stay
+      // intact.
+      claimClassifications: (ans.claimClassifications ?? []).map((c) => ({
+        ...c,
+        claim: stripInternalIds(c.claim, idLabels),
+      })),
+      unknowns: ans.unknowns.map((u) => stripInternalIds(u, idLabels)),
+      proposal: ans.proposal
+        ? { ...ans.proposal, note: stripInternalIds(ans.proposal.note, idLabels) }
+        : null,
+    };
   }
 
   /**

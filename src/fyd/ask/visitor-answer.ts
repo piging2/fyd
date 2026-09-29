@@ -53,7 +53,7 @@ import { createHash } from "node:crypto";
 import type { SiteBundle } from "../media/site-bundle";
 import { buildAskFydContext } from "./context-builder";
 import { composeAskFyd } from "./answer";
-import { canonicalize } from "../../lib/ping/ask-composer";
+import { canonicalize, stripInternalIds } from "../../lib/ping/ask-composer";
 import { type FieldVisibilityDecision } from "../sitespec/field-visibility";
 import { projectAskContextForViewer } from "./context-projection";
 import {
@@ -158,6 +158,86 @@ export function claimClassFor(classification: string | undefined): AskClaimClass
     default:
       return "SUPPORTED DIRECTLY";
   }
+}
+
+/**
+ * PROD-9: answer-class polarity for Ask FYD responses. Distinct from the
+ * 5-class support contract (answerClass/answerState), which describes the
+ * EVIDENCE standing behind the answer: polarity describes what the answer
+ * IS, so the UI can render it unambiguously.
+ * - "ANSWER": a normal answer (cited, derived, or conflicted).
+ * - "DENIAL": the pipeline refused: out of scope, no evidence, or no
+ *   authority. Refusal language is direct, never evasive.
+ * - "PREMISE_REJECTED": the question assumed something false and the
+ *   answer states the corrected premise (e.g. "this business does not
+ *   offer emergency service", "there is no owner or staff information on
+ *   record"). Never a bare "I don't know".
+ */
+export type AskResponseClass = "ANSWER" | "DENIAL" | "PREMISE_REJECTED";
+
+/**
+ * PROD-9: refusal texts whose premise the composer corrects outright.
+ * Each fragment is a verbatim substring of a composer/site-patch refusal
+ * that states the corrected premise instead of merely not knowing. A
+ * refusal carrying one is PREMISE_REJECTED, not a bare denial.
+ */
+const PREMISE_CORRECTING_REFUSAL_FRAGMENTS = [
+  "there is no owner or staff information on record", // people branch
+  "could not find a service matching", // site-patch reorder: named service not offered
+  "is already first, so there is nothing to change", // site-patch reorder no-op
+  "site spec has no sections", // site-patch: nothing to reorder
+];
+
+/**
+ * PROD-9: question-named facets whose absence the composer states as an
+ * explicit corrected premise (INFERENCE absence claims), not as
+ * "I don't know". The claim fragment is matched against the served claim
+ * label; the question must name the facet for the question's premise to
+ * be about it.
+ */
+const PREMISE_FACETS: { words: string[]; claimFragment: string }[] = [
+  { words: ["emergency"], claimFragment: "does not offer emergency service" },
+];
+
+function hasWordLower(haystack: string, word: string): boolean {
+  return new RegExp("\\b" + word + "\\b").test(haystack);
+}
+
+/**
+ * PROD-9: reduce one served answer to its polarity. Deterministic and
+ * surface-only: it classifies what the pipeline already produced, never
+ * changing the answer. Refusals default to DENIAL; a refusal whose text
+ * states the corrected premise is PREMISE_REJECTED. A non-refusal answer
+ * whose claims correct the question's premise (a DERIVED absence claim
+ * about a question-named facet) is PREMISE_REJECTED; everything else is
+ * ANSWER.
+ */
+export function responseClassFor(args: {
+  refusal: boolean;
+  question: string;
+  answer: string;
+  claimClassifications: AskClaimClassification[];
+}): AskResponseClass {
+  const { refusal, question, answer, claimClassifications } = args;
+  const answerLower = answer.toLowerCase();
+  if (refusal) {
+    const correctsPremise = PREMISE_CORRECTING_REFUSAL_FRAGMENTS.some((f) =>
+      answerLower.includes(f),
+    );
+    return correctsPremise ? "PREMISE_REJECTED" : "DENIAL";
+  }
+  const questionLower = question.toLowerCase();
+  for (const facet of PREMISE_FACETS) {
+    const namesFacet = facet.words.some((w) => hasWordLower(questionLower, w));
+    if (!namesFacet) continue;
+    const corrects = claimClassifications.some(
+      (cc) =>
+        claimClassFor(cc.classification) === "DERIVED" &&
+        cc.claim.toLowerCase().includes(facet.claimFragment),
+    );
+    if (corrects) return "PREMISE_REJECTED";
+  }
+  return "ANSWER";
 }
 
 export interface AnswerAskFydInput {
@@ -277,6 +357,8 @@ export interface AskFydSuccess {
   ok: true;
   answer: string;
   refusal: boolean;
+  /** PROD-9: answer-class polarity for the UI: ANSWER | DENIAL | PREMISE_REJECTED. */
+  responseClass: AskResponseClass;
   citations: AskFydCitation[];
   /** Distinct objects cited by the answer (never invented attributions). */
   objectRefs: AskFydObjectRef[];
@@ -408,6 +490,20 @@ function visitorizeAnswer(text: string): string {
     "Try asking about the business, its services, contact details, or location.",
   );
 }
+
+/**
+ * PROD-4: id stripping is the canonical stripInternalIds in
+ * lib/ping/ask-composer, shared by the visitor pipeline and the
+ * PingObjectReader.ask path (PROD-3+4-REPAIR). It runs on EVERY
+ * user-facing text surface this pipeline returns (answer, citation labels,
+ * proposal notes, unknowns, error messages) before it leaves
+ * answerAskFyd. Structured debugging refs (citation ids,
+ * objectRefs[].objectId) are not text surfaces and stay intact for the
+ * Why-this panel.
+ */
+
+/** Label map for error paths: no bundle was loaded, so no id has a title. */
+const NO_ID_LABELS: ReadonlyMap<string, string> = new Map();
 
 function basisForClassification(classification: string): string {
   switch (classification) {
@@ -571,7 +667,7 @@ export function answerAskFyd(
   if (input.mode !== "visitor" && input.mode !== "owner") {
     return {
       ok: false,
-      error: { kind: "bad_mode", message: "mode must be 'visitor' or 'owner'." },
+      error: { kind: "bad_mode", message: stripInternalIds("mode must be 'visitor' or 'owner'.", NO_ID_LABELS) },
     };
   }
   let bundle: SiteBundle | null;
@@ -589,24 +685,32 @@ export function answerAskFyd(
       ok: false,
       error: {
         kind: "projection_unavailable",
-        message:
+        message: stripInternalIds(
           "I could not load this site's data, so I cannot answer your question. The answer is unknown.",
+          NO_ID_LABELS,
+        ),
       },
     };
   }
   if (!bundle) {
-    return { ok: false, error: { kind: "unknown_site", message: "Unknown site." } };
+    return {
+      ok: false,
+      error: { kind: "unknown_site", message: stripInternalIds("Unknown site.", NO_ID_LABELS) },
+    };
   }
   const question = input.question.trim();
   if (question.length === 0) {
-    return { ok: false, error: { kind: "bad_question", message: "Ask a question first." } };
+    return { ok: false, error: { kind: "bad_question", message: stripInternalIds("Ask a question first.", NO_ID_LABELS) } };
   }
   if (question.length > MAX_QUESTION_CHARS) {
     return {
       ok: false,
       error: {
         kind: "bad_question",
-        message: "That question is too long. Please keep it under 2000 characters.",
+        message: stripInternalIds(
+          "That question is too long. Please keep it under 2000 characters.",
+          NO_ID_LABELS,
+        ),
       },
     };
   }
@@ -635,10 +739,16 @@ export function answerAskFyd(
       ok: false,
       error:
         requestedObjectId.length > 0
-          ? { kind: "unknown_object", message: "Unknown object for this site." }
+          ? {
+              kind: "unknown_object",
+              message: stripInternalIds("Unknown object for this site.", NO_ID_LABELS),
+            }
           // The bundle has no public business object to answer from: a
           // server problem, never something to paper over with a guess.
-          : { kind: "bundle_invalid", message: "This site is not available right now." },
+          : {
+              kind: "bundle_invalid",
+              message: stripInternalIds("This site is not available right now.", NO_ID_LABELS),
+            },
     };
   }
   const relatedObjects =
@@ -662,7 +772,20 @@ export function answerAskFyd(
     fieldConflicts: (input.fieldConflicts ?? []).filter(isUnresolvedConflict),
   });
   const ans = composeAskFyd(ctx, question);
-  const answer = visitorizeAnswer(ans.answer);
+  // PROD-4: id -> title map for the strip: known ids resolve to their
+  // object titles in user-facing text; anything unrecognized becomes
+  // "the site record". Titles are never ids here (displayTarget / the
+  // refusal path guarantee it), so the map cannot reintroduce one.
+  const idLabels = new Map<string, string>();
+  const titleOf = (o: { id: string; title: string }): void => {
+    const t = o.title.trim();
+    if (t.length > 0 && !idLabels.has(o.id)) idLabels.set(o.id, t);
+  };
+  titleOf(target);
+  for (const o of relatedObjects) titleOf(o);
+  // PROD-4: the strip runs on every user-facing text surface, on every
+  // answer path (direct answers, refusals, proposals, unknowns).
+  const answer = stripInternalIds(visitorizeAnswer(ans.answer), idLabels);
   const citations = buildCitations(
     answer,
     ans.evidenceRefs,
@@ -670,11 +793,31 @@ export function answerAskFyd(
     target,
     relatedObjects,
     publicGraph.relationships,
-  );
+  ).map((c) => ({ ...c, label: stripInternalIds(c.label, idLabels) }));
   // A refusal is an answer with no cited evidence: the pipeline had nothing
   // to stand on, so it says so instead of guessing.
   const refusal = ans.partial && citations.length === 0;
   const refs = buildAnswerRefs(citations);
+  // Claim groupings for the 5-class reduction: which evidence refs
+  // support the same claim (SUPPORTED BY MULTIPLE EVIDENCE requires
+  // >=2 distinct direct refs behind ONE claim, not across claims).
+  // PROD-3+4-REPAIR-R2: claim labels are user-facing text, so raw ids
+  // in them are stripped like every other surface (a blank-title
+  // target used to leak "<id> business profile" here). Structured
+  // evidenceRefIds are not text and stay intact.
+  const claimClassifications = ans.claimClassifications.map((c) => ({
+    ...c,
+    claim: stripInternalIds(c.claim, idLabels),
+  }));
+  // PROD-9: answer-class polarity, computed on exactly what the visitor
+  // sees (stripped text and claim labels). Surface-only: classification
+  // never changes the answer.
+  const responseClass = responseClassFor({
+    refusal,
+    question,
+    answer,
+    claimClassifications,
+  });
   // The composer already computed unknowns, suggestedActions, and proposal
   // on the internal AskAnswer: surface them honestly, empty/null when
   // absent, never invented.
@@ -682,16 +825,16 @@ export function answerAskFyd(
     ok: true,
     answer,
     refusal,
+    responseClass,
     citations,
     objectRefs: refs.objectRefs,
     evidenceRefs: refs.evidenceRefs,
     sourceRefs: refs.sourceRefs,
-    unknowns: ans.unknowns,
+    unknowns: ans.unknowns.map((u) => stripInternalIds(u, idLabels)),
     suggestedActions: ans.suggestedActions,
-    proposal: ans.proposal,
-    // Claim groupings for the 5-class reduction: which evidence refs
-    // support the same claim (SUPPORTED BY MULTIPLE EVIDENCE requires
-    // >=2 distinct direct refs behind ONE claim, not across claims).
-    claimClassifications: ans.claimClassifications,
+    proposal: ans.proposal
+      ? { ...ans.proposal, note: stripInternalIds(ans.proposal.note, idLabels) }
+      : null,
+    claimClassifications,
   };
 }

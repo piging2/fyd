@@ -27,6 +27,7 @@ import {
   applyPublicVisibilityGate,
   EDGE_VISITOR,
 } from "../resolve";
+import { verifyPublicProjection } from "../../sitespec/public-projection";
 import { EDGE_RENDER_INVARIANT } from "../types";
 import type { ObjectGraph } from "../../sitespec/types";
 import type { PingObject, PingRelationship } from "@/lib/ping/types";
@@ -118,6 +119,11 @@ function fixtureGraph(variant: "alpha" | "beta"): ObjectGraph {
   };
 }
 
+
+/** Wrap a raw fixture graph in the anonymous verified projection.
+ *  Every sheet under test now runs through the Q-C-01 boundary. */
+const verify = (graph: ObjectGraph) => verifyPublicProjection(graph, [], "anonymous");
+
 describe("the invariant is written down", () => {
   test("EDGE_RENDER_INVARIANT names the functional doorway", () => {
     expect(EDGE_RENDER_INVARIANT).toContain("FUNCTIONAL DOORWAY");
@@ -131,7 +137,7 @@ describe.each([["alpha"], ["beta"]])(
     const graph = () => fixtureGraph(variant as "alpha" | "beta");
 
     test("sheet resolves with identity, type, summary, edges, actions", () => {
-      const sheet = buildObjectSheet(graph(), BIZ, EDGE_VISITOR);
+      const sheet = buildObjectSheet(verify(graph()), BIZ, EDGE_VISITOR);
       expect(sheet).not.toBeNull();
       const s = sheet!;
       expect(s.objectId).toBe(BIZ);
@@ -146,7 +152,7 @@ describe.each([["alpha"], ["beta"]])(
 
     test("offers group holds the services, each a real doorway", () => {
       const g = graph();
-      const s = buildObjectSheet(g, BIZ, EDGE_VISITOR)!;
+      const s = buildObjectSheet(verify(g), BIZ, EDGE_VISITOR)!;
       const offers = s.edgeGroups.find((gr) => gr.predicate === "offers");
       expect(offers).toBeDefined();
       // r8 is inactive: the offers group holds exactly the 2 active edges.
@@ -162,7 +168,7 @@ describe.each([["alpha"], ["beta"]])(
     });
 
     test("unknown predicate falls through to generic_edge, never dropped", () => {
-      const s = buildObjectSheet(graph(), BIZ, EDGE_VISITOR)!;
+      const s = buildObjectSheet(verify(graph()), BIZ, EDGE_VISITOR)!;
       const frob = s.edgeGroups.find((gr) => gr.predicate === "frobnicate");
       expect(frob).toBeDefined();
       expect(frob!.items.length).toBe(1);
@@ -172,8 +178,8 @@ describe.each([["alpha"], ["beta"]])(
 
     test("private objects never appear: no sheet, no edge item", () => {
       const g = graph();
-      expect(buildObjectSheet(g, "test-private-0001", EDGE_VISITOR)).toBeNull();
-      const s = buildObjectSheet(g, BIZ, EDGE_VISITOR)!;
+      expect(buildObjectSheet(verify(g), "test-private-0001", EDGE_VISITOR)).toBeNull();
+      const s = buildObjectSheet(verify(g), BIZ, EDGE_VISITOR)!;
       const located = s.edgeGroups.find((gr) => gr.predicate === "located_at");
       expect(located).toBeDefined();
       // Only the public location; the private warehouse is gated out.
@@ -185,8 +191,8 @@ describe.each([["alpha"], ["beta"]])(
     });
 
     test("edge groups are deterministically ordered", () => {
-      const a = buildObjectSheet(graph(), BIZ, EDGE_VISITOR)!;
-      const b = buildObjectSheet(graph(), BIZ, EDGE_VISITOR)!;
+      const a = buildObjectSheet(verify(graph()), BIZ, EDGE_VISITOR)!;
+      const b = buildObjectSheet(verify(graph()), BIZ, EDGE_VISITOR)!;
       expect(a.edgeGroups.map((gr) => gr.predicate)).toEqual(
         b.edgeGroups.map((gr) => gr.predicate),
       );
@@ -195,7 +201,7 @@ describe.each([["alpha"], ["beta"]])(
     });
 
     test("actions resolve through the capability path; none invented", () => {
-      const s = buildObjectSheet(graph(), BIZ, EDGE_VISITOR)!;
+      const s = buildObjectSheet(verify(graph()), BIZ, EDGE_VISITOR)!;
       const kinds = s.actions.map((a) => a.kind);
       expect(kinds).toContain("ask");
       expect(kinds).toContain("why_this");
@@ -207,7 +213,7 @@ describe.each([["alpha"], ["beta"]])(
     });
 
     test("claims are classified; internal keys never render", () => {
-      const s = buildObjectSheet(graph(), BIZ, EDGE_VISITOR)!;
+      const s = buildObjectSheet(verify(graph()), BIZ, EDGE_VISITOR)!;
       for (const c of s.claims) {
         expect(["DIRECT_FACT", "DERIVED_FACT", "OWNER_AUTHORED", "GENERATED_COPY"]).toContain(
           c.claimClass,
@@ -244,13 +250,17 @@ describe("predicateLabel", () => {
 });
 
 describe("visibility gate parity", () => {
-  test("applyPublicVisibilityGate matches the /sites page rule", async () => {
-    // The site pages gate with spec-pipeline.publicGraph; the edge lane
-    // must enforce exactly the same rule. Import lazily so a missing
-    // server-only dep fails loudly, not silently.
-    const { publicGraph } = await import("../../../app/sites/_shared/spec-pipeline");
+  test("the gate is idempotent over the verified anonymous projection", () => {
+    // The /sites pages consume the verified projection's graph directly.
+    // The edge lane re-applies the gate idempotently over that graph;
+    // it must change nothing the boundary already authorized.
     const g = fixtureGraph("alpha");
-    expect(applyPublicVisibilityGate(g)).toEqual(publicGraph(g));
+    const verified = verify(g);
+    expect(applyPublicVisibilityGate(verified.graph)).toEqual(verified.graph);
+    // And the gate alone enforces the same object set as the boundary.
+    const gatedIds = new Set(applyPublicVisibilityGate(g).objects.map((o) => o.id));
+    const boundaryIds = new Set(verified.graph.objects.map((o) => o.id));
+    expect(gatedIds).toEqual(boundaryIds);
   });
 });
 
@@ -270,7 +280,7 @@ describe("real PING projections (when present)", () => {
         (o) => o.schema === "ping.social.business@1" && o.visibility === "public",
       );
       expect(biz).toBeDefined();
-      const sheet = buildObjectSheet(graph, biz!.id, EDGE_VISITOR);
+      const sheet = buildObjectSheet(verify(graph), biz!.id, EDGE_VISITOR);
       expect(sheet).not.toBeNull();
       expect(sheet!.title).toBe(biz!.title);
       // INVARIANT on real data: every edge item is a real doorway.

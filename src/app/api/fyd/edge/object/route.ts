@@ -1,12 +1,12 @@
 /**
  * GET /api/fyd/edge/object?site=&objectId=
  *
- * Edge-object sheet: the compact object expansion. The sheet is built
- * through the public visibility gate inside buildObjectSheet (the same
- * rule the /sites pages use: only visibility "public" objects, only
- * relationships between public objects). An invisible object yields null,
- * mapped here to 404, indistinguishable from "unknown". No oracle, no
- * bypass.
+ * Edge-object sheet: the compact object expansion. The sheet is built by
+ * buildObjectSheet over a VERIFIED public projection (Q-C-01): only
+ * visibility "public" objects, only endpoint-safe active relationships,
+ * owner-hidden fields already removed at the boundary. An invisible object
+ * yields null, mapped here to 404, indistinguishable from "unknown". No
+ * oracle, no bypass.
  *
  * - 400: site or objectId missing/invalid.
  * - 404: object unknown or not visible to a public viewer.
@@ -14,7 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
 import {
   buildObjectSheet,
   EDGE_VISITOR,
@@ -38,16 +38,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       { status: 400 },
     );
   }
-  let graph;
+  let verified;
   try {
-    graph = getPingObjectGraphSync(site).graph;
+    verified = getVerifiedPublicProjectionSync(site, "anonymous");
   } catch {
     return NextResponse.json(
       { found: false, reason: "Projection unavailable." },
       { status: 503 },
     );
   }
-  const sheet = buildObjectSheet(graph, objectId, EDGE_VISITOR);
+  const sheet = buildObjectSheet(verified, objectId, EDGE_VISITOR);
   if (!sheet) {
     return NextResponse.json(
       {
@@ -57,5 +57,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       { status: 404 },
     );
   }
-  return NextResponse.json(sheet);
+  const { provenance } = verified;
+  return NextResponse.json({
+    ...sheet,
+    contract: {
+      boundaryVersion: provenance.boundaryVersion,
+      viewerKind: provenance.viewerKind,
+      checkpoint: provenance.checkpoint,
+      graphDigest: provenance.graphDigest,
+      decisionsDigest: provenance.decisionsDigest,
+      viewerPolicyDigest: provenance.viewerPolicyDigest,
+      capabilities: provenance.capabilities,
+    },
+  });
 }
+

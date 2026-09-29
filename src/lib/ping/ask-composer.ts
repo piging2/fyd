@@ -14,7 +14,7 @@
  * signed envelope as the viewer identity.
  */
 
-import { createHash } from "node:crypto";
+import { canonicalize, sha256Hex } from "./digest";
 import { ownerCorrectionForObject } from "@/fyd/object/owner-overlay";
 import {
   coarsenAddress,
@@ -57,18 +57,7 @@ const PROPOSABLE_FIELDS: Record<string, string> = {
 // Canonical JSON + digest (sha256-canonical-json-v1)
 // ---------------------------------------------------------------------------
 
-export function canonicalize(value: unknown): string {
-  if (value === null || value === undefined) return "null";
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
-  if (typeof value === "object") {
-    const rec = value as Record<string, unknown>;
-    const keys = Object.keys(rec).sort();
-    return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalize(rec[k])}`).join(",")}}`;
-  }
-  return "null";
-}
+export { canonicalize };
 
 export interface ObjectProposalBody {
   kind: "object_update" | "object_create";
@@ -85,7 +74,7 @@ export interface ObjectProposalBody {
 export type ProposalBody = ObjectProposalBody | SitePatchProposalBody;
 
 export function proposalDigest(body: ProposalBody): string {
-  return createHash("sha256").update(canonicalize(body), "utf8").digest("hex");
+  return sha256Hex(canonicalize(body));
 }
 
 export function verifyProposalDigest(proposal: AskProposal): boolean {
@@ -375,6 +364,266 @@ function topicWords(q: string): string[] {
   return out;
 }
 
+/**
+ * PROD-3: out-of-scope topics. These name things with no bearing on any
+ * business Ask FYD answers for (elections, general knowledge, weather
+ * forecasts, news, sports, markets). A question naming one is refused with
+ * the scope refusal ("I can only answer questions about X"), never
+ * answered with a business blurb. The lexicon is a certain-signal list:
+ * anything NOT on it flows to the normal branch logic, which refuses
+ * honestly when ungrounded (fail-closed: uncertain scope never
+ * confabulates).
+ *
+ * PROD-3+4-REPAIR: the ambiguous words "weather", "temperature", "news",
+ * "stock"/"stocks" are NOT bare words here; they are context-sensitive
+ * (see the names* helpers below) because bare matching over-fired on
+ * legitimate business questions ("Do you have this part in stock?",
+ * "What temperature should my water heater be set to?").
+ */
+const OUT_OF_SCOPE_WORDS: ReadonlySet<string> = new Set([
+  // Elections and politics.
+  "election", "elections", "president", "presidential", "senator", "senators",
+  "congress", "congressman", "governor", "mayor", "ballot", "vote", "votes",
+  "voting", "voter", "voters", "democrat", "democrats", "republican",
+  "republicans", "referendum", "polls",
+  // Weather as general knowledge (not business operations).
+  "forecast", "forecasts", "fahrenheit", "celsius",
+  "tornado", "hurricane", "blizzard",
+  // Sports, entertainment.
+  "sports", "football", "basketball", "baseball", "soccer", "olympics",
+  // Markets.
+  "bitcoin", "crypto", "cryptocurrency", "nasdaq",
+  // Lottery, horoscope.
+  "lottery", "horoscope",
+]);
+
+/**
+ * Multi-word out-of-scope topics (matched as substrings of the lowercased
+ * question). PROD-3+4-REPAIR: "how tall is" is context-sensitive
+ * (see namesUnanchoredHeight) because it over-fired on "how tall is your
+ * building?".
+ */
+const OUT_OF_SCOPE_PHRASES: readonly string[] = [
+  "capital of",
+  "population of",
+  "who won",
+  "who will win",
+  "who is winning",
+  "who wrote",
+  "who invented",
+  "who discovered",
+  "world cup",
+  "super bowl",
+];
+
+/**
+ * Words that anchor a question to the business even when it also names an
+ * out-of-scope topic ("What are your hours on election day?"). Business
+ * nouns and the business name itself are checked separately via
+ * namesBusiness / titleWords; these are the concrete business facets and
+ * operation words.
+ */
+const SCOPE_ANCHOR_WORDS: ReadonlySet<string> = new Set([
+  "hour", "hours", "open", "close", "closing", "schedule", "appointment",
+  "appointments", "saturday", "sunday", "weekend", "weekends",
+  "phone", "email", "address", "location", "located", "website", "contact",
+  "price", "pricing", "cost", "costs", "rate", "rates", "quote", "estimate",
+  "estimates", "service", "services", "offer", "offers", "offering",
+  "offerings", "provide", "provides", "providing",
+  "owner", "owners", "staff", "team", "employee", "employees",
+  "emergency", "review", "reviews", "rating", "ratings",
+  "work", "working", "job", "jobs", "operate", "operates", "hire", "hiring",
+  // PROD-3+4-REPAIR: testimonials are a business facet (social proof).
+  "testimonial", "testimonials",
+]);
+
+/**
+ * PROD-3+4-REPAIR: context-sensitive out-of-scope topics. These words are
+ * ambiguous alone, so each only names an out-of-scope topic with
+ * disambiguating context:
+ * - "stock"/"stocks": market context only, never inventory ("this part in
+ *   stock" is a business question).
+ * - "temperature": forecast context only, never appliance settings ("what
+ *   temperature should my water heater be set to" is a business question).
+ * - "news": headlines/current-events context only, never job status ("any
+ *   news on my repair" is a business question).
+ * - "weather": forecast context only, never damage repair ("do you repair
+ *   weather damage" is a business question).
+ * - "how tall is": only when not anchored to a business facet ("how tall
+ *   is your building" is a business question).
+ */
+
+/** Market-context phrases that make singular "stock" out-of-scope. */
+const STOCK_MARKET_PHRASES: readonly string[] = [
+  "stock market",
+  "stock price",
+  "stock prices",
+  "share price",
+  "share prices",
+];
+
+/** "stock"/"stocks": out-of-scope only with market context, never inventory. */
+function namesStockMarket(q: string): boolean {
+  if (!hasWord(q, "stock", "stocks")) return false;
+  if (hasWord(q, "stocks")) return true;
+  return STOCK_MARKET_PHRASES.some((p) => q.includes(p));
+}
+
+/** Words that put "temperature"/"weather" in a weather-forecast frame. */
+const FORECAST_CONTEXT_WORDS: readonly string[] = [
+  "forecast", "forecasts", "outside", "today", "tomorrow", "tonight",
+];
+
+/** "temperature": out-of-scope only with forecast context, never appliance settings. */
+function namesForecastTemperature(q: string): boolean {
+  if (!hasWord(q, "temperature")) return false;
+  return hasWord(q, ...FORECAST_CONTEXT_WORDS);
+}
+
+/** "weather": out-of-scope only with forecast context, never damage repair. */
+function namesForecastWeather(q: string): boolean {
+  if (!hasWord(q, "weather")) return false;
+  if (hasWord(q, ...FORECAST_CONTEXT_WORDS)) return true;
+  // A bare "what is the weather"-style question is a forecast question.
+  return topicWords(q).every((w) => w === "weather");
+}
+
+/** Job-status words that keep "news" about the business in scope. */
+const NEWS_JOB_STATUS_WORDS: readonly string[] = [
+  "repair", "repairs", "order", "orders", "job", "jobs",
+  "project", "projects", "appointment", "appointments",
+  "service", "services", "update", "updates", "status",
+];
+
+/** "news": out-of-scope only with headlines/current-events context, never job status. */
+function namesHeadlineNews(q: string): boolean {
+  if (!hasWord(q, "news")) return false;
+  if (hasWord(q, ...NEWS_JOB_STATUS_WORDS)) return false;
+  if (
+    hasWord(q, "headlines", "headline", "breaking", "latest", "world", "national", "today", "tonight")
+  ) return true;
+  return topicWords(q).every((w) => w === "news");
+}
+
+/** Business-facet nouns that anchor "how tall is" to the business. */
+const HEIGHT_FACET_WORDS: readonly string[] = [
+  "your", "yours",
+  "building", "buildings", "sign", "signs", "fence", "fences",
+  "wall", "walls", "shop", "store", "business", "company",
+  "house", "home", "ceiling", "door", "doors",
+];
+
+/**
+ * "how tall is": out-of-scope only when it asks about something other than
+ * the business ("how tall is the Eiffel Tower?"). A business-facet anchor
+ * ("how tall is your building") keeps it in scope.
+ */
+function namesUnanchoredHeight(q: string): boolean {
+  if (!q.includes("how tall is")) return false;
+  return !hasWord(q, ...HEIGHT_FACET_WORDS);
+}
+
+/**
+ * PROD-3+4-REPAIR-R2: trades/service vocabulary. A question naming
+ * trades or service work is always business scope, never an out-of-scope
+ * topic for the ambiguous words (temperature/weather/stock/news):
+ * "The outside unit shows a temperature fault, can you come look at it
+ * today?" names a condenser fault and a service visit, not a weather
+ * forecast. Business signal wins over out-of-scope signal: the refusal
+ * fires only on a strong out-of-scope signal with zero business/trades
+ * signal. Some of these words also anchor via SCOPE_ANCHOR_WORDS; they
+ * are listed here as the documented trades signal anyway.
+ */
+const TRADES_VOCABULARY_WORDS: readonly string[] = [
+  "unit", "units", "fault", "faults",
+  "repair", "repairs", "service", "services",
+  "install", "installs", "installed", "installation",
+  "fix", "fixes", "fixing", "fixed", "broken",
+  "schedule", "schedules", "scheduling",
+  "appointment", "appointments",
+  "estimate", "estimates", "quote", "quotes",
+  // PROD-3+4-REPAIR-R3: missing trades vocabulary. Legitimate questions
+  // like "Will tomorrow's weather affect the maintenance visit?" were
+  // wrongly refused because no trades word was recognized.
+  "maintenance", "visit", "visits", "tune-up",
+  "diagnostic", "diagnostics", "technician", "technicians",
+  "warranty", "inspection", "inspections",
+  "replacement", "replacements", "upgrade", "upgrades",
+  "servicing",
+  // "tech" (technician shorthand) is a word, not a phrase: word-boundary
+  // matching so "technology"/"technical" do not count as trades signal.
+  "tech",
+];
+const TRADES_VOCABULARY_PHRASES: readonly string[] = [
+  "not working",
+  "come look",
+  "come by",
+  "take a look",
+  "have a look",
+  "stop by",
+  // PROD-3+4-REPAIR-R3: multi-word trades phrases.
+  "maintenance visit",
+  "tune up",
+];
+
+/** True when the question names trades/service work (business scope). */
+function namesTradesWork(q: string): boolean {
+  if (hasWord(q, ...TRADES_VOCABULARY_WORDS)) return true;
+  return TRADES_VOCABULARY_PHRASES.some((p) => q.includes(p));
+}
+
+/**
+ * PROD-3+4-REPAIR-R3: the raw out-of-scope topic-naming test, WITHOUT the
+ * trades/business anchor guards. The profile branch uses this stricter
+ * test: a business blurb must never answer a question whose subject is an
+ * out-of-scope topic, even when trades words are present ("Who will win
+ * the election, fix this?" names trades work via "fix", but the election
+ * is the subject, so it must refuse, not blurb).
+ */
+function namesOutOfScopeTopic(q: string): boolean {
+  for (const w of OUT_OF_SCOPE_WORDS) {
+    if (hasWord(q, w)) return true;
+  }
+  for (const p of OUT_OF_SCOPE_PHRASES) {
+    if (q.includes(p)) return true;
+  }
+  // PROD-3+4-REPAIR: context-sensitive topics; bare words over-fired.
+  return (
+    namesStockMarket(q) ||
+    namesForecastTemperature(q) ||
+    namesForecastWeather(q) ||
+    namesHeadlineNews(q) ||
+    namesUnanchoredHeight(q)
+  );
+}
+
+/**
+ * PROD-3 scope check. True when the question names an out-of-scope topic
+ * AND is not anchored to the business (it neither names the business nor
+ * asks about a concrete business facet). A hit refuses; anything uncertain
+ * flows through to the branch logic, which refuses honestly when it cannot
+ * ground an answer.
+ */
+function isOutOfScopeQuestion(q: string, titleWords: string[]): boolean {
+  if (!namesOutOfScopeTopic(q)) return false;
+  // PROD-3+4-REPAIR-R2: business signal wins over out-of-scope signal.
+  // A question naming trades/service work is never out-of-scope for the
+  // ambiguous topics (temperature/weather/stock/news), regardless of
+  // context words: "outside", "today", "tomorrow" are ordinary trades
+  // words too ("The outside unit shows a temperature fault, can you come
+  // look at it today?"). The refusal fires only on a strong out-of-scope
+  // signal with zero business/trades signal.
+  if (namesTradesWork(q)) return false;
+  if (
+    hasWord(q, "business", "businesses", "company", "companies", "shop", "store", "firm", "contractor") ||
+    titleWords.some((w) => hasWord(q, w))
+  ) return false;
+  for (const w of SCOPE_ANCHOR_WORDS) {
+    if (hasWord(q, w)) return false;
+  }
+  return true;
+}
+
 /** Words describing the services on record (services field, titles, descriptions). */
 function serviceVocabulary(target: PingObject, relatedServices: PingObject[]): Set<string> {
   const vocab = new Set<string>();
@@ -480,7 +729,7 @@ function noEvidenceAnswer(ctx: AskContext, question: string, unknowns: string[] 
     ...baseAnswer(ctx),
     unknowns,
     answer: [
-      "I do not have evidence for that in the current context, so I will not guess.",
+      "I cannot answer that: nothing in the site record covers it, and I will not guess.",
       consulted,
       "Open an object to give me something concrete to answer from, or ask about what is listed below.",
     ].join("\n\n"),
@@ -501,6 +750,44 @@ function noEvidenceAnswer(ctx: AskContext, question: string, unknowns: string[] 
  */
 export interface ComposeAnswerOpts {
   conflictedFields?: { objectId: string; field: string; evidenceIndices: number[] }[];
+}
+
+/**
+ * PROD-4: user-facing display name for the target object. Never an
+ * internal id: a missing or blank title degrades to the given neutral
+ * noun, never to a raw id prefix like "website-bus".
+ */
+function displayTarget(target: PingObject, fallbackNoun: string): string {
+  const t = target.title.trim();
+  return t.length > 0 ? t : fallbackNoun;
+}
+
+/**
+ * PROD-4 (repaired PROD-3+4-REPAIR, hardened PROD-3+4-REPAIR-R2):
+ * internal-id shapes. Matches ONLY actual id shapes: website-business |
+ * service | location followed by a hex hash (8+ hex chars, the observed
+ * id form, e.g. website-business-6fa5ebd99d72c4cb) plus any further
+ * hyphenated id segments (-location, -service-<hex>, -post-<hex>),
+ * fyd-media ids of the same form, or the standalone truncated prefix
+ * "website-bus". The hex hash is the whole gate: plain English words
+ * after the prefix ("website-business-rentals", "website-business-program",
+ * "fyd-media-kit", "Website-Business-99") are never ids and always survive
+ * intact. Once the hex hash confirms an id, trailing hyphenated segments
+ * are consumed as part of it, so suffixed ids never leak a tail. The
+ * trailing (?![-\w]) guard never matches a prefix of a longer hyphenated
+ * word.
+ */
+export const INTERNAL_ID_RE =
+  /\bwebsite-(?:business|service|location)-[0-9a-f]{8,}(?:-[a-z0-9]+)*\b(?![-\w])|\bfyd-media-[0-9a-f]{8,}(?:-[a-z0-9]+)*\b(?![-\w])|\bwebsite-bus\b(?![-\w])/gi;
+
+/**
+ * PROD-4: strip internal identifiers from user-facing text. Known ids
+ * resolve to their object titles; anything unrecognized becomes
+ * "the site record". Structured refs (citation ids, objectRefs) are not
+ * text surfaces and stay intact for the Why-this panel.
+ */
+export function stripInternalIds(text: string, labels: ReadonlyMap<string, string>): string {
+  return text.replace(INTERNAL_ID_RE, (id) => labels.get(id) ?? "the site record");
 }
 
 export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAnswerOpts = {}): AskAnswer {
@@ -557,12 +844,17 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
       ...body,
       digest: proposalDigest(body),
       digestAlgorithm: "sha256-canonical-json-v1",
-      note: `Approving publishes one post as ${ctx.viewer.displayName ?? "your identity"} replying to ${target.id.slice(0, 12)}. The gateway governs the write.`,
+      note: `Approving publishes one post as ${ctx.viewer.displayName ?? "your identity"} replying to ${displayTarget(target, "this post")}. The gateway governs the write.`,
+      // PROD-4 (repaired): the user-facing rendering of the reply target
+      // goes through displayTarget. changes.replyTo keeps the raw id: it is
+      // digest-bound and the governed write + reply-edge derivation consume
+      // it as an id. This label is display-only, never digested or submitted.
+      displayChangeLabels: { replyTo: displayTarget(target, "this post") },
     };
     return {
       ...base,
       answer: [
-        cite(`I drafted a reply to the post ${target.title || target.id.slice(0, 12)}.`, [0]),
+        cite(`I drafted a reply to the post ${displayTarget(target, "this post")}.`, [0]),
         "Review the exact text in the proposal below. Approving publishes it as you through the governed event path. I cannot publish it myself.",
       ].join("\n\n"),
       proposal,
@@ -577,7 +869,7 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
       return {
         ...base,
         answer: [
-          cite(`Only the controlling identity of ${target.title || target.id.slice(0, 12)} can update it.`, [0]),
+          cite(`Only the controlling identity of ${displayTarget(target, "this record")} can update it.`, [0]),
           "You are not signed in as that identity, so I did not draft a proposal.",
         ].join("\n\n"),
         proposal: null,
@@ -605,12 +897,12 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
       ...body,
       digest: proposalDigest(body),
       digestAlgorithm: "sha256-canonical-json-v1",
-      note: `Approving applies this exact change to ${target.id.slice(0, 12)} as ${ctx.viewer.displayName ?? "your identity"}. The gateway governs the write.`,
+      note: `Approving applies this exact change to ${displayTarget(target, "this record")} as ${ctx.viewer.displayName ?? "your identity"}. The gateway governs the write.`,
     };
     return {
       ...base,
       answer: [
-        cite(`I drafted an update to the ${field} of ${target.title || target.id.slice(0, 12)}.`, [0]),
+        cite(`I drafted an update to the ${field} of ${displayTarget(target, "this record")}.`, [0]),
         "Review the exact change in the proposal below. Approving applies it through the governed event path. I cannot apply it myself.",
       ].join("\n\n"),
       proposal,
@@ -628,7 +920,11 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
     const noteUnknown = (w: string): void => {
       if (!branchUnknowns.includes(w)) branchUnknowns.push(w);
     };
-    const title = target.title || target.id;
+    // PROD-3+4-REPAIR-R2: the title feeds user-facing sentences AND
+    // claim labels, so a missing title degrades to a neutral noun via
+    // displayTarget, never to the raw object id ("website-business-<hex>
+    // business profile" was leaking into claimClassifications[].claim).
+    const title = displayTarget(target, "this record");
     const conflictedFields = opts.conflictedFields ?? [];
     const conflictIndicesFor = (objectId: string, fields: string[]): number[] => {
       const out: number[] = [];
@@ -692,6 +988,22 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
       .toLowerCase()
       .split(/[^a-z0-9]+/)
       .filter((w) => w.length > 2);
+
+    // PROD-3: out-of-scope questions ("Who will win the election?", "What
+    // is the weather today?") are refused with the scope refusal, never
+    // answered with a business blurb. partial: true with no citations
+    // marks it a refusal downstream (answerClass UNSUPPORTED). The name in
+    // the refusal is the business title, never an internal id.
+    if (isOutOfScopeQuestion(q, titleWords)) {
+      const scopeName = target.title.trim().length > 0 ? target.title.trim() : "this business";
+      return {
+        ...base,
+        unknowns: [],
+        answer: `I can only answer questions about ${scopeName}.`,
+        proposal: null,
+        partial: true,
+      };
+    }
 
     // People questions are answerable only from Person objects. A
     // description dump names nobody, so when the site data has no person
@@ -864,11 +1176,52 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
     // explicit AND here: either word alone ("what services...") is not a
     // profile question.
     const asksWhatIs = hasWord(q, "what") && hasWord(q, "is");
+    // PROD-3: the single-word triggers ("who", "tell", "about", ...)
+    // fired on questions with no bearing on the business ("Who will win
+    // the election?" answered with a business blurb). A profile question
+    // must be anchored to the business: name it, or address it directly
+    // (this / it / they / you / your).
+    // PROD-3+4-REPAIR-R2: structural "this" rule (replaces the
+    // PROD-3+4-REPAIR enumerated time-noun list, which was whack-a-mole:
+    // "this season", "this quarter", "this semester" evaded it). "this"
+    // anchors to the business only when it determines a business noun
+    // ("this business", "this shop", "this service", "this post") or
+    // stands bare for the object on the page ("What is this?", "Can you
+    // fix this?"). "this" + any other noun ("this fall", "this season",
+    // "this quarter", "this morning") is a time expression or something
+    // else entirely and never anchors. The business name itself is covered
+    // by namesBusiness.
+    const thisBusinessNoun =
+      /\bthis\s+(business|businesses|company|companies|shop|shops|store|stores|service|services|firm|firms|contractor|contractors|place|post|posts|record|records|page|site|team|owner|owners|product|products|offer|offers|offering|offerings)\b/.test(
+        q,
+      );
+    const thisBare = /\bthis\b[^a-z]*$/.test(q);
+    const thisAnchors = thisBusinessNoun || thisBare;
+    const anchoredToBusiness =
+      (hasWord(q, "this") && thisAnchors) ||
+      hasWord(q, "it", "they", "you", "your", "yours") ||
+      namesBusiness;
     const profileIntent =
-      hasWord(q, "who", "describe", "tell", "about", "profile") ||
-      (asksWhatIs && (hasWord(q, "this", "it", "they", "you", "your") || namesBusiness));
+      (hasWord(q, "who", "describe", "tell", "about", "profile") && anchoredToBusiness) ||
+      (asksWhatIs && anchoredToBusiness);
 
     if (profileIntent) {
+      // PROD-3+4-REPAIR-R3: the profile branch is stricter than the general
+      // scope check. The general check lets trades/service words defeat an
+      // out-of-scope topic ("Who will win the election, fix this?" names
+      // trades work via "fix"), but a business blurb is never the right
+      // answer when the question's subject is an out-of-scope topic.
+      // Refuse with the same scope refusal, never blurb.
+      if (namesOutOfScopeTopic(q)) {
+        const scopeName = title.trim().length > 0 ? title.trim() : "this business";
+        return {
+          ...base,
+          unknowns: [],
+          answer: `I can only answer questions about ${scopeName}.`,
+          proposal: null,
+          partial: true,
+        };
+      }
       if (desc)
         pushClaim(`${title}: ${desc}`, [0], `${title} business profile`, target, "description");
       else
@@ -1195,9 +1548,9 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
       } else {
         noteUnknown("emergency");
         pushClaim(
-          `No emergency service is on record for ${title}.`,
+          `${title} does not offer emergency service: nothing in the site record mentions it.`,
           [0],
-          `${title} has no emergency service on record`,
+          `${title} does not offer emergency service`,
           target,
           "services",
           "INFERENCE",

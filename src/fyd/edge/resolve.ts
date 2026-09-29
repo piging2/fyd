@@ -27,6 +27,7 @@
 
 import type { PingObject, PingRelationship } from "@/lib/ping/types";
 import type { ObjectGraph } from "../sitespec/types";
+import type { VerifiedPublicProjection } from "../sitespec/public-projection";
 import {
   capabilityOptions,
   getSchemaDef,
@@ -395,21 +396,27 @@ export interface BuildSheetOptions {
 }
 
 /**
- * buildObjectSheet: (graph, objectId, viewer) -> ObjectSheet | null.
+ * buildObjectSheet: (verifiedProjection, objectId, viewer) -> ObjectSheet | null.
+ *
+ * The input is the VERIFIED public projection (Q-C-01): field visibility,
+ * traversal cuts, and the public-object filter were already applied at the
+ * boundary. The object-level gate below re-applies idempotently as
+ * defense-in-depth; it can only narrow, never widen.
  *
  * Returns null when the object is absent or invisible to this viewer.
  * The HTTP layer maps null -> 404, indistinguishable from "unknown".
  * The input graph is never mutated.
  */
 export function buildObjectSheet(
-  graph: ObjectGraph,
+  projection: VerifiedPublicProjection,
   objectId: string,
   viewer: EdgeViewer,
   opts: BuildSheetOptions = {},
 ): ObjectSheet | null {
   void viewer;
-  // THE gate (public visibility). Everything below sees only authorized state.
-  const visible = applyPublicVisibilityGate(graph);
+  // THE gate (public visibility), re-applied idempotently over the already
+  // projected graph. Everything below sees only authorized state.
+  const visible = applyPublicVisibilityGate(projection.graph);
   const byId = new Map<string, PingObject>();
   for (const o of visible.objects) byId.set(o.id, o);
 

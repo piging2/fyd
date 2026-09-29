@@ -102,7 +102,7 @@ describe("Ask FYD services question: evidence-grounded answers (FYD-007)", () =>
 
     expect(ans.partial).toBe(true);
     expect(ans.answer).toContain(
-      "I do not have evidence for that in the current context, so I will not guess.",
+      "I cannot answer that: nothing in the site record covers it, and I will not guess.",
     );
     // The description prose names services; none may leak into the answer.
     for (const invented of ["Decks", "Fences", "Pergolas", "Bathrooms"]) {

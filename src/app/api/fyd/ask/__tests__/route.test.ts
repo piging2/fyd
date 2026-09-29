@@ -11,7 +11,7 @@ import { answerAskFyd, type AnswerAskFydDeps } from "../../../../../fyd/ask/visi
 import { getSiteBundle, type SiteBundle } from "../../../../../fyd/media/site-bundle";
 import { AskFydWidget } from "../../../../../fyd/components/ask-fyd-widget";
 import type { PingObject } from "../../../../../lib/ping/types";
-import { POST } from "../route";
+import { POST as postNested } from "../[siteId]/route";
 import type { NextRequest } from "next/server";
 import { startStubJournal, type StubJournal } from "./stub-journal";
 
@@ -45,10 +45,18 @@ afterAll(async () => {
   await journal.close();
 });
 
-/** POST a JSON body to the legacy flat ask route. The route only ever calls request.json(). */
+/**
+ * POST a JSON body to the trusted-path ask route. The legacy flat route no
+ * longer serves (Q-P0-06 Mission M), so serving behavior is covered here
+ * through POST /api/fyd/ask/[siteId]. The route only ever calls
+ * request.json().
+ */
 async function postAsk(body: unknown) {
+  const record =
+    typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+  const siteId = typeof record.siteId === "string" ? record.siteId : "happy-place";
   const req = { json: async () => body } as unknown as NextRequest;
-  return POST(req);
+  return postNested(req, { params: Promise.resolve({ siteId }) });
 }
 
 describe("answerAskFyd", () => {
@@ -96,7 +104,7 @@ describe("answerAskFyd", () => {
     if (!out.ok) return;
     expect(out.refusal).toBe(true);
     expect(out.citations).toEqual([]);
-    expect(out.answer).toMatch(/do not have evidence/i);
+    expect(out.answer).toMatch(/I cannot answer that/i);
   });
 
   test("site-change requests from a visitor are refused, not drafted", () => {

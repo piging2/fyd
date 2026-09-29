@@ -63,7 +63,7 @@ describe("LANE E battery (coppersmith-plumbing)", () => {
 
   test("Q2 emergency: explicit UNKNOWN, never inferred from plumbing", () => {
     const out = ask("Do they handle emergency plumbing?");
-    expect(out.answer).toContain("No emergency service is on record");
+        expect(out.answer).toContain("does not offer emergency service");
     expect(out.answer).not.toMatch(/emergency plumbing (is|are) offered/i);
     expect(out.unknowns).toContain("emergency");
   });

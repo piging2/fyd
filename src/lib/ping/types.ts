@@ -365,6 +365,14 @@ export interface AskProposalBase {
   digest: string;
   digestAlgorithm: "sha256-canonical-json-v1";
   note: string;
+  /**
+   * PROD-4 (repaired): user-facing labels for machine-valued change
+   * entries, keyed by change key. The digest-bound `changes` keep raw ids
+   * (the governed write needs them); the proposal card renders these
+   * labels instead of the raw values. Never digested, never submitted:
+   * display only.
+   */
+  displayChangeLabels?: Record<string, string>;
   /** Present when the agent signed the draft; absent otherwise. */
   envelope?: SitePatchEnvelope | null;
 }

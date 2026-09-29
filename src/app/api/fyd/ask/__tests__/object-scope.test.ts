@@ -256,7 +256,7 @@ describe("object-scoped ask: evidence absence is UNKNOWN", () => {
     const out = askOk(HAPPY, HAPPY_SVC, "Do you offer financing?");
     expect(out.refusal).toBe(true);
     expect(out.citations).toEqual([]);
-    expect(out.answer).toMatch(/do not have evidence/i);
+    expect(out.answer).toMatch(/I cannot answer that/i);
     expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("UNSUPPORTED");
   });
 });
@@ -343,14 +343,24 @@ describe("object-scoped ask: tenant and visibility gates", () => {
 });
 
 describe("object-scoped ask: route wiring", () => {
-  test("flat POST with objectId answers 200 with the 5-class contract", async () => {
-    const res = await postFlat(
+  test("flat POST redirects to the trusted path; trusted route with objectId answers 200 with the 5-class contract", async () => {
+    // Q-P0-06 Mission M: the flat route adopts no tenant; it redirects.
+    const flat = await postFlat(
       flatReq({
         siteId: HAPPY,
         objectId: HAPPY_BIZ,
         question: "where are they located?",
       }),
     );
+    expect(flat.status).toBe(308);
+    expect(flat.headers.get("location")).toBe("/api/fyd/ask/" + HAPPY);
+
+    const { req, ctx } = nestedCtx(HAPPY, {
+      siteId: HAPPY,
+      objectId: HAPPY_BIZ,
+      question: "where are they located?",
+    });
+    const res = await postNested(req, ctx);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
@@ -360,20 +370,26 @@ describe("object-scoped ask: route wiring", () => {
     expect(body.tenantId).toBe(HAPPY);
   });
 
-  test("flat POST with another tenant's object id is 404 and leaks nothing", async () => {
-    const res = await postFlat(
-      flatReq({ siteId: HAPPY, objectId: COPPER_BIZ, question: "What is this?" }),
-    );
+  test("trusted route with another tenant's object id is 404 and leaks nothing", async () => {
+    const { req, ctx } = nestedCtx(HAPPY, {
+      siteId: HAPPY,
+      objectId: COPPER_BIZ,
+      question: "What is this?",
+    });
+    const res = await postNested(req, ctx);
     expect(res.status).toBe(404);
     const body = await res.json();
     expect(body.ok).toBe(false);
     expect(JSON.stringify(body)).not.toContain("Coppersmith");
   });
 
-  test("flat POST with unknown object id is 404", async () => {
-    const res = await postFlat(
-      flatReq({ siteId: HAPPY, objectId: "no-such-object", question: "What is this?" }),
-    );
+  test("trusted route with unknown object id is 404", async () => {
+    const { req, ctx } = nestedCtx(HAPPY, {
+      siteId: HAPPY,
+      objectId: "no-such-object",
+      question: "What is this?",
+    });
+    const res = await postNested(req, ctx);
     expect(res.status).toBe(404);
   });
 
@@ -400,7 +416,7 @@ describe("object-scoped ask: route wiring", () => {
     expect(res.status).toBe(400);
   });
 
-  test("shared pipeline helper accepts objectId on both route shapes", async () => {
+  test("legacy flat route redirects to the trusted path; objectId serving lives on the trusted route", async () => {
     const flat = await handleAskRequest(
       null,
       flatReq({
@@ -409,8 +425,16 @@ describe("object-scoped ask: route wiring", () => {
         question: "where are they located?",
       }),
     );
-    expect(flat.status).toBe(200);
-    expect((await flat.json()).answer).toContain("Adair Village");
+    // Q-P0-06 Mission M: the flat route adopts no tenant; it redirects.
+    expect(flat.status).toBe(308);
+    expect(flat.headers.get("location")).toBe("/api/fyd/ask/" + HAPPY);
+
+    const trusted = await handleAskRequest(
+      HAPPY,
+      flatReq({ objectId: HAPPY_BIZ, question: "where are they located?" }),
+    );
+    expect(trusted.status).toBe(200);
+    expect((await trusted.json()).answer).toContain("Adair Village");
 
     const nested = await handleAskRequest(
       HAPPY,

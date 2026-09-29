@@ -24,6 +24,7 @@
  */
 
 import { buildObjectSheet, applyPublicVisibilityGate, EDGE_VISITOR } from "../resolve";
+import { verifyPublicProjection } from "../../sitespec/public-projection";
 import { answerAskFyd } from "../../ask/visitor-answer";
 import type { SiteBundle } from "../../media/site-bundle";
 import { resolveQuery } from "../../components/renderer";
@@ -136,10 +137,15 @@ function bundleFor(graph: ObjectGraph): SiteBundle {
   };
 }
 
+
+/** Wrap a raw fixture graph in the anonymous verified projection.
+ *  Every sheet under test now runs through the Q-C-01 boundary. */
+const verify = (graph: ObjectGraph) => verifyPublicProjection(graph, [], "anonymous");
+
 describe("FYD-Q2 hostile: hidden address survives every expansion path", () => {
   test("1. business edge -> location: sheet never carries the hidden object", () => {
     const g = hostileGraph();
-    const sheet = buildObjectSheet(g, COPPER_BUSINESS, EDGE_VISITOR);
+    const sheet = buildObjectSheet(verify(g), COPPER_BUSINESS, EDGE_VISITOR);
     expect(sheet).not.toBeNull();
     const text = JSON.stringify(sheet);
     expect(text).not.toContain(HIDDEN_ADDRESS);
@@ -195,7 +201,7 @@ describe("FYD-Q2 hostile: hidden address survives every expansion path", () => {
     const g = hostileGraph();
     const visibleIds = applyPublicVisibilityGate(g).objects.map((o) => o.id);
     for (const id of visibleIds) {
-      const sheet = buildObjectSheet(g, id, EDGE_VISITOR);
+      const sheet = buildObjectSheet(verify(g), id, EDGE_VISITOR);
       expect(sheet).not.toBeNull();
       const text = JSON.stringify(sheet);
       expect(text).not.toContain(HIDDEN_ADDRESS);

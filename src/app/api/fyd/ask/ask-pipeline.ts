@@ -11,11 +11,12 @@
  * request is served for the route tenant or refused, never for the
  * body-claimed tenant.
  *
- * The legacy flat POST /api/fyd/ask keeps its body contract ({ siteId,
- * objectId?, question, mode }) but now constructs the TenantContext
- * server-side from
- * the validated body siteId (previously: no tenant context at all). The
- * nested route is the trusted-path surface; prefer it for new callers.
+ * The legacy flat POST /api/fyd/ask keeps its body shape ({ siteId,
+ * objectId?, question, mode }) but never adopts the body siteId as the
+ * subject tenant (Q-P0-06 Mission M: "body is identity" is closed on this
+ * route). It 308-redirects to the trusted-path POST /api/fyd/ask/[siteId],
+ * which re-applies the trusted validation there. New callers must use the
+ * trusted-path route directly.
  *
  * 5-class response contract: every 200 response carries
  * answerClass (exactly one of "SUPPORTED DIRECTLY" | "SUPPORTED BY
@@ -35,6 +36,14 @@
  * INFERENCE / GENERATED_COPY claims are explicitly labeled in the citation
  * basis. The pipeline never fills business gaps from model priors.
  *
+ * PROD-9 answer-class polarity: every 200 also carries responseClass
+ * ("ANSWER" | "DENIAL" | "PREMISE_REJECTED"): what the answer IS, for the
+ * UI to render unambiguously. DENIAL = the pipeline refused (out of
+ * scope, no evidence, no authority). PREMISE_REJECTED = the question
+ * assumed something false and the answer states the corrected premise.
+ * ANSWER = a normal answer. Surface-only; the 5-class contract is
+ * unchanged.
+ *
  * Object-scoped ask: the optional body objectId selects the target
  * object INSIDE the route tenant's public graph; the tenant is still
  * chosen by the route path (or the validated body siteId on the legacy
@@ -52,6 +61,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   answerAskFyd,
   answerStateFor,
+  responseClassFor,
   type AnswerAskFydDeps,
   type AskAnswerClass,
   type AskAnswerState,
@@ -59,6 +69,7 @@ import {
   type AskFydCitation,
   type AskFydMode,
   type AskFydOutcome,
+  type AskResponseClass,
 } from "@/fyd/ask/visitor-answer";
 import {
   ASK_RESPONSE_CONTRACT_VERSION,
@@ -83,6 +94,8 @@ export const runtime = "nodejs";
 
 /** Answer-level class for the 5-class contract (re-exported for tests). */
 export type { AskAnswerClass, AskAnswerState };
+/** PROD-9: answer-class polarity (re-exported for tests). */
+export type { AskResponseClass };
 
 const VALID_MODES: AskFydMode[] = ["visitor", "owner"];
 
@@ -222,8 +235,8 @@ function invalidTenantResponse(raw: string): NextResponse {
  * Handle one Ask FYD POST.
  *
  * @param routeTenantId the tenant from the trusted route path
- *   (/api/fyd/ask/[siteId]), or null for the legacy flat route where the
- *   subject tenant comes from the validated body siteId.
+ *   (/api/fyd/ask/[siteId]), or null for the legacy flat route, which
+ *   never adopts a subject tenant and redirects to the trusted path.
  */
 export async function handleAskRequest(
   routeTenantId: string | null,
@@ -256,18 +269,41 @@ export async function handleAskRequest(
       }
     }
   } else {
-    // Legacy flat route: subject tenant from the validated body siteId,
-    // constructed server-side (previously no tenant context existed here).
+    // Legacy flat route (Q-P0-06 Mission M): the body-supplied siteId is
+    // NOT adopted as the subject tenant. "Body is identity" is closed on
+    // this route: the request is routed through the trusted [siteId]
+    // route instead, via 308 to the path-addressed URL. The trusted route
+    // re-applies its validation there (a body tenant claim that disagrees
+    // with the path tenant is refused with 400 tenant_mismatch).
+    // Fetch-based callers follow 307/308 with method and body preserved,
+    // so legitimate callers keep working. Nothing is served on this route:
+    // the redirect carries no answer, no objects, no citations. The URL
+    // query string is never a tenant source here.
     const raw = typeof record.siteId === "string" ? record.siteId.trim() : "";
     if (!raw) {
-      return NextResponse.json({ ok: false, error: "Unknown site." }, { status: 404 });
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "flat_route_deprecated",
+          error:
+            "The legacy flat ask route no longer accepts a tenant from the request body. " +
+            "Use POST /api/fyd/ask/{siteId} with the tenant in the route path.",
+          trustedRoute: "/api/fyd/ask/{siteId}",
+        },
+        { status: 400 },
+      );
     }
+    let redirectTenant: string;
     try {
-      siteId = requireTenantContext({ tenantId: raw });
+      redirectTenant = requireTenantContext({ tenantId: raw });
     } catch (err) {
       if (err instanceof TenantContextError) return invalidTenantResponse(raw);
       throw err;
     }
+    return new NextResponse(null, {
+      status: 308,
+      headers: { Location: "/api/fyd/ask/" + encodeURIComponent(redirectTenant) },
+    });
   }
 
   const question = typeof record.question === "string" ? record.question : "";
@@ -373,6 +409,15 @@ export async function handleAskRequest(
   );
   // Coarse state, fed by the five support classes (both layers).
   const answerState = answerStateFor(answerClass);
+  // PROD-9: answer-class polarity for the UI: DENIAL (refusal),
+  // PREMISE_REJECTED (the question's premise is wrong and the answer
+  // states the corrected premise), ANSWER (normal). Surface-only.
+  const responseClass = responseClassFor({
+    refusal: outcome.refusal,
+    question,
+    answer: outcome.answer,
+    claimClassifications: outcome.claimClassifications,
+  });
   // CLAIMS: every factual claim with its support class and evidence refs.
   const claims = contractClaimsFor(outcome.claimClassifications);
   // THE binding-contract enforcement seam (Nolan 2026-09-25): the answer
@@ -403,6 +448,8 @@ export async function handleAskRequest(
     answer: outcome.answer,
     answerClass,
     answerState,
+    // PROD-9: answer-class polarity: "ANSWER" | "DENIAL" | "PREMISE_REJECTED".
+    responseClass,
     refusal: outcome.refusal,
     citations: outcome.citations,
     // OUTPUT "CLAIMS": claim text + support class + the evidence ref ids

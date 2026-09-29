@@ -197,7 +197,7 @@ export function assertAskAnswerContract(args: {
  * the POST /api/fyd/ask response shape changes; inv-13 pins the current
  * value so a shape change without a bump fails the suite.
  */
-export const ASK_RESPONSE_CONTRACT_VERSION = "fyd.ask-response@1";
+export const ASK_RESPONSE_CONTRACT_VERSION = "fyd.ask-response@2";
 
 /** Build the full contract view of one served answer (for tests/inspection). */
 export function contractViewFor(outcome: AskFydSuccess): AskFydAnswerContract {

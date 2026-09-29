@@ -19,7 +19,6 @@ import { claimClassFor, answerStateFor, answerAskFyd, type AnswerAskFydDeps } fr
 import { answerClassFor } from "../ask-pipeline";
 import { getSiteBundle, type SiteBundle } from "../../../../../fyd/media/site-bundle";
 import type { PingObject } from "../../../../../lib/ping/types";
-import { POST as postFlat } from "../route";
 import { POST as postNested } from "../[siteId]/route";
 import type { NextRequest } from "next/server";
 import { mkdtempSync } from "node:fs";
@@ -57,9 +56,6 @@ afterAll(async () => {
   await journal.close();
 });
 
-function flatReq(body: unknown) {
-  return { json: async () => body } as unknown as NextRequest;
-}
 function nestedReq(siteId: string, body: unknown) {
   return {
     req: { json: async () => body } as unknown as NextRequest,
@@ -252,9 +248,12 @@ describe("G3: nested route derives tenant from the path", () => {
 
 describe("5-class wiring on live answers", () => {
   test("SUPPORTED DIRECTLY: known phone question answers from cited evidence", async () => {
-    const resp = await postFlat(
-      flatReq({ siteId: "happy-place", question: "What is the phone number?", mode: "visitor" }),
-    );
+    const { req, params } = nestedReq("happy-place", {
+      siteId: "happy-place",
+      question: "What is the phone number?",
+      mode: "visitor",
+    });
+    const resp = await postNested(req, { params });
     expect(resp.status).toBe(200);
     const body = (await resp.json()) as {
       ok: boolean;
@@ -273,9 +272,12 @@ describe("5-class wiring on live answers", () => {
   });
 
   test("UNSUPPORTED / UNKNOWN: question with no evidence is refused, never invented", async () => {
-    const resp = await postFlat(
-      flatReq({ siteId: "happy-place", question: "Does this business offer financing?", mode: "visitor" }),
-    );
+    const { req, params } = nestedReq("happy-place", {
+      siteId: "happy-place",
+      question: "Does this business offer financing?",
+      mode: "visitor",
+    });
+    const resp = await postNested(req, { params });
     expect(resp.status).toBe(200);
     const body = (await resp.json()) as {
       ok: boolean;
@@ -296,7 +298,7 @@ describe("5-class wiring on live answers", () => {
     expect(body.objectRefs).toEqual([]);
     expect(body.evidenceRefs).toEqual([]);
     expect(body.sourceRefs).toEqual([]);
-    expect(body.answer).toMatch(/do not have evidence/i);
+    expect(body.answer).toMatch(/I cannot answer that/i);
   });
 
   test("DERIVED / KNOWN: a DERIVED_FACT claim is explicitly labeled DERIVED but still known", () => {
@@ -386,12 +388,18 @@ describe("visitor vs owner scope", () => {
   );
 
   test('mode "owner" grants nothing: it answers exactly like a visitor', async () => {
-    const visitor = await postFlat(
-      flatReq({ siteId: "happy-place", question: "What is the phone number?", mode: "visitor" }),
-    );
-    const owner = await postFlat(
-      flatReq({ siteId: "happy-place", question: "What is the phone number?", mode: "owner" }),
-    );
+    const vCtx = nestedReq("happy-place", {
+      siteId: "happy-place",
+      question: "What is the phone number?",
+      mode: "visitor",
+    });
+    const visitor = await postNested(vCtx.req, { params: vCtx.params });
+    const oCtx = nestedReq("happy-place", {
+      siteId: "happy-place",
+      question: "What is the phone number?",
+      mode: "owner",
+    });
+    const owner = await postNested(oCtx.req, { params: oCtx.params });
     const vBody = (await visitor.json()) as { answer: string; answerClass: string; answerState: string };
     const oBody = (await owner.json()) as { answer: string; answerClass: string; answerState: string };
     expect(oBody.answer).toBe(vBody.answer);

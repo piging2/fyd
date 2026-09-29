@@ -437,11 +437,16 @@ export function edgeClientScript(siteSlug: string): string {
     '      el.setAttribute("aria-label", (el.querySelector("h3") || {}).textContent || el.textContent || "object");\n' +
     "    });\n" +
     "  }\n" +
-    "  if (document.readyState === \"loading\") {\n" +
-    '    document.addEventListener("DOMContentLoaded", markBindings);\n' +
-    "  } else {\n" +
-    "    markBindings();\n" +
+    "  // Post-hydration only: mutating React-managed DOM before/during\n" +
+    "  // hydration causes hydration mismatches. Defer to window load.\n" +
+    "  function scheduleMarkBindings() {\n" +
+    '    if (document.readyState === \"complete\") {\n' +
+    "      markBindings();\n" +
+    "    } else {\n" +
+    '      window.addEventListener("load", markBindings);\n' +
+    "    }\n" +
     "  }\n" +
+    "  scheduleMarkBindings();\n" +
     "})();\n"
   );
 }

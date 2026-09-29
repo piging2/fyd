@@ -14,7 +14,7 @@ import { getSiteBundle, type SiteBundle } from "../../../../../fyd/media/site-bu
 import { answerAskFyd, answerStateFor, type AnswerAskFydDeps } from "../../../../../fyd/ask/visitor-answer";
 import { answerClassFor } from "../ask-pipeline";
 import type { AskFieldConflict } from "../../../../../fyd/ask/field-conflicts";
-import { POST as postFlat } from "../route";
+import { POST as postNested } from "../[siteId]/route";
 import type { NextRequest } from "next/server";
 import { startStubJournal, type StubJournal } from "./stub-journal";
 
@@ -31,10 +31,13 @@ afterAll(async () => {
   await journal.close();
 });
 
-async function askFlat(question: string) {
-  const resp = await postFlat({
-    json: async () => ({ siteId: "happy-place", question, mode: "visitor" }),
-  } as unknown as NextRequest);
+async function askTrusted(question: string) {
+  const resp = await postNested(
+    {
+      json: async () => ({ siteId: "happy-place", question, mode: "visitor" }),
+    } as unknown as NextRequest,
+    { params: Promise.resolve({ siteId: "happy-place" }) },
+  );
   expect(resp.status).toBe(200);
   return (await resp.json()) as {
     ok: boolean;
@@ -52,7 +55,7 @@ async function askFlat(question: string) {
 
 describe("paired services grounding", () => {
   test('"What services does this business offer, and how do you know?"', async () => {
-    const body = await askFlat("What services does this business offer, and how do you know?");
+    const body = await askTrusted("What services does this business offer, and how do you know?");
     expect(body.ok).toBe(true);
     expect(body.refusal).toBe(false);
     // Five distinct direct service citations behind the same claim.
@@ -85,16 +88,16 @@ describe("paired services grounding", () => {
 
 describe("hostile filler-invention", () => {
   test("the owner's favorite food is UNSUPPORTED / UNKNOWN, never invented", async () => {
-    const body = await askFlat("What is the owner's favorite food?");
+    const body = await askTrusted("What is the owner's favorite food?");
     expect(body.answerClass).toBe("UNSUPPORTED");
     expect(body.answerState).toBe("UNKNOWN");
     expect(body.refusal).toBe(true);
     expect(body.citations).toEqual([]);
-    expect(body.answer).toMatch(/do not have evidence/i);
+    expect(body.answer).toMatch(/I cannot answer that/i);
   });
 
   test("founding date with no evidence is UNSUPPORTED / UNKNOWN", async () => {
-    const body = await askFlat("When was this business founded?");
+    const body = await askTrusted("When was this business founded?");
     expect(body.answerClass).toBe("UNSUPPORTED");
     expect(body.answerState).toBe("UNKNOWN");
     expect(body.refusal).toBe(true);
@@ -102,9 +105,9 @@ describe("hostile filler-invention", () => {
   });
 
   test("emergency-service question stays honest: no 24/7 claim invented", async () => {
-    const body = await askFlat("Does this business offer 24/7 emergency service?");
+    const body = await askTrusted("Does this business offer 24/7 emergency service?");
     expect(body.refusal).toBe(false);
-    expect(body.answer).toMatch(/no emergency service is on record/i);
+    expect(body.answer).toMatch(/does not offer emergency service/i);
     expect(body.answer).not.toMatch(/24\/7|around the clock/i);
   });
 });
