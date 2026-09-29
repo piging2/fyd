@@ -199,6 +199,28 @@ export function interpretTextCommand(text: string, objectId: string): TextPropos
       summary: `Revert the owner correction for ${field}; the site's ${field} is shown again.`,
     };
   }
+  // Owner service-description corrections. Same SOURCE SAYS X / OWNER SAYS Y
+  // contract as contact corrections: the approve stage records the
+  // service's current description alongside the owner's value, so the
+  // correction is never a silent overwrite of the source record.
+  if ((m = lower.match(/^(?:correct|change|update|set)\s+(?:the\s+)?description\s+(?:of|for)\s+(.+?)\s+to\s+(.+)$/))) {
+    const id = findServiceId(m[1], names);
+    if (!id) return null;
+    const value = m[2].trim();
+    if (!value) return null;
+    return {
+      command: { type: "set-service-description", serviceId: id, value },
+      summary: `Record an owner correction for the description of ${names.get(id)}: "${value}". The current description stays recorded as what the source says.`,
+    };
+  }
+  if ((m = lower.match(/^(?:revert|undo|remove)\s+(?:the\s+)?description\s+(?:of|for)\s+(.+?)(?:\s+correction)?$/))) {
+    const id = findServiceId(m[1], names);
+    if (!id) return null;
+    return {
+      command: { type: "revert-service-description", serviceId: id },
+      summary: `Revert the owner description correction for ${names.get(id)}; the service's own description is shown again.`,
+    };
+  }
   return null;
 }
 
@@ -264,6 +286,8 @@ export function commandConsequenceTier(cmd: OwnerCommand): CommandConsequenceTie
     case "set-contact-field":
     case "revert-contact-field":
     case "confirm-contact-field":
+    case "set-service-description":
+    case "revert-service-description":
     case "add-service":
       return "MEDIUM";
   }
@@ -368,6 +392,18 @@ export function describeCommand(
       return "Update the business: revert the owner correction for " + cmd.field + ".";
     case "confirm-contact-field":
       return "Update the business: confirm the " + cmd.field + " is correct.";
+    case "set-service-description":
+      return (
+        "Update the business: record an owner correction for the description of " +
+        name(cmd.serviceId) +
+        "."
+      );
+    case "revert-service-description":
+      return (
+        "Update the business: revert the owner description correction for " +
+        name(cmd.serviceId) +
+        "."
+      );
     case "add-service":
       return "Update the business: add service " + cmd.name + ".";
   }

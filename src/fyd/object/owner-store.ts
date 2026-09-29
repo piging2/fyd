@@ -33,6 +33,7 @@ import {
   SERVICE_ORDER_TARGET,
   appendOwnerEvent,
   projectOwnerState,
+  serviceFieldTarget,
   serviceTarget,
   type OwnerEventActor,
   type OwnerEventDraft,
@@ -466,6 +467,36 @@ export function applyOwnerCommand(
       };
       break;
     }
+    case "revert-service-description": {
+      if (!known.has(cmd.serviceId))
+        throw new OwnerCommandError("Unknown service.");
+      const target = serviceFieldTarget(cmd.serviceId);
+      const existing = current.fieldCorrections[target];
+      if (!existing)
+        throw new OwnerCommandError(
+          "There is no description correction to revert for this service.",
+        );
+      const name = knownServiceNames.get(cmd.serviceId) ?? cmd.serviceId;
+      // Revert appends a restored event; the correction event stays in the
+      // log. The projection stops composing the correction.
+      draft = {
+        at,
+        objectId,
+        type: "owner.restored-fact",
+        actor,
+        target,
+        previousBasis: { ...existing },
+        newValue: null,
+        evidence: {
+          kind: "owner-attestation",
+          ref: "command:revert-service-description",
+          detail: "owner reverted the description correction for '" + name + "'",
+        },
+        note: "Reverted the description correction for '" + name + "'.",
+        generator: "fyd-owner@1",
+      };
+      break;
+    }
     case "confirm-contact-field": {
       // The owner asserts the current effective value is correct. Nothing
       // is changed: the assertion is recorded as an owner.confirmed-fact
@@ -648,6 +679,20 @@ export function parseOwnerCommand(body: unknown): OwnerCommand {
         );
       }
       return { type: "confirm-contact-field", field: r.field };
+    case "set-service-description":
+      if (typeof r.serviceId !== "string" || typeof r.value !== "string") {
+        throw new OwnerCommandError(
+          "set-service-description needs { serviceId: string, value: string }.",
+        );
+      }
+      return { type: "set-service-description", serviceId: r.serviceId, value: r.value };
+    case "revert-service-description":
+      if (typeof r.serviceId !== "string") {
+        throw new OwnerCommandError(
+          "revert-service-description needs { serviceId: string }.",
+        );
+      }
+      return { type: "revert-service-description", serviceId: r.serviceId };
     default:
       throw new OwnerCommandError("Unknown command type.");
   }

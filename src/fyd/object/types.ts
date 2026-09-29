@@ -157,12 +157,14 @@ export interface OwnerOverrides {
   /** The owner's SHOW/HIDE/DEFAULT preference for the address field. */
   addressVisibility: AddressVisibilityPreference;
   /**
-   * Owner-attested field corrections keyed by field ("phone" | "email" |
-   * "website"). The correction NEVER rewrites source state: the source
-   * projection keeps saying what it says; the read model composes the
-   * owner value over it (see src/fyd/object/owner-overlay.ts) and keeps
-   * the source value on the record for the SOURCE SAYS X / OWNER SAYS Y
-   * distinction.
+   * Owner-attested field corrections. Contact corrections are keyed by
+   * field ("phone" | "email" | "website") and target the business object;
+   * service-description corrections are keyed by their event target
+   * ("service-field:<serviceId>") and carry targetObjectId on the record.
+   * The correction NEVER rewrites source state: the source projection
+   * keeps saying what it says; the read model composes the owner value
+   * over it (see src/fyd/object/owner-overlay.ts) and keeps the source
+   * value on the record for the SOURCE SAYS X / OWNER SAYS Y distinction.
    */
   fieldCorrections: Record<string, OwnerFieldCorrection>;
   /**
@@ -271,7 +273,9 @@ export type OwnerCommand =
   | { type: "set-address-visibility"; visibility: AddressVisibilityPreference }
   | { type: "set-contact-field"; field: "phone" | "email" | "website"; value: string }
   | { type: "revert-contact-field"; field: "phone" | "email" | "website" }
-  | { type: "confirm-contact-field"; field: "phone" | "email" | "website" };
+  | { type: "confirm-contact-field"; field: "phone" | "email" | "website" }
+  | { type: "set-service-description"; serviceId: string; value: string }
+  | { type: "revert-service-description"; serviceId: string };
 
 /**
  * Circle background: a tiny website-photo derivative when authorized site

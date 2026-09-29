@@ -75,6 +75,28 @@ export const serviceTarget = (serviceId: string): string =>
   "service:" + serviceId;
 
 /**
+ * Fact address for a service description correction, e.g.
+ * "service-field:ping-fyd-svc-calls". Deliberately NOT under the
+ * "service:<id>" namespace: the restored-fact reducer matches
+ * startsWith("service:") for visibility toggles, so a description
+ * correction must not share that prefix.
+ */
+export const serviceFieldTarget = (serviceId: string): string =>
+  "service-field:" + serviceId;
+
+/** True for a "service-field:<id>" description-correction target. */
+export function isServiceFieldTarget(t: string): boolean {
+  return (
+    t.startsWith("service-field:") && t.length > "service-field:".length
+  );
+}
+
+/** The service id inside a "service-field:<id>" target. */
+export function serviceFieldOf(t: string): string {
+  return t.slice("service-field:".length);
+}
+
+/**
  * The actor an event is recorded under. Demo events carry kind "demo"
  * with the seeded demo label: an explicit non-identity, never a verified
  * owner. Real owner identity attaches as kind "owner" later; the reducer
@@ -227,6 +249,11 @@ export function reduceOwnerEvents(
         } else if (isContactFieldTarget(e.target)) {
           const field = contactFieldOf(e.target);
           o.fieldCorrections[field] = e.newValue as OwnerFieldCorrection;
+        } else if (isServiceFieldTarget(e.target)) {
+          // Service description correction: keyed by its event target so
+          // two services can each hold a description correction. The
+          // record carries targetObjectId for the read-model composer.
+          o.fieldCorrections[e.target] = e.newValue as OwnerFieldCorrection;
         } else {
           throw new OwnerEventError(
             "owner.corrected-fact does not apply to target '" + e.target + "'.",
@@ -333,6 +360,12 @@ export function reduceOwnerEvents(
             },
             eventId: e.id,
           };
+        } else if (isServiceFieldTarget(e.target)) {
+          // Revert a service description correction: a new event, never a
+          // delete; the correction event stays in the log and the
+          // projection stops composing it. Checked before the
+          // startsWith("service:") arm, which owns a different namespace.
+          delete o.fieldCorrections[e.target];
         } else if (e.target.startsWith("service:")) {
           const id = e.target.slice("service:".length);
           o.hiddenServices = o.hiddenServices.filter((x) => x !== id);

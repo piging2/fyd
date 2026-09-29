@@ -228,6 +228,16 @@ function ownerConsequenceForCommand(cmd: OwnerCommand): string {
         "This records that you confirmed your " + cmd.field +
         " is correct, with your name and the time. Nothing about the value changes."
       );
+    case "set-service-description":
+      return (
+        "This records your correction for this service's description" +
+        ": what you say replaces what the site currently says everywhere it is shown. " +
+        "The original description stays recorded as what the source said."
+      );
+    case "revert-service-description":
+      return (
+        "This withdraws your description correction. The service's original description shows again."
+      );
   }
 }
 

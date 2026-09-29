@@ -140,8 +140,21 @@ export interface PingObject {
  * the owner attests.
  */
 export interface OwnerFieldCorrection {
-  /** Correctable contact field. */
-  field: "phone" | "email" | "website";
+  /**
+   * Correctable field. Contact fields (phone/email/website) target the
+   * business object; "description" targets a service object via
+   * targetObjectId (the render binding-verifier already binds
+   * title/description/fields-key assertions per object).
+   */
+  field: "phone" | "email" | "website" | "description";
+  /**
+   * Object the correction targets. Absent = the business object (the
+   * legacy contact-field corrections, which resolve the single public
+   * business object at compose time). Present = the object is resolved
+   * by id at compose time (e.g. a service object for a description
+   * correction).
+   */
+  targetObjectId?: string;
   /** Human label, e.g. "Phone". */
   label: string;
   /** What the source projection said when the correction was recorded. Null when the source had no value. */
