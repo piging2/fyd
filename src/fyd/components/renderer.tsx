@@ -14,6 +14,7 @@
 import type { OwnerFieldCorrection, PingObject } from "@/lib/ping/types";
 import type { CSSProperties, ReactNode } from "react";
 import { getComponentDef } from "./registry";
+import { EditorialSection } from "./editorial-sections";
 import { AskFydWidget } from "./ask-fyd-widget";
 import { ObjectRail, pingObjectToView, richestObject } from "./object-rail";
 import { ObjectCard } from "../object/card";
@@ -2706,6 +2707,13 @@ export function renderSection(section: FYDSection, ctx: RenderContext, motionInd
     motionIndex,
   };
   switch (section.component) {
+    case "EditorialHero":
+    case "EditorialAtlas":
+    case "EditorialKnowledge":
+    case "EditorialPublications":
+    case "EditorialStory":
+    case "EditorialProof":
+      return <EditorialSection key={section.id} section={section} objects={objects} graph={ctx.graph} />;
     case "Hero":
       return <Hero key={section.id} {...props} />;
     case "BusinessSummary":

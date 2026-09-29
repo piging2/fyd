@@ -1,0 +1,2167 @@
+[
+  {
+    "name": "candidate",
+    "width": 320,
+    "errors": [],
+    "overflow": false,
+    "title": "PING — A business changes. Keep the understanding.",
+    "h1": [
+      "A business changes.\nKeep the understanding."
+    ],
+    "height": 8022,
+    "cls": 0,
+    "lcp": 1420,
+    "brokenImages": [],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/097e8d86015e5f32.css",
+        "bytes": 4072,
+        "duration": 12.700000002980232
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/c6d782ae454e8b16.css",
+        "bytes": 932,
+        "duration": 13.899999998509884
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/main-app-d806174abd7e8077.js",
+        "bytes": 855,
+        "duration": 24.19999999552965
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/webpack-eaa4eff7bdb71e7a.js",
+        "bytes": 2005,
+        "duration": 24.600000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/238-3e306a3fc31af7db.js",
+        "bytes": 46662,
+        "duration": 26.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/b0bf4a65-0f1417c27d95ccd7.js",
+        "bytes": 54660,
+        "duration": 26.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/fonts/dm-sans.ttf",
+        "bytes": 110810,
+        "duration": 24.30000000447035
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/276-822940dc6744a432.js",
+        "bytes": 13292,
+        "duration": 25.30000000447035
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/app/page-0eb08828fc80250c.js",
+        "bytes": 12103,
+        "duration": 28.900000005960464
+      }
+    ]
+  },
+  {
+    "name": "candidate",
+    "width": 375,
+    "errors": [],
+    "overflow": false,
+    "title": "PING — A business changes. Keep the understanding.",
+    "h1": [
+      "A business changes.\nKeep the understanding."
+    ],
+    "height": 7482,
+    "cls": 0,
+    "lcp": 392,
+    "brokenImages": [],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/097e8d86015e5f32.css",
+        "bytes": 4072,
+        "duration": 6.700000002980232
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/c6d782ae454e8b16.css",
+        "bytes": 932,
+        "duration": 5.5999999940395355
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/webpack-eaa4eff7bdb71e7a.js",
+        "bytes": 2005,
+        "duration": 7.699999995529652
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/b0bf4a65-0f1417c27d95ccd7.js",
+        "bytes": 54660,
+        "duration": 19
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/main-app-d806174abd7e8077.js",
+        "bytes": 855,
+        "duration": 16.600000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/276-822940dc6744a432.js",
+        "bytes": 13292,
+        "duration": 18.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/238-3e306a3fc31af7db.js",
+        "bytes": 46662,
+        "duration": 19.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/fonts/dm-sans.ttf",
+        "bytes": 110810,
+        "duration": 18.600000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/app/page-0eb08828fc80250c.js",
+        "bytes": 12103,
+        "duration": 18.600000001490116
+      }
+    ]
+  },
+  {
+    "name": "candidate",
+    "width": 390,
+    "errors": [],
+    "overflow": false,
+    "title": "PING — A business changes. Keep the understanding.",
+    "h1": [
+      "A business changes.\nKeep the understanding."
+    ],
+    "height": 7330,
+    "cls": 0,
+    "lcp": 316,
+    "brokenImages": [],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/097e8d86015e5f32.css",
+        "bytes": 4072,
+        "duration": 5
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/c6d782ae454e8b16.css",
+        "bytes": 932,
+        "duration": 5.800000004470348
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/webpack-eaa4eff7bdb71e7a.js",
+        "bytes": 2005,
+        "duration": 7
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/b0bf4a65-0f1417c27d95ccd7.js",
+        "bytes": 54660,
+        "duration": 12.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/fonts/dm-sans.ttf",
+        "bytes": 110810,
+        "duration": 12.399999998509884
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/main-app-d806174abd7e8077.js",
+        "bytes": 855,
+        "duration": 10.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/276-822940dc6744a432.js",
+        "bytes": 13292,
+        "duration": 11.399999998509884
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/238-3e306a3fc31af7db.js",
+        "bytes": 46662,
+        "duration": 11.899999998509884
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/app/page-0eb08828fc80250c.js",
+        "bytes": 12103,
+        "duration": 13.5
+      }
+    ]
+  },
+  {
+    "name": "candidate",
+    "width": 768,
+    "errors": [],
+    "overflow": false,
+    "title": "PING — A business changes. Keep the understanding.",
+    "h1": [
+      "A business changes.\nKeep the understanding."
+    ],
+    "height": 6010,
+    "cls": 0,
+    "lcp": 368,
+    "brokenImages": [],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/097e8d86015e5f32.css",
+        "bytes": 4072,
+        "duration": 6.200000002980232
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/c6d782ae454e8b16.css",
+        "bytes": 932,
+        "duration": 8.300000004470348
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/webpack-eaa4eff7bdb71e7a.js",
+        "bytes": 2005,
+        "duration": 11.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/238-3e306a3fc31af7db.js",
+        "bytes": 46662,
+        "duration": 12.600000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/b0bf4a65-0f1417c27d95ccd7.js",
+        "bytes": 54660,
+        "duration": 13.899999998509884
+      },
+      {
+        "name": "http://127.0.0.1:3213/fonts/dm-sans.ttf",
+        "bytes": 110810,
+        "duration": 15
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/main-app-d806174abd7e8077.js",
+        "bytes": 855,
+        "duration": 10.899999998509884
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/276-822940dc6744a432.js",
+        "bytes": 13292,
+        "duration": 14.099999994039536
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/app/page-0eb08828fc80250c.js",
+        "bytes": 12103,
+        "duration": 15.199999995529652
+      }
+    ]
+  },
+  {
+    "name": "candidate",
+    "width": 1024,
+    "errors": [],
+    "overflow": false,
+    "title": "PING — A business changes. Keep the understanding.",
+    "h1": [
+      "A business changes.\nKeep the understanding."
+    ],
+    "height": 5731,
+    "cls": 0,
+    "lcp": 284,
+    "brokenImages": [],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/097e8d86015e5f32.css",
+        "bytes": 4072,
+        "duration": 5.699999995529652
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/c6d782ae454e8b16.css",
+        "bytes": 932,
+        "duration": 6.5
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/webpack-eaa4eff7bdb71e7a.js",
+        "bytes": 2005,
+        "duration": 8
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/238-3e306a3fc31af7db.js",
+        "bytes": 46662,
+        "duration": 12.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/b0bf4a65-0f1417c27d95ccd7.js",
+        "bytes": 54660,
+        "duration": 12.200000002980232
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/main-app-d806174abd7e8077.js",
+        "bytes": 855,
+        "duration": 10.299999997019768
+      },
+      {
+        "name": "http://127.0.0.1:3213/fonts/dm-sans.ttf",
+        "bytes": 110810,
+        "duration": 13.299999997019768
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/276-822940dc6744a432.js",
+        "bytes": 13292,
+        "duration": 11.399999998509884
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/app/page-0eb08828fc80250c.js",
+        "bytes": 12103,
+        "duration": 13.299999997019768
+      }
+    ]
+  },
+  {
+    "name": "candidate",
+    "width": 1280,
+    "errors": [],
+    "overflow": false,
+    "title": "PING — A business changes. Keep the understanding.",
+    "h1": [
+      "A business changes.\nKeep the understanding."
+    ],
+    "height": 5767,
+    "cls": 0,
+    "lcp": 364,
+    "brokenImages": [],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/097e8d86015e5f32.css",
+        "bytes": 4072,
+        "duration": 4.799999997019768
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/c6d782ae454e8b16.css",
+        "bytes": 932,
+        "duration": 6.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/webpack-eaa4eff7bdb71e7a.js",
+        "bytes": 2005,
+        "duration": 9.399999998509884
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/238-3e306a3fc31af7db.js",
+        "bytes": 46662,
+        "duration": 11.599999994039536
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/b0bf4a65-0f1417c27d95ccd7.js",
+        "bytes": 54660,
+        "duration": 13.299999997019768
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/main-app-d806174abd7e8077.js",
+        "bytes": 855,
+        "duration": 9.400000005960464
+      },
+      {
+        "name": "http://127.0.0.1:3213/fonts/dm-sans.ttf",
+        "bytes": 110810,
+        "duration": 12.399999998509884
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/276-822940dc6744a432.js",
+        "bytes": 13292,
+        "duration": 13.200000002980232
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/app/page-0eb08828fc80250c.js",
+        "bytes": 12103,
+        "duration": 13.399999998509884
+      }
+    ]
+  },
+  {
+    "name": "candidate",
+    "width": 1440,
+    "errors": [],
+    "overflow": false,
+    "title": "PING — A business changes. Keep the understanding.",
+    "h1": [
+      "A business changes.\nKeep the understanding."
+    ],
+    "height": 5893,
+    "cls": 0,
+    "lcp": 296,
+    "brokenImages": [],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/097e8d86015e5f32.css",
+        "bytes": 4072,
+        "duration": 4.5999999940395355
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/c6d782ae454e8b16.css",
+        "bytes": 932,
+        "duration": 6
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/webpack-eaa4eff7bdb71e7a.js",
+        "bytes": 2005,
+        "duration": 8.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/main-app-d806174abd7e8077.js",
+        "bytes": 855,
+        "duration": 11
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/276-822940dc6744a432.js",
+        "bytes": 13292,
+        "duration": 12.800000004470348
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/238-3e306a3fc31af7db.js",
+        "bytes": 46662,
+        "duration": 13
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/b0bf4a65-0f1417c27d95ccd7.js",
+        "bytes": 54660,
+        "duration": 13.600000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/fonts/dm-sans.ttf",
+        "bytes": 110810,
+        "duration": 15.299999997019768
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/app/page-0eb08828fc80250c.js",
+        "bytes": 12103,
+        "duration": 15.399999998509884
+      }
+    ]
+  },
+  {
+    "name": "candidate",
+    "width": 1920,
+    "errors": [],
+    "overflow": false,
+    "title": "PING — A business changes. Keep the understanding.",
+    "h1": [
+      "A business changes.\nKeep the understanding."
+    ],
+    "height": 5902,
+    "cls": 0,
+    "lcp": 248,
+    "brokenImages": [],
+    "resources": [
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/097e8d86015e5f32.css",
+        "bytes": 4072,
+        "duration": 5.200000002980232
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/c6d782ae454e8b16.css",
+        "bytes": 932,
+        "duration": 6.299999997019768
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/webpack-eaa4eff7bdb71e7a.js",
+        "bytes": 2005,
+        "duration": 8.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/238-3e306a3fc31af7db.js",
+        "bytes": 46662,
+        "duration": 12
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/b0bf4a65-0f1417c27d95ccd7.js",
+        "bytes": 54660,
+        "duration": 12.100000001490116
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/main-app-d806174abd7e8077.js",
+        "bytes": 855,
+        "duration": 10
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/276-822940dc6744a432.js",
+        "bytes": 13292,
+        "duration": 11.200000002980232
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/app/page-0eb08828fc80250c.js",
+        "bytes": 12103,
+        "duration": 13.899999998509884
+      },
+      {
+        "name": "http://127.0.0.1:3213/fonts/dm-sans.ttf",
+        "bytes": 110810,
+        "duration": 12.899999998509884
+      }
+    ]
+  },
+  {
+    "name": "current",
+    "width": 320,
+    "errors": [],
+    "overflow": true,
+    "title": "PING: Continuity infrastructure for AI agents",
+    "h1": [
+      "Systems that remember,agents you can trust"
+    ],
+    "height": 27938,
+    "cls": 0,
+    "lcp": 2664,
+    "brokenImages": [
+      "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/blur-10w.webp"
+    ],
+    "resources": [
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/22a5144ee8d83bca-s.p.woff2",
+        "bytes": 29588,
+        "duration": 11.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/7d4881bb7e1bf84d-s.p.woff2",
+        "bytes": 23408,
+        "duration": 10.799999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
+        "bytes": 38760,
+        "duration": 10.800000004470348
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/6e7b4dfc4271dafa.css",
+        "bytes": 1364,
+        "duration": 11.800000004470348
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/578785ccdaede965.css",
+        "bytes": 21303,
+        "duration": 12.300000004470348
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/image?url=%2Fimages%2Fping-social-logo.png&w=128&q=75",
+        "bytes": 2210,
+        "duration": 22.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/webpack-ff12f876d312f53b.js",
+        "bytes": 2060,
+        "duration": 23.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/main-app-54006aba4bb3a5c2.js",
+        "bytes": 858,
+        "duration": 20.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1255-fc6c00ab2f765339.js",
+        "bytes": 46791,
+        "duration": 32.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4bd1b696-f785427dddbba9fb.js",
+        "bytes": 54659,
+        "duration": 33.29999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4909-09e20765c3e2a673.js",
+        "bytes": 8857,
+        "duration": 33.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/5754-9096e51d5249c552.js",
+        "bytes": 40056,
+        "duration": 34.29999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2015-6f264653d42bd8ec.js",
+        "bytes": 2392,
+        "duration": 40.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1356-e7329fe8ae0bdee5.js",
+        "bytes": 5500,
+        "duration": 42.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2619-3c9e02e22d10480a.js",
+        "bytes": 3688,
+        "duration": 75.89999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7645-e30d28323fb3c929.js",
+        "bytes": 1760,
+        "duration": 42.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/9233-4406c801f009793d.js",
+        "bytes": 9323,
+        "duration": 83.89999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/8197-cbdf94ccbb593599.js",
+        "bytes": 8511,
+        "duration": 42.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7519-2b1f3975220ad8b9.js",
+        "bytes": 5581,
+        "duration": 89.09999999403954
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/page-36a17df6ab5eb8d8.js",
+        "bytes": 4943,
+        "duration": 88.89999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/layout-29e3ee9888a93c40.js",
+        "bytes": 24110,
+        "duration": 92.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 9.300000004470348
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 16.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 12.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 19.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 22.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 18161,
+        "duration": 38.80000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/723894ee4164f6e9e270002d68302c47a6f15b361676316f52a21b72f9f52444/thumbnail-480w.webp",
+        "bytes": 22798,
+        "duration": 32.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 54.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 61.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 64.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 22.799999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 71.39999999850988
+      }
+    ]
+  },
+  {
+    "name": "current",
+    "width": 375,
+    "errors": [],
+    "overflow": true,
+    "title": "PING: Continuity infrastructure for AI agents",
+    "h1": [
+      "Systems that remember,agents you can trust"
+    ],
+    "height": 25639,
+    "cls": 0,
+    "lcp": 3064,
+    "brokenImages": [
+      "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/blur-10w.webp"
+    ],
+    "resources": [
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/22a5144ee8d83bca-s.p.woff2",
+        "bytes": 29588,
+        "duration": 7.800000004470348
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/7d4881bb7e1bf84d-s.p.woff2",
+        "bytes": 23408,
+        "duration": 7.799999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
+        "bytes": 38760,
+        "duration": 7.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/6e7b4dfc4271dafa.css",
+        "bytes": 1364,
+        "duration": 9.800000004470348
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/578785ccdaede965.css",
+        "bytes": 21303,
+        "duration": 11.400000005960464
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/image?url=%2Fimages%2Fping-social-logo.png&w=128&q=75",
+        "bytes": 2210,
+        "duration": 17.400000005960464
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/webpack-ff12f876d312f53b.js",
+        "bytes": 2060,
+        "duration": 16.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/main-app-54006aba4bb3a5c2.js",
+        "bytes": 858,
+        "duration": 24.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2619-3c9e02e22d10480a.js",
+        "bytes": 3688,
+        "duration": 25.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4909-09e20765c3e2a673.js",
+        "bytes": 8857,
+        "duration": 26.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/5754-9096e51d5249c552.js",
+        "bytes": 40056,
+        "duration": 27.799999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1255-fc6c00ab2f765339.js",
+        "bytes": 46791,
+        "duration": 27.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4bd1b696-f785427dddbba9fb.js",
+        "bytes": 54659,
+        "duration": 27.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1356-e7329fe8ae0bdee5.js",
+        "bytes": 5500,
+        "duration": 31.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2015-6f264653d42bd8ec.js",
+        "bytes": 2392,
+        "duration": 33.29999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/9233-4406c801f009793d.js",
+        "bytes": 9323,
+        "duration": 34
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/8197-cbdf94ccbb593599.js",
+        "bytes": 8511,
+        "duration": 34.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7645-e30d28323fb3c929.js",
+        "bytes": 1760,
+        "duration": 71.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/page-36a17df6ab5eb8d8.js",
+        "bytes": 4943,
+        "duration": 34.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7519-2b1f3975220ad8b9.js",
+        "bytes": 5581,
+        "duration": 38.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/layout-29e3ee9888a93c40.js",
+        "bytes": 24110,
+        "duration": 38.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 5.299999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 49.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 9.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 12.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 16.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 15828,
+        "duration": 20.19999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/723894ee4164f6e9e270002d68302c47a6f15b361676316f52a21b72f9f52444/thumbnail-480w.webp",
+        "bytes": 22798,
+        "duration": 21.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 47.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 55.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 15.299999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 62.29999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 22.200000002980232
+      }
+    ]
+  },
+  {
+    "name": "current",
+    "width": 390,
+    "errors": [],
+    "overflow": true,
+    "title": "PING: Continuity infrastructure for AI agents",
+    "h1": [
+      "Systems that remember,agents you can trust"
+    ],
+    "height": 25089,
+    "cls": 0,
+    "lcp": 2696,
+    "brokenImages": [
+      "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/blur-10w.webp"
+    ],
+    "resources": [
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/22a5144ee8d83bca-s.p.woff2",
+        "bytes": 29588,
+        "duration": 7.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/7d4881bb7e1bf84d-s.p.woff2",
+        "bytes": 23408,
+        "duration": 7.199999995529652
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
+        "bytes": 38760,
+        "duration": 7.299999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/image?url=%2Fimages%2Fping-social-logo.png&w=128&q=75",
+        "bytes": 2210,
+        "duration": 16.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/6e7b4dfc4271dafa.css",
+        "bytes": 1364,
+        "duration": 9.199999995529652
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/578785ccdaede965.css",
+        "bytes": 21303,
+        "duration": 10.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/webpack-ff12f876d312f53b.js",
+        "bytes": 2060,
+        "duration": 16.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/main-app-54006aba4bb3a5c2.js",
+        "bytes": 858,
+        "duration": 20.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2619-3c9e02e22d10480a.js",
+        "bytes": 3688,
+        "duration": 24.299999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1255-fc6c00ab2f765339.js",
+        "bytes": 46791,
+        "duration": 26.099999994039536
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4bd1b696-f785427dddbba9fb.js",
+        "bytes": 54659,
+        "duration": 26.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4909-09e20765c3e2a673.js",
+        "bytes": 8857,
+        "duration": 25.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1356-e7329fe8ae0bdee5.js",
+        "bytes": 5500,
+        "duration": 28.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/5754-9096e51d5249c552.js",
+        "bytes": 40056,
+        "duration": 26.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2015-6f264653d42bd8ec.js",
+        "bytes": 2392,
+        "duration": 29.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7645-e30d28323fb3c929.js",
+        "bytes": 1760,
+        "duration": 30.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/8197-cbdf94ccbb593599.js",
+        "bytes": 8511,
+        "duration": 33.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/page-36a17df6ab5eb8d8.js",
+        "bytes": 4943,
+        "duration": 33.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/layout-29e3ee9888a93c40.js",
+        "bytes": 24110,
+        "duration": 35.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7519-2b1f3975220ad8b9.js",
+        "bytes": 5581,
+        "duration": 41.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/9233-4406c801f009793d.js",
+        "bytes": 9323,
+        "duration": 72.19999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 5.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 10.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 16.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 50.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 54.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 15828,
+        "duration": 24
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/723894ee4164f6e9e270002d68302c47a6f15b361676316f52a21b72f9f52444/thumbnail-480w.webp",
+        "bytes": 22798,
+        "duration": 20.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 53.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 9.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 60.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 67.60000000149012
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 23.700000002980232
+      }
+    ]
+  },
+  {
+    "name": "current",
+    "width": 768,
+    "errors": [],
+    "overflow": false,
+    "title": "PING: Continuity infrastructure for AI agents",
+    "h1": [
+      "Systems that remember,agents you can trust"
+    ],
+    "height": 18875,
+    "cls": 0,
+    "lcp": 2616,
+    "brokenImages": [],
+    "resources": [
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/22a5144ee8d83bca-s.p.woff2",
+        "bytes": 29588,
+        "duration": 7.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/7d4881bb7e1bf84d-s.p.woff2",
+        "bytes": 23408,
+        "duration": 7.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
+        "bytes": 38760,
+        "duration": 7.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/6e7b4dfc4271dafa.css",
+        "bytes": 1364,
+        "duration": 9.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/image?url=%2Fimages%2Fping-social-logo.png&w=128&q=75",
+        "bytes": 2210,
+        "duration": 15.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/578785ccdaede965.css",
+        "bytes": 21303,
+        "duration": 10.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/webpack-ff12f876d312f53b.js",
+        "bytes": 2060,
+        "duration": 14.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1255-fc6c00ab2f765339.js",
+        "bytes": 46791,
+        "duration": 25.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4bd1b696-f785427dddbba9fb.js",
+        "bytes": 54659,
+        "duration": 25.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/main-app-54006aba4bb3a5c2.js",
+        "bytes": 858,
+        "duration": 20.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2619-3c9e02e22d10480a.js",
+        "bytes": 3688,
+        "duration": 23.19999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4909-09e20765c3e2a673.js",
+        "bytes": 8857,
+        "duration": 24.299999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/5754-9096e51d5249c552.js",
+        "bytes": 40056,
+        "duration": 25.299999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7645-e30d28323fb3c929.js",
+        "bytes": 1760,
+        "duration": 32.099999994039536
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1356-e7329fe8ae0bdee5.js",
+        "bytes": 5500,
+        "duration": 38
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2015-6f264653d42bd8ec.js",
+        "bytes": 2392,
+        "duration": 76.19999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/9233-4406c801f009793d.js",
+        "bytes": 9323,
+        "duration": 80.09999999403954
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/page-36a17df6ab5eb8d8.js",
+        "bytes": 4943,
+        "duration": 32.80000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7519-2b1f3975220ad8b9.js",
+        "bytes": 5581,
+        "duration": 37
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/layout-29e3ee9888a93c40.js",
+        "bytes": 24110,
+        "duration": 39.400000005960464
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/8197-cbdf94ccbb593599.js",
+        "bytes": 8511,
+        "duration": 76.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 6.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 12.199999995529652
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 9
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 14.800000004470348
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 20
+      },
+      {
+        "name": "http://100.79.154.43:3100/technology?_rsc=3lb4g",
+        "bytes": 435,
+        "duration": 67.19999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/blog?_rsc=3lb4g",
+        "bytes": 428,
+        "duration": 59.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/products?_rsc=3lb4g",
+        "bytes": 433,
+        "duration": 70.89999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/about?_rsc=3lb4g",
+        "bytes": 430,
+        "duration": 74.69999999552965
+      }
+    ]
+  },
+  {
+    "name": "current",
+    "width": 1024,
+    "errors": [],
+    "overflow": true,
+    "title": "PING: Continuity infrastructure for AI agents",
+    "h1": [
+      "Systems that remember,agents you can trust"
+    ],
+    "height": 16661,
+    "cls": 0.000915798611111111,
+    "lcp": 1588,
+    "brokenImages": [
+      "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/blur-10w.webp"
+    ],
+    "resources": [
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/22a5144ee8d83bca-s.p.woff2",
+        "bytes": 29588,
+        "duration": 6.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/7d4881bb7e1bf84d-s.p.woff2",
+        "bytes": 23408,
+        "duration": 7
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
+        "bytes": 38760,
+        "duration": 6.9000000059604645
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/6e7b4dfc4271dafa.css",
+        "bytes": 1364,
+        "duration": 8
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/image?url=%2Fimages%2Fping-social-logo.png&w=128&q=75",
+        "bytes": 2210,
+        "duration": 12.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/578785ccdaede965.css",
+        "bytes": 21303,
+        "duration": 10.299999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/webpack-ff12f876d312f53b.js",
+        "bytes": 2060,
+        "duration": 13.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/main-app-54006aba4bb3a5c2.js",
+        "bytes": 858,
+        "duration": 20.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2619-3c9e02e22d10480a.js",
+        "bytes": 3688,
+        "duration": 22.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1255-fc6c00ab2f765339.js",
+        "bytes": 46791,
+        "duration": 25.19999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4bd1b696-f785427dddbba9fb.js",
+        "bytes": 54659,
+        "duration": 26.799999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4909-09e20765c3e2a673.js",
+        "bytes": 8857,
+        "duration": 23.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/5754-9096e51d5249c552.js",
+        "bytes": 40056,
+        "duration": 24.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2015-6f264653d42bd8ec.js",
+        "bytes": 2392,
+        "duration": 27.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7645-e30d28323fb3c929.js",
+        "bytes": 1760,
+        "duration": 30.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1356-e7329fe8ae0bdee5.js",
+        "bytes": 5500,
+        "duration": 30.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/9233-4406c801f009793d.js",
+        "bytes": 9323,
+        "duration": 31.299999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/8197-cbdf94ccbb593599.js",
+        "bytes": 8511,
+        "duration": 31.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/page-36a17df6ab5eb8d8.js",
+        "bytes": 4943,
+        "duration": 35.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/layout-29e3ee9888a93c40.js",
+        "bytes": 24110,
+        "duration": 35.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7519-2b1f3975220ad8b9.js",
+        "bytes": 5581,
+        "duration": 77.10000000149012
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 4.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 50.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 14.599999994039536
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 17.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 10.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/technology?_rsc=3lb4g",
+        "bytes": 435,
+        "duration": 67.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/blog?_rsc=3lb4g",
+        "bytes": 428,
+        "duration": 63.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/products?_rsc=3lb4g",
+        "bytes": 433,
+        "duration": 55.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/about?_rsc=3lb4g",
+        "bytes": 430,
+        "duration": 63.80000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/contact?_rsc=3lb4g",
+        "bytes": 432,
+        "duration": 72
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 34032,
+        "duration": 71
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/723894ee4164f6e9e270002d68302c47a6f15b361676316f52a21b72f9f52444/thumbnail-480w.webp",
+        "bytes": 22798,
+        "duration": 74.89999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 77.19999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 88.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 96.19999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 95.89999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 99.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 36719,
+        "duration": 162.60000000149012
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 6.699999995529652
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 9.300000004470348
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 10.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 14.799999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 18.799999997019768
+      }
+    ]
+  },
+  {
+    "name": "current",
+    "width": 1280,
+    "errors": [],
+    "overflow": true,
+    "title": "PING: Continuity infrastructure for AI agents",
+    "h1": [
+      "Systems that remember,agents you can trust"
+    ],
+    "height": 16490,
+    "cls": 0.0006009928385416667,
+    "lcp": 1752,
+    "brokenImages": [
+      "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/blur-10w.webp"
+    ],
+    "resources": [
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/22a5144ee8d83bca-s.p.woff2",
+        "bytes": 29588,
+        "duration": 6.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/7d4881bb7e1bf84d-s.p.woff2",
+        "bytes": 23408,
+        "duration": 6.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
+        "bytes": 38760,
+        "duration": 9.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/6e7b4dfc4271dafa.css",
+        "bytes": 1364,
+        "duration": 8.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/image?url=%2Fimages%2Fping-social-logo.png&w=128&q=75",
+        "bytes": 2210,
+        "duration": 14.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/578785ccdaede965.css",
+        "bytes": 21303,
+        "duration": 10.299999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/webpack-ff12f876d312f53b.js",
+        "bytes": 2060,
+        "duration": 14.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1255-fc6c00ab2f765339.js",
+        "bytes": 46791,
+        "duration": 25.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4bd1b696-f785427dddbba9fb.js",
+        "bytes": 54659,
+        "duration": 26.599999994039536
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/main-app-54006aba4bb3a5c2.js",
+        "bytes": 858,
+        "duration": 20.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2619-3c9e02e22d10480a.js",
+        "bytes": 3688,
+        "duration": 23.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4909-09e20765c3e2a673.js",
+        "bytes": 8857,
+        "duration": 25.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/5754-9096e51d5249c552.js",
+        "bytes": 40056,
+        "duration": 26.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2015-6f264653d42bd8ec.js",
+        "bytes": 2392,
+        "duration": 28.80000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1356-e7329fe8ae0bdee5.js",
+        "bytes": 5500,
+        "duration": 31.80000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/9233-4406c801f009793d.js",
+        "bytes": 9323,
+        "duration": 32.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/page-36a17df6ab5eb8d8.js",
+        "bytes": 4943,
+        "duration": 32.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/8197-cbdf94ccbb593599.js",
+        "bytes": 8511,
+        "duration": 71.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7645-e30d28323fb3c929.js",
+        "bytes": 1760,
+        "duration": 71.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7519-2b1f3975220ad8b9.js",
+        "bytes": 5581,
+        "duration": 35.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/layout-29e3ee9888a93c40.js",
+        "bytes": 24110,
+        "duration": 37
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 5.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 7.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 57.29999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 22.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 29.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 15828,
+        "duration": 38.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/723894ee4164f6e9e270002d68302c47a6f15b361676316f52a21b72f9f52444/thumbnail-480w.webp",
+        "bytes": 22798,
+        "duration": 37.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/technology?_rsc=3lb4g",
+        "bytes": 435,
+        "duration": 65.89999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/blog?_rsc=3lb4g",
+        "bytes": 428,
+        "duration": 38.80000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/products?_rsc=3lb4g",
+        "bytes": 433,
+        "duration": 65.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/about?_rsc=3lb4g",
+        "bytes": 430,
+        "duration": 117.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/contact?_rsc=3lb4g",
+        "bytes": 432,
+        "duration": 113
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 72.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 76.10000000149012
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 39.19999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 74.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 90.10000000149012
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 36719,
+        "duration": 188.09999999403954
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 7
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 9.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 11
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 13.699999995529652
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 16.299999997019768
+      }
+    ]
+  },
+  {
+    "name": "current",
+    "width": 1440,
+    "errors": [],
+    "overflow": false,
+    "title": "PING: Continuity infrastructure for AI agents",
+    "h1": [
+      "Systems that remember,agents you can trust"
+    ],
+    "height": 16490,
+    "cls": 0.0009928718400940622,
+    "lcp": 1328,
+    "brokenImages": [
+      "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/blur-10w.webp"
+    ],
+    "resources": [
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/22a5144ee8d83bca-s.p.woff2",
+        "bytes": 29588,
+        "duration": 12.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/7d4881bb7e1bf84d-s.p.woff2",
+        "bytes": 23408,
+        "duration": 12.199999995529652
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
+        "bytes": 38760,
+        "duration": 12.199999995529652
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/image?url=%2Fimages%2Fping-social-logo.png&w=128&q=75",
+        "bytes": 2210,
+        "duration": 15.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/6e7b4dfc4271dafa.css",
+        "bytes": 1364,
+        "duration": 10.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/578785ccdaede965.css",
+        "bytes": 21303,
+        "duration": 12
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/webpack-ff12f876d312f53b.js",
+        "bytes": 2060,
+        "duration": 18.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/main-app-54006aba4bb3a5c2.js",
+        "bytes": 858,
+        "duration": 25.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2619-3c9e02e22d10480a.js",
+        "bytes": 3688,
+        "duration": 37.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4909-09e20765c3e2a673.js",
+        "bytes": 8857,
+        "duration": 40.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1356-e7329fe8ae0bdee5.js",
+        "bytes": 5500,
+        "duration": 46.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1255-fc6c00ab2f765339.js",
+        "bytes": 46791,
+        "duration": 46.900000005960464
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4bd1b696-f785427dddbba9fb.js",
+        "bytes": 54659,
+        "duration": 48.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/5754-9096e51d5249c552.js",
+        "bytes": 40056,
+        "duration": 48.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2015-6f264653d42bd8ec.js",
+        "bytes": 2392,
+        "duration": 50.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7645-e30d28323fb3c929.js",
+        "bytes": 1760,
+        "duration": 53.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/9233-4406c801f009793d.js",
+        "bytes": 9323,
+        "duration": 61.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/8197-cbdf94ccbb593599.js",
+        "bytes": 8511,
+        "duration": 61.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7519-2b1f3975220ad8b9.js",
+        "bytes": 5581,
+        "duration": 63.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/page-36a17df6ab5eb8d8.js",
+        "bytes": 4943,
+        "duration": 63.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/layout-29e3ee9888a93c40.js",
+        "bytes": 24110,
+        "duration": 64.10000000149012
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 5.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 12
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 9
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 17.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 14.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 15828,
+        "duration": 26.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/723894ee4164f6e9e270002d68302c47a6f15b361676316f52a21b72f9f52444/thumbnail-480w.webp",
+        "bytes": 22798,
+        "duration": 27.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/technology?_rsc=3lb4g",
+        "bytes": 435,
+        "duration": 48.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/blog?_rsc=3lb4g",
+        "bytes": 428,
+        "duration": 52.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/products?_rsc=3lb4g",
+        "bytes": 433,
+        "duration": 60.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/about?_rsc=3lb4g",
+        "bytes": 430,
+        "duration": 24.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/contact?_rsc=3lb4g",
+        "bytes": 432,
+        "duration": 100.39999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 66.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 70.39999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 34
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 85.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 89.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 36719,
+        "duration": 195.19999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 8.699999995529652
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 10.599999994039536
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 12.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 14.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 15.599999994039536
+      }
+    ]
+  },
+  {
+    "name": "current",
+    "width": 1920,
+    "errors": [],
+    "overflow": false,
+    "title": "PING: Continuity infrastructure for AI agents",
+    "h1": [
+      "Systems that remember,agents you can trust"
+    ],
+    "height": 16490,
+    "cls": 0.0005584904100529101,
+    "lcp": 1488,
+    "brokenImages": [
+      "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/blur-10w.webp"
+    ],
+    "resources": [
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/22a5144ee8d83bca-s.p.woff2",
+        "bytes": 29588,
+        "duration": 6.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/7d4881bb7e1bf84d-s.p.woff2",
+        "bytes": 23408,
+        "duration": 7
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/media/eaead17c7dbfcd5d-s.p.woff2",
+        "bytes": 38760,
+        "duration": 7.0999999940395355
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/image?url=%2Fimages%2Fping-social-logo.png&w=128&q=75",
+        "bytes": 2210,
+        "duration": 14.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/6e7b4dfc4271dafa.css",
+        "bytes": 1364,
+        "duration": 9.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/css/578785ccdaede965.css",
+        "bytes": 21303,
+        "duration": 11.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/webpack-ff12f876d312f53b.js",
+        "bytes": 2060,
+        "duration": 23
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4bd1b696-f785427dddbba9fb.js",
+        "bytes": 54659,
+        "duration": 29.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1255-fc6c00ab2f765339.js",
+        "bytes": 46791,
+        "duration": 23.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/main-app-54006aba4bb3a5c2.js",
+        "bytes": 858,
+        "duration": 19.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/4909-09e20765c3e2a673.js",
+        "bytes": 8857,
+        "duration": 22.400000005960464
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2015-6f264653d42bd8ec.js",
+        "bytes": 2392,
+        "duration": 28.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/1356-e7329fe8ae0bdee5.js",
+        "bytes": 5500,
+        "duration": 28.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/5754-9096e51d5249c552.js",
+        "bytes": 40056,
+        "duration": 29.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/2619-3c9e02e22d10480a.js",
+        "bytes": 3688,
+        "duration": 63.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7645-e30d28323fb3c929.js",
+        "bytes": 1760,
+        "duration": 28.30000000447035
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/9233-4406c801f009793d.js",
+        "bytes": 9323,
+        "duration": 35.600000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/page-36a17df6ab5eb8d8.js",
+        "bytes": 4943,
+        "duration": 35.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/8197-cbdf94ccbb593599.js",
+        "bytes": 8511,
+        "duration": 35.399999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/7519-2b1f3975220ad8b9.js",
+        "bytes": 5581,
+        "duration": 35.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/_next/static/chunks/app/layout-29e3ee9888a93c40.js",
+        "bytes": 24110,
+        "duration": 35.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 7.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 53.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 12.699999995529652
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 14.799999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 16.799999997019768
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 15828,
+        "duration": 24.200000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/723894ee4164f6e9e270002d68302c47a6f15b361676316f52a21b72f9f52444/thumbnail-480w.webp",
+        "bytes": 22798,
+        "duration": 24.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/technology?_rsc=3lb4g",
+        "bytes": 435,
+        "duration": 52.20000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/products?_rsc=3lb4g",
+        "bytes": 433,
+        "duration": 21.5
+      },
+      {
+        "name": "http://100.79.154.43:3100/blog?_rsc=3lb4g",
+        "bytes": 428,
+        "duration": 51.69999999552965
+      },
+      {
+        "name": "http://100.79.154.43:3100/about?_rsc=3lb4g",
+        "bytes": 430,
+        "duration": 99.89999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/contact?_rsc=3lb4g",
+        "bytes": 432,
+        "duration": 99.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 65.60000000149012
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 69.39999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 31.700000002980232
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 76.79999999701977
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 84.70000000298023
+      },
+      {
+        "name": "http://100.79.154.43:3100/fyd-media/5e2971a6051b333c74c1037b0ca49c39503f827d275a8ee0e908b0add5bdcf9b/w480-480w.webp",
+        "bytes": 36719,
+        "duration": 249.89999999850988
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=coppersmith-plumbing",
+        "bytes": 328,
+        "duration": 6.100000001490116
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=ping-fyd",
+        "bytes": 328,
+        "duration": 9.199999995529652
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place",
+        "bytes": 329,
+        "duration": 10.400000005960464
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=happy-place-carpentry-decks-fences-remod-2f7098",
+        "bytes": 329,
+        "duration": 11.899999998509884
+      },
+      {
+        "name": "http://100.79.154.43:3100/api/fyd/follow?objectId=tenant-e2e-synth",
+        "bytes": 329,
+        "duration": 13.800000004470348
+      }
+    ]
+  },
+  {
+    "name": "donor",
+    "width": 390,
+    "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3211/\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3211/\", waiting until \"networkidle\"\u001b[22m\n"
+  },
+  {
+    "name": "donor",
+    "width": 1440,
+    "error": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:3211/\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3211/\", waiting until \"networkidle\"\u001b[22m\n"
+  }
+]

@@ -52,6 +52,8 @@ export type FYDQuery =
 
 /** Presentation overrides. Copy edits arrive here as PROPOSED changes only. */
 export interface FYDPresentation {
+  /** Optional editorial composition; presentation copy never becomes graph truth. */
+  editorial?: import("../components/editorial-sections").EditorialIntent;
   heading?: string;
   copy?: string;
   featuredIds?: string[];
