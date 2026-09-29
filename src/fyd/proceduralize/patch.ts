@@ -61,6 +61,28 @@ export interface PatchResult {
 // ---------------------------------------------------------------------------
 // Proposal digest. Mirrors src/lib/ping/ask-composer.ts: canonicalize the
 // body (sorted keys, volatile fields stripped) then sha256.
+//
+// DIGEST LAW (overlay / site_patch domain, pinned 2026-09-27). proposalDigest
+// covers the OVERLAY-FORMAT block only: the proposal body minus the
+// proposalDigest field itself, keys sorted recursively (UTF-16 code-unit
+// order), compact JSON (JSON.stringify: no whitespace, non-ASCII kept raw),
+// UTF-8 encoded, SHA-256 hex (via ./sha256, algorithm sha256-canonical-json-v1).
+// Volatile keys excluded: proposalDigest, createdAt, generatedAt, nonce.
+// It does NOT cover the Mission Control proposal bytes: the MC approval
+// digest is a different digest over different bytes, linked to an overlay
+// op only as a prose citation in approval.note (see
+// fyd/customize/types.ts PresentationIntentOverlayOp).
+//
+// SIBLING CANONICALIZER (do not mix up): mc-approval/approval_request.py
+// proposal_digest serves the MC APPROVAL domain (the ApprovalRequest
+// primitive), not the overlay domain. The two agree on pure-ASCII input
+// but differ by design: (1) volatile exclusion sets differ in naming and
+// membership (here: proposalDigest/createdAt/generatedAt/nonce; there:
+// proposal_digest/requested_at/nonce); (2) there ensure_ascii=True escapes
+// non-ASCII to \uXXXX while here JSON.stringify keeps non-ASCII raw;
+// (3) key sort is UTF-16 code units here vs Unicode code points there,
+// which diverges only for astral characters. Cross-check:
+// __tests__/canonicalizer-agreement.test.ts.
 // ---------------------------------------------------------------------------
 
 const VOLATILE_KEYS = new Set(["proposalDigest", "createdAt", "generatedAt", "nonce"]);

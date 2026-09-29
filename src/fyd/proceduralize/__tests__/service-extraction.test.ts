@@ -305,7 +305,8 @@ describe("ask fyd services question", () => {
     // The frozen refusal sentence leads; the composer appends the
     // consulted-context line, which is not part of the frozen wording.
     expect(answer.answer.startsWith(
-      "I do not have evidence for that in the current context, so I will not guess.",
+      "I cannot answer that: nothing in the site record covers it, and I will not guess.",
+
     )).toBe(true);
     expect(answer.unknowns).toEqual(["services offered by this business"]);
     expect(answer.claimClassifications).toEqual([]);
