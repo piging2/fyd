@@ -56,10 +56,20 @@ import type { PingObject } from "@/lib/ping/types";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** The authorized FYD demo tenants (same list as /sites page.tsx). */
+/**
+ * Tenants the Why This trust path may serve.
+ *
+ * Interval 08 whitelist (Nolan, binding): opened NARROWLY for "ping-fyd"
+ * only - exactly the correction-survival capability demonstrated in
+ * Interval 07, where Why This must distinguish source X from owner Y for
+ * the ping-fyd owner corrections. No tenant wildcard, no broader mutation
+ * privilege. happy-place and coppersmith-plumbing remain the /sites-page
+ * demo set; nothing else is added.
+ */
 const DEMO_SITES: ReadonlySet<string> = new Set([
   "happy-place",
   "coppersmith-plumbing",
+  "ping-fyd",
 ]);
 
 function stepDetail(

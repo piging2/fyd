@@ -169,6 +169,18 @@ SITES = {
         "generatedAt": "2026-09-21T12:01:10.844Z",
         "eventSequences": None,
     },
+    # Interval 08 whitelist (Nolan, binding): opened NARROWLY for "ping-fyd"
+    # only - exactly the correction-survival capability demonstrated in
+    # Interval 07. No tenant wildcard. The pin matches the PING-side dump
+    # recorded 2026-09-21 (see src/fyd/data/fyd-tenant-graph.ts OVERLAY
+    # STORY): eventSequences is None, no journal window; overlays still
+    # compose above the pinned base via query_overlays (tenant-scoped by
+    # event_data.siteId, mirroring PingObjectReader.queryFydSiteOverlays).
+    "ping-fyd": {
+        "fixture": REPO + "/src/fyd/proceduralize/__fixtures__/ping-fyd-graph.ts",
+        "generatedAt": "2026-09-21T00:00:00.000Z",
+        "eventSequences": None,
+    },
 }
 
 QUERY_JS = r"""

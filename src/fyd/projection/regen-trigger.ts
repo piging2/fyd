@@ -34,8 +34,23 @@ import { join } from "node:path";
 
 const execFileAsync = promisify(execFile);
 
-/** Must match tools/fyd-site-projection/dump.py SITES. */
-const KNOWN_SITES = new Set(["happy-place", "coppersmith-plumbing"]);
+/**
+ * Interval 08 whitelist (Nolan, binding): regeneration opens NARROWLY for
+ * "ping-fyd" only - exactly the capability demonstrated in Interval 07
+ * (owner corrects a fact, hides/shows a fact, publishes an address, changes
+ * section priority -> approval -> journaled overlay -> projection rebuild ->
+ * owner intent survives source re-observation). No tenant wildcard, no
+ * broader mutation privilege: SOURCE X stays the pinned fixture base (never
+ * rewritten), OWNER Y travels only through journaled overlays, and the
+ * base/overlay digest verification still runs on every regen.
+ *
+ * Must match tools/fyd-site-projection/dump.py SITES.
+ */
+const KNOWN_SITES = new Set([
+  "happy-place",
+  "coppersmith-plumbing",
+  "ping-fyd",
+]);
 
 const PROJECTION_DIR =
   process.env.FYD_PROJECTION_DIR ?? "/home/nolan/ping/var/fyd-projections";
