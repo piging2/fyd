@@ -1342,6 +1342,12 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
     const asksServices =
       hasWord(q, "service", "services", "offer", "offers", "provide") ||
       (hasWord(q, "do") && !asksProvenance);
+    // Services-intent ownership: when the services branch sees a genuine
+    // services-intent question (strong triggers, not the loose "do"
+    // fallback) whose topics match nothing on record, it skips; the flag
+    // stops the contact branch below from re-consuming those same words
+    // ("website") as contact triggers.
+    let servicesIntentUngrounded = false;
     if (asksServices && !(targetIsService && profileIntent)) {
       const services = fieldOf(target, "services");
       const relatedServices = ctx.relatedObjects.filter((o) =>
@@ -1436,10 +1442,26 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
         if (!services && named.length === 0) {
           return noEvidenceAnswer(ctx, question, ["services offered by this business"]);
         }
+      } else if (hasWord(q, "service", "services", "offer", "offers", "provide")) {
+        // Genuine services intent (strong triggers, not the loose "do"
+        // fallback) with nothing on record ("Does PING offer website
+        // design?"): the named topics stay UNKNOWN with the same filter
+        // the grounded path uses (hours words belong to the hours
+        // branch), and the contact branch below must not re-consume them
+        // as contact triggers. A loose-"do" question ("Do you have a
+        // website?") is contact intent: it keeps its old routing and its
+        // unknowns stay empty.
+        for (const w of matchable.filter((w) => !vocab.has(w) && !HOURS_WORDS.has(w))) noteUnknown(w);
+        servicesIntentUngrounded = true;
       }
     }
 
-    if (hasWord(q, "website", "contact", "email", "phone", "call", "site")) {
+    // Negative guard: a genuine services-intent question whose topics the
+    // services branch could not ground must not be re-consumed here as a
+    // contact question ("Does PING offer website design?" is not a request
+    // for the business website). The loose "do" fallback ("Do you have a
+    // website?") still routes here: it is not services intent.
+    if (hasWord(q, "website", "contact", "email", "phone", "call", "site") && !servicesIntentUngrounded) {
       const site = fieldOf(target, "website", "url", "domain");
       const email = fieldOf(target, "email");
       const phone = fieldOf(target, "phone");
