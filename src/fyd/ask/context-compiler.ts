@@ -179,7 +179,12 @@ function predicateWeight(p: string): number {
 
 export function classificationFromProvenance(provenanceKind: string | undefined | null): string {
   const kind = provenanceKind ?? "";
-  if (kind === "owner-authored" || kind === "owner-correction" || kind === "owner" || kind === "owner_asserted")
+  // "owner-asserted" (hyphen) is the legacy dump vocabulary for the same
+  // thing as "owner_asserted": facts the owner asserted into the tenant
+  // config (see the binding-verifier's owner_asserted lane, b9a0201a).
+  // Both map to USER_OVERRIDE so the ask lane and the render binding lane
+  // share one semantic evidence identity for owner-asserted facts.
+  if (kind === "owner-authored" || kind === "owner-correction" || kind === "owner" || kind === "owner_asserted" || kind === "owner-asserted")
     return "USER_OVERRIDE";
   if (kind === "overlay-authored") return "DEMO_SYNTHETIC";
   if (kind === "canonical-journal" || kind === "observation") return "DIRECT_FACT";
