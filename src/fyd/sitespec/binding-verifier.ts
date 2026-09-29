@@ -95,6 +95,15 @@ export interface OwnerAssertion {
 }
 
 /**
+ * Legacy provenance kind recorded by the PING-side projection dump for
+ * owner-provided tenant facts (ref "owner:tenant-config"). It was dropped
+ * from the ObjectProvenanceKind vocabulary, but the kind still rides the
+ * objects in digest-pinned projections, so the read seam reads it here
+ * rather than re-labeling recorded history.
+ */
+const LEGACY_OWNER_ASSERTED_KIND = "owner-asserted";
+
+/**
  * Derive owner assertions from a graph: the read seam attaches
  * ownerFieldCorrections to objects, each carrying the source value the
  * correction was recorded against and the owner's attested value.
@@ -105,8 +114,33 @@ export function ownerAssertionsFromGraph(graph: ObjectGraph): OwnerAssertion[] {
   const out: OwnerAssertion[] = [];
   for (const o of graph.objects) {
     const corrections: OwnerFieldCorrection[] = o.ownerFieldCorrections ?? [];
+    const correctedFields: Set<string> = new Set(
+      corrections.map((c) => c.field),
+    );
     for (const c of corrections) {
       out.push({ objectId: o.id, field: c.field, value: c.ownerValue });
+    }
+    // A legacy-kind object IS the recorded owner assertion: the dumper
+    // recorded that the owner asserted these values (owner ref), so the
+    // verifier's owner_authored lane may bind them. The value must still
+    // match exactly: presenting a value the owner never asserted stays
+    // UNBOUND.
+    const kind: string | undefined = o.provenance?.kind;
+    if (kind === LEGACY_OWNER_ASSERTED_KIND) {
+      const attest = (field: string, value: unknown) => {
+        if (
+          typeof value === "string" &&
+          value !== "" &&
+          !correctedFields.has(field)
+        ) {
+          out.push({ objectId: o.id, field, value });
+        }
+      };
+      attest("title", o.title);
+      attest("description", o.description);
+      for (const field of Object.keys(o.fields ?? {}).sort()) {
+        attest(field, o.fields[field]);
+      }
     }
   }
   return out;

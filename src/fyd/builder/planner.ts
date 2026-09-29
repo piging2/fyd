@@ -64,6 +64,7 @@ import {
 import {
   assertGeneratedPresentationVerified,
   copyClassToBindingClassification,
+  type CopyClass,
   type GeneratedCopySlot,
   type GeneratedPresentation,
 } from "./generated-presentation";
@@ -379,9 +380,14 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     if (locality !== "") {
       bindings.push({ objectId: owner.id, field: "locality", claimRef: owner.provenance?.ref ?? null });
     }
-    // DIRECT_FACT: the tagline interpolates ONLY bound object fields, so
-    // every binding must resolve or the spec is refused.
-    slots.push({ slotId: "hero-tagline", sectionId: "", text: tagline, bindings, copyClass: "DIRECT_FACT" });
+    // Copy class follows the owner's provenance: website-derived facts
+    // verify as DIRECT_FACT (direct evidence); anything else the owner
+    // provided (e.g. the legacy "owner-asserted" projection kind) is
+    // USER_COPY and must resolve through a recorded owner assertion
+    // (owner_authored), never as direct evidence.
+    const copyClass: CopyClass =
+      owner.provenance?.kind === "website-derived" ? "DIRECT_FACT" : "USER_COPY";
+    slots.push({ slotId: "hero-tagline", sectionId: "", text: tagline, bindings, copyClass });
   }
   const generatedPresentation: GeneratedPresentation = { version: 1, slots };
 

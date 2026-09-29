@@ -931,14 +931,22 @@ function boundField(
   ctx: RenderContext,
   o: PingObject,
   field: string,
-  classification: BindingClassification = "direct",
+  classification?: BindingClassification,
 ): string | undefined {
-  // Owner assertions ride on the render graph; the strong verifier
-  // requires a recorded assertion for owner_authored bindings. Pure and
-  // deterministic; trivial cost at demo graph sizes.
+  // Classification follows the object's provenance when the caller does
+  // not name one: website-derived facts verify as direct evidence;
+  // owner-provided facts (e.g. the legacy "owner-asserted" projection
+  // kind) verify through a recorded owner assertion, never as direct
+  // evidence. Mirrors the planner's emission seam (LANE-CLAIM H4/R-H4
+  // reconciliation). Owner assertions ride on the render graph; the
+  // strong verifier requires a recorded assertion for owner_authored
+  // bindings. Pure and deterministic; trivial cost at demo graph sizes.
+  const cls: BindingClassification =
+    classification ??
+    (o.provenance?.kind === "website-derived" ? "direct" : "owner_authored");
   return resolveBoundFieldVerified(
     ctx.graph,
-    { objectId: o.id, field, classification },
+    { objectId: o.id, field, classification: cls },
     ownerAssertionsFromGraph(ctx.graph),
   );
 }
@@ -1000,7 +1008,12 @@ function contactMethod(
   kind: ContactMethodKind,
   correction: OwnerFieldCorrection | null,
 ): ContactMethod | null {
-  const value = boundField(ctx, o, kind, correction ? "owner_authored" : "direct");
+  const value = boundField(
+    ctx,
+    o,
+    kind,
+    correction ? "owner_authored" : undefined,
+  );
   if (value === undefined) return null;
   // Fail-closed dial gating (OBJECT-SHARD-2): an explicit field-conflict
   // marker blocks the dial/mailto action. An explicit owner correction is a
