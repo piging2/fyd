@@ -177,7 +177,12 @@ SITES = {
     # compose above the pinned base via query_overlays (tenant-scoped by
     # event_data.siteId, mirroring PingObjectReader.queryFydSiteOverlays).
     "ping-fyd": {
-        "fixture": REPO + "/src/fyd/proceduralize/__fixtures__/ping-fyd-graph.ts",
+        # The ping-fyd fixture lives in the convergence (served) tree, not the
+        # frozen PING tree: the frozen tree carries no ping-fyd fixture. This
+        # is the same fixture the ask seam pins
+        # (src/fyd/data/fyd-tenant-graph.ts FYD_TENANT_PINS["ping-fyd"]).
+        "fixture": "/home/nolan/projects/ping-fyd-converged"
+                    "/src/fyd/proceduralize/__fixtures__/ping-fyd-graph.ts",
         "generatedAt": "2026-09-21T00:00:00.000Z",
         "eventSequences": None,
     },
@@ -252,6 +257,25 @@ def extract_base_graph(fixture_path):
         tail = tail[:-1].rstrip()
     if not tail.endswith("}"):
         raise ValueError("fixture body does not end with } in %s" % fixture_path)
+    # Interval 08 whitelist: the ping-fyd fixture is a faithful hand-authored
+    # copy whose header declares simple string consts (e.g.
+    # `const OWNER_ASSERTED = "owner-asserted" as ObjectProvenanceKind;`) used
+    # inside the body. The fixture itself must NOT be rewritten (its bytes
+    # are digest-pinned), so resolve those consts mechanically here: every
+    # `const NAME = "literal"` declaration in the file substitutes NAME (word
+    # boundary) with the literal before JSON parsing. Machine-generated
+    # fixtures declare no such consts and are unaffected.
+    for cm in re.finditer(
+        r'^const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"((?:[^"\\]|\\.)*)"',
+        text,
+        re.M,
+    ):
+        name, lit = cm.group(1), cm.group(2)
+        tail = re.sub(
+            r"\b" + re.escape(name) + r"\b",
+            '"%s"' % lit.replace('"', '\\"'),
+            tail,
+        )
     graph = json.loads(tail)
     header = ""
     hm = re.match(r"\s*/\*\*(.*?)\*/", text, re.DOTALL)
