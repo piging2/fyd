@@ -3,17 +3,29 @@
  * EXISTING journal on every request. No cache, no store: refresh preserves
  * state because state lives in the journal; replay reconstructs it because
  * the projection is deterministic.
+ *
+ * Mission L (Q-P0-06 finding #4, 2026-09-27): tenant-scoped reads. A caller
+ * asserting `x-mc-tenant` sees ONLY that tenant's missions. No header means
+ * the operator view (the MC page's honest operator surface) and is unchanged.
  */
 
 import { loadJournalEvents, nowIso, projectMissions, JOURNAL_PATH } from '../_lib/mc-dispatch';
+import { callerScope } from '../_lib/mc-tenant-gate';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
+  let scope;
+  try {
+    scope = callerScope(req);
+  } catch (e) {
+    return Response.json({ ok: false, error: 'invalid_caller_tenant' }, { status: 400 });
+  }
   let missions;
   try {
-    missions = projectMissions(loadJournalEvents());
+    const all = projectMissions(loadJournalEvents());
+    missions = scope.kind === 'tenant' ? all.filter((m) => m.tenant === scope.tenant) : all;
   } catch (e) {
     return Response.json({ ok: false, error: 'projection_failed', detail: String(e).slice(0, 300) }, { status: 500 });
   }
@@ -21,6 +33,7 @@ export async function GET() {
     ok: true,
     as_of: nowIso(),
     journal: JOURNAL_PATH,
+    scope: scope.kind === 'tenant' ? { tenant: scope.tenant } : { operator: true },
     mission_count: missions.length,
     missions: missions.map((m) => ({
       mission_id: m.mission_id,

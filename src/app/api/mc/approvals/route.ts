@@ -1,0 +1,130 @@
+/**
+ * P0 W4: /api/mc/approvals — the harvested ApprovalRequest primitive
+ * (dormant branch mc/approval-request, canonical model) exposed over HTTP
+ * as the Mission Control surface.
+ *
+ * GET  /api/mc/approvals?proposal_id=<id>
+ *      The recorded proposal: digest, status, summary, canonical bytes.
+ *      Read-only; this is the proposal view for the owner decision.
+ * POST /api/mc/approvals
+ *      {proposal_id, digest, decision: "approve"|"deny",
+ *       approver?, reason?}
+ *      Runs the single canonical transition in approval_request.py through
+ *      approval_cli.py. The digest must match the recorded proposal digest
+ *      EXACTLY; a mismatch is refused with no state change (tamper
+ *      detection). Approve emits MC_APPROVAL_APPROVED; deny emits
+ *      MC_APPROVAL_DENIED. Events carry the digest and metadata, never the
+ *      raw proposal body.
+ *
+ * This route owns no approval logic: it projects the operator's decision
+ * into the one canonical transition. Silence never approves.
+ */
+
+import { spawnSync } from 'child_process';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+const MC_APPROVAL_DIR = '/home/nolan/projects/ping/mc-approval';
+const STORE_PATH = '/home/nolan/projects/ping/var/mc-approvals.json';
+const JOURNAL_PATH = '/home/nolan/workspace/fyd-journal-gateway/events.jsonl';
+const OUTREACH_PATH = '/home/nolan/workspace/outreach';
+const DIGEST_RE = /^[0-9a-f]{64}$/;
+
+function bad(status: number, error: string, detail?: string) {
+  return Response.json({ ok: false, error, detail: detail ?? null }, { status });
+}
+
+function runCli(args: string[]): { ok: boolean; result?: any; error?: string } {
+  let r;
+  try {
+    r = spawnSync('python3', ['approval_cli.py', ...args], {
+      cwd: MC_APPROVAL_DIR,
+      encoding: 'utf8',
+      timeout: 30000,
+      maxBuffer: 4 * 1024 * 1024,
+      env: { ...process.env, MC_OUTREACH_PATH: OUTREACH_PATH },
+    });
+  } catch (e) {
+    return { ok: false, error: `approval_cli spawn failed: ${String(e).slice(0, 200)}` };
+  }
+  if (r.error) {
+    return { ok: false, error: `approval_cli spawn failed: ${String(r.error).slice(0, 200)}` };
+  }
+  if (r.status !== 0) {
+    return { ok: false, error: `approval_cli exited ${r.status}: ${(r.stderr || '').slice(0, 300)}` };
+  }
+  try {
+    return { ok: true, result: JSON.parse((r.stdout || '').trim()) };
+  } catch {
+    return { ok: false, error: `approval_cli returned unparsable output: ${(r.stdout || '').slice(0, 200)}` };
+  }
+}
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const proposalId = searchParams.get('proposal_id') || '';
+  if (!proposalId) {
+    return bad(400, 'bad_proposal_id', 'proposal_id query param is required.');
+  }
+  const cli = runCli(['get', '--store', STORE_PATH, '--proposal-id', proposalId]);
+  if (!cli.ok) return bad(500, 'approval_backend_failed', cli.error);
+  const res = cli.result;
+  if (!res.ok) {
+    return bad(404, 'unknown_proposal', `no approval record for '${proposalId}'`);
+  }
+  return Response.json({ ok: true, proposal: res.record });
+}
+
+export async function POST(req: Request) {
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return bad(400, 'bad_json', 'Request body must be JSON.');
+  }
+  const proposalId = typeof body.proposal_id === 'string' ? body.proposal_id : '';
+  const digest = typeof body.digest === 'string' ? body.digest : '';
+  const decision = typeof body.decision === 'string' ? body.decision : '';
+  const approver =
+    typeof body.approver === 'string' && body.approver ? body.approver : 'nolan:demo-owner';
+  const reason = typeof body.reason === 'string' ? body.reason : '';
+  if (!proposalId) {
+    return bad(400, 'bad_proposal_id', 'proposal_id is required.');
+  }
+  if (!DIGEST_RE.test(digest)) {
+    return bad(400, 'bad_digest', 'digest must be a 64-char lowercase hex sha256.');
+  }
+  if (decision !== 'approve' && decision !== 'deny') {
+    return bad(400, 'bad_decision', 'decision must be "approve" or "deny".');
+  }
+
+  const args = [
+    'decide',
+    '--store', STORE_PATH,
+    '--journal', JOURNAL_PATH,
+    '--proposal-id', proposalId,
+    '--digest', digest,
+    '--decision', decision,
+    '--approver', approver,
+  ];
+  if (decision === 'deny' && reason) args.push('--reason', reason);
+  const cli = runCli(args);
+  if (!cli.ok) return bad(500, 'approval_backend_failed', cli.error);
+  const res = cli.result;
+  if (res.ok) {
+    return Response.json({
+      ok: true,
+      decision,
+      proposal_id: proposalId,
+      digest,
+      idempotent: res.idempotent === true,
+      how: res.how ?? null,
+      record: res.record,
+      event: res.event ?? null,
+    });
+  }
+  // Typed refusals from the primitive: no state change happened.
+  const status = res.reason === 'unknown_id' ? 404 : 409;
+  return Response.json({ ok: false, ...res }, { status });
+}
