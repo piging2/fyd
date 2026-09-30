@@ -15,6 +15,12 @@
  * The registry is read per request so key rotation needs no rebuild; any
  * read or parse failure throws and the route refuses the dispatch (fail
  * closed). No new event types, no new authorities, no journal changes.
+ *
+ * P0 approval boundary (2026-09-30): the same registry also carries the
+ * caller-granted CAPABILITIES used by the approvals gate
+ * (mc-approval-gate.ts): NO REQUIRED CAPABILITY -> NO APPROVAL. Capabilities
+ * are operator-provisioned in the same file; this module is the single
+ * reader. No new identity authority.
  */
 
 import { readFileSync } from 'fs';
@@ -29,6 +35,12 @@ export interface CallerContext {
   agent_id: string;
   tenant: string;
   entitled_tenants: string[];
+  /**
+   * Capabilities granted to this caller (operator-provisioned, same registry).
+   * The approvals boundary requires the proposal's recorded capability to be
+   * present here. Absent field -> no granted capabilities (fail closed).
+   */
+  capabilities: string[];
 }
 
 export interface CallerRegistry {
@@ -51,6 +63,17 @@ export function loadCallerRegistry(): CallerRegistry {
     }
     if (!Array.isArray(c.entitled_tenants)) {
       throw new Error('registry entry has no entitled_tenants');
+    }
+    const rawCaps = (c as { capabilities?: unknown }).capabilities;
+    if (rawCaps === undefined) {
+      c.capabilities = [];
+    } else if (
+      !Array.isArray(rawCaps) ||
+      rawCaps.some((x) => typeof x !== 'string' || !x)
+    ) {
+      throw new Error('registry entry has invalid capabilities');
+    } else {
+      c.capabilities = rawCaps as string[];
     }
     tenants.add(c.tenant);
     for (const t of c.entitled_tenants) tenants.add(t);
