@@ -37,6 +37,11 @@ import {
   SERVICE_CARD_FACT_NAMES,
 } from "./service-cards";
 import { mineBodyContactFacts } from "./body-contact";
+import {
+  extractLocationBlocks,
+  LOCATION_BLOCK_ENTITY_PREFIX,
+  LOCATION_BLOCK_FACT_NAMES,
+} from "./location-blocks";
 import { ROLE_PREDICATES } from "../sitespec/schema-roles";
 
 /** A source the proceduralizer may acquire. */
@@ -323,6 +328,32 @@ export async function parseRich(acquired: AcquiredSource): Promise<ParsedResult>
     // wins in resolve(); provenance() tags factClass + visibility.
     for (const fact of mineBodyContactFacts(acquired.raw, acquired.url)) {
       facts.push(fact);
+    }
+    // Location-block lane (2026-09-30): repeated per-location blocks
+    // (name+address+phone) become direct html observations with stable
+    // synthetic entity ids (location-block:<key>); project() compiles
+    // them into Location objects with located_at edges. Only repeated
+    // blocks (2+) are extracted: single-location pages are covered by
+    // body-contact mining + PostalAddress.
+    for (const block of extractLocationBlocks(acquired.raw, acquired.url)) {
+      const entityId = LOCATION_BLOCK_ENTITY_PREFIX + block.key;
+      const blockFact = (name: string, value: string): ParsedFact => ({
+        name,
+        value,
+        sourceType: "html",
+        inferred: false,
+        factClass: "DIRECT_FACT",
+        visibility: "public",
+        evidenceDetail: block.evidenceDetail,
+        extractor: "location-blocks@2026-09-30",
+        entityId,
+        property: "location_block",
+      });
+      facts.push(
+        blockFact(LOCATION_BLOCK_FACT_NAMES.name, block.name),
+        blockFact(LOCATION_BLOCK_FACT_NAMES.address, block.address),
+        blockFact(LOCATION_BLOCK_FACT_NAMES.phone, block.phone),
+      );
     }
   }
   // sitemap: parse() extracts nothing (RUN-NOTES #9: the fetch is pure
@@ -1241,6 +1272,63 @@ export function project(
       "offers",
       objId,
       `proceduralizer:project:service-card:${card.pattern}:${card.key}`,
+    );
+  }
+
+  // -- Location blocks: deterministic HTML location-block lane
+  //    (2026-09-30). parseRich emits location_block_* facts with stable
+  //    synthetic entity ids (location-block:<key>); this lane compiles
+  //    each block into a ping.social.location@1 object with a located_at
+  //    edge from the business. Only repeated blocks (2+) reach this
+  //    lane: single-location pages are covered by body-contact mining +
+  //    PostalAddress. Every claim is a website_statement DIRECT_FACT;
+  //    the edge evidenceRef names the detector and block key.
+  const blockGroups = new Map<string, Map<string, ExtractedField>>();
+  for (const [entityKey, eFields] of entityFields ?? []) {
+    if (!entityKey.startsWith(LOCATION_BLOCK_ENTITY_PREFIX)) continue;
+    let group = blockGroups.get(entityKey);
+    if (!group) {
+      group = new Map();
+      blockGroups.set(entityKey, group);
+    }
+    for (const f of eFields) group.set(f.name, f);
+  }
+  for (const [entityKey, block] of [...blockGroups.entries()].sort((a, b) =>
+    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0,
+  )) {
+    const addressField = block.get(LOCATION_BLOCK_FACT_NAMES.address);
+    const address = addressField ? asString(addressField.value).trim() : "";
+    if (!address) continue;
+    const blockKey = entityKey.slice(LOCATION_BLOCK_ENTITY_PREFIX.length);
+    const objId = `${businessId}-location-${sha256Hex(entityKey).slice(0, 12)}`;
+    objectIdByEntityKey.set(entityKey, objId);
+    const lFields: Record<string, string | string[]> = { address };
+    const lClasses: Record<string, FactClass> = { address: "DIRECT_FACT" };
+    const nameField = block.get(LOCATION_BLOCK_FACT_NAMES.name);
+    const blockName = nameField ? asString(nameField.value).trim() : "";
+    if (blockName) {
+      lFields["name"] = blockName;
+      lClasses["name"] = "DIRECT_FACT";
+    }
+    const phoneField = block.get(LOCATION_BLOCK_FACT_NAMES.phone);
+    const blockPhone = phoneField ? asString(phoneField.value).trim() : "";
+    if (blockPhone) {
+      lFields["phone"] = blockPhone;
+      lClasses["phone"] = "DIRECT_FACT";
+    }
+    mkObject(
+      objId,
+      "ping.social.location@1",
+      blockName || address,
+      address + (blockPhone ? " " + blockPhone : ""),
+      { ...lFields, claimKind: "website_statement" },
+      { ...lClasses, claimKind: "DIRECT_FACT" },
+    );
+    mkRel(
+      businessId,
+      "located_at",
+      objId,
+      `proceduralizer:project:location-block:${blockKey}`,
     );
   }
 

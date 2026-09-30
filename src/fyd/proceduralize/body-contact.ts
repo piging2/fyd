@@ -37,8 +37,14 @@ export const BODY_CONTACT_EXTRACTOR = "body-contact@2026-09-30";
  * lane must not depend on the onboarding lane's module. Used here with
  * the global flag to mine every occurrence; values are emitted verbatim
  * and deduped by normalized digits.
+ *
+ * Exported for the location-block lane (location-blocks.ts), which
+ * reuses the same patterns to find addresses/phones inside repeated
+ * per-location blocks. Consumers must construct a fresh RegExp from
+ * .source (or use String.match) rather than sharing the global-flag
+ * instance, whose lastIndex is mutable.
  */
-const PHONE_RE =
+export const PHONE_RE =
   /(?<!\d)(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g;
 
 const STREET_SUFFIX =
@@ -60,8 +66,11 @@ const DIRECTIONAL = "(?:North|South|East|West|[NSEW])\\.?";
  * - "400 Main St. Grand Junction, CO" (no ZIP)
  * - "400 Main Street in Downtown Grand Junction, Colorado" (prose, no ZIP)
  * - "126 S. 5th St." (no city/state/ZIP)
+ *
+ * Exported for the location-block lane (location-blocks.ts); same
+ * lastIndex caution as PHONE_RE above.
  */
-const ADDRESS_RE = new RegExp(
+export const ADDRESS_RE = new RegExp(
   "(?<!\\d)" + // not in the middle of a longer digit run
     "\\d{1,6}" + // house number
     "\\s+" +
