@@ -3,7 +3,11 @@
  * Address fixtures are verbatim strings observed on the five
  * falsification-battery sites (2026-09-30).
  */
-import { mineBodyContactFacts, BODY_CONTACT_EXTRACTOR } from "../body-contact";
+import {
+  mineBodyContactFacts,
+  BODY_CONTACT_EXTRACTOR,
+  ADDRESS_RE,
+} from "../body-contact";
 import type { ParsedFact } from "../proceduralizer";
 
 function factNamed(facts: ParsedFact[], name: string): ParsedFact | undefined {
@@ -165,5 +169,37 @@ describe("mineBodyContactFacts: address (falsification strings)", () => {
     const v = String(factNamed(facts, "address")!.value);
     expect(v).not.toContain("Old Mill Rd, Fruita, CO 81521 220");
     expect(v).not.toContain("81521, 220");
+  });
+});
+
+describe("ADDRESS_RE: unit-designator boundary (elevationfamilydental 2026-09-30)", () => {
+  function allMatches(text: string): string[] {
+    return [...text.matchAll(new RegExp(ADDRESS_RE.source, "g"))].map((m) => m[0]);
+  }
+
+  test("spaced unit still matches, unit value is 101 not 101Grand", () => {
+    const good = "1190 Bookcliff Ave, Unit 101 Grand Junction, CO 81501";
+    const m = allMatches(good);
+    expect(m).toEqual([good]);
+    expect(m[0]).toContain("Unit 101 Grand Junction");
+    expect(m[0]).not.toContain("101Grand");
+  });
+
+  test("tag-boundary-collapsed Unit 101Grand Junction yields no address (fail closed)", () => {
+    // node-html-parser .text concatenates
+    // <p>1190 Bookcliff Ave, Unit 101</p><p>Grand Junction, CO 81501</p>
+    // with no separator. The greedy unit value must not absorb the glued
+    // city word into a malformed second address.
+    expect(allMatches("1190 Bookcliff Ave, Unit 101Grand Junction, CO 81501")).toEqual([]);
+  });
+
+  test("other unit forms unaffected: Apt 4B, Suite 200A, Unit B-204", () => {
+    for (const text of [
+      "456 Main St, Apt 4B Denver, CO 80202",
+      "789 Oak Ave, Suite 200A Denver, CO 80202",
+      "321 Pine Rd, Unit B-204 Denver, CO 80202",
+    ]) {
+      expect(allMatches(text)).toEqual([text]);
+    }
   });
 });

@@ -62,10 +62,18 @@ const DIRECTIONAL = "(?:North|South|East|West|[NSEW])\\.?";
  * - letter streets: "1234 G Rd, Grand Junction, CO 81501"
  * - highway forms: "825 East US Hwy 6&50 Fruita, CO 81521"
  * - punctuation-light forms: "220 E. Aspen Ave. Fruita CO. 81521"
+ * The unit value must end at a separator (trailing lookahead) and must not
+ * be a digit run glued to a following word ((?!\d+[A-Za-z]{2}) guard): a
+ * tag-boundary collapse like "Unit 101Grand Junction" fails closed
+ * instead of minting a malformed second address. The lookahead alone is
+ * not enough: greedy [\w-]+ would still absorb "101Grand" up to the
+ * following space, so the anti-glue guard rejects the glued shape first.
  * Deliberately NOT matched (conservative misses, documented):
  * - "400 Main St. Grand Junction, CO" (no ZIP)
  * - "400 Main Street in Downtown Grand Junction, Colorado" (prose, no ZIP)
  * - "126 S. 5th St." (no city/state/ZIP)
+ * - "1190 Bookcliff Ave, Unit 101Grand Junction, CO 81501" (tag-boundary
+ *   collapse glued the unit number to the city word; fail closed)
  *
  * Exported for the location-block lane (location-blocks.ts); same
  * lastIndex caution as PHONE_RE above.
@@ -92,7 +100,7 @@ export const ADDRESS_RE = new RegExp(
     // stranded behind a leading space, which silently failed matches
     // like "Bookcliff Ave")
     ")" +
-    "(?:\\s*,?\\s*(?:Unit|Apt\\.?|Suite|Ste\\.?|#)\\s*[\\w-]+)?" + // unit
+    "(?:\\s*,?\\s*(?:Unit|Apt\\.?|Suite|Ste\\.?|#)\\s*(?!\\d+[A-Za-z]{2})[\\w-]+(?=[\\s,;.]|$))?" + // unit
     "[\\s,;.]*" +
     "[A-Z][a-zA-Z.'-]*(?:\\s+[A-Z][a-zA-Z.'-]*){0,2}" + // city, 1-3 words
     "[\\s,;.]*" +
