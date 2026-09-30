@@ -253,15 +253,36 @@ export async function parseRich(acquired: AcquiredSource): Promise<ParsedResult>
   } else if (acquired.sourceType === "html") {
     structured = await extractStructuredData(acquired.raw, ctx);
     facts.push(...structured.facts);
+    // The page title is read before meta handling: the name-vs-
+    // description sanity check (below) voids a description that names a
+    // different business than the page, and it needs the title text.
+    const pageTitle = extractTitle(acquired.raw);
     for (const [property, content] of extractMetaTags(acquired.raw)) {
       if (property.startsWith("og:")) {
-        push(ogToField(property), content, "opengraph");
+        const field = ogToField(property);
+        // Name-vs-description sanity (2026-09-30): a description that
+        // names a different business than the page is VOIDED, never
+        // emitted. A missing description is honest; a wrong one is a
+        // false claim. Structured (JSON-LD) descriptions are untouched:
+        // this gate covers only the og/meta description path.
+        if (
+          field === "description" &&
+          descriptionNamesForeignBusiness(content, pageTitle)
+        ) {
+          continue;
+        }
+        push(field, content, "opengraph");
       } else if (property === "description" || property === "keywords") {
+        if (
+          property === "description" &&
+          descriptionNamesForeignBusiness(content, pageTitle)
+        ) {
+          continue;
+        }
         push(property, content, "html-meta");
       }
     }
-    const title = extractTitle(acquired.raw);
-    if (title) push("title", title, "html-meta");
+    if (pageTitle) push("title", pageTitle, "html-meta");
     // Service lane v2 (2026-09-22): deterministic HTML service-card
     // extraction. Cards become direct html observations with stable
     // synthetic entity ids (service-card:<pattern>:<key>); project()
@@ -329,6 +350,56 @@ function ogToField(property: string): string {
     "og:url": "website",
   };
   return map[property] ?? property.replace(/^og:/, "");
+}
+
+/**
+ * Name-vs-description sanity (2026-09-30). The falsification found an
+ * og:description naming a DIFFERENT business than the page
+ * (kimsautopart.com: description "…A&D Auto Parts is far and away the
+ * best place…", page title "Kims - Kims Auto Parts"). A wrong
+ * description is a false claim; a missing description is honest. So
+ * the description fact is VOIDED (never emitted) when the description
+ * contains a capitalized multi-word phrase whose distinctive tokens do
+ * not occur in the page title at all.
+ *
+ * "Distinctive tokens" of a candidate name phrase = the phrase's
+ * tokens (length >= 2) that do NOT occur in the page title: these are
+ * what would make it a DIFFERENT name. The phrase voids the
+ * description only when its distinctive head is non-empty AND every
+ * distinctive token carries a proper-name mark (contains &, an
+ * apostrophe, or a digit, or is an all-caps initialism). A plain-word
+ * distinctive head ("Gentle", "Grand", "Exceptional") is a descriptor
+ * or a place, not evidence of a different business, so the rule stays
+ * narrow and conservative: it voids only confident mismatches, never
+ * merely flowery copy. Voiding only: nothing is invented or rewritten.
+ *
+ * Pure and deterministic: same strings in, same boolean out.
+ */
+export function descriptionNamesForeignBusiness(
+  description: string,
+  pageTitle: string,
+): boolean {
+  const title = pageTitle.trim();
+  if (title === "") return false; // no title: nothing to check against
+  const titleTokens = new Set(
+    title
+      .toLowerCase()
+      .split(/[^a-z0-9&']+/)
+      .filter((t) => t !== ""),
+  );
+  const desc = decodeEntities(description);
+  const PHRASE_RE = /\b([A-Z][A-Za-z&']*(?:\s+[A-Z0-9][A-Za-z&']*)+)\b/g;
+  const NAME_MARK_RE = /[&'\d]|^[A-Z]{2,}$/;
+  let m: RegExpExecArray | null;
+  while ((m = PHRASE_RE.exec(desc)) !== null) {
+    const tokens = m[1].split(/\s+/).filter((t) => t.length >= 2);
+    const distinctive = tokens.filter(
+      (t) => !titleTokens.has(t.toLowerCase()),
+    );
+    if (distinctive.length === 0) continue;
+    if (distinctive.every((t) => NAME_MARK_RE.test(t))) return true;
+  }
+  return false;
 }
 
 function extractTitle(html: string): string {
