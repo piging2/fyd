@@ -37,6 +37,7 @@ import {
   SERVICE_CARD_FACT_NAMES,
 } from "./service-cards";
 import { mineBodyContactFacts } from "./body-contact";
+import { ROLE_PREDICATES } from "../sitespec/schema-roles";
 
 /** A source the proceduralizer may acquire. */
 export interface SourceRecord {
@@ -1014,15 +1015,39 @@ export function project(
   }
 
   // -- People: Person entities with names.
+  //
+  // Person role gate (2026-09-30). The falsification found this loop
+  // minting ping.social.person@1 cards for ANY Person-typed entity with
+  // a collapsed "title" field: blog authors ("Admin") and headline-only
+  // nodes ("Welcome to our blog") became person cards with team-member
+  // framing, and no business<->person edge was ever minted. A Person
+  // entity now projects only when it carries a job_title field OR
+  // participates in a person-role relationship (the builder's exact
+  // ROLE_PREDICATES.person set: employs/has_member/has_employee/
+  // works_for/member_of) from the structured extraction. This kills
+  // both junk vectors while keeping employees, founders, and jobTitle
+  // persons. Skipped persons are a deliberate policy exclusion, not
+  // silent loss: the entity facts remain in entityFields for inspection.
+  const personRolePredicates = new Set<string>(ROLE_PREDICATES.person);
+  const personRoleEntities = new Set<string>();
+  for (const r of opts.relationships ?? []) {
+    if (personRolePredicates.has(r.predicate)) {
+      personRoleEntities.add(r.subjectKey);
+      personRoleEntities.add(r.objectKey);
+    }
+  }
   for (const e of entities) {
     if (!e.types.includes("Person")) continue;
     const name = fieldOf(entityFields, e.key, "title")?.value;
     if (!name || asString(name) === "") continue;
+    const jobTitle = fieldOf(entityFields, e.key, "job_title")?.value;
+    // Role gate: skip Person entities with neither a job_title field
+    // nor a person-role relationship participation.
+    if (!jobTitle && !personRoleEntities.has(e.key)) continue;
     const personId = `${businessId}-person-${sha256Hex(e.key).slice(0, 12)}`;
     objectIdByEntityKey.set(e.key, personId);
     const pFields: Record<string, string | string[]> = { name: asString(name) };
     const pClasses: Record<string, FactClass> = { name: "DIRECT_FACT" };
-    const jobTitle = fieldOf(entityFields, e.key, "job_title")?.value;
     if (jobTitle) {
       pFields["job_title"] = asString(jobTitle);
       pClasses["job_title"] = "DIRECT_FACT";
