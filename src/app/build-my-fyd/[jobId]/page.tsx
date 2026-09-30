@@ -16,6 +16,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { notFound } from "next/navigation";
 import { BuildClient } from "@/app/build/[siteId]/build-client";
+import RenderBeacon from "./render-beacon";
 import type { ObjectGraph, FYDSiteSpec, FYDFinding } from "@/fyd/sitespec/types";
 import type { DisplayMedia } from "@/fyd/media/select";
 
@@ -27,6 +28,12 @@ interface JobPayload {
     seedUrl: string;
     finalUrl: string | null;
     stages: Array<{ stage: string; status: string; detail: string; ms: number }>;
+    timings?: {
+      urlSubmittedAt: string | null;
+      firstMeaningfulObjectAt: string | null;
+      siteSpecReadyAt: string | null;
+      firstRenderAt: string | null;
+    };
     graphSummary: { objects: number; relationships: number; schemas: Record<string, number> };
     specSummary: {
       pages: number;
@@ -68,6 +75,7 @@ export default async function BuildMyFydJobPage({ params }: { params: Promise<{ 
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
+      <RenderBeacon jobId={jobId} />
       <div className="rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
         <p className="font-semibold">DEMO PREVIEW</p>
         <p className="mt-1">

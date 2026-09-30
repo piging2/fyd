@@ -8,6 +8,9 @@
  * Event frames (JSON per line):
  *   { type: "stage", stage: { stage, status, detail, ms } }
  *   { type: "done", jobId, ok, report }  // ok=false when report.error is set
+ * report.timings carries the hour-10 metric timestamps:
+ * urlSubmittedAt / firstMeaningfulObjectAt / siteSpecReadyAt /
+ * firstRenderAt (the last is stamped by the job page's render beacon).
  *   { type: "error", message }            // unexpected throw, not a typed failure
  *
  * The final result (report + graph + spec + media selections) is
@@ -44,6 +47,8 @@ export async function POST(req: Request): Promise<Response> {
   const documentNames = Array.isArray(body.documentNames) ? body.documentNames.map(String).slice(0, 10) : [];
 
   const tenantId = "live-" + createHash("sha256").update(canonicalEntityUrl(url)).digest("hex").slice(0, 12);
+  // Hour-10 metric: URL_SUBMITTED_AT is the moment the intake POST is received.
+  const urlSubmittedAt = new Date().toISOString();
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -57,6 +62,7 @@ export async function POST(req: Request): Promise<Response> {
           tenantId,
           socials,
           documentNames,
+          urlSubmittedAtIso: urlSubmittedAt,
           onProgress: (stage) => send({ type: "stage", stage }),
         });
         const payload = {

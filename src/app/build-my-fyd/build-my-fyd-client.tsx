@@ -20,13 +20,16 @@ interface StageEvent {
   ms: number;
 }
 
+// Hour-10 (2026-09-30): customer-facing progress language. These label
+// the true pipeline stages; no invented granularity (the pipeline has
+// no distinct "finding services" / "finding locations" stages).
 const STAGE_LABELS: Record<string, string> = {
-  discover: "DISCOVER",
-  acquire: "ACQUIRE",
-  understand: "UNDERSTAND",
-  resolve: "RESOLVE",
-  generate: "GENERATE",
-  media: "MEDIA",
+  discover: "Discovering presence",
+  acquire: "Reading your website",
+  understand: "Understanding your business",
+  resolve: "Checking facts against evidence",
+  generate: "Building your FYD",
+  media: "Media",
 };
 
 export default function BuildMyFydClient() {
@@ -171,7 +174,7 @@ export default function BuildMyFydClient() {
           disabled={running || !url.trim()}
           className="rounded bg-black px-6 py-3 font-semibold text-white disabled:opacity-50"
         >
-          {running ? "Building..." : "BUILD"}
+          {running ? "Building..." : "Build my FYD"}
         </button>
       </form>
 

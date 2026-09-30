@@ -138,6 +138,22 @@ export interface LiveLoopReport {
   finalUrl: string | null;
   startedAt: string;
   finishedAt: string;
+  /**
+   * Hour-10 magic-moment instrumentation (2026-09-30). Named absolute
+   * timestamps for the customer metric URL -> FIRST TRUSTWORTHY USEFUL
+   * RENDER. urlSubmittedAt is the POST /api/fyd/build receipt time
+   * (the route passes urlSubmittedAtIso); firstMeaningfulObjectAt is
+   * stamped when the projected graph first holds >= 1 object;
+   * siteSpecReadyAt when validateSiteSpec passes; firstRenderAt is
+   * filled by the job page's render beacon on first human view
+   * (null until then).
+   */
+  timings: {
+    urlSubmittedAt: string | null;
+    firstMeaningfulObjectAt: string | null;
+    siteSpecReadyAt: string | null;
+    firstRenderAt: string | null;
+  };
   stages: LoopStageReport[];
   graphSummary: {
     objects: number;
@@ -185,6 +201,8 @@ export interface LiveLoopOptions {
   onProgress?: (stage: LoopStageReport) => void;
   safeFetchDeps?: SafeFetchDeps;
   nowIso?: string;
+  /** POST /api/fyd/build receipt time (ISO); recorded as timings.urlSubmittedAt. */
+  urlSubmittedAtIso?: string;
 }
 
 /**
@@ -301,6 +319,12 @@ function documentIntake(documentNames?: string[]): DocumentIntakeResult[] {
 export async function runLiveLoop(opts: LiveLoopOptions): Promise<LiveLoopResult> {
   const nowIso = opts.nowIso ?? new Date().toISOString();
   const startedAt = new Date().toISOString();
+  const timings: LiveLoopReport["timings"] = {
+    urlSubmittedAt: opts.urlSubmittedAtIso ?? null,
+    firstMeaningfulObjectAt: null,
+    siteSpecReadyAt: null,
+    firstRenderAt: null,
+  };
   const seedUrl = opts.url.trim();
   const tenantId = opts.tenantId ?? defaultTenantId(seedUrl);
   const controllerId = opts.controllerId ?? "fyd-live-loop";
@@ -326,6 +350,7 @@ export async function runLiveLoop(opts: LiveLoopOptions): Promise<LiveLoopResult
         finalUrl: null,
         startedAt,
         finishedAt: new Date().toISOString(),
+        timings,
         stages,
         graphSummary: { objects: 0, relationships: 0, schemas: {} },
         specSummary: null,
@@ -536,6 +561,9 @@ export async function runLiveLoop(opts: LiveLoopOptions): Promise<LiveLoopResult
       socials.filter((s) => s.status === "rejected").length + " rejected.",
     ms: Date.now() - t0,
   });
+  if (timings.firstMeaningfulObjectAt === null && fullGraph.objects.length > 0) {
+    timings.firstMeaningfulObjectAt = new Date().toISOString();
+  }
 
   // ---- GENERATE ----
   t0 = Date.now();
@@ -567,6 +595,7 @@ export async function runLiveLoop(opts: LiveLoopOptions): Promise<LiveLoopResult
       "; semantic digest " + planned.semanticDigest.slice(0, 12) + ".",
     ms: Date.now() - t0,
   });
+  timings.siteSpecReadyAt = new Date().toISOString();
 
   // ---- MEDIA ----
   t0 = Date.now();
@@ -634,6 +663,7 @@ export async function runLiveLoop(opts: LiveLoopOptions): Promise<LiveLoopResult
     finalUrl,
     startedAt,
     finishedAt: new Date().toISOString(),
+    timings,
     stages,
     graphSummary: { objects: renderGraph.objects.length, relationships: renderGraph.relationships.length, schemas },
     specSummary: {
