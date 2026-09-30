@@ -36,6 +36,7 @@ import {
   SERVICE_CARD_ENTITY_PREFIX,
   SERVICE_CARD_FACT_NAMES,
 } from "./service-cards";
+import { mineBodyContactFacts } from "./body-contact";
 
 /** A source the proceduralizer may acquire. */
 export interface SourceRecord {
@@ -291,6 +292,15 @@ export async function parseRich(acquired: AcquiredSource): Promise<ParsedResult>
         cardFact(SERVICE_CARD_FACT_NAMES.description, card.description),
         cardFact(SERVICE_CARD_FACT_NAMES.href, card.href),
       );
+    }
+    // Body-contact mining (2026-09-30): deterministic phone/address
+    // mining from body HTML, parallel to the service-card lane. Fills
+    // the dominant falsification gap: real sites carry phone/address in
+    // body text (footers, contact sections) with no structured markup.
+    // Facts arrive with sourceType "html", so structured truth still
+    // wins in resolve(); provenance() tags factClass + visibility.
+    for (const fact of mineBodyContactFacts(acquired.raw, acquired.url)) {
+      facts.push(fact);
     }
   }
   // sitemap: parse() extracts nothing (RUN-NOTES #9: the fetch is pure
