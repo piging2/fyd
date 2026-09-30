@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import MarketingOSPanel from "./marketingos-panel";
 
 type Health = "PROVEN" | "DEGRADED" | "PROTOTYPE";
 
@@ -94,7 +95,7 @@ function J({ v }: { v: unknown }) {
   );
 }
 
-const TABS = ["TODAY", "AGENTS", "BUSINESSES", "WEBSITES", "TECHNOLOGY", "SEARCH", "DISPATCH"] as const;
+const TABS = ["TODAY", "AGENTS", "BUSINESSES", "WEBSITES", "TECHNOLOGY", "SEARCH", "DISPATCH", "MARKETING"] as const;
 
 const OP_FIELDS = [
   "mission",
@@ -636,6 +637,7 @@ export default function MissionControlPage() {
         </>
       )}
       {tab === "DISPATCH" && <DispatchPanel />}
+      {tab === "MARKETING" && <MarketingOSPanel />}
     </main>
   );
 }
