@@ -9,18 +9,23 @@
  * POST /api/mc/approvals
  *      {proposal_id, digest, decision: "approve"|"deny",
  *       approver?, reason?}
- *      Runs the single canonical transition in approval_request.py through
- *      approval_cli.py. The digest must match the recorded proposal digest
- *      EXACTLY; a mismatch is refused with no state change (tamper
- *      detection). Approve emits MC_APPROVAL_APPROVED; deny emits
- *      MC_APPROVAL_DENIED. Events carry the digest and metadata, never the
- *      raw proposal body.
+ *      GATED (99h convergence block 0-10): the caller must present a
+ *      provisioned key in the x-mc-caller-key header; the approver is
+ *      DERIVED from the authenticated caller identity, never from the body.
+ *      A body approver that differs from the identity is refused (400
+ *      approver_mismatch). Runs the single canonical transition in
+ *      approval_request.py through approval_cli.py. The digest must match
+ *      the recorded proposal digest EXACTLY; a mismatch is refused with no
+ *      state change (tamper detection). Approve emits MC_APPROVAL_APPROVED;
+ *      deny emits MC_APPROVAL_DENIED. Events carry the digest and metadata,
+ *      never the raw proposal body.
  *
  * This route owns no approval logic: it projects the operator's decision
  * into the one canonical transition. Silence never approves.
  */
 
 import { spawnSync } from 'child_process';
+import { gateApprovalCaller, resolveApprover } from '../_lib/mc-approval-gate';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -77,17 +82,24 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  // Approval gate first: authenticated caller before any body trust.
+  const gate = gateApprovalCaller(req);
+  if (!gate.ok) return gate.response;
+
   let body: any;
   try {
     body = await req.json();
   } catch {
     return bad(400, 'bad_json', 'Request body must be JSON.');
   }
+  // Approver is derived from the authenticated identity, never asserted.
+  const approverRes = resolveApprover(gate.caller, body);
+  if (!approverRes.ok) return approverRes.response;
+  const approver = approverRes.approver;
+
   const proposalId = typeof body.proposal_id === 'string' ? body.proposal_id : '';
   const digest = typeof body.digest === 'string' ? body.digest : '';
   const decision = typeof body.decision === 'string' ? body.decision : '';
-  const approver =
-    typeof body.approver === 'string' && body.approver ? body.approver : 'nolan:demo-owner';
   const reason = typeof body.reason === 'string' ? body.reason : '';
   if (!proposalId) {
     return bad(400, 'bad_proposal_id', 'proposal_id is required.');
