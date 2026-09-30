@@ -43,6 +43,10 @@ def cmd_record(a):
         actor=a.actor,
         summary=a.summary,
         why=a.why,
+        # P0-2 (2026-09-30): tenant is immutable proposal context, bound at
+        # creation. Omitted -> legacy record without tenant provenance
+        # (fails closed on approve; deny/expiry still work).
+        tenant=a.tenant,
     )
 
 
@@ -84,6 +88,11 @@ def main(argv):
     r.add_argument("--actor", default="p0-writer-w4")
     r.add_argument("--summary", default="")
     r.add_argument("--why", default="")
+    # P0-2 (2026-09-30): tenant is immutable proposal context, bound at
+    # creation from the operator-provisioned caller registry. Omitted ->
+    # legacy record without tenant provenance (fails closed on approve).
+    r.add_argument("--tenant", default=None,
+                   help="tenant id owning this proposal")
 
     d = sub.add_parser("decide")
     d.add_argument("--store", required=True)

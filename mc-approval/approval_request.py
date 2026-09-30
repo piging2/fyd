@@ -33,6 +33,19 @@ Constitutional invariants enforced here (fail closed):
   appends a typed MC_APPROVAL_* event to the PING journal (audit trail);
   events carry digests and metadata, never raw sensitive payloads
   (Batch 6: append-only does not mean store everything forever).
+
+P0-2 tenant binding (Nolan, 2026-09-30, binding): TENANT IS IMMUTABLE
+PROPOSAL CONTEXT. request_approval() binds the tenant at creation; the
+record stores it; no transition may modify it. The approval boundary
+(:3100 route gate) verifies PROPOSAL TENANT vs CALLER ENTITLEMENT TENANT
+before approval, and this canonical transition itself refuses to grant a
+WAITING -> APPROVED authorization when the record carries no tenant
+provenance (tenant_unknown, fail closed). A deny is the safe direction
+and is not blocked by missing tenant provenance. Records created before
+tenant binding (tenant None) are legacy: they can be denied or expire,
+but never approved. No TenantAuthority is created here: the tenant
+string comes from the existing operator-provisioned caller registry
+(mc-dispatch-identity.ts); this module only carries it immutably.
 """
 
 import hashlib
@@ -138,8 +151,11 @@ def proposal_digest(proposal):
     return hashlib.sha256(canonical_proposal_bytes(proposal)).hexdigest()
 
 
-def _mint_id(digest, capability, actor, seq):
-    seed = "|".join([digest, capability, actor, str(seq)])
+def _mint_id(digest, capability, actor, seq, tenant=None):
+    # P0-2 (2026-09-30): the tenant is part of the mint seed so the first
+    # record for the same (digest, capability, actor) in two different
+    # tenants cannot collide on one id.
+    seed = "|".join([digest, capability, actor, str(seq), tenant or ""])
     return "apr-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:16]
 
 
@@ -232,23 +248,35 @@ def _validate_consequence(consequence):
 def request_approval(store, proposal, capability, actor, consequence,
                      summary="", why="", cost=None, expires_at=None,
                      expiry_policy="HOLD", now=None, journal_file=None,
-                     dry_run=False, approval_id=None):
+                     dry_run=False, approval_id=None, tenant=None):
     """Propose something that needs human authorization.
 
     Creates an ApprovalRequest in WAITING_APPROVAL and emits
     MC_APPROVAL_REQUESTED. Idempotent: an identical WAITING request for the
-    same (proposal_digest, capability, actor) returns the existing record
-    instead of creating a duplicate.
+    same (proposal_digest, capability, actor, tenant) returns the existing
+    record instead of creating a duplicate.
 
     p0/approval adaptation (2026-09-27): callers may pass approval_id to pin
     the record id deterministically (e.g. derived from mission_id +
     proposal digest). When the pinned id already exists, the existing record
     is returned (idempotent). Otherwise the id is minted as before.
+
+    P0-2 tenant binding (2026-09-30): tenant is IMMUTABLE proposal context,
+    bound here at creation and never modified by any transition. A
+    non-empty string tenant is stored on the record and emitted on
+    MC_APPROVAL_REQUESTED. tenant=None marks a legacy record without
+    tenant provenance: the approval boundary fails closed on approve for
+    such records (deny/expiry still work). The tenant string itself comes
+    from the existing operator-provisioned caller registry; this function
+    never invents or resolves tenant identity.
     """
     if not capability or not isinstance(capability, str):
         return {"ok": False, "reason": "missing_capability"}
     if not actor or not isinstance(actor, str):
         return {"ok": False, "reason": "missing_actor"}
+    if tenant is not None and (not isinstance(tenant, str) or not tenant):
+        return {"ok": False, "reason": "invalid_request",
+                "error": "tenant must be a non-empty string or omitted"}
     if expiry_policy not in EXPIRY_POLICY_OUTCOMES:
         return {"ok": False, "reason": "unknown_expiry_policy",
                 "policy": expiry_policy}
@@ -263,7 +291,8 @@ def request_approval(store, proposal, capability, actor, consequence,
         if (rec["status"] == WAITING
                 and rec["proposal_digest"] == digest
                 and rec["capability"] == capability
-                and rec["actor"] == actor):
+                and rec["actor"] == actor
+                and rec.get("tenant") == tenant):
             return {"ok": True, "created": False, "record": rec,
                     "event": None, "how": "existing"}
 
@@ -280,8 +309,9 @@ def request_approval(store, proposal, capability, actor, consequence,
         seq = sum(1 for r in store.all().values()
                   if r["proposal_digest"] == digest
                   and r["capability"] == capability
-                  and r["actor"] == actor)
-        record_id = _mint_id(digest, capability, actor, seq)
+                  and r["actor"] == actor
+                  and r.get("tenant") == tenant)
+        record_id = _mint_id(digest, capability, actor, seq, tenant)
     requested_at = _iso(_epoch(now))
     record = {
         "id": record_id,
@@ -292,6 +322,11 @@ def request_approval(store, proposal, capability, actor, consequence,
         "proposal": _canonicalize(proposal),
         "capability": capability,
         "actor": actor,
+        # P0-2 (2026-09-30): tenant is IMMUTABLE proposal context, bound at
+        # creation. No transition in this module may modify it. None marks
+        # a legacy record without tenant provenance (fails closed on
+        # approve; see authorize_approval_transition).
+        "tenant": tenant,
         "consequence": consequence,
         "summary": summary,
         "why": why,
@@ -308,6 +343,7 @@ def request_approval(store, proposal, capability, actor, consequence,
         "proposal_digest": digest,
         "capability": capability,
         "actor": actor,
+        "tenant": tenant,
         "consequence": consequence,
         "summary": summary,
         "why": why,
@@ -333,8 +369,10 @@ def authorize_approval_transition(store, approval_id, approver_identity,
     Verifies the expected digest against the server record, then performs
     the WAITING_APPROVAL -> APPROVED transition exactly once. Refuses
     (typed, no state change) on: unknown id, expired request, wrong state,
-    or digest mismatch. Double-approve with the correct digest is
-    idempotent-safe (no second event).
+    digest mismatch, or missing tenant provenance (tenant_unknown, P0-2
+    2026-09-30: a legacy record with no tenant context cannot be
+    approved; deny/expiry still work). Double-approve with the correct
+    digest is idempotent-safe (no second event).
     """
     if not approval_id or not approver_identity or not expected_digest:
         return {"ok": False, "reason": "missing_argument",
@@ -383,6 +421,25 @@ def authorize_approval_transition(store, approval_id, approver_identity,
             "stamp": _iso(epoch),
         }, journal_file, dry_run)
         return {"ok": False, "reason": "digest_mismatch",
+                "event": event, "how": how}
+
+    # P0-2 (2026-09-30): TENANT IS IMMUTABLE PROPOSAL CONTEXT. Granting
+    # WAITING -> APPROVED on a record with no tenant provenance would
+    # establish tenant authorization that cannot be verified against any
+    # caller entitlement: fail closed (typed refusal, no state change).
+    # Deny and expiry paths are unaffected: a deny is the safe direction
+    # and must not strand a legacy record. The surface boundary (route
+    # gate) additionally verifies caller entitlement to the record's
+    # tenant; this layer enforces provenance existence.
+    if not rec.get("tenant"):
+        event, how = _emit("MC_APPROVAL_REFUSED", approval_id, {
+            "proposal_digest": rec["proposal_digest"],
+            "reason": "tenant_unknown",
+            "detail": ("record carries no tenant context; tenant "
+                       "authorization cannot be established"),
+            "stamp": _iso(epoch),
+        }, journal_file, dry_run)
+        return {"ok": False, "reason": "tenant_unknown",
                 "event": event, "how": how}
 
     rec["status"] = APPROVED

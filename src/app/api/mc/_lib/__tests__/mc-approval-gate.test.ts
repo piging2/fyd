@@ -5,6 +5,7 @@
 import {
   gateApprovalCapability,
   gateApprovalTenant,
+  gateProposalTenant,
   resolveApprover,
 } from '../mc-approval-gate';
 import type { CallerContext } from '../mc-dispatch-identity';
@@ -67,6 +68,67 @@ describe('gateApprovalTenant (NO TENANT MATCH -> NO APPROVAL)', () => {
       const body = await r.response.json();
       expect(body.error).toBe('tenant_not_entitled');
     }
+  });
+});
+
+describe('gateProposalTenant (P0-2: PROPOSAL TENANT vs CALLER ENTITLEMENT)', () => {
+  const tenantedWaiting = { tenant: 'demo-owner', status: 'WAITING_APPROVAL' };
+
+  test('allows an entitled caller to approve a same-tenant proposal', () => {
+    expect(gateProposalTenant(caller(), tenantedWaiting, 'approve').ok).toBe(true);
+  });
+
+  test('allows a caller entitled via entitled_tenants (not derived tenant)', () => {
+    const c = caller({ tenant: 'ops', entitled_tenants: ['ops', 'demo-owner'] });
+    expect(gateProposalTenant(c, tenantedWaiting, 'approve').ok).toBe(true);
+  });
+
+  test('refuses 403 tenant_not_entitled on cross-tenant approve', async () => {
+    const c = caller({ tenant: 'other-tenant', entitled_tenants: ['other-tenant'] });
+    const r = gateProposalTenant(c, tenantedWaiting, 'approve');
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.response.status).toBe(403);
+      const body = await r.response.json();
+      expect(body.error).toBe('tenant_not_entitled');
+    }
+  });
+
+  test('refuses 403 tenant_not_entitled on cross-tenant deny', async () => {
+    const c = caller({ tenant: 'other-tenant', entitled_tenants: ['other-tenant'] });
+    const r = gateProposalTenant(c, tenantedWaiting, 'deny');
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.response.status).toBe(403);
+      const body = await r.response.json();
+      expect(body.error).toBe('tenant_not_entitled');
+    }
+  });
+
+  test('refuses 403 tenant_unknown on approve of tenant-less WAITING record', async () => {
+    const r = gateProposalTenant(caller(), { status: 'WAITING_APPROVAL' }, 'approve');
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.response.status).toBe(403);
+      const body = await r.response.json();
+      expect(body.error).toBe('tenant_unknown');
+    }
+  });
+
+  test('allows deny of a tenant-less WAITING record (safe direction, no stranding)', () => {
+    expect(gateProposalTenant(caller(), { status: 'WAITING_APPROVAL' }, 'deny').ok).toBe(true);
+  });
+
+  test('terminal legacy records keep canonical behavior (idempotent approve passes the gate)', () => {
+    expect(gateProposalTenant(caller(), { status: 'APPROVED' }, 'approve').ok).toBe(true);
+    expect(gateProposalTenant(caller(), { status: 'DENIED' }, 'deny').ok).toBe(true);
+  });
+
+  test('a tenant-bearing terminal record still enforces entitlement', async () => {
+    const c = caller({ tenant: 'other-tenant', entitled_tenants: ['other-tenant'] });
+    const r = gateProposalTenant(c, { tenant: 'demo-owner', status: 'APPROVED' }, 'approve');
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.response.status).toBe(403);
   });
 });
 

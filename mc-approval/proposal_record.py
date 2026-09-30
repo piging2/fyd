@@ -59,11 +59,17 @@ def mint_proposal_id(mission_id, digest):
 
 def record_proposal(proposal, mission_id, store_path, journal_file,
                     actor="p0-writer-w4", summary="", why="", now=None,
-                    dry_run=False):
+                    dry_run=False, tenant=None):
     """Record a validated proposal. Returns the record dict.
 
     proposal must already have passed proposal_validate.py; this function
     does not re-validate semantics, it binds bytes.
+
+    P0-2 (2026-09-30): tenant is immutable proposal context, bound here at
+    creation and passed through to request_approval. tenant=None marks a
+    legacy record without tenant provenance (fails closed on approve).
+    The tenant string comes from the existing operator-provisioned caller
+    registry; this function never invents or resolves tenant identity.
     """
     if not isinstance(proposal, dict) or not proposal:
         return {"ok": False, "reason": "invalid_proposal"}
@@ -84,6 +90,7 @@ def record_proposal(proposal, mission_id, store_path, journal_file,
         now=now,
         dry_run=dry_run,
         approval_id=proposal_id,
+        tenant=tenant,
     )
     if not result.get("ok"):
         return result
@@ -94,6 +101,7 @@ def record_proposal(proposal, mission_id, store_path, journal_file,
         "proposal_id": proposal_id,
         "digest": digest,
         "status": rec["status"],
+        "tenant": rec.get("tenant"),
         "expected_waiting": WAITING,
         "canonical_bytes": canonical_proposal_bytes(proposal).decode("utf-8"),
         "event": result.get("event"),

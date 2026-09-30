@@ -16,10 +16,12 @@
  *                              Python transition, no state change)
  *   NO TENANT/OWNER MATCH   -> NO APPROVAL  (403 tenant_not_entitled:
  *                              the caller must be entitled to its derived
- *                              tenant; the proposal record carries no
- *                              tenant field, so the enforceable match at
- *                              this boundary is caller-side entitlement.
- *                              See route.ts.)
+ *                              tenant AND to the proposal record's tenant,
+ *                              which is bound at proposal creation and
+ *                              immutable; 403 tenant_unknown: a legacy
+ *                              proposal with no tenant provenance cannot
+ *                              be approved, though it can still be
+ *                              denied. See gateProposalTenant.)
  *
  * Fail-closed: registry unreadable/missing, key missing/unknown, or caller
  * with no agent_id -> 401 identity_required. A body approver that differs
@@ -138,9 +140,9 @@ export function gateApprovalCapability(
 /**
  * NO TENANT/OWNER MATCH -> NO APPROVAL (caller-side enforcement).
  * The caller must be entitled to its derived tenant (mirrors the dispatch
- * route's tenant_not_entitled check). The approval record carries no tenant
- * field, so no proposal-side match is representable at this boundary; this
- * check keeps a mis-provisioned or cross-scope caller from deciding.
+ * route's tenant_not_entitled check). The proposal-side match is enforced
+ * separately by gateProposalTenant below, now that proposal records carry
+ * their immutable tenant.
  */
 export function gateApprovalTenant(caller: CallerContext): CheckOk | CheckRefused {
   if (!caller.entitled_tenants.includes(caller.tenant)) {
@@ -150,6 +152,62 @@ export function gateApprovalTenant(caller: CallerContext): CheckOk | CheckRefuse
         403,
         'tenant_not_entitled',
         `caller '${caller.agent_id}' is not entitled to its derived tenant '${caller.tenant}': NO TENANT MATCH -> NO APPROVAL.`,
+      ),
+    };
+  }
+  return { ok: true };
+}
+
+/**
+ * NO TENANT/OWNER MATCH -> NO APPROVAL (proposal-side enforcement, P0-2
+ * tenant binding 2026-09-30: TENANT IS IMMUTABLE PROPOSAL CONTEXT).
+ *
+ * The proposal record carries the tenant bound at creation by
+ * request_approval(); no canonical transition may modify it. The caller
+ * must be entitled to that tenant: its derived tenant, or one of its
+ * entitled_tenants. A cross-tenant caller gets 403 tenant_not_entitled
+ * for both approve and deny (denying someone else's proposal is still
+ * someone else's decision to make).
+ *
+ * Legacy records carry no tenant provenance (tenant null). Approving a
+ * WAITING legacy proposal would establish tenant authorization that
+ * cannot be verified against any caller entitlement: 403 tenant_unknown.
+ * A deny is the safe direction and must not strand the record; terminal
+ * records keep their existing canonical behavior (idempotent approve /
+ * wrong_state deny).
+ */
+export function gateProposalTenant(
+  caller: CallerContext,
+  record: { tenant?: unknown; status?: unknown } | null | undefined,
+  decision: string,
+): CheckOk | CheckRefused {
+  const tenant =
+    typeof record?.tenant === 'string' && record.tenant ? record.tenant : '';
+  if (tenant) {
+    if (caller.tenant === tenant || caller.entitled_tenants.includes(tenant)) {
+      return { ok: true };
+    }
+    return {
+      ok: false,
+      response: bad(
+        403,
+        'tenant_not_entitled',
+        `caller '${caller.agent_id}' is not entitled to proposal tenant '${tenant}': NO TENANT MATCH -> NO APPROVAL.`,
+      ),
+    };
+  }
+  // 'WAITING_APPROVAL' is the canonical Python status constant
+  // (approval_request.py WAITING). A legacy record approved from any other
+  // state keeps its existing canonical behavior.
+  const status = typeof record?.status === 'string' ? record.status : '';
+  if (decision === 'approve' && status === 'WAITING_APPROVAL') {
+    return {
+      ok: false,
+      response: bad(
+        403,
+        'tenant_unknown',
+        `proposal carries no tenant context (legacy record without tenant provenance): tenant authorization cannot be established -> NO APPROVAL. ` +
+          `Re-record the proposal with tenant context, or deny it.`,
       ),
     };
   }

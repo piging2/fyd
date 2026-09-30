@@ -27,13 +27,20 @@
  *                                     digest mismatch with no state change)
  *        NO TENANT/OWNER MATCH    -> NO APPROVAL (403 tenant_not_entitled:
  *                                     the caller must be entitled to its
- *                                     derived tenant)
+ *                                     derived tenant AND to the proposal
+ *                                     record's immutable tenant, bound at
+ *                                     proposal creation; 403 tenant_unknown:
+ *                                     a legacy proposal with no tenant
+ *                                     provenance cannot be approved, though
+ *                                     it can still be denied)
  *      Runs the single canonical transition in approval_request.py through
  *      approval_cli.py. The digest must match the recorded proposal digest
  *      EXACTLY; a mismatch is refused with no state change (tamper
- *      detection). Approve emits MC_APPROVAL_APPROVED; deny emits
- *      MC_APPROVAL_DENIED. Events carry the digest and metadata, never the
- *      raw proposal body.
+ *      detection). The canonical transition itself also refuses
+ *      WAITING -> APPROVED on a record with no tenant provenance
+ *      (tenant_unknown, defense in depth for non-route surfaces).
+ *      Approve emits MC_APPROVAL_APPROVED; deny emits MC_APPROVAL_DENIED.
+ *      Events carry the digest and metadata, never the raw proposal body.
  *
  * This route owns no approval logic: it projects the operator's decision
  * into the one canonical transition. Silence never approves.
@@ -44,6 +51,7 @@ import {
   gateApprovalCaller,
   gateApprovalTenant,
   gateApprovalCapability,
+  gateProposalTenant,
   resolveApprover,
 } from '../_lib/mc-approval-gate';
 
@@ -141,6 +149,16 @@ export async function POST(req: Request) {
   }
   const tenantGate = gateApprovalTenant(gate.caller);
   if (!tenantGate.ok) return tenantGate.response;
+  // P0-2 (2026-09-30): TENANT IS IMMUTABLE PROPOSAL CONTEXT. The record
+  // carries the tenant bound at proposal creation; the caller must be
+  // entitled to it. Legacy records without tenant provenance fail closed
+  // on approve; a deny still works so no legacy record strands.
+  const proposalTenantGate = gateProposalTenant(
+    gate.caller,
+    recCli.result.record,
+    decision,
+  );
+  if (!proposalTenantGate.ok) return proposalTenantGate.response;
   const capGate = gateApprovalCapability(gate.caller, recCli.result.record?.capability);
   if (!capGate.ok) return capGate.response;
 
@@ -170,6 +188,9 @@ export async function POST(req: Request) {
     });
   }
   // Typed refusals from the primitive: no state change happened.
-  const status = res.reason === 'unknown_id' ? 404 : 409;
+  // tenant_unknown (defense in depth: the route gate normally catches this
+  // first) is an authorization refusal, not a state conflict.
+  const status =
+    res.reason === 'unknown_id' ? 404 : res.reason === 'tenant_unknown' ? 403 : 409;
   return Response.json({ ok: false, ...res }, { status });
 }
