@@ -42,11 +42,21 @@
 .pg-continuity[data-phase="1"] .pg-drawing-next { opacity: .06; transform: translate(-8px,8px); }
 .pg-continuity[data-phase="1"] .pg-drawing-joints rect:last-child { opacity: 0; }
 .pg-continuity[data-phase="1"] .pg-drawing-connection { stroke-dashoffset: .41; }
-.pg-continuity-controls { display: grid; grid-template-columns: .8fr 1fr 1.3fr; border-top: 1px solid var(--ink); }
-.pg-continuity-controls button { border: 0; border-bottom: 1px solid var(--line); padding: 10px 5px; min-height: 44px; background: none; text-align: left; font-size: 11px; display: flex; align-items: center; gap: 7px; }
-.pg-continuity-controls button span { font: 10px ui-monospace,monospace; color: var(--muted); }
-.pg-continuity-controls button[aria-pressed="true"] { border-bottom: 3px solid var(--ink); font-weight: 700; }
-.pg-drawing-caption { min-height: 2.5em; font-size: 12px; line-height: 1.5; padding-top: 10px; color: var(--muted); }
+/* One record, three views: the steps read as a single journey, not a carousel.
+ * Every view's meaning stays visible; the artwork strip slides between frames
+ * (transform transition, motion tokens from compose-motion.ts: 260ms SUBTLE). */
+.pg-continuity-steps { list-style: none; margin: 22px 0 0; padding: 0; border-top: 1px solid var(--line); position: relative; }
+.pg-continuity-steps li { position: relative; }
+.pg-continuity-steps li + li { border-top: 1px solid var(--line); }
+.pg-continuity-steps button { width: 100%; display: flex; gap: 12px; align-items: baseline; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 11px 4px; min-height: 44px; text-align: left; color: var(--ink); cursor: pointer; }
+.pg-step-num { font: 10px ui-monospace,monospace; color: var(--muted); flex: 0 0 auto; }
+.pg-step-text { display: flex; flex-direction: column; gap: 3px; }
+.pg-step-text strong { font-weight: 600; font-size: 12.5px; letter-spacing: .01em; }
+.pg-step-text small { font-size: 11px; line-height: 1.5; color: var(--muted); }
+.pg-continuity-steps li[data-active="true"] .pg-step-num { color: var(--gold); }
+.pg-continuity-steps li[data-active="true"] .pg-step-text strong { font-weight: 700; }
+.pg-continuity-steps li[data-active="true"] button { border-bottom-color: var(--gold); }
+.pg-continuity-example { min-height: 2.5em; font-size: 12px; line-height: 1.5; padding-top: 12px; color: var(--muted); }
 
 /* Edge objects become labeled records. They retain the original projection links. */
 .pl-margin-object { border-radius: 0; background: transparent !important; border: 0 !important; box-shadow: none; height: 60px; width: 60px; top: calc(155px + var(--object-row)*113px); }
@@ -165,7 +175,8 @@
 @media (max-width:1100px) {
  .ed-wordmark { font-size: 23vw; }
  .ed-hero { column-gap: 3%; }
- .pg-continuity-controls button { font-size: 10px; gap: 4px; }
+ .pg-continuity-steps button { font-size: 11px; gap: 8px; }
+ .pg-step-text small { font-size: 10.5px; }
  .pl-flow-glyph { width: 57px; height: 57px; }
  .pg-symbol-tile { padding: 18px; }
  .pg-symbol-tile > .pg-symbol { width: 106px; height: 106px; }
@@ -180,10 +191,10 @@
  .pg-continuity { order: 4; padding: 4px 0 18px; margin-top: 0; width: 100%; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1.1fr 1fr; gap: 0 16px; }
  .pg-continuity-heading { grid-column: 1/-1; padding-top: 16px; }
  .pg-continuity-drawing { grid-column: 1; grid-row: 2/4; align-self: center; }
- .pg-continuity-controls { grid-column: 2; grid-row: 2; display: block; border: 0; padding-top: 12px; }
- .pg-continuity-controls button { width: 100%; font-size: 12px; justify-content: start; gap: 12px; }
- .pg-continuity-controls button[aria-pressed="true"] { border-bottom-width: 2px; }
- .pg-drawing-caption { grid-column: 1/-1; min-height: 3em; font-size: 12px; padding-top: 4px; }
+ .pg-continuity-steps { grid-column: 2; grid-row: 2; border: 0; margin: 0; padding-top: 12px; }
+ .pg-continuity-steps button { font-size: 12px; gap: 10px; padding: 9px 2px; }
+ .pg-step-text small { display: none; }
+ .pg-continuity-example { grid-column: 1/-1; min-height: 3em; font-size: 12px; padding-top: 4px; }
  .ed-hero-line { order: 5; }
  .ed-hero-bottom { padding-bottom: 26px; }
  .ed-hero h1 { font-size: clamp(42px,10vw,66px); max-width: 17ch; }
@@ -252,7 +263,7 @@
  .pg-symbol-tile > .pg-symbol { width: 80px; }
 }
 @media (prefers-reduced-motion:reduce) {
- .pg-symbol path, .pg-continuity-drawing *, .pg-evolve * { transition: none !important; animation: none !important; }
+ .pg-symbol path, .pg-continuity-drawing *, .pg-evolve *, .pg-artwork img { transition: none !important; animation: none !important; }
 }
 
 /* Study 02: solid origins, open joints, distinguishable silhouettes. */

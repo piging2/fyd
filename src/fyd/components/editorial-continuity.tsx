@@ -4,25 +4,44 @@ import { EditorialSymbol, symbolForms, type SymbolName } from "./editorial-symbo
 
 import { PrimitiveArtwork } from "./primitive-artwork";
 
-const phases = ["Record", "Connect", "Carry forward"];
+/* One record, three views. The artwork is a single continuous strip; the
+ * steps are lenses onto it, not a carousel: the abstract meaning of each
+ * view stays visible while the concrete example follows the active view. */
+const steps = [
+  {
+    label: "Record",
+    teach: "An observation enters the system.",
+    example: "\u201cUse the side entrance.\u201d A customer request becomes a record.",
+    alt: "A violet glass ring surrounding a gold core: a record is retained.",
+  },
+  {
+    label: "Connect",
+    teach: "It relates to existing knowledge.",
+    example: "The request attaches to its customer and the conversation it came from.",
+    alt: "Connected violet orbits around the same core: the record gains relationships.",
+  },
+  {
+    label: "Carry forward",
+    teach: "Useful context survives into future work.",
+    example: "The next visit starts with that context. An illustrative workflow.",
+    alt: "Nested translucent rings keep the gold core present: context carries forward.",
+  },
+];
 
 export function ContinuityDrawing() {
   const [phase, setPhase] = useState(2);
   return <div className="pg-continuity" data-phase={phase}>
-    <div className="pg-continuity-heading"><span className="ed-label">A customer request, carried forward</span><span className="pg-drawing-index">01 → 03</span></div>
-    <div className="pg-continuity-material" role="img" aria-label={[
-      "A violet glass ring surrounding a gold core: a record is retained.",
-      "Connected violet orbits surrounding the same core: records gain relationships.",
-      "Nested translucent rings keep the gold core present: context carries forward.",
-    ][phase]}><PrimitiveArtwork concept="continuity" phase={phase} eager priority/></div>
-    <div className="pg-continuity-controls" role="group" aria-label="Explore the continuity drawing">
-      {phases.map((label, index) => <button key={label} aria-pressed={phase===index} onClick={()=>setPhase(index)}><span>0{index+1}</span>{label}</button>)}
-    </div>
-    <p className="pg-drawing-caption" aria-live="polite">{[
-      "“Use the side entrance.” A customer request becomes a record.",
-      "Attach the request to its customer and the conversation it came from.",
-      "The next visit can start with that context. An illustrative workflow.",
-    ][phase]}</p>
+    <div className="pg-continuity-heading"><span className="ed-label">A customer request, carried forward</span><span className="pg-drawing-index" aria-hidden="true">0{phase + 1} / 03</span></div>
+    <div className="pg-continuity-material" role="img" aria-label={steps[phase].alt}><PrimitiveArtwork concept="continuity" phase={phase} eager priority/></div>
+    <ol className="pg-continuity-steps" aria-label="Three views of one record">
+      {steps.map((step, index) => <li key={step.label} data-active={phase === index}>
+        <button type="button" aria-pressed={phase === index} onClick={() => setPhase(index)}>
+          <span className="pg-step-num" aria-hidden="true">0{index + 1}</span>
+          <span className="pg-step-text"><strong>{step.label}</strong><small>{step.teach}</small></span>
+        </button>
+      </li>)}
+    </ol>
+    <p className="pg-continuity-example" aria-live="polite">{steps[phase].example}</p>
     <a className="pg-material-link" href="/design">Explore the evolving forms <span aria-hidden="true">↗</span></a>
   </div>;
 }
