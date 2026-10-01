@@ -1,0 +1,96 @@
+/* Transparent, three-frame originals. The square window preserves every silhouette. */
+.pg-artwork { display:block;position:relative;aspect-ratio:1;overflow:hidden;pointer-events:none; }
+.pg-artwork img { display:block;height:100%;width:300%;max-width:none!important;object-fit:fill;user-select:none; }
+
+/* The existing hero becomes the first material study. Local tokens keep the public tools intact. */
+.ed-hero:has(.pg-continuity-material) {
+ --paper:#0c0b10;--ink:#f4f0e9;--muted:#b9afc7;--line:#38303f;
+ color:var(--ink);background:radial-gradient(ellipse at 82% 35%,#261936 0%,transparent 48%),var(--paper);
+}
+.ed-hero:has(.pg-continuity-material) .ed-wordmark { color:var(--ink); }
+.ed-hero:has(.pg-continuity-material) .ed-hero-line { background:transparent; }
+.ed-hero:has(.pg-continuity-material) .ed-button { background:#e7bb78;color:#17111d; }
+.ed-hero:has(.pg-continuity-material) .ed-button:hover { background:#f2cf96; }
+.ed-hero:has(.pg-continuity-material) .ed-text-link { color:var(--ink);border-color:#8c7b9a; }
+.ed-hero:has(.pg-continuity-material) .pl-object-dialog { --paper:#f7f7f4;--ink:#151715;--muted:#565b51;--line:#d4d6cb;color:var(--ink); }
+.pg-continuity:has(.pg-continuity-material) { padding:24px 0 12px; }
+.pg-continuity-material { position:relative;width:100%;max-width:440px;aspect-ratio:1.28;margin:0 auto;display:grid;place-items:center;isolation:isolate; }
+.pg-continuity-material:before { content:"";position:absolute;width:78%;aspect-ratio:1;border:1px solid #aa86d51c;border-radius:50%;z-index:-1; }
+.pg-continuity-material:after { content:"";position:absolute;inset:50% 2% auto;height:1px;background:#aa86d515;z-index:-1; }
+.pg-continuity-material>.pg-artwork { width:82%; }
+.pg-continuity:has(.pg-continuity-material) .pg-continuity-controls { border-top-color:var(--line); }
+.pg-continuity:has(.pg-continuity-material) .pg-continuity-controls button[aria-pressed=true] { color:#e7bb78;border-bottom-color:#e7bb78; }
+.pg-continuity:has(.pg-continuity-material) .pg-drawing-index { color:#e7bb78; }
+.pg-material-link { font-size:11px;line-height:1.5;display:inline-flex;align-items:center;justify-content:space-between;gap:20px;min-height:36px;color:#d0b8f3; }
+.pg-material-link span { color:#e7bb78; }
+
+/* Evidence is an inset beside the source explanation, directly above the existing FYD demo. */
+.ed-proof .pg-material-intro-evidence { grid-template-columns:1.1fr 160px 1fr;gap:20px 32px;align-items:center; }
+.ed-proof .pg-material-intro-evidence .ed-label { grid-column:1/-1; }
+.ed-proof .pg-material-intro-evidence h2 { font-size:clamp(38px,3.9vw,62px); }
+.ed-proof .pg-material-intro-evidence .ed-copy { margin:0;align-self:center; }
+.pg-section-material { margin:0;min-width:0; }
+.pg-material-intro-evidence .pg-section-material { background:radial-gradient(ellipse at center,#30213f,#100d16 75%);border:1px solid #493855;border-radius:4px;padding:6px 8px 14px; }
+.pg-material-intro-evidence .pg-artwork { width:100%; }
+.pg-section-material figcaption { font-size:10px;line-height:1.5;letter-spacing:.03em;color:#c8b6dc;text-align:center; }
+
+/* The globe sits beside the introduction; the actual interactive graph stays below. */
+.ed-atlas-section .pg-material-intro-knowledge { grid-template-columns:minmax(0,1fr) 280px;gap:16px 60px;align-items:center; }
+.pg-material-intro-knowledge>.ed-label { grid-column:1; }
+.pg-material-intro-knowledge h2 { grid-column:1;grid-row:2; }
+.pg-material-intro-knowledge .ed-copy { grid-column:1;grid-row:3;margin:0;max-width:65ch; }
+.pg-material-intro-knowledge .pg-section-material { grid-column:2;grid-row:1/4; }
+.pg-material-intro-knowledge .pg-artwork { width:100%; }
+.pg-material-intro-knowledge figcaption { color:#bcb0c6; }
+
+/* Large teaching and journal illustrations reuse the same family; small UI marks stay legible. */
+.pl-primitive-giant:has(.pg-artwork) { width:154px;height:154px;top:18px;right:20px; }
+.pl-primitive-detail:has(.pg-artwork) h3,.pl-primitive-detail:has(.pg-artwork)>.pl-status { max-width:calc(100% - 165px); }
+.pl-primitive-detail:has(.pg-artwork) h3 { margin-bottom:40px; }
+.pl-journal-art:has(.pg-artwork) { background:radial-gradient(ellipse at 50% 40%,#2d203d,#100e15 78%);color:#d6c2ec; }
+.pl-journal-art>.pg-artwork { width:176px;height:176px;font-size:inherit;line-height:inherit;transform:none;transition:translate .25s ease; }
+.ed-publication-list article:hover .pl-journal-art>.pg-artwork,.journal-grid article:hover .pl-journal-art>.pg-artwork { transform:none;translate:0 -4px; }
+
+@media(max-width:1100px) {
+ .ed-proof .pg-material-intro-evidence { grid-template-columns:1fr 140px;gap:20px 30px; }
+ .ed-proof .pg-material-intro-evidence h2 { grid-column:1; }
+ .pg-material-intro-evidence .pg-section-material { grid-column:2;grid-row:2/4; }
+ .ed-proof .pg-material-intro-evidence .ed-copy { grid-column:1; }
+ .ed-atlas-section .pg-material-intro-knowledge { grid-template-columns:minmax(0,1fr) 220px;gap:16px 30px; }
+ .pl-primitive-giant:has(.pg-artwork) { width:110px;height:110px;right:16px; }
+ .pl-primitive-detail:has(.pg-artwork) h3,.pl-primitive-detail:has(.pg-artwork)>.pl-status { max-width:calc(100% - 116px); }
+}
+@media(max-width:767px) {
+ .ed-hero:has(.pg-continuity-material) { display:grid;grid-template-columns:minmax(0,1fr); }
+ .ed-hero:has(.pg-continuity-material) .ed-wordmark { grid-column:1;grid-row:2;order:initial;font-size:41.8vw;margin:24px 0 0; }
+ .ed-hero:has(.pg-continuity-material) .ed-hero-top { grid-row:1; }
+ .ed-hero:has(.pg-continuity-material) .pg-continuity { grid-column:1;grid-row:4;order:initial;padding:0;margin:18px 0 12px;border-top:0;display:grid;grid-template-columns:1fr;gap:0; }
+ .pg-continuity:has(.pg-continuity-material) .pg-continuity-heading { padding-top:0;grid-column:1; }
+ .pg-continuity:has(.pg-continuity-material) .pg-continuity-heading .ed-label { font-size:9px; }
+ .pg-continuity-material { grid-column:1;grid-row:2;width:100%;max-width:310px;aspect-ratio:1.6; }
+ .pg-continuity-material>.pg-artwork { width:64%; }
+ .pg-continuity-material:before { width:60%; }
+ .pg-continuity:has(.pg-continuity-material) .pg-continuity-controls { grid-column:1;grid-row:3;display:grid;grid-template-columns:.85fr 1fr 1.25fr;padding:0; }
+ .pg-continuity:has(.pg-continuity-material) .pg-continuity-controls button { font-size:11px;gap:5px; }
+ .pg-continuity:has(.pg-continuity-material) .pg-drawing-caption { min-height:3.5em;font-size:11px;padding-top:9px; }
+ .pg-material-link { grid-column:1;justify-self:start;min-height:44px; }
+ .ed-hero:has(.pg-continuity-material) .ed-hero-bottom { display:contents; }
+ .ed-hero:has(.pg-continuity-material) .ed-hero-bottom h1 { grid-column:1;grid-row:3;font-size:clamp(34px,9.8vw,54px);margin:20px 0 0; }
+ .ed-hero:has(.pg-continuity-material) .ed-hero-actions { grid-column:1;grid-row:5;width:100%;margin:0 0 24px; }
+ .ed-hero:has(.pg-continuity-material) .pl-hero-explanation { grid-column:1;grid-row:6; }
+ .ed-hero:has(.pg-continuity-material) .pl-object-margins { grid-column:1;grid-row:7;order:initial;margin-top:28px; }
+ .ed-hero:has(.pg-continuity-material) .ed-hero-line { grid-column:1;grid-row:8; }
+ .ed-proof .pg-material-intro-evidence { display:grid;grid-template-columns:minmax(0,1fr) 98px;gap:18px 16px; }
+ .ed-proof .pg-material-intro-evidence h2 { grid-column:1/-1;font-size:clamp(34px,8.5vw,52px); }
+ .ed-proof .pg-material-intro-evidence .ed-label { margin:0; }
+ .ed-proof .pg-material-intro-evidence .ed-copy { grid-column:1;grid-row:3;font-size:15px;line-height:1.65; }
+ .pg-material-intro-evidence .pg-section-material { grid-column:2;grid-row:3;padding:4px 4px 10px; }
+ .pg-material-intro-evidence figcaption { font-size:9px;letter-spacing:0; }
+ .ed-atlas-section .pg-material-intro-knowledge { grid-template-columns:1fr;gap:18px; }
+ .pg-material-intro-knowledge .pg-section-material { grid-column:1;grid-row:3;max-width:230px;justify-self:center; }
+ .pg-material-intro-knowledge .ed-copy { grid-column:1;grid-row:4; }
+ .pg-material-intro-knowledge>.ed-label { margin:0; }
+ .pl-primitive-giant:has(.pg-artwork) { width:110px;height:110px;top:16px;right:12px; }
+ .pl-primitive-detail:has(.pg-artwork) h3 { margin-bottom:30px; }
+}
+@media(prefers-reduced-motion:reduce) { .pl-journal-art>.pg-artwork { transition:none; } }
