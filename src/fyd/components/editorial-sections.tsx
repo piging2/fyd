@@ -13,6 +13,7 @@ import { EditorialWorkspace } from "./editorial-workspace";
 import { EditorialSymbol, articleSymbol } from "./editorial-symbols";
 import { PrimitiveArtwork } from "./primitive-artwork";
 import { ContinuityDrawing } from "./editorial-continuity";
+import { EvidenceChain } from "./editorial-evidence";
 
 export function EditorialSection({
   section,
@@ -145,6 +146,7 @@ export function EditorialSection({
     return (
       <section className="ed-section ed-proof" id={section.id}>
         {intro}
+        <EvidenceChain />
         <ProjectionPreview endpoint={intent.previewEndpoint} />
         <div className="ed-section-actions">
           {actions.map((a) => (

@@ -304,3 +304,39 @@
  .pg-evolution .pg-symbol { width: 64px; margin-bottom: 20px; }
  .pg-evolution figcaption { font-size: 11px; }
 }
+
+/* Evidence chain: EXPLANATION -> PROOF. A dark signature panel carrying the
+ * grammar CLAIM -> SUPPORT SET -> OBSERVATION -> SOURCE, then the verdict
+ * stated honestly. Bridges into the live ProjectionPreview below. */
+.pg-evidence-chain { background: #100d16; color: #ece5f5; border: 1px solid #493855; border-radius: 4px; padding: clamp(28px, 4vw, 56px); margin: 48px 0; }
+.pg-evidence-chain :focus-visible { outline-color: #e8c875 !important; }
+.pg-evidence-chain .ed-label { color: #c8b6dc; }
+.pg-evidence-chain h3 { font-size: clamp(28px, 3vw, 44px); letter-spacing: -.03em; font-weight: 600; margin: 12px 0 0; color: #f4f0e9; }
+.pg-evidence-sub { color: #bcb0c6; max-width: 62ch; line-height: 1.6; margin-top: 14px; font-size: 15px; }
+.pg-evidence-stages { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); margin: 36px 0 0; padding: 0; border-top: 1px solid #493855; }
+.pg-evidence-stages li { border-bottom: 1px solid #493855; }
+.pg-evidence-stages button { width: 100%; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 16px 34px 16px 12px; min-height: 44px; color: #ece5f5; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 6px; position: relative; }
+.pg-evidence-num { font: 10px ui-monospace,monospace; color: #8f7ba3; }
+.pg-evidence-stage-label { font-size: 14px; font-weight: 600; letter-spacing: .02em; }
+.pg-evidence-arrow { position: absolute; right: 10px; top: 16px; color: #8f7ba3; }
+.pg-evidence-stages li[data-active="true"] .pg-evidence-num { color: #e8c875; }
+.pg-evidence-stages li[data-active="true"] button { border-bottom-color: #e8c875; }
+.pg-evidence-detail { padding: 24px 4px 8px; min-height: 9.5em; }
+.pg-evidence-detail .ed-label { margin-bottom: 10px; }
+.pg-evidence-detail-title { font-size: 19px; font-weight: 600; color: #f4f0e9; margin-bottom: 10px; }
+.pg-evidence-detail > p:last-child { color: #bcb0c6; line-height: 1.65; max-width: 68ch; }
+.pg-evidence-verdict { border-top: 1px solid #493855; margin-top: 20px; padding-top: 24px; }
+.pg-evidence-verdicts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.pg-evidence-verdicts button { background: none; border: 1px solid #493855; border-radius: 2px; color: #ece5f5; padding: 10px 18px; min-height: 44px; font-size: 13px; cursor: pointer; }
+.pg-evidence-verdicts button[aria-pressed="true"] { border-color: #e8c875; color: #e8c875; font-weight: 700; }
+.pg-evidence-verdict-line { margin-top: 16px; color: #bcb0c6; line-height: 1.6; max-width: 70ch; min-height: 3.2em; }
+.pg-evidence-verdict-line strong { color: #f4f0e9; }
+.pg-evidence-bridge { margin-top: 28px; padding-top: 20px; border-top: 1px solid #493855; color: #8f7ba3; font-size: 13px; line-height: 1.6; }
+.pg-evidence-bridge em { color: #c8b6dc; font-style: normal; border-bottom: 1px solid #493855; }
+@media (max-width: 767px) {
+ .pg-evidence-chain { padding: 26px 20px; margin: 36px 0; }
+ .pg-evidence-stages { grid-template-columns: 1fr 1fr; }
+ .pg-evidence-arrow { display: none; }
+ .pg-evidence-detail { min-height: 0; }
+ .pg-evidence-verdict-line { min-height: 0; }
+}
