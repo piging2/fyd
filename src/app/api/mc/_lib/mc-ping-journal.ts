@@ -21,6 +21,7 @@
 
 import { execFileSync } from 'child_process';
 import { Pool } from 'pg';
+import type { QueueMissionInput } from './mc-queue-project';
 
 export const PING_JOURNAL_SOURCE =
   'brain-postgres / ping_runtime.ping_events (Pig plane, read-only)';
@@ -275,5 +276,40 @@ export async function listIntelligenceResearchMissions(): Promise<
     started_at: iso(r.started_at),
     completed_at: iso(r.completed_at),
     event_count: Number(r.event_count ?? 0),
+  }));
+}
+/**
+ * Read-only list of ALL ping_missions rows (every mission_type), newest
+ * first, with per-mission event linkage. Same payload-linkage LIKE pattern
+ * as listIntelligenceResearchMissions; lifecycle_event_count isolates the
+ * MISSION_ASSIGNED / MISSION_STARTED events the queue health detector needs.
+ */
+export async function listPingQueueMissions(): Promise<QueueMissionInput[]> {
+  const rows = await query<Record<string, unknown>>(
+    `SELECT m.mission_id, m.mission_type, m.status, m.tenant_id, m.created_by,
+            m.created_at, m.started_at, m.completed_at,
+            m.assigned_to, m.retries, m.hold_at,
+            (SELECT count(*)::int FROM ping_events e
+             WHERE e.payload::text LIKE '%' || m.mission_id || '%') AS event_count,
+            (SELECT count(*)::int FROM ping_events e2
+             WHERE e2.payload::text LIKE '%' || m.mission_id || '%'
+               AND e2.event_type IN ('MISSION_ASSIGNED', 'MISSION_STARTED')) AS lifecycle_event_count
+     FROM ping_missions m
+     ORDER BY m.created_at DESC`,
+  );
+  return rows.map((r) => ({
+    mission_id: String(r.mission_id),
+    mission_type: (r.mission_type as string) ?? null,
+    status: (r.status as string) ?? null,
+    tenant_id: (r.tenant_id as string) ?? null,
+    created_by: (r.created_by as string) ?? null,
+    created_at: iso(r.created_at),
+    started_at: iso(r.started_at),
+    completed_at: iso(r.completed_at),
+    assigned_to: (r.assigned_to as string) ?? null,
+    retries: (r.retries as number) ?? null,
+    hold_at: iso(r.hold_at),
+    event_count: Number(r.event_count ?? 0),
+    lifecycle_event_count: Number(r.lifecycle_event_count ?? 0),
   }));
 }
