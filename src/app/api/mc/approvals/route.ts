@@ -34,7 +34,12 @@
  *                                     provenance cannot be approved, though
  *                                     it can still be denied)
  *      Runs the single canonical transition in approval_request.py through
- *      approval_cli.py. The digest must match the recorded proposal digest
+ *      approval_cli.py. The validated caller key is passed to the CLI via
+ *      the MC_CALLER_KEY env var so the CLI re-verifies principal ->
+ *      tenant -> capability at the effect site against the same caller
+ *      registry (P0-C 2026-10-01: the route gate is not the only path to
+ *      the CLI, so the authorization is bound to the invocation, not just
+ *      the HTTP boundary). The digest must match the recorded proposal digest
  *      EXACTLY; a mismatch is refused with no state change (tamper
  *      detection). The canonical transition itself also refuses
  *      WAITING -> APPROVED on a record with no tenant provenance
@@ -69,7 +74,11 @@ function bad(status: number, error: string, detail?: string) {
   return Response.json({ ok: false, error, detail: detail ?? null }, { status });
 }
 
-function runCli(args: string[]): { ok: boolean; result?: any; error?: string } {
+// P0-C (2026-10-01): bind the route's authorization decision to the effect
+// invocation. approval_cli re-verifies principal -> tenant -> capability at
+// the effect site against the same caller registry; pass the
+// already-validated caller key through the environment (never argv).
+function runCli(args: string[], callerKey = ''): { ok: boolean; result?: any; error?: string } {
   let r;
   try {
     r = spawnSync('python3', ['approval_cli.py', ...args], {
@@ -77,7 +86,7 @@ function runCli(args: string[]): { ok: boolean; result?: any; error?: string } {
       encoding: 'utf8',
       timeout: 30000,
       maxBuffer: 4 * 1024 * 1024,
-      env: { ...process.env, MC_OUTREACH_PATH: OUTREACH_PATH },
+      env: { ...process.env, MC_OUTREACH_PATH: OUTREACH_PATH, MC_CALLER_KEY: callerKey },
     });
   } catch (e) {
     return { ok: false, error: `approval_cli spawn failed: ${String(e).slice(0, 200)}` };
@@ -209,7 +218,9 @@ export async function POST(req: Request) {
     '--approver', approver,
   ];
   if (decision === 'deny' && reason) args.push('--reason', reason);
-  const cli = runCli(args);
+  // The CLI derives the approver from this same key at the effect site;
+  // passing it here keeps the two verifications bound to one principal.
+  const cli = runCli(args, req.headers.get('x-mc-caller-key') ?? '');
   if (!cli.ok) return bad(500, 'approval_backend_failed', cli.error);
   const res = cli.result;
   if (res.ok) {
