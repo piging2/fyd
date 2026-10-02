@@ -54,13 +54,13 @@ import {
   gateProposalTenant,
   resolveApprover,
 } from '../_lib/mc-approval-gate';
+import { journalPath } from '../_lib/mc-dispatch';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const MC_APPROVAL_DIR = '/home/nolan/projects/ping/mc-approval';
 const STORE_PATH = '/home/nolan/projects/ping/var/mc-approvals.json';
-const JOURNAL_PATH = '/home/nolan/workspace/fyd-journal-gateway/events.jsonl';
 const OUTREACH_PATH = '/home/nolan/workspace/outreach';
 const DIGEST_RE = /^[0-9a-f]{64}$/;
 
@@ -162,10 +162,16 @@ export async function POST(req: Request) {
   const capGate = gateApprovalCapability(gate.caller, recCli.result.record?.capability);
   if (!capGate.ok) return capGate.response;
 
+  let journal: string;
+  try {
+    journal = journalPath();
+  } catch (e) {
+    return bad(500, 'journal_unconfigured', String(e).slice(0, 200));
+  }
   const args = [
     'decide',
     '--store', STORE_PATH,
-    '--journal', JOURNAL_PATH,
+    '--journal', journal,
     '--proposal-id', proposalId,
     '--digest', digest,
     '--decision', decision,
