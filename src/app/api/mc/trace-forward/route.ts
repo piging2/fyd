@@ -11,28 +11,40 @@
  */
 import { NextResponse } from "next/server";
 import { getFydTenantGraph, getFydTenantIds } from "@/fyd/data/fyd-tenant-graph";
+import {
+  mergeOverlayEvents,
+  normalizeOverlayEvents,
+  overlayEventsUrl,
+  type OverlayEvent,
+} from "./overlay-events";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const JOURNAL_BASE = "http://localhost:18199";
-
-async function allOverlayEvents() {
+async function fetchTenantOverlayEvents(
+  tenantId: string,
+): Promise<OverlayEvent[] | null> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 5000);
   try {
-    const r = await fetch(`${JOURNAL_BASE}/events/FYD_SITE_OVERLAY?limit=1000`, {
+    const r = await fetch(overlayEventsUrl(tenantId), {
       signal: ctrl.signal,
       cache: "no-store",
     });
     clearTimeout(t);
     if (!r.ok) return null;
-    const b = (await r.json()) as { events?: unknown[] } | unknown[];
-    return (Array.isArray(b) ? b : b.events ?? []) as Record<string, unknown>[];
+    return normalizeOverlayEvents(await r.json());
   } catch {
     clearTimeout(t);
     return null;
   }
+}
+
+async function allOverlayEvents(): Promise<OverlayEvent[] | null> {
+  const results = await Promise.all(
+    getFydTenantIds().map((t) => fetchTenantOverlayEvents(t)),
+  );
+  return mergeOverlayEvents(results);
 }
 
 export async function GET(request: Request) {
