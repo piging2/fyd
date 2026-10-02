@@ -318,7 +318,7 @@
 .pg-evidence-chain .ed-label { color: #c8b6dc; }
 .pg-evidence-chain h3 { font-size: clamp(28px, 3vw, 44px); letter-spacing: -.03em; font-weight: 600; margin: 12px 0 0; color: #f4f0e9; }
 .pg-evidence-sub { color: #bcb0c6; max-width: 62ch; line-height: 1.6; margin-top: 14px; font-size: 15px; }
-.pg-evidence-stages { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); margin: 36px 0 0; padding: 0; border-top: 1px solid #493855; }
+.pg-evidence-stages { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); margin: 36px 0 0; padding: 0; border-top: 1px solid #493855; }
 .pg-evidence-stages li { border-bottom: 1px solid #493855; }
 .pg-evidence-stages button { width: 100%; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 16px 34px 16px 12px; min-height: 44px; color: #ece5f5; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 6px; position: relative; }
 .pg-evidence-num { font: 10px ui-monospace,monospace; color: #8f7ba3; }
@@ -326,6 +326,7 @@
 .pg-evidence-arrow { position: absolute; right: 10px; top: 16px; color: #8f7ba3; }
 .pg-evidence-stages li[data-active="true"] .pg-evidence-num { color: #e8c875; }
 .pg-evidence-stages li[data-active="true"] button { border-bottom-color: #e8c875; }
+.pg-evidence-loading { color: #8f7ba3; padding: 36px 0 8px; font-size: 14px; }
 .pg-evidence-detail { padding: 24px 4px 8px; min-height: 9.5em; }
 .pg-evidence-detail .ed-label { margin-bottom: 10px; }
 .pg-evidence-detail-title { font-size: 19px; font-weight: 600; color: #f4f0e9; margin-bottom: 10px; }

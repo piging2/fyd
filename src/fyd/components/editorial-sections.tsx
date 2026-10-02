@@ -146,7 +146,7 @@ export function EditorialSection({
     return (
       <section className="ed-section ed-proof" id={section.id}>
         {intro}
-        <EvidenceChain />
+        <EvidenceChain endpoint={intent.previewEndpoint} />
         <ProjectionPreview endpoint={intent.previewEndpoint} />
         <div className="ed-section-actions">
           {actions.map((a) => (
