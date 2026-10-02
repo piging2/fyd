@@ -9,7 +9,7 @@
  * the operator view (the MC page's honest operator surface) and is unchanged.
  */
 
-import { loadJournalEvents, nowIso, projectMissions, JOURNAL_PATH } from '../_lib/mc-dispatch';
+import { loadJournalEvents, nowIso, projectMissions, journalPath } from '../_lib/mc-dispatch';
 import { callerScope } from '../_lib/mc-tenant-gate';
 
 export const runtime = 'nodejs';
@@ -23,7 +23,9 @@ export async function GET(req: Request) {
     return Response.json({ ok: false, error: 'invalid_caller_tenant' }, { status: 400 });
   }
   let missions;
+  let journal: string;
   try {
+    journal = journalPath();
     const all = projectMissions(loadJournalEvents());
     missions = scope.kind === 'tenant' ? all.filter((m) => m.tenant === scope.tenant) : all;
   } catch (e) {
@@ -32,7 +34,7 @@ export async function GET(req: Request) {
   return Response.json({
     ok: true,
     as_of: nowIso(),
-    journal: JOURNAL_PATH,
+    journal,
     scope: scope.kind === 'tenant' ? { tenant: scope.tenant } : { operator: true },
     mission_count: missions.length,
     missions: missions.map((m) => ({

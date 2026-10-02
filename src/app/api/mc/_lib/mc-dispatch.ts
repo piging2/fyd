@@ -2,10 +2,14 @@
  * Lane D shared server library: Mission Control dispatch over the EXISTING
  * event plane. No new store, no new authority.
  *
- * - Journal: the existing append-only PING journal JSONL
- *   (/home/nolan/workspace/fyd-journal-gateway/events.jsonl). MC_DISPATCH_*
- *   event types ride the journal's stream model (same envelope as emit.py),
- *   so existing readers are unaffected.
+ * - Journal: the canonical append-only PING journal, resolved from
+ *   FYD_JOURNAL_STORE -- the same configuration authority the canonical
+ *   fyd-journal-gateway honors for its store. MC_DISPATCH_* event types
+ *   ride the journal's stream model (same envelope as emit.py), so existing
+ *   readers are unaffected. There is intentionally no default path: an
+ *   unset FYD_JOURNAL_STORE fails closed, because silently falling back to
+ *   another file is exactly how the 2026-10-01 truth-split happened
+ *   (writers appended to a journal the gateway could not see).
  * - Authorization / work orders / result verification: the EXISTING
  *   ExternalAgentAdapter, called through the lane-d shim
  *   (/home/nolan/workspace/mission-control/lane-d/adapter-call.js).
@@ -20,7 +24,21 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { spawnSync } from 'child_process';
 import { join } from 'path';
 
-export const JOURNAL_PATH = '/home/nolan/workspace/fyd-journal-gateway/events.jsonl';
+/**
+ * Resolve the canonical journal path from the ONE configuration authority.
+ * Fail-closed when unconfigured: inventing a fallback path would recreate
+ * the 2026-10-01 truth-split.
+ */
+export function journalPath(): string {
+  const p = process.env.FYD_JOURNAL_STORE;
+  if (!p) {
+    throw new Error(
+      'FYD_JOURNAL_STORE is not set: refusing to read/append a journal file rather ' +
+      'than risk another truth-split. Set FYD_JOURNAL_STORE to the canonical journal path.'
+    );
+  }
+  return p;
+}
 export const ARTIFACT_ROOT = '/home/nolan/workspace/mission-control/artifacts';
 export const ADAPTER_SHIM = '/home/nolan/workspace/mission-control/lane-d/adapter-call.js';
 
@@ -183,10 +201,10 @@ export function mintEventId(kind: string, missionId: string, eventType: string, 
 }
 
 export function loadJournalEvents(): JournalEvent[] {
-  if (!existsSync(JOURNAL_PATH)) return [];
+  if (!existsSync(journalPath())) return [];
   const events: JournalEvent[] = [];
   const seen = new Set<string>();
-  for (const line of readFileSync(JOURNAL_PATH, 'utf8').split('\n')) {
+  for (const line of readFileSync(journalPath(), 'utf8').split('\n')) {
     const t = line.trim();
     if (!t) continue;
     try {
@@ -207,8 +225,8 @@ export function loadJournalEvents(): JournalEvent[] {
 }
 
 function journalHas(eventId: string): boolean {
-  if (!existsSync(JOURNAL_PATH)) return false;
-  const data = readFileSync(JOURNAL_PATH, 'utf8');
+  if (!existsSync(journalPath())) return false;
+  const data = readFileSync(journalPath(), 'utf8');
   return data.includes(`"event_id":"${eventId}"`);
 }
 
@@ -223,10 +241,10 @@ function journalHas(eventId: string): boolean {
  * Timestamps remain acceptance times; only the tie is broken.
  */
 function maxMissionTimestamp(missionId: string): string | null {
-  if (!existsSync(JOURNAL_PATH)) return null;
+  if (!existsSync(journalPath())) return null;
   const agg = `mc:mission:${missionId}`;
   let max: string | null = null;
-  for (const line of readFileSync(JOURNAL_PATH, 'utf8').split('\n')) {
+  for (const line of readFileSync(journalPath(), 'utf8').split('\n')) {
     if (!line.includes(agg)) continue;
     try {
       const ev = JSON.parse(line) as JournalEvent;
@@ -270,7 +288,7 @@ export function appendDispatchEvent(
   };
   if (journalHas(eventId)) return { event, disposition: 'duplicate-skipped' };
   mkdirSync(join(ARTIFACT_ROOT, '..'), { recursive: true });
-  appendFileSync(JOURNAL_PATH, JSON.stringify(event) + '\n', 'utf8');
+  appendFileSync(journalPath(), JSON.stringify(event) + '\n', 'utf8');
   return { event, disposition: 'appended' };
 }
 
