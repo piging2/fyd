@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const JOURNAL_BASE =
-  process.env.FYD_JOURNAL_GATEWAY_URL ?? "http://127.0.0.1:18200";
+  process.env.FYD_JOURNAL_GATEWAY_URL ?? "http://127.0.0.1:18199";
 const OWNER =
   "convergence lane block 10-20 (projection only; PING object graph owns semantics)";
 const KNOWN_VIEWS = ["companies", "people", "leads", "opportunities"] as const;
