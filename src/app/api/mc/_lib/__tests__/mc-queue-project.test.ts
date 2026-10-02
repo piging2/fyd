@@ -5,6 +5,7 @@
 
 import {
   canonicalState,
+  delayLayer,
   missionHealth,
   projectQueueMission,
   projectQueueMissions,
@@ -24,6 +25,11 @@ function row(over: Partial<QueueMissionInput> = {}): QueueMissionInput {
     assigned_to: null,
     retries: 0,
     hold_at: null,
+    lease_until: null,
+    claimed_at: null,
+    retry_at: null,
+    hold_reason: null,
+    priority: null,
     event_count: 1,
     lifecycle_event_count: 1,
     ...over,
@@ -144,5 +150,61 @@ describe('projectQueueMission', () => {
 describe('projectQueueMissions empty input', () => {
   test('empty in -> empty out (honest empty)', () => {
     expect(projectQueueMissions([])).toEqual([]);
+  });
+});
+
+describe('delayLayer: four latency/failure layers', () => {
+  const NOW = Date.now();
+  const old = new Date(NOW - 2 * 60 * 60 * 1000).toISOString();
+  const future = new Date(NOW + 30 * 60 * 1000).toISOString();
+
+  test('terminal -> none', () => {
+    const d = delayLayer(row({ status: 'completed' }), NOW);
+    expect(d.layer).toBe('none');
+    expect(d.derived).toBe(true);
+  });
+
+  test('ON_HOLD -> cross_workflow', () => {
+    const d = delayLayer(
+      row({ status: 'created', hold_at: old, hold_reason: 'awaiting owner' }),
+      NOW,
+    );
+    expect(d.layer).toBe('cross_workflow');
+  });
+
+  test('STALLED (no consumer) -> cross_machine', () => {
+    const d = delayLayer(
+      row({ status: 'created', created_at: old, lifecycle_event_count: 0 }),
+      NOW,
+    );
+    expect(d.layer).toBe('cross_machine');
+  });
+
+  test('retry loop -> cross_workflow', () => {
+    const d = delayLayer(row({ status: 'retry_pending', retries: 3 }), NOW);
+    expect(d.layer).toBe('cross_workflow');
+  });
+
+  test('live lease, no progress -> cross_machine', () => {
+    const d = delayLayer(
+      row({ status: 'running', lease_until: future, lifecycle_event_count: 0 }),
+      NOW,
+    );
+    expect(d.layer).toBe('cross_machine');
+  });
+
+  test('thin evidence -> unknown, never guessed', () => {
+    const d = delayLayer(row({ status: 'created' }), NOW);
+    expect(d.layer).toBe('unknown');
+  });
+
+  test('projectQueueMission carries delay_layer and durable fields', () => {
+    const p = projectQueueMission(
+      row({ lease_until: future, hold_reason: 'x', priority: 5 }),
+    );
+    expect(p.delay_layer.derived).toBe(true);
+    expect(p.lease_until).toBe(future);
+    expect(p.hold_reason).toBe('x');
+    expect(p.priority).toBe(5);
   });
 });

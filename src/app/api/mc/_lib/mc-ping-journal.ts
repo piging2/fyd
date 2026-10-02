@@ -289,6 +289,7 @@ export async function listPingQueueMissions(): Promise<QueueMissionInput[]> {
     `SELECT m.mission_id, m.mission_type, m.status, m.tenant_id, m.created_by,
             m.created_at, m.started_at, m.completed_at,
             m.assigned_to, m.retries, m.hold_at,
+            m.lease_until, m.claimed_at, m.retry_at, m.hold_reason, m.priority,
             (SELECT count(*)::int FROM ping_events e
              WHERE e.payload::text LIKE '%' || m.mission_id || '%') AS event_count,
             (SELECT count(*)::int FROM ping_events e2
@@ -309,6 +310,11 @@ export async function listPingQueueMissions(): Promise<QueueMissionInput[]> {
     assigned_to: (r.assigned_to as string) ?? null,
     retries: (r.retries as number) ?? null,
     hold_at: iso(r.hold_at),
+    lease_until: iso(r.lease_until),
+    claimed_at: iso(r.claimed_at),
+    retry_at: iso(r.retry_at),
+    hold_reason: (r.hold_reason as string) ?? null,
+    priority: (r.priority as number) ?? null,
     event_count: Number(r.event_count ?? 0),
     lifecycle_event_count: Number(r.lifecycle_event_count ?? 0),
   }));
