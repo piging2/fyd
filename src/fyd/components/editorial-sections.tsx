@@ -5,7 +5,8 @@
 import type { FYDSection, ObjectGraph } from "../sitespec/types";
 import type { PingObject } from "@/lib/ping/types";
 import { editorialRecords, editorialHref } from "./editorial-model";
-import { EditorialAtlas, KnowledgeIndex } from "./editorial-interactions";
+import { KnowledgeIndex } from "./editorial-interactions";
+import { KnowledgeStory } from "./editorial-knowledge";
 import { ProjectionPreview } from "./projection-preview";
 import { EditorialLearning } from "./editorial-learning";
 import { EditorialObjectMargins } from "./editorial-object-margins";
@@ -92,7 +93,7 @@ export function EditorialSection({
     return (
       <section className="ed-atlas-section" id={section.id}>
         {intro}
-        <EditorialAtlas
+        <KnowledgeStory
           records={records}
           relationships={graph.relationships
             .filter(

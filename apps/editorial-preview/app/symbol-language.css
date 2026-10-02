@@ -56,10 +56,7 @@
 .pg-continuity-steps li[data-active="true"] .pg-step-num { color: var(--gold); }
 .pg-continuity-steps li[data-active="true"] .pg-step-text strong { font-weight: 700; }
 .pg-continuity-steps li[data-active="true"] button { border-bottom-color: var(--gold); }
-.pg-continuity-readout { min-height: 5em; padding-top: 12px; }
-.pg-continuity-example { font-size: 12px; line-height: 1.5; color: var(--muted); }
-.pg-continuity-holds { font-size: 11px; line-height: 1.5; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 8px; }
-.pg-continuity-holds span { font: 9px ui-monospace,monospace; letter-spacing: .08em; text-transform: uppercase; }
+.pg-continuity-example { min-height: 2.5em; font-size: 12px; line-height: 1.5; padding-top: 12px; color: var(--muted); }
 
 /* Edge objects become labeled records. They retain the original projection links. */
 .pl-margin-object { border-radius: 0; background: transparent !important; border: 0 !important; box-shadow: none; height: 60px; width: 60px; top: calc(155px + var(--object-row)*113px); }
@@ -197,9 +194,7 @@
  .pg-continuity-steps { grid-column: 2; grid-row: 2; border: 0; margin: 0; padding-top: 12px; }
  .pg-continuity-steps button { font-size: 12px; gap: 10px; padding: 9px 2px; }
  .pg-step-text small { display: none; }
- .pg-continuity-readout { grid-column: 1/-1; min-height: 5.5em; padding-top: 4px; }
- .pg-continuity-example { font-size: 12px; }
- .pg-continuity-holds { font-size: 11px; }
+ .pg-continuity-example { grid-column: 1/-1; min-height: 3em; font-size: 12px; padding-top: 4px; }
  .ed-hero-line { order: 5; }
  .ed-hero-bottom { padding-bottom: 26px; }
  .ed-hero h1 { font-size: clamp(42px,10vw,66px); max-width: 17ch; }
@@ -318,7 +313,7 @@
 .pg-evidence-chain .ed-label { color: #c8b6dc; }
 .pg-evidence-chain h3 { font-size: clamp(28px, 3vw, 44px); letter-spacing: -.03em; font-weight: 600; margin: 12px 0 0; color: #f4f0e9; }
 .pg-evidence-sub { color: #bcb0c6; max-width: 62ch; line-height: 1.6; margin-top: 14px; font-size: 15px; }
-.pg-evidence-stages { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); margin: 36px 0 0; padding: 0; border-top: 1px solid #493855; }
+.pg-evidence-stages { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); margin: 36px 0 0; padding: 0; border-top: 1px solid #493855; }
 .pg-evidence-stages li { border-bottom: 1px solid #493855; }
 .pg-evidence-stages button { width: 100%; background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 16px 34px 16px 12px; min-height: 44px; color: #ece5f5; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 6px; position: relative; }
 .pg-evidence-num { font: 10px ui-monospace,monospace; color: #8f7ba3; }
@@ -326,7 +321,6 @@
 .pg-evidence-arrow { position: absolute; right: 10px; top: 16px; color: #8f7ba3; }
 .pg-evidence-stages li[data-active="true"] .pg-evidence-num { color: #e8c875; }
 .pg-evidence-stages li[data-active="true"] button { border-bottom-color: #e8c875; }
-.pg-evidence-loading { color: #8f7ba3; padding: 36px 0 8px; font-size: 14px; }
 .pg-evidence-detail { padding: 24px 4px 8px; min-height: 9.5em; }
 .pg-evidence-detail .ed-label { margin-bottom: 10px; }
 .pg-evidence-detail-title { font-size: 19px; font-weight: 600; color: #f4f0e9; margin-bottom: 10px; }
@@ -365,3 +359,59 @@
 /* ENTER intent from the FYD motion vocabulary: quiet fade-rise on reveal. */
 .pg-reveal { animation: pg-reveal-in .26s cubic-bezier(.2,.7,.2,1); }
 @keyframes pg-reveal-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+
+/* Knowledge story: EXPLANATION -> INTERACTIVE STATE. The knowledge artwork
+ * hands off to a bounded object inspector: central object, relationship
+ * type, related object, evidence, direction, status. Selecting a
+ * relationship explains why PING believes it exists.
+ * The atlas section is dark (ink background): this block is dark-native. */
+.pg-knowledge-story { border-top: 1px solid #38303f; padding-top: 36px; margin-top: 8px; }
+.pg-knowledge-story :focus-visible { outline-color: #e8c875 !important; }
+.pg-knowledge-head { display: flex; gap: 20px; align-items: center; margin-bottom: 28px; }
+.pg-knowledge-art { width: 88px; height: 88px; flex: 0 0 88px; border-radius: 4px; background: radial-gradient(ellipse at center,#2a1f3d,#100d16 78%); border: 1px solid #493855; overflow: hidden; }
+.pg-knowledge-art .pg-artwork { width: 100%; }
+.pg-knowledge-story .ed-label { color: #c8b6dc; }
+.pg-knowledge-lede { color: #8f7ba3; font-size: 14px; margin-top: 8px; max-width: 52ch; line-height: 1.6; }
+.ed-atlas-section .pg-story-rail button { border-color: #493855; color: #ece5f5; }
+.ed-atlas-section .pg-story-num { color: #8f7ba3; }
+.ed-atlas-section .pg-story-rail li[data-active="true"] button { border-color: #e8c875; }
+.ed-atlas-section .pg-story-rail li[data-active="true"] .pg-story-num { color: #e8c875; }
+.ed-atlas-section .pg-story-hint { color: #8f7ba3; }
+.pg-knowledge-body { display: grid; grid-template-columns: minmax(220px,300px) minmax(0,1fr); gap: 32px; margin-top: 8px; align-items: start; }
+.pg-knowledge-nodes { display: grid; gap: 8px; }
+.pg-knowledge-nodes button { background: none; border: 1px solid #493855; border-radius: 2px; padding: 12px 14px; min-height: 44px; text-align: left; cursor: pointer; color: #ece5f5; display: flex; flex-direction: column; gap: 4px; }
+.pg-knowledge-nodes button small { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #8f7ba3; }
+.pg-knowledge-nodes button strong { font-size: 14px; font-weight: 600; }
+.pg-knowledge-nodes button[aria-pressed="true"] { border: 2px solid #e8c875; padding: 11px 13px; }
+.pg-knowledge-record { border: 1px solid #493855; border-radius: 2px; padding: 24px 26px; min-width: 0; background: #100d16; }
+.pg-knowledge-record h3 { font-size: 24px; letter-spacing: -.02em; margin: 10px 0 12px; color: #f4f0e9; }
+.pg-knowledge-record > p { color: #bcb0c6; line-height: 1.65; font-size: 15px; }
+.pg-knowledge-record .ed-record-meta .ed-label { margin: 0; }
+.pg-knowledge-record .ed-status { color: #e8c875; }
+.pg-knowledge-record .pg-reveal > .ed-label { margin: 20px 0 4px; }
+.pg-knowledge-relations { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.pg-knowledge-relations button { width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 16px; background: none; border: 0; border-top: 1px solid #38303f; padding: 10px 2px; min-height: 44px; font-size: 13.5px; cursor: pointer; color: #ece5f5; text-align: left; }
+.pg-knowledge-relations button span { color: #8f7ba3; }
+.pg-knowledge-relations li[data-active="true"] button { border-top: 2px solid #e8c875; padding-top: 9px; }
+.pg-knowledge-relations li[data-active="true"] button strong { font-weight: 700; color: #e8c875; }
+.pg-knowledge-empty { color: #8f7ba3; font-size: 13.5px; margin-top: 10px; }
+.pg-knowledge-why { border: 1px solid #493855; border-radius: 2px; padding: 16px 18px; margin-top: 14px; }
+.pg-knowledge-why .ed-label { margin: 0 0 10px; }
+.pg-knowledge-why dl { margin: 0; display: grid; gap: 10px; }
+.pg-knowledge-why dl > div { display: grid; grid-template-columns: 104px 1fr; gap: 12px; font-size: 13px; }
+.pg-knowledge-why dt { color: #8f7ba3; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding-top: 2px; }
+.pg-knowledge-why dd { margin: 0; line-height: 1.55; color: #ece5f5; }
+.ed-atlas-section .pg-lineage { border-top-color: #38303f; color: #8f7ba3; }
+.ed-atlas-section .pg-lineage code { color: #c8b6dc; }
+.ed-atlas-section .pg-new-observation { border-color: #493855; }
+.ed-atlas-section .pg-new-observation p:last-child { color: #bcb0c6; }
+.ed-atlas-section .ed-source { border-color: #493855; }
+.ed-atlas-section .ed-source summary { color: #ece5f5; }
+.ed-atlas-section .ed-source p { color: #bcb0c6; }
+.ed-atlas-section .ed-source code { color: #c8b6dc; }
+@media (max-width: 767px) {
+ .pg-knowledge-body { grid-template-columns: 1fr; }
+ .pg-knowledge-nodes { grid-template-columns: 1fr 1fr; }
+ .pg-knowledge-why dl > div { grid-template-columns: 1fr; gap: 2px; }
+}
