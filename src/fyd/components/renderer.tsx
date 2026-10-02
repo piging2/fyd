@@ -2713,6 +2713,9 @@ export function renderSection(section: FYDSection, ctx: RenderContext, motionInd
     case "EditorialPublications":
     case "EditorialStory":
     case "EditorialProof":
+    case "EditorialLearning":
+    case "EditorialProducts":
+    case "EditorialWorkspace":
       return <EditorialSection key={section.id} section={section} objects={objects} graph={ctx.graph} />;
     case "Hero":
       return <Hero key={section.id} {...props} />;

@@ -69,10 +69,10 @@ export const COMPONENT_REGISTRY_VERSION = "fyd-component-registry@1";
 const KNOWLEDGE_WEBSITE = "ping.knowledge.website@1";
 
 const DEFINITIONS: FYDComponentDef[] = [
-  ...["EditorialHero", "EditorialAtlas", "EditorialKnowledge", "EditorialPublications", "EditorialStory", "EditorialProof"].map(name => ({
+  ...["EditorialHero", "EditorialAtlas", "EditorialKnowledge", "EditorialPublications", "EditorialStory", "EditorialProof", "EditorialWorkspace", "EditorialLearning", "EditorialProducts"].map(name => ({
     name, label: name, description: "Editorial presentation of verified public records and separate presentation intent.",
     acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.product, ...SCHEMA_ROLES.service, ...SCHEMA_ROLES.person, ...SCHEMA_ROLES.article],
-    ownerBound: false, requiresData: ["EditorialHero", "EditorialAtlas", "EditorialKnowledge", "EditorialPublications"].includes(name),
+    ownerBound: false, requiresData: ["EditorialHero", "EditorialAtlas", "EditorialKnowledge", "EditorialPublications", "EditorialProducts"].includes(name),
   })),
   { name: "Hero", label: "Hero", description: "Identity block: name, category, tagline, primary action.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
   { name: "IdentityCard", label: "Identity card", description: "Compact identity card for the business. (Follow/share are unwired: no UI renders them.)", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },

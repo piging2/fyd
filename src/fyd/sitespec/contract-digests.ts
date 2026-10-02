@@ -11,8 +11,8 @@
  * these digests, so a stale pin is a contract violation, not a silent
  * drift. Regenerate with: node scripts/fyd-contract-digests.mjs
  */
-export const COMPONENT_CATALOG_DIGEST = "df967e6f3fd17d7a87fbe1cb5201712eec5614449f311c38b1c4d314d700cfbb";
-export const THEME_TOKENS_DIGEST = "821c658c14dd3c2eea6ab4bc66f94269c16b2dd280f822ddbc0997cf4d6995cb";
+export const COMPONENT_CATALOG_DIGEST = "a0a5c0f4b1e90df17d4d001d54660623f4620adea5024533c6afe26683854584";
+export const THEME_TOKENS_DIGEST = "fd23fe0cbc1736ebaf34e9a070ca8f053a721d276a66e2eb96cb0cf72e5366f5";
 export const CONTRACT_DIGEST_SOURCES = {
   registry: "src/fyd/components/registry.ts",
   types: "src/fyd/sitespec/types.ts",

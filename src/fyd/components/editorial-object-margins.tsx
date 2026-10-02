@@ -1,0 +1,15 @@
+"use client";
+import {useEffect,useRef,useState} from "react";
+import {EditorialSymbol} from "./editorial-symbols";
+import type {EditorialRecord} from "./editorial-model";
+import type {PublicPreview} from "./projection-preview";
+/** Local presentation of verified public objects. No mutation or authority. */
+export function EditorialObjectMargins({records,endpoint,symbols={}}:{records:EditorialRecord[];endpoint:string;symbols?:Record<string,string>}){
+ const [previews,setPreviews]=useState<PublicPreview[]>([]),[selected,setSelected]=useState<EditorialRecord|null>(null);
+ const dialog=useRef<HTMLDialogElement>(null),trigger=useRef<HTMLButtonElement|null>(null);
+ useEffect(()=>{const controller=new AbortController();if(!/^\/api\/[a-z0-9-]+$/.test(endpoint))return;fetch(endpoint,{signal:controller.signal}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{if(Array.isArray(d.previews))setPreviews(d.previews)}).catch(()=>{});return()=>controller.abort()},[endpoint]);
+ const business=previews.map(p=>({id:p.href,title:p.name,description:p.records.map(r=>r.title).join(" · "),kind:"business",href:p.href,source:"FYD anonymous public projection",status:"published"}));
+ const objects=[...business,...records.filter(r=>r.kind==="product").slice(0,3)];
+ const open=(record:EditorialRecord,e:React.MouseEvent<HTMLButtonElement>)=>{trigger.current=e.currentTarget;setSelected(record);dialog.current?.showModal()};
+ return <><div className="pl-object-margins" aria-label="FYD objects">{objects.map((r,i)=><button key={r.id} className={"pl-margin-object pg-evolve pl-margin-"+(i%2?"right":"left")} style={{"--object-row":Math.floor(i/2)} as React.CSSProperties} onClick={e=>open(r,e)} aria-label={"Explore "+r.title+" object"}><EditorialSymbol concept={symbols[r.id]??r.kind} phase={1}/><span className="pg-object-index" aria-hidden="true">{String(i+1).padStart(2,"0")}</span><span className="pl-object-label">{r.title}</span><span className="pl-object-dot" aria-hidden="true">↗</span></button>)}</div><dialog className="pl-object-dialog" aria-label={selected?.title??"Public object"} ref={dialog} onClose={()=>trigger.current?.focus()} onClick={e=>{if(e.target===e.currentTarget)dialog.current?.close()}}><div className="pl-object-dialog-top"><span className="ed-label">FYD / public object</span><button aria-label="Close object" onClick={()=>dialog.current?.close()}>×</button></div>{selected&&<><div className="pl-object-dialog-glyph"><EditorialSymbol concept={symbols[selected.id]??selected.kind}/></div><p className="pl-status">{selected.status?.replace(/-/g," ")??"Published"}</p><h2>{selected.title}</h2><p>{selected.description}</p><details><summary>Source &amp; context</summary><p>Published website information, projected through FYD. These statements retain their source; they are not independent verification.</p><code>{selected.source}</code></details>{selected.href&&<a className="ed-button" href={selected.href}>Explore {selected.title}<span aria-hidden="true">↗</span></a>}</>}</dialog></>;
+}

@@ -50,10 +50,42 @@ export type FYDQuery =
   | { kind: "reference"; objectIds: string[] }
   | { kind: "static" };
 
+/** Optional editorial vocabulary. It controls presentation, never business truth. */
+export interface EditorialIntent {
+  learning?: import("../components/editorial-learning").LearningIntent;
+  heroEdition?: string;
+  heroNote?: string;
+  heroSeal?: string;
+  symbols?: Record<string, string>;
+  eyebrow?: string;
+  wordmark?: string;
+  sourceOrigin?: string;
+  previewEndpoint?: string;
+  principles?: string[];
+  suggestedQueries?: string[];
+  workspace?: {
+    label: string;
+    disclosure: string;
+    views: {
+      id: string;
+      label: string;
+      purpose: string;
+      title: string;
+      description: string;
+      accent: "purple" | "gold";
+      steps: { label: string; title: string; detail: string; requirement: string }[];
+      exception?: { label: string; title: string; detail: string; requirement: string };
+      source: string;
+    }[];
+  };
+  actions?: { label: string; href: string }[];
+  panels?: { label: string; title: string; copy: string; href?: string; linkLabel?: string }[];
+}
+
 /** Presentation overrides. Copy edits arrive here as PROPOSED changes only. */
 export interface FYDPresentation {
   /** Optional editorial composition; presentation copy never becomes graph truth. */
-  editorial?: import("../components/editorial-sections").EditorialIntent;
+  editorial?: EditorialIntent;
   heading?: string;
   copy?: string;
   featuredIds?: string[];
