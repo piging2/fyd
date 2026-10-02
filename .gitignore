@@ -17,3 +17,7 @@ npm-debug.log*
 # FYD local runtime state
 tsconfig.tsbuildinfo
 data/
+
+# Local dependency symlinks as well as directories
+/node_modules
+/apps/editorial-preview/node_modules

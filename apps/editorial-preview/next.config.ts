@@ -1,2 +1,8 @@
-import type {NextConfig} from "next";
-const config:NextConfig={experimental:{externalDir:true},devIndicators:false}; export default config;
+import type { NextConfig } from "next";
+import path from "node:path";
+const config: NextConfig = {
+  experimental: { externalDir: true },
+  devIndicators: false,
+  outputFileTracingRoot: path.resolve(__dirname, "../.."),
+};
+export default config;
