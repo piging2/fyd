@@ -45,9 +45,12 @@ export async function GET(
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
-    // Same-origin redirect chain only: a cross-origin redirect (parked
-    // domain, hijack, captive portal) fails closed to the fallback page
-    // instead of embedding a stranger's content. Never a general proxy.
+    // Same-origin redirect chain only: a redirect off the site's own
+    // domain (parked domain, hijack, captive portal) fails closed to the
+    // fallback page instead of embedding a stranger's content. apex <->
+    // www counts as the same site. Never a general proxy.
+    const siteHost = new URL(href).hostname.replace(/^www\./i, "");
+    const siteProto = new URL(href).protocol;
     let current = href;
     let upstream: Response | null = null;
     for (let hop = 0; hop < 5; hop++) {
@@ -62,7 +65,8 @@ export async function GET(
       const loc = res.headers.get("location");
       if (res.status >= 300 && res.status < 400 && loc) {
         const next = new URL(loc, current);
-        if (next.origin !== new URL(href).origin) {
+        const nextHost = next.hostname.replace(/^www\./i, "");
+        if (nextHost !== siteHost || next.protocol !== siteProto) {
           return fallback("The live site redirected away from its own domain.", href);
         }
         current = next.toString();
