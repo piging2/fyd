@@ -1,10 +1,12 @@
 /**
  * Mission Control — operator surface over EXISTING authorities.
- * NOT a new authority. Reads the canonical journal through the same
- * deterministic projection the /api/mc routes use. No mocks, no fake
- * counters: if the backend cannot answer, the UI renders UNKNOWN.
+ * NOT a new authority. Missions project live from the canonical journal;
+ * proposals read from the approval store through the existing approvals
+ * route. No mocks, no fake counters: if the backend cannot answer, the UI
+ * renders UNKNOWN.
  */
 import Link from "next/link";
+import { headers } from "next/headers";
 import { loadJournalEvents, projectMissions, journalPath } from "../api/mc/_lib/mc-dispatch";
 
 export const dynamic = "force-dynamic";
@@ -25,11 +27,36 @@ async function gatewayStatus(): Promise<Gw> {
   }
 }
 
+type ProposalRow = {
+  proposal_id: string;
+  status: string | null;
+  tenant: string | null;
+  capability: string | null;
+  actor: string | null;
+  proposal_digest: string | null;
+  decided_at: string | null;
+  decided_by: string | null;
+};
+
+async function proposalList(): Promise<{ ok: boolean; count: number; proposals: ProposalRow[]; error?: string }> {
+  try {
+    const h = await headers();
+    const host = h.get("host") ?? "localhost:3100";
+    const proto = h.get("x-forwarded-proto") ?? "http";
+    const r = await fetch(`${proto}://${host}/api/mc/approvals`, { cache: "no-store" });
+    const j = (await r.json()) as { ok: boolean; count?: number; proposals?: ProposalRow[]; error?: string };
+    if (!j.ok) return { ok: false, count: 0, proposals: [], error: j.error ?? "list_failed" };
+    return { ok: true, count: j.count ?? 0, proposals: j.proposals ?? [] };
+  } catch (e) {
+    return { ok: false, count: 0, proposals: [], error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 function Badge({ s }: { s: string }) {
   const c =
-    s === "SUCCEEDED" ? "bg-emerald-100 text-emerald-900 border-emerald-300"
-    : s === "FAILED" ? "bg-red-100 text-red-900 border-red-300"
-    : s === "RUNNING" || s === "IN_PROGRESS" ? "bg-amber-100 text-amber-900 border-amber-300"
+    s === "SUCCEEDED" || s === "APPROVED" ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+    : s === "FAILED" || s === "DENIED" || s === "REFUSED" ? "bg-red-100 text-red-900 border-red-300"
+    : s === "RUNNING" || s === "IN_PROGRESS" || s === "WAITING" ? "bg-amber-100 text-amber-900 border-amber-300"
     : "bg-slate-100 text-slate-700 border-slate-300";
   return <span className={`inline-block px-2 py-0.5 text-xs font-mono border rounded ${c}`}>{s}</span>;
 }
@@ -52,6 +79,7 @@ export default async function MissionControlHome() {
     }
   }
   const gw = await gatewayStatus();
+  const props = await proposalList();
   const asOf = new Date().toISOString();
 
   return (
@@ -61,8 +89,8 @@ export default async function MissionControlHome() {
         <h1 className="text-3xl font-bold mt-1">Mission Control</h1>
         <p className="text-sm text-slate-600 mt-2 max-w-2xl">
           Reads existing authorities (missions, runs, proposals, approvals, evidence, history).
-          Creates none. Every number below is projected live from the canonical journal —
-          refresh preserves state because state lives in the journal.
+          Creates none. Every number below is projected live — refresh preserves state
+          because state lives in the journal and the approval store.
         </p>
       </header>
 
@@ -91,21 +119,20 @@ export default async function MissionControlHome() {
           {projectionError ? (
             <p className="text-xs font-mono mt-1 text-red-700">FAILED — {projectionError}</p>
           ) : (
-            <p className="text-sm font-mono mt-1">{missions.length} missions</p>
+            <p className="text-sm font-mono mt-1">{missions.length} missions · {props.ok ? props.count : "?"} proposals</p>
           )}
           <p className="text-xs font-mono mt-1 text-slate-500">as of {asOf}</p>
         </div>
       </section>
 
-      <section aria-label="missions">
+      <section className="mb-10" aria-label="missions">
         <h2 className="text-xl font-semibold mb-3">Missions</h2>
         {projectionError || journalError ? (
-          <p className="text-sm text-red-700 font-mono">
-            Cannot project missions: {projectionError ?? journalError}
-          </p>
+          <p className="text-sm text-red-700 font-mono">Cannot project missions: {projectionError ?? journalError}</p>
         ) : missions.length === 0 ? (
           <p className="text-sm text-slate-600">
-            No missions in the canonical journal. This is the true state — not an empty mock.
+            No dispatch missions in the canonical journal. True state, not an empty mock —
+            the proven approval chain below lives in the proposal records.
           </p>
         ) : (
           <div className="overflow-x-auto border rounded">
@@ -126,9 +153,7 @@ export default async function MissionControlHome() {
                 {missions.map((m) => (
                   <tr key={m.mission_id} className="border-b last:border-0 hover:bg-slate-50">
                     <td className="px-3 py-2 font-mono text-xs">
-                      <Link className="underline text-blue-800" href={`/mc/missions/${m.mission_id}`}>
-                        {m.mission_id}
-                      </Link>
+                      <Link className="underline text-blue-800" href={`/mc/missions/${m.mission_id}`}>{m.mission_id}</Link>
                     </td>
                     <td className="px-3 py-2"><Badge s={m.status} /></td>
                     <td className="px-3 py-2 font-mono text-xs">{m.tenant ?? "—"}</td>
@@ -145,8 +170,48 @@ export default async function MissionControlHome() {
         )}
       </section>
 
+      <section aria-label="proposals">
+        <h2 className="text-xl font-semibold mb-3">Proposals</h2>
+        {!props.ok ? (
+          <p className="text-sm text-red-700 font-mono">Cannot list proposals: {props.error}</p>
+        ) : props.count === 0 ? (
+          <p className="text-sm text-slate-600">No proposal records in the approval store.</p>
+        ) : (
+          <div className="overflow-x-auto border rounded">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs font-mono uppercase text-slate-500 border-b">
+                  <th className="px-3 py-2">Proposal</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Capability</th>
+                  <th className="px-3 py-2">Actor</th>
+                  <th className="px-3 py-2">Digest</th>
+                  <th className="px-3 py-2">Decided</th>
+                  <th className="px-3 py-2">Decided by</th>
+                </tr>
+              </thead>
+              <tbody>
+                {props.proposals.map((p) => (
+                  <tr key={p.proposal_id} className="border-b last:border-0 hover:bg-slate-50">
+                    <td className="px-3 py-2 font-mono text-xs">
+                      <Link className="underline text-blue-800" href={`/mc/proposals/${p.proposal_id}`}>{p.proposal_id}</Link>
+                    </td>
+                    <td className="px-3 py-2"><Badge s={p.status ?? "UNKNOWN"} /></td>
+                    <td className="px-3 py-2 font-mono text-xs">{p.capability ?? "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{p.actor ?? "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{p.proposal_digest ? p.proposal_digest.slice(0, 12) + "…" : "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{p.decided_at ?? "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{p.decided_by ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       <footer className="mt-10 text-xs font-mono text-slate-500">
-        <p>Authority: canonical journal → deterministic projection. No cache. No new store.</p>
+        <p>Authorities: canonical journal → deterministic projection; approval store → approvals route. No cache. No new store.</p>
       </footer>
     </main>
   );

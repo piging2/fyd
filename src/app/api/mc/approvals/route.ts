@@ -47,6 +47,7 @@
  */
 
 import { spawnSync } from 'child_process';
+import { readFileSync } from 'fs';
 import {
   gateApprovalCaller,
   gateApprovalTenant,
@@ -94,11 +95,41 @@ function runCli(args: string[]): { ok: boolean; result?: any; error?: string } {
   }
 }
 
+/**
+ * Read-only proposal list for the Mission Control surface (2026-10-01):
+ * the same records the per-id GET discloses, one summary row each.
+ * GET-only; the POST approval boundary below is untouched.
+ */
+function listProposals() {
+  let store: any;
+  try {
+    store = JSON.parse(readFileSync(STORE_PATH, 'utf8'));
+  } catch (e) {
+    return bad(500, 'approval_store_unreadable', String(e).slice(0, 200));
+  }
+  const records =
+    store && store.records && typeof store.records === 'object' ? store.records : {};
+  const proposals = Object.keys(records).map((id) => {
+    const r = records[id] || {};
+    return {
+      proposal_id: id,
+      status: r.status ?? null,
+      tenant: r.tenant ?? null,
+      capability: r.capability ?? null,
+      actor: r.actor ?? null,
+      proposal_digest: r.proposal_digest ?? null,
+      decided_at: r.decided_at ?? null,
+      decided_by: r.decided_by ?? null,
+    };
+  });
+  return Response.json({ ok: true, count: proposals.length, proposals });
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const proposalId = searchParams.get('proposal_id') || '';
   if (!proposalId) {
-    return bad(400, 'bad_proposal_id', 'proposal_id query param is required.');
+    return listProposals();
   }
   const cli = runCli(['get', '--store', STORE_PATH, '--proposal-id', proposalId]);
   if (!cli.ok) return bad(500, 'approval_backend_failed', cli.error);
