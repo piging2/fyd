@@ -415,3 +415,19 @@
  .pg-knowledge-nodes { grid-template-columns: 1fr 1fr; }
  .pg-knowledge-why dl > div { grid-template-columns: 1fr; gap: 2px; }
 }
+
+/* Journal: WHAT HAPPENED. A chronological spine makes the sequence explicit:
+ * oldest decision on the left, newest on the right. Deliberately not an
+ * object graph: knowledge maps what PING understands, the journal walks
+ * what happened, in the order it happened. */
+.pg-journal-timeline { position: relative; display: flex; margin: 12px 0 44px; }
+.pg-journal-timeline:before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 1px; background: var(--line); }
+.pg-journal-node { position: relative; flex: 1 1 0; min-width: 0; padding: 0 18px 0 0; text-decoration: none; color: var(--ink); }
+.pg-journal-dot { display: block; width: 11px; height: 11px; border-radius: 50%; background: var(--paper); border: 2px solid var(--ink); margin-bottom: 12px; }
+.pg-journal-node:hover .pg-journal-dot, .pg-journal-node:focus-visible .pg-journal-dot { background: var(--gold); }
+.pg-journal-when { display: block; font-family: ui-monospace, monospace; font-size: 10px; color: var(--muted); letter-spacing: .04em; }
+.pg-journal-what { display: block; font-size: 13px; font-weight: 600; line-height: 1.4; margin-top: 4px; }
+@media (max-width: 767px) {
+ .pg-journal-timeline { overflow-x: auto; padding-bottom: 10px; }
+ .pg-journal-node { flex: 0 0 190px; }
+}

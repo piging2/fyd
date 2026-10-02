@@ -123,6 +123,17 @@ export function EditorialSection({
     return (
       <section className="ed-publications ed-section" id={section.id}>
         {intro}
+        <div className="pg-journal-timeline" aria-label="Build timeline, oldest to newest">
+          {[...records]
+            .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""))
+            .map((r) => (
+              <a key={r.id} className="pg-journal-node" href={r.href}>
+                <span className="pg-journal-dot" aria-hidden="true" />
+                <span className="pg-journal-when">{r.date?.slice(0, 10) ?? r.kind}</span>
+                <span className="pg-journal-what">{r.title}</span>
+              </a>
+            ))}
+        </div>
         <div className="ed-publication-list">
           {[...records].sort((a,b)=>(b.date??"").localeCompare(a.date??"")).map((r, i) => (
             <article key={r.id} className="pg-evolve">
