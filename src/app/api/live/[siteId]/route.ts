@@ -45,14 +45,33 @@ export async function GET(
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
-    const upstream = await fetch(href, {
-      signal: ctrl.signal,
-      redirect: "follow",
-      headers: {
-        "User-Agent": "PING-LiveEmbed/1.0 (+portal preview)",
-        Accept: "text/html",
-      },
-    });
+    // Same-origin redirect chain only: a cross-origin redirect (parked
+    // domain, hijack, captive portal) fails closed to the fallback page
+    // instead of embedding a stranger's content. Never a general proxy.
+    let current = href;
+    let upstream: Response | null = null;
+    for (let hop = 0; hop < 5; hop++) {
+      const res = await fetch(current, {
+        signal: ctrl.signal,
+        redirect: "manual",
+        headers: {
+          "User-Agent": "PING-LiveEmbed/1.0 (+portal preview)",
+          Accept: "text/html",
+        },
+      });
+      const loc = res.headers.get("location");
+      if (res.status >= 300 && res.status < 400 && loc) {
+        const next = new URL(loc, current);
+        if (next.origin !== new URL(href).origin) {
+          return fallback("The live site redirected away from its own domain.", href);
+        }
+        current = next.toString();
+        continue;
+      }
+      upstream = res;
+      break;
+    }
+    if (!upstream) return fallback("The live site redirected too many times.", href);
     if (!upstream.ok) return fallback("The live site did not respond.", href);
     const contentType = upstream.headers.get("content-type") ?? "";
     if (!contentType.includes("text/html")) return fallback("The live site did not return a page.", href);
@@ -62,6 +81,8 @@ export async function GET(
     let html = new TextDecoder("utf-8", { fatal: false }).decode(buf);
 
     // <base> so relative subresource/link URLs resolve to the real site.
+    // Anchored to the portal's own origin (not the final hop), so a
+    // same-origin redirect chain cannot rebase assets elsewhere.
     const origin = new URL(href).origin + "/";
     if (/<head[^>]*>/i.test(html)) {
       html = html.replace(/<head[^>]*>/i, (m) => `${m}<base href="${origin}">`);
