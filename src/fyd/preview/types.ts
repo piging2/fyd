@@ -32,6 +32,13 @@ export interface PortalLogo {
   src: string;
   digest: string;
   basis: string;
+  /**
+   * True when the logo is an owner-supplied asset (not ingested site
+   * media). Owner assets render as irregular cutouts: no badge
+   * background disc, and they win over the preview photo in the
+   * collapsed mark. Nolan 2026-10-02: HPP = tape measure.
+   */
+  ownerSupplied?: boolean;
 }
 
 export interface PortalProjection {

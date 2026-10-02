@@ -73,8 +73,31 @@ interface ManifestMedia {
   variants?: Array<{ name: string; url: string; bytes: number; width?: number }>;
 }
 
+/**
+ * Owner-supplied logo assets, by portal object id. Presentation config:
+ * the semantic pipeline never names these. Add entries as owners supply
+ * art; the generic ingested-logo path below stays the fallback.
+ */
+const OWNER_LOGO_OVERRIDES: Record<string, string> = {
+  // Happy Place Carpentry: the owner's real hand-drawn tape measure
+  // (transparent irregular cutout webp, black knocked out).
+  "happy-place": "/marks/happy-place-tape-measure.webp",
+};
+
 /** Resolve the ingested logo (role "logo"), smallest variant. Null when none. */
 function resolveLogo(objectId: string): PortalProjection["logo"] {
+  // Nolan 2026-10-02 (binding): owner-supplied logo assets win over
+  // ingested media. HPP = the real tape-measure cutout. Served from the
+  // site's own public dir; the semantic pipeline is untouched.
+  const ownerSrc = OWNER_LOGO_OVERRIDES[objectId];
+  if (ownerSrc) {
+    return {
+      src: ownerSrc,
+      digest: "",
+      basis: "Owner-supplied logo asset",
+      ownerSupplied: true,
+    };
+  }
   try {
     const raw = readFileSync(
       join(process.cwd(), "src", "fyd", "media", "manifests", objectId + ".json"),

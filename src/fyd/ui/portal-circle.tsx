@@ -227,7 +227,19 @@ export function PortalCircle(props: PortalCircleProps) {
 
   const preview = portal.preview;
   const focalPos = preview ? focalToObjectPosition({ x: preview.focalX, y: preview.focalY }) : "50% 30%";
-  const collapsedBg = preview ? (
+  // Nolan 2026-10-02: an owner-supplied logo (irregular cutout) wins over
+  // the preview photo in the collapsed mark and renders with NO badge
+  // background, so the cutout's own edge is the visible shape.
+  const ownerLogo = portal.logo?.ownerSupplied ? portal.logo : null;
+  const collapsedBg = ownerLogo ? (
+    <img
+      src={ownerLogo.src}
+      alt=""
+      aria-hidden="true"
+      decoding="async"
+      className="fyd-owner-mark absolute inset-0 h-full w-full object-contain"
+    />
+  ) : preview ? (
     <img
       src={preview.thumbSrc}
       srcSet={preview.srcSet}
@@ -261,6 +273,23 @@ export function PortalCircle(props: PortalCircleProps) {
 
   return (
     <>
+      {/* Nolan 2026-10-02: owner marks rock on hover. Pure CSS; the
+          framer-motion circle transform stays untouched. */}
+      <style>{`
+        @keyframes fyd-owner-rock {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-9deg); }
+          50% { transform: rotate(7deg); }
+          75% { transform: rotate(-4deg); }
+        }
+        .group:hover .fyd-owner-mark {
+          animation: fyd-owner-rock 0.6s ease-in-out;
+          transform-origin: 50% 80%;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .group:hover .fyd-owner-mark { animation: none; }
+        }
+      `}</style>
       <motion.button
         ref={buttonRef}
         type="button"
@@ -552,18 +581,42 @@ function CompactSheet(p: SheetProps) {
         </button>
       </div>
 
-      {preview && (
+      {/* Nolan 2026-10-02: the sheet shows the LIVE website (same-origin
+          proxy embed), not a static screenshot, whenever the portal has
+          one. The static preview is the fallback. */}
+      {p.webHref ? (
         <div className="px-4">
-          <img
-            src={preview.thumbSrc ?? preview.src}
-            srcSet={preview.srcSet}
-            sizes="(max-width: 640px) 100vw, 480px"
-            alt={`${c.name} website preview`}
-            decoding="async"
-            className="aspect-[16/9] w-full rounded-2xl object-cover"
-            style={{ objectPosition: focalToObjectPosition({ x: preview.focalX, y: preview.focalY }) }}
-          />
+          <div className="overflow-hidden rounded-2xl border border-border-soft">
+            <div className="flex items-center gap-2 bg-black/70 px-3 py-1.5">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+              <p className="truncate text-xs font-semibold text-white">{c.name}</p>
+              <span className="shrink-0 rounded bg-emerald-400/20 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                Live
+              </span>
+            </div>
+            <iframe
+              src={`/api/live/${encodeURIComponent(portal.circle.id)}`}
+              title={`${c.name} live website`}
+              sandbox="allow-scripts allow-forms allow-popups"
+              loading="lazy"
+              className="h-[52vh] w-full border-0 bg-white"
+            />
+          </div>
         </div>
+      ) : (
+        preview && (
+          <div className="px-4">
+            <img
+              src={preview.thumbSrc ?? preview.src}
+              srcSet={preview.srcSet}
+              sizes="(max-width: 640px) 100vw, 480px"
+              alt={`${c.name} website preview`}
+              decoding="async"
+              className="aspect-[16/9] w-full rounded-2xl object-cover"
+              style={{ objectPosition: focalToObjectPosition({ x: preview.focalX, y: preview.focalY }) }}
+            />
+          </div>
+        )
       )}
 
       <div className="px-5 pb-6 pt-4">
@@ -653,6 +706,11 @@ function EngagedPortal(p: EngagedProps) {
   const wrapRef = React.useRef<HTMLDivElement>(null);
   const preview = portal.preview;
   const focalPos = preview ? focalToObjectPosition({ x: preview.focalX, y: preview.focalY }) : "50% 30%";
+  // Nolan 2026-10-02: when the portal has a real website, the engaged
+  // circle MORPHS into a live browser panel. The site is served through
+  // /api/live/[id] (same-origin proxy that strips frame-blocking
+  // headers), so what renders is the live site, not a screenshot.
+  const liveSrc = p.webHref ? `/api/live/${encodeURIComponent(portal.circle.id)}` : null;
 
   // Outside pointer closes. The wrap is pointer-transparent except children.
   React.useEffect(() => {
@@ -683,11 +741,11 @@ function EngagedPortal(p: EngagedProps) {
       aria-label={`${portal.circle.name} preview`}
     >
       <motion.div
-        initial={{ scale: COLLAPSED_D / d, opacity: 0.55 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: COLLAPSED_D / d, opacity: 0 }}
+        initial={{ scale: COLLAPSED_D / d, opacity: 0.55, borderRadius: "50%" }}
+        animate={{ scale: 1, opacity: 1, borderRadius: liveSrc ? 28 : "50%" }}
+        exit={{ scale: COLLAPSED_D / d, opacity: 0, borderRadius: "50%" }}
         transition={p.txGentle}
-        className="pointer-events-auto absolute overflow-hidden rounded-full bg-neutral-900"
+        className={`pointer-events-auto absolute overflow-hidden bg-neutral-900${liveSrc ? "" : " rounded-full"}`}
         style={{
           left: (wrapSize - d) / 2,
           top: (wrapSize - d) / 2,
@@ -697,7 +755,24 @@ function EngagedPortal(p: EngagedProps) {
             "0 0 0 1px rgba(255,255,255,0.22), 0 0 60px rgba(232,180,90,0.22), 0 24px 70px rgba(0,0,0,0.6)",
         }}
       >
-        {preview ? (
+        {liveSrc ? (
+          <>
+            <iframe
+              src={liveSrc}
+              title={`${portal.circle.name} live website`}
+              sandbox="allow-scripts allow-forms allow-popups"
+              loading="lazy"
+              className="absolute inset-0 h-full w-full border-0 bg-white"
+            />
+            <div className="absolute inset-x-0 top-0 flex items-center gap-2 bg-black/70 px-4 py-2 backdrop-blur">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+              <p className="truncate text-xs font-semibold text-white">{portal.circle.name}</p>
+              <span className="shrink-0 rounded bg-emerald-400/20 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                Live
+              </span>
+            </div>
+          </>
+        ) : preview ? (
           <img
             src={preview.src}
             srcSet={preview.srcSet}
@@ -717,42 +792,47 @@ function EngagedPortal(p: EngagedProps) {
 
         {/* Interior chrome: native object projection, quiet until asked.
             Text width is constrained to the circle's chord so long names
-            wrap instead of clipping on the curve. */}
-        <div className="absolute inset-x-0 top-0 p-[7%] text-center">
-          <div
-            className="absolute inset-x-0 top-0 h-[46%]"
-            style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.62), transparent)" }}
-          />
-          <p
-            className="relative mx-auto text-[clamp(13px,4.5%,18px)] font-bold leading-tight text-white"
-            style={{ maxWidth: d * 0.6 }}
-          >
-            {portal.circle.name}
-          </p>
-          <p
-            className="relative mx-auto mt-0.5 text-[clamp(10px,3.4%,13px)] text-white/75"
-            style={{ maxWidth: d * 0.62 }}
-          >
-            {[portal.circle.category, portal.circle.locationLabel].filter(Boolean).join(" · ")}
-          </p>
-          {facts.length > 0 && (
-            <p className="relative mt-1 text-[clamp(10px,3.2%,12px)] text-white/65">
-              {facts.join(" · ")}
+            wrap instead of clipping on the curve. Skipped for the live
+            website panel: the top bar above is its chrome. */}
+        {!liveSrc && (
+          <div className="absolute inset-x-0 top-0 p-[7%] text-center">
+            <div
+              className="absolute inset-x-0 top-0 h-[46%]"
+              style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.62), transparent)" }}
+            />
+            <p
+              className="relative mx-auto text-[clamp(13px,4.5%,18px)] font-bold leading-tight text-white"
+              style={{ maxWidth: d * 0.6 }}
+            >
+              {portal.circle.name}
             </p>
-          )}
-        </div>
+            <p
+              className="relative mx-auto mt-0.5 text-[clamp(10px,3.4%,13px)] text-white/75"
+              style={{ maxWidth: d * 0.62 }}
+            >
+              {[portal.circle.category, portal.circle.locationLabel].filter(Boolean).join(" · ")}
+            </p>
+            {facts.length > 0 && (
+              <p className="relative mt-1 text-[clamp(10px,3.2%,12px)] text-white/65">
+                {facts.join(" · ")}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Evidence affordance: one subtle check, detail on demand. */}
-        <button
-          type="button"
-          onClick={() => p.setShowEvidence(!p.showEvidence)}
-          aria-label={p.showEvidence ? "Hide verification" : "Why is this verified?"}
-          className="absolute bottom-[6%] left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-black/60 text-[13px] text-emerald-300 backdrop-blur"
-          style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.18)" }}
-        >
-          {p.showEvidence ? <X size={13} /> : <Check size={13} />}
-        </button>
-        {p.showEvidence && (
+        {!liveSrc && (
+          <button
+            type="button"
+            onClick={() => p.setShowEvidence(!p.showEvidence)}
+            aria-label={p.showEvidence ? "Hide verification" : "Why is this verified?"}
+            className="absolute bottom-[6%] left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-black/60 text-[13px] text-emerald-300 backdrop-blur"
+            style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.18)" }}
+          >
+            {p.showEvidence ? <X size={13} /> : <Check size={13} />}
+          </button>
+        )}
+        {p.showEvidence && !liveSrc && (
           <div className="absolute inset-x-[10%] bottom-[14%] rounded-2xl bg-black/78 px-3 py-2 text-center backdrop-blur">
             <p className="text-[11px] leading-snug text-white/85">{portal.circle.provenanceLabel}</p>
             <p className="mt-0.5 text-[10px] leading-snug text-white/55">{portal.circle.provenanceDetail}</p>
