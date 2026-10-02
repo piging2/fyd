@@ -1,0 +1,625 @@
+{
+  "matrix": [
+    {
+      "width": 320,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 320,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 320,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 360,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 360,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 360,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 360,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 375,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 375,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 375,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 375,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 390,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 390,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 414,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 414,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 414,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 414,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 540,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 540,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 540,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 540,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 768,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 768,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 768,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 768,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 820,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 820,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 820,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 820,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1024,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1024,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1024,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1024,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1280,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1280,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1280,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1280,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1440,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1440,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1440,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1440,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1920,
+      "height": 568,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1920,
+      "height": 568,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1920,
+      "height": 844,
+      "reducedMotion": "reduce",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    },
+    {
+      "width": 1920,
+      "height": 844,
+      "reducedMotion": "no-preference",
+      "overflow": false,
+      "h1": 1,
+      "broken": [],
+      "smallButtons": [],
+      "outside": [],
+      "runningAnimations": 0
+    }
+  ],
+  "failures": [],
+  "a11y": [
+    {
+      "width": 320,
+      "route": "/",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/",
+      "violations": []
+    },
+    {
+      "width": 768,
+      "route": "/",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/docs",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/docs",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/blog",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/blog",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/blog/hpp-to-ping-first-tenant",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/blog/hpp-to-ping-first-tenant",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/blog/why-continuity-matters-for-ai-agents",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/blog/why-continuity-matters-for-ai-agents",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/blog/building-agent-execution-boundaries",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/blog/building-agent-execution-boundaries",
+      "violations": []
+    },
+    {
+      "width": 390,
+      "route": "/blog/evidence-and-provenance-for-autonomous-systems",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "/blog/evidence-and-provenance-for-autonomous-systems",
+      "violations": []
+    }
+  ],
+  "errors": [],
+  "interactions": {
+    "navigation": true,
+    "objectKeyboard": true,
+    "fyd": true,
+    "boundedTourAndPause": true,
+    "primitives": true,
+    "unknownSearch": true,
+    "reducedMotionManualControls": true
+  }
+}

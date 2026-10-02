@@ -1,0 +1,409 @@
+[
+  {
+    "width": 390,
+    "scrollWidth": 390,
+    "sections": [
+      {
+        "id": "home",
+        "class": "ed-hero",
+        "y": 76,
+        "height": 560.828125
+      },
+      {
+        "id": "understanding",
+        "class": "ed-atlas-section",
+        "y": 636.828125,
+        "height": 1302.703125
+      },
+      {
+        "id": "continuity",
+        "class": "ed-section ed-story ",
+        "y": 1939.53125,
+        "height": 947.046875
+      },
+      {
+        "id": "fyd",
+        "class": "ed-section ed-proof",
+        "y": 2886.578125,
+        "height": 1087.828125
+      },
+      {
+        "id": "knowledge",
+        "class": "ed-knowledge-section ed-section",
+        "y": 3974.40625,
+        "height": 636.46875
+      },
+      {
+        "id": "builders",
+        "class": "ed-section ed-story ",
+        "y": 4610.875,
+        "height": 937.484375
+      },
+      {
+        "id": "journal",
+        "class": "ed-publications ed-section",
+        "y": 5548.359375,
+        "height": 1047.03125
+      },
+      {
+        "id": "contact",
+        "class": "ed-section ed-story ",
+        "y": 6595.390625,
+        "height": 439.234375
+      }
+    ],
+    "images": [],
+    "bodyFont": "\"DM Sans\", Arial, sans-serif",
+    "resources": [
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/87011f171ee3cd43.css",
+        "duration": 18.5,
+        "transfer": 4661
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/c6d782ae454e8b16.css",
+        "duration": 25,
+        "transfer": 932
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/main-app-d806174abd7e8077.js",
+        "duration": 27.900000005960464,
+        "transfer": 855
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/webpack-eaa4eff7bdb71e7a.js",
+        "duration": 30.5,
+        "transfer": 2005
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/276-822940dc6744a432.js",
+        "duration": 35.80000001192093,
+        "transfer": 13292
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/854-088b927c588da010.js",
+        "duration": 38.1000000089407,
+        "transfer": 2928
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/b0bf4a65-0f1417c27d95ccd7.js",
+        "duration": 38.6000000089407,
+        "transfer": 54660
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/238-3e306a3fc31af7db.js",
+        "duration": 40.70000000298023,
+        "transfer": 46662
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/app/page-56cf3a107497f82c.js",
+        "duration": 41,
+        "transfer": 10866
+      },
+      {
+        "name": "http://127.0.0.1:3213/fonts/dm-sans.ttf",
+        "duration": 40.20000000298023,
+        "transfer": 110810
+      }
+    ],
+    "navigation": [
+      {
+        "duration": 490.5,
+        "domContentLoaded": 61.29999999701977,
+        "load": 490.5
+      }
+    ],
+    "buttons": [
+      {
+        "text": "Menu+",
+        "aria": null
+      },
+      {
+        "text": "◉businessPING Social",
+        "aria": null
+      },
+      {
+        "text": "↗productAI Concierge",
+        "aria": null
+      },
+      {
+        "text": "↗productPING",
+        "aria": null
+      },
+      {
+        "text": "↗productPING Social",
+        "aria": null
+      },
+      {
+        "text": "↗productWebsites on TenantOS",
+        "aria": null
+      },
+      {
+        "text": "↗",
+        "aria": "Search published knowledge"
+      },
+      {
+        "text": "continuity↗",
+        "aria": null
+      },
+      {
+        "text": "concierge↗",
+        "aria": null
+      },
+      {
+        "text": "replay↗",
+        "aria": null
+      }
+    ],
+    "tabs": [
+      {
+        "tag": "A",
+        "text": "Skip to content",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": "#main"
+      },
+      {
+        "tag": "A",
+        "text": "PING↗",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": "#home"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Menu+",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": null
+      },
+      {
+        "tag": "A",
+        "text": "See it in FYD↗",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": "#fyd"
+      },
+      {
+        "tag": "A",
+        "text": "Explore PING↗",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": "#understanding"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "◉businessPING Social",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": null
+      }
+    ],
+    "menuOpened": "true",
+    "menuFirstFocus": "Understanding",
+    "menuClosed": "false",
+    "escapeFocus": "Menu+",
+    "navAfterClick": {
+      "hash": "#fyd",
+      "open": "false",
+      "focus": "BODY:Skip to contentPING↗Menu+UnderstandingFYDFor buildersLet’s t"
+    },
+    "proofText": "03 / FYD · IN DEVELOPMENT\n\nUnderstanding,\nput to work.\n\nA real business. Its actual services. The source behind each one. Explore what FYD understands, then open the full experience.\n\nFYD\n↗\nBUSINESS UNDERSTANDING\nPublic · Read only\nCoppersmith\n↗\nHappy Place\n↗\n\nWHAT THIS BUSINESS DOES\n\n01\nPlumbing\n↗\n02\nHeating & Cooling\n↗\n03\nHVAC\n↗\n04\nVentilation\n↗\n\nSERVICE · FROM THE BUSINESS WEBSITE\n\nPlumbing\n\nAre you working on new construction for residential homes or commercial buildings?\n\nWhy does FYD know this?\nExplore the business and Ask FYD\n↗\nActual public FYD records. Select a service to explore it.\nNo business information is changed.\nExplore FYD and Ask\n↗",
+    "proofHTML": "<div class=\"ed-intro\"><p class=\"ed-label\">03 / FYD · In development</p><h2>Understanding,\nput to work.</h2><p class=\"ed-copy\">A real business. Its actual services. The source behind each one. Explore what FYD understands, then open the full experience.</p></div><div class=\"ed-live-preview\"><div class=\"ed-preview-bar\"><strong>FYD<span aria-hidden=\"true\">↗</span></strong><span class=\"ed-label\">Business understanding</span><span class=\"ed-preview-readonly\">Public · Read only</span></div><div class=\"ed-preview-selector\" aria-label=\"Choose a business\"><button aria-pressed=\"true\">Coppersmith<span aria-hidden=\"true\">↗</span></button><button aria-pressed=\"false\">Happy Place<span aria-hidden=\"true\">↗</span></button></div><div class=\"ed-preview-body\"><div class=\"ed-service-list\"><p class=\"ed-label\">What this business does</p><button aria-pressed=\"true\"><span class=\"ed-service-number\">01</span><span>Plumbing</span><span aria-hidden=\"true\">↗</span></button><button aria-pressed=\"false\"><span class=\"ed-service-number\">02</span><span>Heating &amp; Cooling</span><span aria-hidden=\"true\">↗</span></button><button aria-pressed=\"false\"><span class=\"ed-service-number\">03</span><span>HVAC</span><span aria-hidden=\"true\">↗</span></button><button aria-pressed=\"false\"><span class=\"ed-service-number\">04</span><span>Ventilation</span><span aria-hidden=\"true\">↗</span></button></div><div class=\"ed-service-detail\" aria-live=\"polite\"><p class=\"ed-label\">Service · From the business website</p><h3>Plumbing</h3><p>Are you working on new construction for residential homes or commercial buildings?</p><details class=\"ed-source\"><summary>Why does FYD know this?</summary><p>From the business website, through FYD’s public projection. This is a website statement, not independent verification.</p><code>website-ingestion:https://www.coppersmithplumbing.com/</code><p>Read from the public projection: 2026-09-29</p></details><a class=\"ed-text-link\" href=\"http://100.79.154.43:3100/sites/coppersmith-plumbing\">Explore the business and Ask FYD<span aria-hidden=\"true\">↗</span></a></div></div><div class=\"ed-preview-foot\"><span>Actual public FYD records. Select a service to explore it.</span><span>No business information is changed.</span></div></div><div class=\"ed-section-actions\"><a class=\"ed-text-link\" href=\"http://100.79.154.43:3100/fyd\">Explore FYD and Ask<span aria-hidden=\"true\">↗</span></a></div>",
+    "blocked": [],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "scrollWidth": 1440,
+    "sections": [
+      {
+        "id": "home",
+        "class": "ed-hero",
+        "y": 90,
+        "height": 880.28125
+      },
+      {
+        "id": "understanding",
+        "class": "ed-atlas-section",
+        "y": 970.28125,
+        "height": 844.859375
+      },
+      {
+        "id": "continuity",
+        "class": "ed-section ed-story ",
+        "y": 1815.140625,
+        "height": 707.25
+      },
+      {
+        "id": "fyd",
+        "class": "ed-section ed-proof",
+        "y": 2522.390625,
+        "height": 1015.171875
+      },
+      {
+        "id": "knowledge",
+        "class": "ed-knowledge-section ed-section",
+        "y": 3537.5625,
+        "height": 498.390625
+      },
+      {
+        "id": "builders",
+        "class": "ed-section ed-story ",
+        "y": 4035.953125,
+        "height": 707.25
+      },
+      {
+        "id": "journal",
+        "class": "ed-publications ed-section",
+        "y": 4743.203125,
+        "height": 734.734375
+      },
+      {
+        "id": "contact",
+        "class": "ed-section ed-story ",
+        "y": 5477.9375,
+        "height": 438.453125
+      }
+    ],
+    "images": [],
+    "bodyFont": "\"DM Sans\", Arial, sans-serif",
+    "resources": [
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/87011f171ee3cd43.css",
+        "duration": 9.5,
+        "transfer": 4661
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/css/c6d782ae454e8b16.css",
+        "duration": 6.300000011920929,
+        "transfer": 932
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/webpack-eaa4eff7bdb71e7a.js",
+        "duration": 12.700000002980232,
+        "transfer": 2005
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/main-app-d806174abd7e8077.js",
+        "duration": 14,
+        "transfer": 855
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/238-3e306a3fc31af7db.js",
+        "duration": 19.30000001192093,
+        "transfer": 46662
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/b0bf4a65-0f1417c27d95ccd7.js",
+        "duration": 19.5,
+        "transfer": 54660
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/854-088b927c588da010.js",
+        "duration": 18.299999997019768,
+        "transfer": 2928
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/276-822940dc6744a432.js",
+        "duration": 18.700000002980232,
+        "transfer": 13292
+      },
+      {
+        "name": "http://127.0.0.1:3213/_next/static/chunks/app/page-56cf3a107497f82c.js",
+        "duration": 20.799999997019768,
+        "transfer": 10866
+      },
+      {
+        "name": "http://127.0.0.1:3213/fonts/dm-sans.ttf",
+        "duration": 15.799999997019768,
+        "transfer": 110810
+      }
+    ],
+    "navigation": [
+      {
+        "duration": 367.20000000298023,
+        "domContentLoaded": 21,
+        "load": 367.20000000298023
+      }
+    ],
+    "buttons": [
+      {
+        "text": "Menu+",
+        "aria": null
+      },
+      {
+        "text": "◉businessPING Social",
+        "aria": null
+      },
+      {
+        "text": "↗productAI Concierge",
+        "aria": null
+      },
+      {
+        "text": "↗productPING",
+        "aria": null
+      },
+      {
+        "text": "↗productPING Social",
+        "aria": null
+      },
+      {
+        "text": "↗productWebsites on TenantOS",
+        "aria": null
+      },
+      {
+        "text": "↗",
+        "aria": "Search published knowledge"
+      },
+      {
+        "text": "continuity↗",
+        "aria": null
+      },
+      {
+        "text": "concierge↗",
+        "aria": null
+      },
+      {
+        "text": "replay↗",
+        "aria": null
+      }
+    ],
+    "tabs": [
+      {
+        "tag": "A",
+        "text": "Skip to content",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": "#main"
+      },
+      {
+        "tag": "A",
+        "text": "PING↗",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": "#home"
+      },
+      {
+        "tag": "A",
+        "text": "Understanding",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": "#understanding"
+      },
+      {
+        "tag": "A",
+        "text": "FYD",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": "#fyd"
+      },
+      {
+        "tag": "A",
+        "text": "For builders",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": "#builders"
+      },
+      {
+        "tag": "A",
+        "text": "Let’s talk ↗",
+        "outline": "rgb(85, 112, 27) solid 3px",
+        "href": "#contact"
+      }
+    ],
+    "proofText": "03 / FYD · IN DEVELOPMENT\n\nUnderstanding,\nput to work.\n\nA real business. Its actual services. The source behind each one. Explore what FYD understands, then open the full experience.\n\nFYD\n↗\nBUSINESS UNDERSTANDING\nPublic · Read only\nCoppersmith\n↗\nHappy Place\n↗\n\nWHAT THIS BUSINESS DOES\n\n01\nPlumbing\n↗\n02\nHeating & Cooling\n↗\n03\nHVAC\n↗\n04\nVentilation\n↗\n\nSERVICE · FROM THE BUSINESS WEBSITE\n\nPlumbing\n\nAre you working on new construction for residential homes or commercial buildings?\n\nWhy does FYD know this?\nExplore the business and Ask FYD\n↗\nActual public FYD records. Select a service to explore it.\nNo business information is changed.\nExplore FYD and Ask\n↗",
+    "proofHTML": "<div class=\"ed-intro\"><p class=\"ed-label\">03 / FYD · In development</p><h2>Understanding,\nput to work.</h2><p class=\"ed-copy\">A real business. Its actual services. The source behind each one. Explore what FYD understands, then open the full experience.</p></div><div class=\"ed-live-preview\"><div class=\"ed-preview-bar\"><strong>FYD<span aria-hidden=\"true\">↗</span></strong><span class=\"ed-label\">Business understanding</span><span class=\"ed-preview-readonly\">Public · Read only</span></div><div class=\"ed-preview-selector\" aria-label=\"Choose a business\"><button aria-pressed=\"true\">Coppersmith<span aria-hidden=\"true\">↗</span></button><button aria-pressed=\"false\">Happy Place<span aria-hidden=\"true\">↗</span></button></div><div class=\"ed-preview-body\"><div class=\"ed-service-list\"><p class=\"ed-label\">What this business does</p><button aria-pressed=\"true\"><span class=\"ed-service-number\">01</span><span>Plumbing</span><span aria-hidden=\"true\">↗</span></button><button aria-pressed=\"false\"><span class=\"ed-service-number\">02</span><span>Heating &amp; Cooling</span><span aria-hidden=\"true\">↗</span></button><button aria-pressed=\"false\"><span class=\"ed-service-number\">03</span><span>HVAC</span><span aria-hidden=\"true\">↗</span></button><button aria-pressed=\"false\"><span class=\"ed-service-number\">04</span><span>Ventilation</span><span aria-hidden=\"true\">↗</span></button></div><div class=\"ed-service-detail\" aria-live=\"polite\"><p class=\"ed-label\">Service · From the business website</p><h3>Plumbing</h3><p>Are you working on new construction for residential homes or commercial buildings?</p><details class=\"ed-source\"><summary>Why does FYD know this?</summary><p>From the business website, through FYD’s public projection. This is a website statement, not independent verification.</p><code>website-ingestion:https://www.coppersmithplumbing.com/</code><p>Read from the public projection: 2026-09-29</p></details><a class=\"ed-text-link\" href=\"http://100.79.154.43:3100/sites/coppersmith-plumbing\">Explore the business and Ask FYD<span aria-hidden=\"true\">↗</span></a></div></div><div class=\"ed-preview-foot\"><span>Actual public FYD records. Select a service to explore it.</span><span>No business information is changed.</span></div></div><div class=\"ed-section-actions\"><a class=\"ed-text-link\" href=\"http://100.79.154.43:3100/fyd\">Explore FYD and Ask<span aria-hidden=\"true\">↗</span></a></div>",
+    "blocked": [],
+    "errors": []
+  }
+]

@@ -1,0 +1,45 @@
+{
+  "method": "Single fresh browser context per viewport/site. Installed Windows Chrome, local/private network, no CPU or network throttling, reduced motion. One lab sample, not field Core Web Vitals; original and candidate use different local server paths.",
+  "results": [
+    {
+      "site": "current",
+      "width": 390,
+      "status": 200,
+      "lcpMs": 256,
+      "cls": 0,
+      "resourceTransferBytes": 377114,
+      "resourceCount": 34,
+      "documentTransferBytes": 44552
+    },
+    {
+      "site": "current",
+      "width": 1440,
+      "status": 200,
+      "lcpMs": 212,
+      "cls": 0,
+      "resourceTransferBytes": 379272,
+      "resourceCount": 39,
+      "documentTransferBytes": 44552
+    },
+    {
+      "site": "candidate",
+      "width": 390,
+      "status": 200,
+      "lcpMs": 208,
+      "cls": 0.04431163075735993,
+      "resourceTransferBytes": 263019,
+      "resourceCount": 12,
+      "documentTransferBytes": 27772
+    },
+    {
+      "site": "candidate",
+      "width": 1440,
+      "status": 200,
+      "lcpMs": 240,
+      "cls": 0.013345568629972566,
+      "resourceTransferBytes": 260622,
+      "resourceCount": 11,
+      "documentTransferBytes": 27772
+    }
+  ]
+}

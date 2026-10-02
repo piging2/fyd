@@ -1,0 +1,11 @@
+{
+  "allTabsAndSteps": true,
+  "keyboard": true,
+  "boundedPlayback": true,
+  "pause": true,
+  "offscreenPause": true,
+  "unknownOutcome": true,
+  "reducedMotion": true,
+  "fydAction": true,
+  "errors": []
+}
