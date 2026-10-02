@@ -238,6 +238,13 @@ export function PortalCircle(props: PortalCircleProps) {
       aria-hidden="true"
       decoding="async"
       className="fyd-owner-mark absolute inset-0 h-full w-full object-contain"
+      // Drop-shadow follows the irregular cutout edge (no circular rim).
+      style={{
+        filter: aware
+          ? "drop-shadow(0 14px 22px rgba(0,0,0,0.55))"
+          : "drop-shadow(0 8px 14px rgba(0,0,0,0.4))",
+        transition: "filter 180ms ease",
+      }}
     />
   ) : preview ? (
     <img
@@ -303,25 +310,30 @@ export function PortalCircle(props: PortalCircleProps) {
         animate={{ scale, opacity: engaged ? 0 : 1 }}
         transition={txSnap}
         whileTap={reduceMotion ? undefined : { scale: scale * 0.96 }}
-        className="relative block overflow-hidden rounded-full"
+        // Nolan 2026-10-02: an owner mark is the FULL irregular object.
+        // No circle clip, no circular rim, no circular tint overlay; the
+        // drop-shadow follows the cutout's own edge so it pops off the page.
+        className={ownerLogo ? "relative block bg-transparent" : "relative block overflow-hidden rounded-full"}
         style={{
           width: D,
           height: D,
-          boxShadow: aware ? rimAware : rimRest,
+          boxShadow: ownerLogo ? "none" : aware ? rimAware : rimRest,
           cursor: "pointer",
           pointerEvents: engaged ? "none" : "auto",
         }}
       >
         {collapsedBg}
-        <span
-          aria-hidden="true"
-          className="absolute inset-0 rounded-full"
-          style={{
-            background: "linear-gradient(to top, rgba(0,0,0,0.28), transparent 55%)",
-            opacity: aware ? 0.4 : 1,
-            transition: "opacity 180ms ease",
-          }}
-        />
+        {!ownerLogo && (
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: "linear-gradient(to top, rgba(0,0,0,0.28), transparent 55%)",
+              opacity: aware ? 0.4 : 1,
+              transition: "opacity 180ms ease",
+            }}
+          />
+        )}
       </motion.button>
 
       <AnimatePresence>
@@ -726,6 +738,9 @@ function EngagedPortal(p: EngagedProps) {
   }, [p]);
 
   const facts = portal.circle.topFacts.slice(0, 2);
+  // Owner marks are irregular objects, not circles: the engaged panel
+  // morphs from the cutout's own edge, not from a round badge.
+  const engagedFromRadius = portal.logo?.ownerSupplied ? 12 : "50%";
 
   return (
     <div
@@ -741,9 +756,9 @@ function EngagedPortal(p: EngagedProps) {
       aria-label={`${portal.circle.name} preview`}
     >
       <motion.div
-        initial={{ scale: COLLAPSED_D / d, opacity: 0.55, borderRadius: "50%" }}
+        initial={{ scale: COLLAPSED_D / d, opacity: 0.55, borderRadius: engagedFromRadius }}
         animate={{ scale: 1, opacity: 1, borderRadius: liveSrc ? 28 : "50%" }}
-        exit={{ scale: COLLAPSED_D / d, opacity: 0, borderRadius: "50%" }}
+        exit={{ scale: COLLAPSED_D / d, opacity: 0, borderRadius: engagedFromRadius }}
         transition={p.txGentle}
         className={`pointer-events-auto absolute overflow-hidden bg-neutral-900${liveSrc ? "" : " rounded-full"}`}
         style={{
