@@ -1222,22 +1222,51 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
           partial: true,
         };
       }
-      if (desc)
-        pushClaim(`${title}: ${desc}`, [0], `${title} business profile`, target, "description");
-      else
-        pushClaim(
-          `${title} is a ${ctx.schemaLabel} with no description on record.`,
-          [0],
-          `${title} has no description on record`,
-          target,
-          "description",
-        );
-      const loc = fieldOf(target, "location");
-      if (loc)
-        pushClaim(`Location on record: ${loc}.`, [0], `${title} location`, target, "location");
-      const cat = fieldOf(target, "category", "businessCategory");
-      if (cat)
-        pushClaim(`Category on record: ${cat}.`, [0], `${title} category`, target, "category");
+      // ASK-FYD RELEVANCE (2026-10-03): the profile branch answers "what
+      // is this business"-style questions from the description/location/
+      // category facets. A business-anchored question that names a SPECIFIC
+      // topic those facets do not address ("Who is the CEO and what did
+      // they have for breakfast?", "What is the business owners favorite
+      // color?") must not be answered with a profile dump: citing the
+      // business object for a question it does not answer mislabels the
+      // whole answer SUPPORTED. Mirror the services/people grounded-topic
+      // guards: when the question names specific topics and none of them
+      // appear in the profile facets, skip the branch; the named topics
+      // join unknowns and the question falls through to the honest
+      // fallback.
+      const profileVocab = new Set<string>();
+      const addProfileWords = (text: string | null): void => {
+        if (!text) return;
+        for (const w of text.toLowerCase().split(/[^a-z0-9]+/)) {
+          if (w.length > 2 && !GENERIC_WORDS.has(w)) profileVocab.add(w);
+        }
+      };
+      addProfileWords(desc);
+      addProfileWords(fieldOf(target, "location"));
+      addProfileWords(fieldOf(target, "category", "businessCategory"));
+      const profileMatchable = topicWords(q).filter((w) => !titleWords.includes(w));
+      const profileGrounded =
+        profileMatchable.length === 0 || profileMatchable.some((w) => profileVocab.has(w));
+      if (!profileGrounded) {
+        for (const w of profileMatchable) noteUnknown(w);
+      } else {
+        if (desc)
+          pushClaim(`${title}: ${desc}`, [0], `${title} business profile`, target, "description");
+        else
+          pushClaim(
+            `${title} is a ${ctx.schemaLabel} with no description on record.`,
+            [0],
+            `${title} has no description on record`,
+            target,
+            "description",
+          );
+        const loc = fieldOf(target, "location");
+        if (loc)
+          pushClaim(`Location on record: ${loc}.`, [0], `${title} location`, target, "location");
+        const cat = fieldOf(target, "category", "businessCategory");
+        if (cat)
+          pushClaim(`Category on record: ${cat}.`, [0], `${title} category`, target, "category");
+      }
     }
 
     // Coverage questions ("what don't you know?") get an evidence-bound
@@ -1365,7 +1394,15 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
       const nameWords = new Set(titleWords);
       const matchable = topics.filter((w) => !nameWords.has(w));
       const vocab = serviceVocabulary(target, relatedServices);
-      const grounded = matchable.length === 0 || matchable.some((w) => vocab.has(w));
+      // ASK-FYD RELEVANCE (2026-10-03): a specific-topic services question
+      // is answerable only when the record grounds EVERY named topic. The
+      // old "some" rule let a single generic word ("repairs") trigger a
+      // full listing for "Do you offer roof replacement, plumbing repairs,
+      // and electrical panel upgrades?", citing evidence for claims the
+      // question never made and mislabeling the answer SUPPORTED. Hours
+      // words stay owned by the hours branch: they never ground a services
+      // listing here.
+      const grounded = matchable.length === 0 || matchable.every((w) => vocab.has(w));
       if (grounded) {
         if (services)
           pushClaim(
@@ -1424,21 +1461,10 @@ export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAn
             });
           }
         }
-        // Topics the question named that no branch can address stay
-        // UNKNOWN: they join unknowns, and the answer says so plainly.
-        // Hours words are excluded here: the hours branch owns them.
-        const unmatched = matchable.filter((w) => !vocab.has(w) && !HOURS_WORDS.has(w));
-        for (const w of unmatched) noteUnknown(w);
-        if (unmatched.length > 0) {
-          pushClaim(
-            `The site data has no record addressing ${unmatched.map((w) => `'${w}'`).join(", ")} specifically.`,
-            [],
-            `${title} unmatched service topics`,
-            target,
-            "services",
-            "INFERENCE",
-          );
-        }
+        // Every named topic is grounded here (the grounded rule above is
+        // every-or-refusal), so there are no unmatched topics to report:
+        // a question naming anything the record cannot address takes the
+        // ungrounded path instead and refuses honestly.
         if (!services && named.length === 0) {
           return noEvidenceAnswer(ctx, question, ["services offered by this business"]);
         }
