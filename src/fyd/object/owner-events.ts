@@ -696,12 +696,23 @@ export function readOwnerEvents(objectId: string): OwnerEvent[] {
   } catch {
     throw new CorruptOwnerLogError(objectId, path, "invalid JSON");
   }
-  if (
+  // A file only counts as "our log, but untrusted" when it claims the
+  // owner-log shape. A valid JSON file with no log markers (e.g. a
+  // projection file sharing the directory in tests) is not an owner log:
+  // projecting [] for it is correct, and the mismatch rule must not fire.
+  const claimsLogShape =
     typeof parsed === "object" &&
     parsed !== null &&
-    (parsed as { objectId?: unknown }).objectId !== objectId
-  ) {
-    throw new CorruptOwnerLogError(objectId, path, "objectId mismatch");
+    ("version" in (parsed as Record<string, unknown>) ||
+      "events" in (parsed as Record<string, unknown>));
+  if (isValidLogFile(parsed) || isV1File(parsed)) {
+    if ((parsed as { objectId?: unknown }).objectId !== objectId) {
+      throw new CorruptOwnerLogError(objectId, path, "objectId mismatch");
+    }
+  } else if (claimsLogShape) {
+    throw new CorruptOwnerLogError(objectId, path, "invalid log structure");
+  } else {
+    return [];
   }
   if (isValidLogFile(parsed)) {
     const events = parsed.events
@@ -709,12 +720,9 @@ export function readOwnerEvents(objectId: string): OwnerEvent[] {
       .sort((a, b) => a.seq - b.seq);
     return events;
   }
-  if (isV1File(parsed)) {
-    // Transparent migration: synthesize events, assign seqs + IDs now so
-    // the returned log is identical to what the first append will persist.
-    return finalizeDrafts(objectId, migrateV1ToEvents(parsed));
-  }
-  throw new CorruptOwnerLogError(objectId, path, "unrecognized log shape");
+  // isV1File: transparent migration. Synthesize events, assign seqs + IDs
+  // now so the returned log is identical to what the first append persists.
+  return finalizeDrafts(objectId, migrateV1ToEvents(parsed as OwnerOverrides));
 }
 
 function finalizeDrafts(objectId: string, drafts: OwnerEventDraft[]): OwnerEvent[] {

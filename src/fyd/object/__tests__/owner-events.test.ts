@@ -407,3 +407,24 @@ describe("owner log compare-and-swap (F02)", () => {
     expect(event.seq).toBe(1);
   });
 });
+
+describe("non-log files sharing the directory (F01 refinement)", () => {
+  const oid = "happy-place";
+  const logPath = () => join(process.env.FYD_OWNER_DIR!, oid + ".json");
+
+  test("a valid JSON file with no owner-log shape yields [], not a throw", () => {
+    writeFileSync(logPath(), JSON.stringify({ meta: { siteId: oid }, data: {} }), "utf8");
+    expect(readOwnerEvents(oid)).toEqual([]);
+  });
+
+  test("a file with log markers but invalid structure throws", () => {
+    writeFileSync(logPath(), JSON.stringify({ version: 2, objectId: oid, events: "not-an-array" }), "utf8");
+    expect(() => readOwnerEvents(oid)).toThrow(CorruptOwnerLogError);
+  });
+
+  test("append over a non-log file does not throw on read", () => {
+    writeFileSync(logPath(), JSON.stringify({ meta: { siteId: oid } }), "utf8");
+    const event = appendOwnerEvent(oid, draft());
+    expect(event.seq).toBe(0);
+  });
+});
