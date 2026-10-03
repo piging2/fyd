@@ -1,3 +1,4 @@
+import { escapeHtml, safeWebHref } from "@/fyd/preview/fallback-html";
 // ==== FYD EMBED SHIMS (portal lane 2026-10-02): begin ====
 import { injectEmbedShims } from "@/fyd/ui/storage-shim";
 // ==== FYD EMBED SHIMS (portal lane 2026-10-02): end ====
@@ -112,15 +113,23 @@ export async function GET(
     const headers = new Headers();
     headers.set("content-type", "text/html; charset=utf-8");
     headers.set("cache-control", "public, max-age=120");
+    // F04: this is third-party HTML served from the app origin. The embedding
+    // iframe sandboxes it (allow-scripts allow-forms allow-popups, no
+    // allow-same-origin), but a direct navigation here ran it with full
+    // origin privileges. Mirror the iframe sandbox profile in the response
+    // CSP so both paths treat the document as untrusted. The embed shims
+    // above were built for exactly this profile (storage in-memory
+    // fallbacks, crash beacon for location probes), so the framed path is
+    // unaffected: identical sandbox flags intersect to the same profile.
+    const sandboxDirective = "sandbox allow-scripts allow-forms allow-popups";
     // Strip frame-ancestors only; keep the rest of the site's CSP.
     const csp = upstream.headers.get("content-security-policy");
-    if (csp) {
-      const kept = csp
-        .split(";")
-        .map((d) => d.trim())
-        .filter((d) => d && !/^frame-ancestors\b/i.test(d));
-      if (kept.length > 0) headers.set("content-security-policy", kept.join("; "));
-    }
+    const kept = (csp ?? "")
+      .split(";")
+      .map((d) => d.trim())
+      .filter((d) => d && !/^frame-ancestors\b/i.test(d));
+    if (!kept.some((d) => /^sandbox\b/i.test(d))) kept.push(sandboxDirective);
+    headers.set("content-security-policy", kept.join("; "));
     // Deliberately NOT forwarding x-frame-options.
     return new NextResponse(html, { status: 200, headers });
   } catch (error) {
@@ -131,39 +140,6 @@ export async function GET(
   }
 }
 
-/**
- * Stored-XSS guard (P1-1, red-team round 1, 2026-10-03): the websiteHref and
- * the fallback message reach this sink from projected/onboarding data, which
- * is untrusted. Two independent layers:
- *   1. escapeHtml() encodes every interpolated value for its HTML context
- *      (attribute for href, text for message), so `"` or `<` cannot break
- *      out of markup.
- *   2. safeWebHref() additionally allows only parseable http:/https: URLs
- *      and rejects quotes, angle brackets, backticks, and whitespace, so
- *      javascript:, data:, and malformed URLs never render as a clickable
- *      link at all.
- * Exported for the regression test.
- */
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;");
-}
-
-export function safeWebHref(raw: string): string | null {
-  let url: URL;
-  try {
-    url = new URL(raw);
-  } catch {
-    return null;
-  }
-  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-  if (/[\s"<>`]/.test(raw)) return null;
-  return escapeHtml(raw);
-}
 
 function fallback(message: string, href?: string | null) {
   const safe = href ? safeWebHref(href) : null;
