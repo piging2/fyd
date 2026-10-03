@@ -8,7 +8,6 @@
 import {
   SecretBroker,
   BrokerError,
-  BrokerError,
   type CredentialStore,
   MAX_TTL_SECONDS,
 } from "../secret-broker";
@@ -80,6 +79,7 @@ describe("issuance", () => {
     expect(() =>
       broker.request({
         principal: PRINCIPAL,
+        tenantId: "tenant-acme",
         operation: "write:issues",
         target: "github.com/ping-org/demo",
         audience: SEAM,
@@ -89,6 +89,7 @@ describe("issuance", () => {
     expect(() =>
       broker.request({
         principal: PRINCIPAL,
+        tenantId: "tenant-acme",
         operation: "fetch:issues",
         target: "github.com/other-org/other",
         audience: SEAM,
