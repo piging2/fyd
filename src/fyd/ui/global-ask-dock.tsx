@@ -1,4 +1,5 @@
 "use client";
+import { ObjectIdentityMark } from "../presentation/object-identity-mark";
 
 /**
  * GlobalAskDock: the ONE small FYD assistant for the entire PING homepage.
@@ -62,6 +63,12 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
   const [error, setError] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  // Guards against late responses: every submit bumps requestRef; only the
+  // latest request for the current context may write state.
+  const requestRef = React.useRef(0);
+  const abortRef = React.useRef<AbortController | null>(null);
+  const wasOpenRef = React.useRef(false);
 
   const configured = context !== null;
   const busy = status === "loading";
@@ -71,6 +78,11 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
   // they were asked about, never carried across identities.
   const contextKey = context ? `${context.siteId}:${context.objectId}` : null;
   React.useEffect(() => {
+    // A new identity invalidates any in-flight answer: abort the network
+    // request and bump the request id so a late response is discarded.
+    abortRef.current?.abort();
+    abortRef.current = null;
+    requestRef.current += 1;
     setQuestion("");
     setStatus("idle");
     setAnswer("");
@@ -79,9 +91,25 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
     setError("");
   }, [contextKey]);
 
-  // Focus the input when the dock opens; Escape closes it.
+  // Abort any in-flight request on unmount.
   React.useEffect(() => {
-    if (!open) return;
+    return () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
+
+  // Focus the input when the dock opens; Escape closes it. When the dock
+  // closes, restore focus to the invoking trigger control.
+  React.useEffect(() => {
+    if (!open) {
+      if (wasOpenRef.current) {
+        wasOpenRef.current = false;
+        triggerRef.current?.focus({ preventScroll: true });
+      }
+      return;
+    }
+    wasOpenRef.current = true;
     inputRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onOpenChange(false);
@@ -94,8 +122,19 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
     e.preventDefault();
     const q = question.trim();
     if (!configured || busy || q.length === 0 || !context) return;
+    // One in-flight request at a time: abort the previous answer attempt.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const requestId = (requestRef.current += 1);
+    const askedObjectId = context.objectId;
+    const askedKey = contextKey;
     setStatus("loading");
     setError("");
+    // True only while this request is still the latest for the same identity.
+    // Guards against A-resolves-after-B overwrites when identities change.
+    const stillCurrent = () =>
+      requestRef.current === requestId && contextKey === askedKey;
     try {
       // Trusted path: the tenant comes from the route path, the object
       // scope from the body. Evidence-bounded, visitor-safe, no grants.
@@ -104,9 +143,10 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           question: q,
-          objectId: context.objectId,
+          objectId: askedObjectId,
           mode: "visitor",
         }),
+        signal: controller.signal,
       });
       let data: AskApiResponse | null = null;
       try {
@@ -114,6 +154,7 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
       } catch {
         data = null;
       }
+      if (!stillCurrent()) return;
       if (!res.ok || !data || !data.ok) {
         setStatus("error");
         setError(data?.error ?? "Ask FYD could not answer right now. Please try again.");
@@ -123,9 +164,14 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
       setRefusal(data.refusal === true);
       setCitations(Array.isArray(data.citations) ? data.citations : []);
       setStatus("answered");
-    } catch {
+    } catch (err) {
+      // Aborted requests are superseded, never errors: state was already reset.
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      if (!stillCurrent()) return;
       setStatus("error");
       setError("Could not reach Ask FYD. Check your connection and try again.");
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
     }
   }
 
@@ -138,6 +184,7 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
     <>
       {/* Floating trigger: one small circle, bottom-right, gold on ink. */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => onOpenChange(!open)}
         aria-expanded={open}
@@ -181,6 +228,7 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
             <p className="mt-1 text-xs text-accent/70" aria-live="polite">
               {context ? (
                 <>
+                  <ObjectIdentityMark object={{ id: context.objectId, name: context.name }} size={24} decorative className="inline-block align-middle mr-1" />
                   Asking about <strong className="text-accent">{context.name}</strong>
                 </>
               ) : (

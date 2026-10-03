@@ -44,6 +44,11 @@ import {
 } from "lucide-react";
 import { spring } from "@/motion/motionTokens";
 import { ImmersiveWebsiteView, PortalWebsitePreview } from "./portal-website-preview";
+import { useObjectDialog } from "./use-object-dialog";
+import { useObjectRelationship } from "./use-object-relationship";
+import { ObjectRelationshipFeedback } from "./object-relationship-feedback";
+import { resolveObjectPresentationIdentity } from "@/fyd/presentation/identity";
+import { isObjectDisplayContextValid, ObjectPlacementDisclosure, ObjectDiscoveryExplanation, type ObjectDisplayContext } from "@/fyd/presentation/object-context";
 import { compactEngagedDiameter, portalOriginTransform, type PortalOrigin } from "./portal-motion";
 import type { PeripheralSlot } from "@/fyd/spatial/slot-manager";
 import { PEEK_D, engagedGeometryFor, type EngagedSide } from "@/fyd/spatial/slot-manager";
@@ -51,8 +56,6 @@ import { focalToObjectPosition } from "@/fyd/preview/focal";
 import { isSafeWebHref } from "@/fyd/preview/types";
 import type { PortalProjection } from "@/fyd/preview/types";
 import {
-  executeFollow,
-  executeLike,
   hasCapability,
   openWebsite,
 } from "@/fyd/capabilities/runtime";
@@ -62,6 +65,7 @@ const AWARE_D = 112;
 
 interface PortalCircleProps {
   portal: PortalProjection;
+  displayContext?: ObjectDisplayContext;
   /** Assigned peripheral slot (viewport coords), or null in dock mode. */
   slot: PeripheralSlot | null;
   dock?: boolean;
@@ -91,14 +95,22 @@ const rimAware =
   "0 0 0 1px rgba(255,255,255,0.32), 0 0 34px rgba(232,180,90,0.34), 0 10px 28px rgba(0,0,0,0.45)";
 
 export function PortalCircle(props: PortalCircleProps) {
+  const [now, setNow] = React.useState(() => Date.now());
+  const expires = props.displayContext?.sponsorship?.validUntil;
+  React.useEffect(() => {
+    if (expires === undefined || expires <= now) return;
+    const timer = setTimeout(() => setNow(Date.now()), Math.min(2147483647, Math.max(0, expires - Date.now())));
+    return () => clearTimeout(timer);
+  }, [expires, now]);
+  if (!isObjectDisplayContextValid(props.portal.circle.id, props.displayContext)) return null;
+  return <PortalCircleContent {...props} />;
+}
+
+function PortalCircleContent(props: PortalCircleProps) {
   const { portal, slot, aware, engaged } = props;
   const id = portal.circle.id;
   const reduceMotion = useReducedMotion();
   const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const [following, setFollowing] = React.useState<boolean | null>(null);
-  const [liked, setLiked] = React.useState<boolean | null>(null);
-  const followInFlight = React.useRef(false);
-  const likeInFlight = React.useRef(false);
   const [showEvidence, setShowEvidence] = React.useState(false);
   const [center, setCenter] = React.useState<{ x: number; y: number } | null>(null);
   const [engagedD, setEngagedD] = React.useState(320);
@@ -125,29 +137,13 @@ export function PortalCircle(props: PortalCircleProps) {
   const txSnap = reduceMotion ? instant : springSnap;
   const txGentle = reduceMotion ? instant : springGentle;
 
-  // Follow / like state: fetched once, fail closed.
-  React.useEffect(() => {
-    let cancelled = false;
-    if (canFollow) {
-      fetch(`/api/fyd/follow?objectId=${encodeURIComponent(id)}`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (!cancelled && d && d.ok === true) setFollowing(!!d.following);
-        })
-        .catch(() => {});
-    }
-    if (canLike) {
-      fetch(`/api/fyd/like?objectId=${encodeURIComponent(id)}`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (!cancelled && d && d.ok === true) setLiked(!!d.liked);
-        })
-        .catch(() => {});
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [id, canFollow, canLike]);
+  const follow = useObjectRelationship(id, "follow", canFollow);
+  const like = useObjectRelationship(id, "like", canLike);
+  const following = follow.state;
+  const liked = like.state;
+  const followDisabled = following === null || !["ready", "success"].includes(follow.status);
+  const likeDisabled = liked === null || !["ready", "success"].includes(like.status);
+  const relationshipFeedback = <ObjectRelationshipFeedback follow={canFollow ? follow : undefined} like={canLike ? like : undefined} />;
 
   // Prewarm the engaged image on proximity: REST -> NEAR -> PREWARM -> HOVER -> EXPAND.
   React.useEffect(() => {
@@ -252,26 +248,16 @@ export function PortalCircle(props: PortalCircleProps) {
     };
   }, [engaged, popupStage, closePortal, closeAndFocus]);
 
-  const toggleFollow = async () => {
-    if (following === null || followInFlight.current) return;
-    followInFlight.current = true;
-    try { setFollowing(await executeFollow(id, following)); }
-    finally { followInFlight.current = false; }
-  };
-
-  const toggleLike = async () => {
-    if (liked === null || likeInFlight.current) return;
-    likeInFlight.current = true;
-    try { setLiked(await executeLike(id, liked)); }
-    finally { likeInFlight.current = false; }
-  };
+  const toggleFollow = follow.toggle;
+  const toggleLike = like.toggle;
 
   const preview = portal.preview;
   const focalPos = preview ? focalToObjectPosition({ x: preview.focalX, y: preview.focalY }) : "50% 30%";
   // Nolan 2026-10-02: an owner-supplied logo (irregular cutout) wins over
   // the preview photo in the collapsed mark and renders with NO badge
   // background, so the cutout's own edge is the visible shape.
-  const ownerLogo = portal.logo?.ownerSupplied ? portal.logo : null;
+  const identity = resolveObjectPresentationIdentity({ id, name: portal.circle.name, logo: portal.logo });
+  const ownerLogo = identity.shapeMode === "cutout" ? identity.mark : null;
   const collapsedBg = ownerLogo ? (
     <img
       src={ownerLogo.src}
@@ -282,8 +268,8 @@ export function PortalCircle(props: PortalCircleProps) {
       // Drop-shadow follows the irregular cutout edge (no circular rim).
       style={{
         filter: aware
-          ? "drop-shadow(0 14px 22px rgba(0,0,0,0.55))"
-          : "drop-shadow(0 8px 14px rgba(0,0,0,0.4))",
+          ? "drop-shadow(0 7px 10px rgba(0,0,0,0.4))"
+          : "drop-shadow(0 4px 6px rgba(0,0,0,0.3))",
         transition: "filter 180ms ease",
       }}
     />
@@ -298,9 +284,9 @@ export function PortalCircle(props: PortalCircleProps) {
       className="absolute inset-0 h-full w-full object-cover"
       style={{ objectPosition: focalPos }}
     />
-  ) : portal.logo ? (
+  ) : identity.mark ? (
     <img
-      src={portal.logo.src}
+      src={identity.mark.src}
       alt=""
       aria-hidden="true"
       decoding="async"
@@ -312,12 +298,12 @@ export function PortalCircle(props: PortalCircleProps) {
       className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white"
       style={{ background: "radial-gradient(circle at 35% 30%, #8a6f4d, #4a3f30)" }}
     >
-      {portal.circle.name.trim().charAt(0).toUpperCase()}
+      {identity.fallback}
     </span>
   );
 
   const D = props.peek ? PEEK_D : COLLAPSED_D;
-  const scale = aware && !engaged ? AWARE_D / D : 1;
+  const scale = aware && !engaged ? (ownerLogo ? 1.18 : AWARE_D / D) : 1;
 
   return (
     <>
@@ -341,7 +327,7 @@ export function PortalCircle(props: PortalCircleProps) {
       <motion.button
         ref={buttonRef}
         type="button"
-        aria-label={`${portal.circle.name}, ${portal.circle.category ?? "business"}. Activate to expand.`}
+        aria-label={`${portal.circle.name}, ${portal.circle.category ?? "business"}${following ? ", followed in this demo" : ""}. Activate to expand.`}
         aria-expanded={engaged}
         aria-haspopup="dialog"
         tabIndex={engaged ? -1 : 0}
@@ -384,6 +370,9 @@ export function PortalCircle(props: PortalCircleProps) {
           />
         )}
       </motion.button>
+      {props.displayContext?.sponsorship && <div className="pointer-events-none absolute top-full z-10 mt-1" style={{ right: props.peek ? 28 : 0 }}>
+        <ObjectPlacementDisclosure objectId={id} context={props.displayContext} compact />
+      </div>}
 
       <AnimatePresence>
         {aware && !engaged && (
@@ -393,7 +382,8 @@ export function PortalCircle(props: PortalCircleProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={reduceMotion ? instant : { duration: 0.18 }}
-            className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/80 px-3 py-1 text-xs font-medium text-white backdrop-blur"
+            className="pointer-events-none absolute left-1/2 top-full z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/80 px-3 py-1 text-xs font-medium text-white backdrop-blur"
+            style={{ marginTop: props.displayContext?.sponsorship ? 30 : 8 }}
           >
             {portal.circle.name}
           </motion.span>
@@ -405,9 +395,12 @@ export function PortalCircle(props: PortalCircleProps) {
             <AnimatePresence>
               {engaged && popupStage && (
                 <MobileImmersivePopup
-                  key={popupStage}
                   portal={portal}
+                  displayContext={props.displayContext}
                   stage={popupStage}
+                  relationshipFeedback={relationshipFeedback}
+                  followDisabled={followDisabled}
+                  likeDisabled={likeDisabled}
                   following={following}
                   liked={liked}
                   canFollow={canFollow}
@@ -434,11 +427,15 @@ export function PortalCircle(props: PortalCircleProps) {
               key={id}
               origin={origin}
               portal={portal}
+              displayContext={props.displayContext}
               center={center}
               diameter={engagedD}
               side={engagedSide}
               orbitPad={orbitPad}
               orbitBtn={orbitBtn}
+              relationshipFeedback={relationshipFeedback}
+              followDisabled={followDisabled}
+              likeDisabled={likeDisabled}
               following={following}
               liked={liked}
               canFollow={canFollow}
@@ -464,6 +461,7 @@ export function PortalCircle(props: PortalCircleProps) {
 }
 
 interface EngagedProps {
+  displayContext?: ObjectDisplayContext;
   origin: PortalOrigin;
   onDismiss: () => void;
   portal: PortalProjection;
@@ -472,6 +470,9 @@ interface EngagedProps {
   side: EngagedSide;
   orbitPad: number;
   orbitBtn: number;
+  relationshipFeedback?: React.ReactNode;
+  followDisabled?: boolean;
+  likeDisabled?: boolean;
   following: boolean | null;
   liked: boolean | null;
   canFollow: boolean;
@@ -583,8 +584,12 @@ function orbitAngles(side: EngagedSide) {
  * buttons. Same identity, same actions, no forced geometry.
  */
 export interface MobilePopupProps {
+  displayContext?: ObjectDisplayContext;
   portal: PortalProjection;
   stage: "compact" | "full";
+  relationshipFeedback?: React.ReactNode;
+  followDisabled?: boolean;
+  likeDisabled?: boolean;
   following: boolean | null;
   liked: boolean | null;
   canFollow: boolean;
@@ -606,23 +611,11 @@ export function MobileImmersivePopup(p: MobilePopupProps) {
   const c = portal.circle;
   const isPresent = useIsPresent();
   const full = stage === "full";
+  const contextValid = isObjectDisplayContextValid(c.id, p.displayContext);
   const sub = [c.category, c.locationLabel].filter(Boolean).join(" · ");
-
-  // Scroll lock + Escape while the popup is present. The parent also
-  // closes on Escape; both paths are idempotent.
-  React.useEffect(() => {
-    if (!isPresent) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") p.onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [p.onClose, isPresent]);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  useObjectDialog(dialogRef, isPresent && contextValid, stage, p.onClose);
+  if (!contextValid) return null;
 
   const actions = (
     <>
@@ -640,7 +633,7 @@ export function MobileImmersivePopup(p: MobilePopupProps) {
         <button
           type="button"
           onClick={p.onToggleFollow}
-          disabled={p.following === null}
+          disabled={p.followDisabled || p.following === null}
           aria-pressed={!!p.following}
           className="fyd-glass-btn flex min-h-[48px] items-center gap-2 rounded-full px-5 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey disabled:opacity-40"
         >
@@ -656,7 +649,7 @@ export function MobileImmersivePopup(p: MobilePopupProps) {
         <button
           type="button"
           onClick={p.onToggleLike}
-          disabled={p.liked === null}
+          disabled={p.likeDisabled || p.liked === null}
           aria-pressed={!!p.liked}
           aria-label={p.liked ? "Liked" : "Like"}
           className="fyd-glass-btn flex h-12 w-12 items-center justify-center rounded-full text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey disabled:opacity-40"
@@ -680,6 +673,8 @@ export function MobileImmersivePopup(p: MobilePopupProps) {
   const view = (
     <ImmersiveWebsiteView
       portal={portal}
+      displayContext={p.displayContext}
+      relationshipFeedback={p.relationshipFeedback}
       title={c.name}
       subtitle={sub || null}
       actions={actions}
@@ -688,63 +683,63 @@ export function MobileImmersivePopup(p: MobilePopupProps) {
     />
   );
 
-  if (!full) {
-    return (
-      <>
-        <motion.div
-          key="backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: p.reduceMotion ? 0 : 0.2 }}
-          onClick={p.onClose}
-          aria-hidden="true"
-          className="fixed inset-0 z-[94] bg-black/55"
-          style={{ WebkitBackdropFilter: "blur(2px)", backdropFilter: "blur(2px)" }}
-        />
-        <motion.div
-          key="compact"
-          role="dialog"
-          aria-modal="true"
-          aria-label={c.name}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.94 }}
-          transition={p.reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 34 }}
-          className="fyd-popup-compact fixed z-[95] overflow-hidden"
-          style={{
-            left: "50%",
-            top: "50%",
-            x: "-50%",
-            y: "-50%",
-            width: "min(92vw, 380px)",
-            height: "min(62vh, 540px)",
-            borderRadius: 28,
-            boxShadow:
-              "0 0 0 1px rgba(255,255,255,0.16), 0 30px 80px rgba(0,0,0,0.6)",
-          }}
-        >
-          {view}
-        </motion.div>
-      </>
-    );
-  }
+  // One continuous physical object: a single mounted shell morphs between
+  // compact and full geometry. The content subtree above (live website
+  // iframe, evidence disclosures, scroll position, loading state) is
+  // mounted once and never recreated on stage change, so expanding causes
+  // no iframe reload, no loading flash, and no lost scroll position.
+  // Framer Motion owns opacity/scale; CSS transitions own the dimension
+  // morph so interrupted gestures stay smooth.
+  const geometryTransition = p.reduceMotion
+    ? undefined
+    : "width 0.34s cubic-bezier(0.32, 0.72, 0, 1), height 0.34s cubic-bezier(0.32, 0.72, 0, 1), top 0.34s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.34s ease, padding-top 0.34s ease";
 
   return (
-    <motion.div
-      key="full"
-      role="dialog"
-      aria-modal="true"
-      aria-label={c.name}
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.98 }}
-      transition={p.reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 34 }}
-      className="fyd-popup-full fixed inset-0 z-[95] bg-neutral-950"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
-    >
-      {view}
-    </motion.div>
+    <>
+      <motion.div
+        key="backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: p.reduceMotion ? 0 : 0.2 }}
+        onClick={p.onClose}
+        aria-hidden="true"
+        className="fixed inset-0 z-[94] bg-black/55"
+        style={{ WebkitBackdropFilter: "blur(2px)", backdropFilter: "blur(2px)" }}
+      />
+      <motion.div
+        ref={dialogRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={c.name}
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.96 }}
+        transition={p.reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 340, damping: 34 }}
+        className={
+          full
+            ? "fyd-popup-full fixed z-[95] bg-neutral-950"
+            : "fyd-popup-compact fixed z-[95] overflow-hidden"
+        }
+        style={{
+          left: "50%",
+          top: full ? 0 : "50%",
+          x: "-50%",
+          y: full ? "0%" : "-50%",
+          width: full ? "100vw" : "min(92vw, 380px)",
+          height: full ? "100dvh" : "min(62vh, 540px)",
+          borderRadius: full ? 0 : 28,
+          paddingTop: full ? "env(safe-area-inset-top)" : 0,
+          boxShadow: full
+            ? "none"
+            : "0 0 0 1px rgba(255,255,255,0.16), 0 30px 80px rgba(0,0,0,0.6)",
+          transition: geometryTransition,
+        }}
+      >
+        {view}
+      </motion.div>
+    </>
   );
 }
 
@@ -817,7 +812,7 @@ function EngagedPortal(p: EngagedProps) {
         }}
       >
         {liveSrc ? (
-          <PortalWebsitePreview portal={portal} href={p.webHref!} className="h-full w-full" />
+          <PortalWebsitePreview portal={portal} href={p.webHref!} displayContext={p.displayContext} relationshipFeedback={p.relationshipFeedback} className="h-full w-full" />
         ) : preview ? (
           <img
             src={preview.src}
@@ -842,6 +837,7 @@ function EngagedPortal(p: EngagedProps) {
             website panel: the top bar above is its chrome. */}
         {!liveSrc && (
           <div className="absolute inset-x-0 top-0 p-[7%] text-center">
+            <ObjectPlacementDisclosure objectId={portal.circle.id} context={p.displayContext} />
             <div
               className="absolute inset-x-0 top-0 h-[46%]"
               style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.62), transparent)" }}
@@ -883,6 +879,7 @@ function EngagedPortal(p: EngagedProps) {
           <div className="absolute inset-x-[10%] bottom-[14%] rounded-2xl bg-black/78 px-3 py-2 text-center backdrop-blur">
             <p className="text-[11px] leading-snug text-white/85">{portal.circle.provenanceLabel}</p>
             <p className="mt-0.5 text-[10px] leading-snug text-white/55">{portal.circle.provenanceDetail}</p>
+            <ObjectDiscoveryExplanation objectId={portal.circle.id} context={p.displayContext} />
           </div>
         )}
       </motion.div>
@@ -893,7 +890,7 @@ function EngagedPortal(p: EngagedProps) {
       {p.canFollow && (
         <PerimeterButton
           label="Follow"
-          disabled={p.following === null}
+          disabled={p.followDisabled || p.following === null}
           activeLabel="Following"
           active={!!p.following}
           receded={!!p.following}
@@ -933,7 +930,7 @@ function EngagedPortal(p: EngagedProps) {
       {p.canLike && (
         <PerimeterButton
           label="Like"
-          disabled={p.liked === null}
+          disabled={p.likeDisabled || p.liked === null}
           activeLabel="Liked"
           active={!!p.liked}
           receded={!!p.liked}
