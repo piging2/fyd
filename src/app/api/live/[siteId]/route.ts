@@ -4,6 +4,7 @@ import { injectEmbedShims } from "@/fyd/ui/storage-shim";
 import { NextRequest, NextResponse } from "next/server";
 import { buildPortalProjection } from "@/fyd/preview/pipeline";
 import { isSafeWebHref } from "@/fyd/preview/types";
+import { PreviewSizeLimitError, readPreviewHtml } from "@/fyd/preview/bounded-response";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -70,8 +71,10 @@ export async function GET(
         const next = new URL(loc, current);
         const nextHost = next.hostname.replace(/^www\./i, "");
         if (nextHost !== siteHost || next.protocol !== siteProto) {
+          await res.body?.cancel().catch(() => {});
           return fallback("The live site redirected away from its own domain.", href);
         }
+        await res.body?.cancel().catch(() => {});
         current = next.toString();
         continue;
       }
@@ -83,9 +86,7 @@ export async function GET(
     const contentType = upstream.headers.get("content-type") ?? "";
     if (!contentType.includes("text/html")) return fallback("The live site did not return a page.", href);
 
-    const buf = await upstream.arrayBuffer();
-    if (buf.byteLength > MAX_BYTES) return fallback("The live site page is too large to embed.", href);
-    let html = new TextDecoder("utf-8", { fatal: false }).decode(buf);
+    let html = await readPreviewHtml(upstream, MAX_BYTES, ctrl);
 
     // <base> so relative subresource/link URLs resolve to the real site.
     // Anchored to the portal's own origin (not the final hop), so a
@@ -97,7 +98,6 @@ export async function GET(
       html = html.replace(/<html[^>]*>/i, (m) => `${m}<head><base href="${origin}"></head>`);
     }
 
-    const headers = new Headers();
     // ==== FYD EMBED SHIMS (portal lane 2026-10-02): begin ====
     // Proxied generated sites (e.g. Happy Place) crash with a user-visible
     // "Application error" inside FYD's sandboxed iframe (no allow-same-origin):
@@ -109,6 +109,7 @@ export async function GET(
     html = injectEmbedShims(html);
     // ==== FYD EMBED SHIMS (portal lane 2026-10-02): end ====
 
+    const headers = new Headers();
     headers.set("content-type", "text/html; charset=utf-8");
     headers.set("cache-control", "public, max-age=120");
     // Strip frame-ancestors only; keep the rest of the site's CSP.
@@ -122,19 +123,55 @@ export async function GET(
     }
     // Deliberately NOT forwarding x-frame-options.
     return new NextResponse(html, { status: 200, headers });
-  } catch {
+  } catch (error) {
+    if (error instanceof PreviewSizeLimitError) return fallback(error.message, href);
     return fallback("Could not reach the live site right now.", href);
   } finally {
     clearTimeout(timer);
   }
 }
 
+/**
+ * Stored-XSS guard (P1-1, red-team round 1, 2026-10-03): the websiteHref and
+ * the fallback message reach this sink from projected/onboarding data, which
+ * is untrusted. Two independent layers:
+ *   1. escapeHtml() encodes every interpolated value for its HTML context
+ *      (attribute for href, text for message), so `"` or `<` cannot break
+ *      out of markup.
+ *   2. safeWebHref() additionally allows only parseable http:/https: URLs
+ *      and rejects quotes, angle brackets, backticks, and whitespace, so
+ *      javascript:, data:, and malformed URLs never render as a clickable
+ *      link at all.
+ * Exported for the regression test.
+ */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+export function safeWebHref(raw: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+  if (/[\s"<>`]/.test(raw)) return null;
+  return escapeHtml(raw);
+}
+
 function fallback(message: string, href?: string | null) {
-  const link = href
-    ? `<p><a href="${href}" target="_blank" rel="noopener" style="color:#d9a441">Open the live site in a new tab</a></p>`
+  const safe = href ? safeWebHref(href) : null;
+  const link = safe
+    ? `<p><a href="${safe}" target="_blank" rel="noopener" style="color:#d9a441">Open the live site in a new tab</a></p>`
     : "";
   return new NextResponse(
-    `<!doctype html><html><body style="font-family:system-ui;background:#141210;color:#e8e2d6;display:flex;align-items:center;justify-content:center;min-height:90vh;margin:0"><div style="text-align:center;padding:24px"><p>${message}</p>${link}</div></body></html>`,
+    `<!doctype html><html><body style="font-family:system-ui;background:#141210;color:#e8e2d6;display:flex;align-items:center;justify-content:center;min-height:90vh;margin:0"><div style="text-align:center;padding:24px"><p>${escapeHtml(message)}</p>${link}</div></body></html>`,
     { status: 200, headers: { "content-type": "text/html; charset=utf-8" } },
   );
 }
