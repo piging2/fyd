@@ -26,15 +26,15 @@
  * src/motion/motionTokens.ts. prefers-reduced-motion: instant opacity
  * swap, capability fully retained.
  *
- * Security: every href rendered here is validated https-only. The website
- * preview is a snapshot (content), never an interactive authority.
+ * Security: every external href rendered here is validated https-only.
+ * Embedded websites stay sandboxed and do not grant FYD capabilities.
  */
 
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useIsPresent, useReducedMotion } from "framer-motion";
 import {
-  Check,
+  Info,
   ExternalLink,
   Heart,
   MessageCircleQuestion,
@@ -43,6 +43,8 @@ import {
   X,
 } from "lucide-react";
 import { spring } from "@/motion/motionTokens";
+import { ImmersiveWebsiteView, PortalWebsitePreview } from "./portal-website-preview";
+import { compactEngagedDiameter, portalOriginTransform, type PortalOrigin } from "./portal-motion";
 import type { PeripheralSlot } from "@/fyd/spatial/slot-manager";
 import { PEEK_D, engagedGeometryFor, type EngagedSide } from "@/fyd/spatial/slot-manager";
 import { focalToObjectPosition } from "@/fyd/preview/focal";
@@ -89,19 +91,25 @@ const rimAware =
   "0 0 0 1px rgba(255,255,255,0.32), 0 0 34px rgba(232,180,90,0.34), 0 10px 28px rgba(0,0,0,0.45)";
 
 export function PortalCircle(props: PortalCircleProps) {
-  const { portal, slot, dock, aware, engaged } = props;
+  const { portal, slot, aware, engaged } = props;
   const id = portal.circle.id;
   const reduceMotion = useReducedMotion();
   const buttonRef = React.useRef<HTMLButtonElement>(null);
   const [following, setFollowing] = React.useState<boolean | null>(null);
   const [liked, setLiked] = React.useState<boolean | null>(null);
+  const followInFlight = React.useRef(false);
+  const likeInFlight = React.useRef(false);
   const [showEvidence, setShowEvidence] = React.useState(false);
   const [center, setCenter] = React.useState<{ x: number; y: number } | null>(null);
   const [engagedD, setEngagedD] = React.useState(320);
-  // Mobile sheet: narrow viewports cannot honestly hold the circle+orbit
-  // footprint (320px), so tap opens a compact bottom sheet instead of the
-  // spatial expansion. Same identity, same actions, no forced geometry.
-  const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [origin, setOrigin] = React.useState<PortalOrigin | null>(null);
+  const suppressAwareness = React.useRef(false);
+  // Mobile two-stage popup (Nolan 2026-10-02): narrow viewports cannot
+  // honestly hold the circle+orbit footprint, so the first tap opens a
+  // compact object popup that never takes up the screen; a second tap
+  // (expand button or the preview) blows up to full screen. Same identity,
+  // same actions, no forced geometry.
+  const [popupStage, setPopupStage] = React.useState<"compact" | "full" | null>(null);
   const [engagedSide, setEngagedSide] = React.useState<EngagedSide>("dock");
   const [orbitPad, setOrbitPad] = React.useState(26);
   const [orbitBtn, setOrbitBtn] = React.useState(44);
@@ -158,51 +166,80 @@ export function PortalCircle(props: PortalCircleProps) {
   const beginEngage = React.useCallback(() => {
     const el = buttonRef.current;
     if (!el) return;
-    // Directive (Nolan, 2026-09-22): do not force desktop spatial behavior
-    // onto mobile. Below 640px the tap opens the bottom sheet; the
-    // circle+orbit expansion stays a desktop treatment. Edge peeks (round
-    // 3: narrow desktop bands, mobile overlay) also open the sheet: no
-    // safe footprint exists for spatial expansion there.
+    // Directive (Nolan, 2026-09-22, refined 2026-10-02): do not force
+    // desktop spatial behavior onto mobile. Below 640px the first tap opens
+    // the compact popup stage; the circle+orbit expansion stays a desktop
+    // treatment. Edge peeks (round 3: narrow desktop bands, mobile overlay)
+    // also open the compact popup: no safe footprint exists for spatial
+    // expansion there.
     if (window.innerWidth < 640 || props.peek) {
-      setSheetOpen(true);
+      setPopupStage("compact");
       props.onEngageRequest(id);
       return;
     }
     const r = el.getBoundingClientRect();
+    setOrigin({ x: r.x + r.width / 2, y: r.y + r.height / 2, width: r.width, height: r.height });
     // Full-footprint geometry: the orbit controls extend beyond the circle,
     // so the engaged size and center account for the whole footprint.
-    // Null means no safe geometry: stay collapsed, never overlap content.
+    // Null means no safe geometry: use the compact sheet instead.
     const g = engagedGeometryFor(
       { width: window.innerWidth, height: window.innerHeight },
       slot,
       { x: r.x + r.width / 2, y: r.y + r.height / 2 },
     );
-    if (!g) return;
+    if (!g) {
+      setPopupStage("compact");
+      props.onEngageRequest(id);
+      return;
+    }
+    setPopupStage(null);
     setCenter({ x: g.cx, y: g.cy });
-    setEngagedD(g.d);
+    // Nolan 2026-10-02: the first click expands a SMALLER object, never a
+    // page-filling panel. Clamp the engaged diameter to the compact
+    // first-stage size around the same center.
+    setEngagedD(compactEngagedDiameter(g.d));
     setEngagedSide(g.side);
     setOrbitPad(g.orbitPad);
     setOrbitBtn(g.orbitBtn);
     props.onEngageRequest(id);
   }, [id, slot, props]);
 
-  // Scroll while engaged: the engaged overlay is viewport-fixed (a
-  // transient open interaction, not resting presence), so host scrolling
-  // never moves it; but a host-page scroll means the reading context
-  // moved on, so release. Resting circles are document-anchored and
-  // scroll away with their region naturally. Resize while engaged: the
-  // slot geometry changed, so release rather than sit on stale
-  // measurements.
+  const release = props.onRelease;
+  const ask = props.onAskRequest;
+  const closePortal = React.useCallback(() => {
+    setPopupStage(null);
+    setShowEvidence(false);
+    release(id);
+  }, [id, release]);
+  const closeAndFocus = React.useCallback(() => {
+    closePortal();
+    suppressAwareness.current = true;
+    requestAnimationFrame(() => buttonRef.current?.focus({ preventScroll: true }));
+  }, [closePortal]);
+  const askFromPortal = React.useCallback((objectId: string) => {
+    closePortal();
+    ask(objectId);
+  }, [ask, closePortal]);
+
+  // Parent release (another object, Escape, or placement change) also
+  // dismisses the mobile popup. Local state never keeps a stale popup open.
+  React.useEffect(() => {
+    if (!engaged) {
+      setPopupStage(null);
+      setShowEvidence(false);
+    }
+  }, [engaged]);
+
   React.useEffect(() => {
     if (!engaged) return;
-    const onScroll = () => props.onRelease(id);
+    const onScroll = () => { if (!popupStage) closePortal(); };
     let t: ReturnType<typeof setTimeout> | null = null;
     const onResize = () => {
       if (t) clearTimeout(t);
-      t = setTimeout(() => props.onRelease(id), 200);
+      t = setTimeout(closePortal, 200);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") props.onRelease(id);
+      if (e.key === "Escape") closeAndFocus();
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
@@ -213,16 +250,20 @@ export function PortalCircle(props: PortalCircleProps) {
       window.removeEventListener("keydown", onKey);
       if (t) clearTimeout(t);
     };
-  }, [engaged, id, props]);
+  }, [engaged, popupStage, closePortal, closeAndFocus]);
 
   const toggleFollow = async () => {
-    if (following === null) return;
-    setFollowing(await executeFollow(id, following));
+    if (following === null || followInFlight.current) return;
+    followInFlight.current = true;
+    try { setFollowing(await executeFollow(id, following)); }
+    finally { followInFlight.current = false; }
   };
 
   const toggleLike = async () => {
-    if (liked === null) return;
-    setLiked(await executeLike(id, liked));
+    if (liked === null || likeInFlight.current) return;
+    likeInFlight.current = true;
+    try { setLiked(await executeLike(id, liked)); }
+    finally { likeInFlight.current = false; }
   };
 
   const preview = portal.preview;
@@ -285,16 +326,16 @@ export function PortalCircle(props: PortalCircleProps) {
       <style>{`
         @keyframes fyd-owner-rock {
           0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-9deg); }
-          50% { transform: rotate(7deg); }
-          75% { transform: rotate(-4deg); }
+          25% { transform: rotate(-4deg); }
+          50% { transform: rotate(3deg); }
+          75% { transform: rotate(-1deg); }
         }
-        .group:hover .fyd-owner-mark {
+        .fyd-portal-trigger:is(:hover, :focus-visible) .fyd-owner-mark {
           animation: fyd-owner-rock 0.6s ease-in-out;
           transform-origin: 50% 80%;
         }
         @media (prefers-reduced-motion: reduce) {
-          .group:hover .fyd-owner-mark { animation: none; }
+          .fyd-portal-trigger:is(:hover, :focus-visible) .fyd-owner-mark { animation: none; }
         }
       `}</style>
       <motion.button
@@ -302,9 +343,17 @@ export function PortalCircle(props: PortalCircleProps) {
         type="button"
         aria-label={`${portal.circle.name}, ${portal.circle.category ?? "business"}. Activate to expand.`}
         aria-expanded={engaged}
+        aria-haspopup="dialog"
+        tabIndex={engaged ? -1 : 0}
         onMouseEnter={() => props.onAware(id)}
         onMouseLeave={() => props.onUnaware(id)}
-        onFocus={() => props.onAware(id)}
+        onFocus={() => {
+          if (suppressAwareness.current) {
+            suppressAwareness.current = false;
+            return;
+          }
+          props.onAware(id);
+        }}
         onBlur={() => props.onUnaware(id)}
         onClick={beginEngage}
         animate={{ scale, opacity: engaged ? 0 : 1 }}
@@ -313,7 +362,7 @@ export function PortalCircle(props: PortalCircleProps) {
         // Nolan 2026-10-02: an owner mark is the FULL irregular object.
         // No circle clip, no circular rim, no circular tint overlay; the
         // drop-shadow follows the cutout's own edge so it pops off the page.
-        className={ownerLogo ? "relative block bg-transparent" : "relative block overflow-hidden rounded-full"}
+        className={`fyd-portal-trigger relative block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-honey ${ownerLogo ? "bg-transparent" : "overflow-hidden rounded-full"}`}
         style={{
           width: D,
           height: D,
@@ -354,9 +403,11 @@ export function PortalCircle(props: PortalCircleProps) {
       {typeof document !== "undefined"
         ? createPortal(
             <AnimatePresence>
-              {sheetOpen && (
-                <CompactSheet
+              {engaged && popupStage && (
+                <MobileImmersivePopup
+                  key={popupStage}
                   portal={portal}
+                  stage={popupStage}
                   following={following}
                   liked={liked}
                   canFollow={canFollow}
@@ -365,14 +416,9 @@ export function PortalCircle(props: PortalCircleProps) {
                   webHref={webHref}
                   onToggleFollow={toggleFollow}
                   onToggleLike={toggleLike}
-                  onAskRequest={(sid) => {
-                    setSheetOpen(false);
-                    props.onAskRequest(sid);
-                  }}
-                  onClose={() => {
-                    setSheetOpen(false);
-                    props.onRelease(id);
-                  }}
+                  onAskRequest={askFromPortal}
+                  onExpand={() => setPopupStage("full")}
+                  onClose={closeAndFocus}
                   reduceMotion={!!reduceMotion}
                 />
               )}
@@ -381,9 +427,12 @@ export function PortalCircle(props: PortalCircleProps) {
           )
         : null}
 
-      {engaged && !sheetOpen && center && typeof document !== "undefined"
+      {typeof document !== "undefined"
         ? createPortal(
-            <EngagedPortal
+            <AnimatePresence>
+            {engaged && !popupStage && center && origin && <EngagedPortal
+              key={id}
+              origin={origin}
               portal={portal}
               center={center}
               diameter={engagedD}
@@ -400,11 +449,13 @@ export function PortalCircle(props: PortalCircleProps) {
               setShowEvidence={setShowEvidence}
               onToggleFollow={toggleFollow}
               onToggleLike={toggleLike}
-              onAskRequest={props.onAskRequest}
-              onClose={() => props.onRelease(id)}
+              onAskRequest={askFromPortal}
+              onClose={closeAndFocus}
+              onDismiss={closePortal}
               txGentle={txGentle}
               reduceMotion={!!reduceMotion}
-            />,
+            />}
+            </AnimatePresence>,
             document.body,
           )
         : null}
@@ -413,6 +464,8 @@ export function PortalCircle(props: PortalCircleProps) {
 }
 
 interface EngagedProps {
+  origin: PortalOrigin;
+  onDismiss: () => void;
   portal: PortalProjection;
   center: { x: number; y: number };
   diameter: number;
@@ -441,6 +494,7 @@ function PerimeterButton({
   activeLabel,
   active,
   receded,
+  disabled,
   onClick,
   angleDeg,
   radius,
@@ -452,6 +506,7 @@ function PerimeterButton({
   activeLabel?: string;
   active?: boolean;
   receded?: boolean;
+  disabled?: boolean;
   onClick: () => void;
   angleDeg: number;
   radius: number;
@@ -460,6 +515,7 @@ function PerimeterButton({
   inwardTooltip?: boolean;
   children: React.ReactNode;
 }) {
+  const reduceMotion = useReducedMotion();
   const rad = (angleDeg * Math.PI) / 180;
   const x = Math.cos(rad) * radius;
   const y = Math.sin(rad) * radius;
@@ -478,9 +534,10 @@ function PerimeterButton({
       onClick={onClick}
       aria-label={active && activeLabel ? activeLabel : label}
       aria-pressed={active}
-      whileHover={{ scale: 1.08 }}
-      whileTap={{ scale: 0.94 }}
-      className="group pointer-events-auto absolute flex items-center justify-center rounded-full bg-black/78 text-white backdrop-blur"
+      disabled={disabled}
+      whileHover={reduceMotion ? undefined : { scale: 1.04 }}
+      whileTap={reduceMotion ? undefined : { scale: 0.97 }}
+      className="group pointer-events-auto absolute flex items-center justify-center rounded-full bg-black/78 text-white backdrop-blur focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-honey disabled:opacity-40"
       style={{
         width: size,
         height: size,
@@ -517,14 +574,17 @@ function orbitAngles(side: EngagedSide) {
 }
 
 /**
- * CompactSheet: the mobile engaged treatment. A bottom sheet with the
- * identity's highest-value information: image, name, descriptor,
- * location, top facts, actions (Ask FYD, Follow, Like, Website), and
- * evidence provenance. One tap opens, readable at 320px, close/Escape/
- * outside-tap collapses. No orbit ring, no spatial footprint math.
+ * MobileImmersivePopup: the mobile engaged treatment (Nolan 2026-10-02).
+ *
+ * Two stages. First tap: a compact object popup that never takes up the
+ * screen. Second tap (expand button or the preview itself): full screen.
+ * The live website fills the ENTIRE popup and drifts gently behind big,
+ * bold, OUTLINED (never drop shadow), animated, bright, shiny text and
+ * buttons. Same identity, same actions, no forced geometry.
  */
-interface SheetProps {
+export interface MobilePopupProps {
   portal: PortalProjection;
+  stage: "compact" | "full";
   following: boolean | null;
   liked: boolean | null;
   canFollow: boolean;
@@ -533,176 +593,157 @@ interface SheetProps {
   webHref: string | null;
   onToggleFollow: () => void;
   onToggleLike: () => void;
-  /** Routes to the ONE global assistant; the sheet closes so the dock is visible. */
+  /** Routes to the ONE global assistant; the popup closes so the dock is visible. */
   onAskRequest: (id: string) => void;
+  /** Second tap: blow up to full screen. */
+  onExpand: () => void;
   onClose: () => void;
   reduceMotion: boolean;
 }
 
-function CompactSheet(p: SheetProps) {
-  const { portal } = p;
+export function MobileImmersivePopup(p: MobilePopupProps) {
+  const { portal, stage } = p;
   const c = portal.circle;
-  const preview = portal.preview;
-  const sheetRef = React.useRef<HTMLDivElement>(null);
-  const closeRef = React.useRef<HTMLButtonElement>(null);
+  const isPresent = useIsPresent();
+  const full = stage === "full";
+  const sub = [c.category, c.locationLabel].filter(Boolean).join(" · ");
 
-  // Focus the close control on open; Escape closes; outside tap closes.
-  // The open tap is deferred past so it never instantly dismisses.
+  // Scroll lock + Escape while the popup is present. The parent also
+  // closes on Escape; both paths are idempotent.
   React.useEffect(() => {
-    closeRef.current?.focus({ preventScroll: true });
+    if (!isPresent) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") p.onClose();
     };
-    const onDown = (e: PointerEvent) => {
-      if (sheetRef.current && !sheetRef.current.contains(e.target as Node)) p.onClose();
-    };
-    const t = setTimeout(() => document.addEventListener("pointerdown", onDown), 60);
     window.addEventListener("keydown", onKey);
     return () => {
-      clearTimeout(t);
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onDown);
     };
-  }, [p]);
+  }, [p.onClose, isPresent]);
 
-  const facts = c.topFacts.slice(0, 4);
-  const sub = [c.category, c.locationLabel].filter(Boolean).join(" · ");
+  const actions = (
+    <>
+      {p.canAsk && (
+        <button
+          type="button"
+          onClick={() => p.onAskRequest(c.id)}
+          className="fyd-shiny-btn flex min-h-[48px] items-center gap-2 rounded-full px-6 text-[15px] font-extrabold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey"
+        >
+          <MessageCircleQuestion className="h-5 w-5" aria-hidden="true" />
+          <span>Ask FYD</span>
+        </button>
+      )}
+      {p.canFollow && (
+        <button
+          type="button"
+          onClick={p.onToggleFollow}
+          disabled={p.following === null}
+          aria-pressed={!!p.following}
+          className="fyd-glass-btn flex min-h-[48px] items-center gap-2 rounded-full px-5 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey disabled:opacity-40"
+        >
+          {p.following ? (
+            <UserCheck className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <UserPlus className="h-4 w-4" aria-hidden="true" />
+          )}
+          <span>{p.following ? "Following" : "Follow"}</span>
+        </button>
+      )}
+      {p.canLike && (
+        <button
+          type="button"
+          onClick={p.onToggleLike}
+          disabled={p.liked === null}
+          aria-pressed={!!p.liked}
+          aria-label={p.liked ? "Liked" : "Like"}
+          className="fyd-glass-btn flex h-12 w-12 items-center justify-center rounded-full text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey disabled:opacity-40"
+        >
+          <Heart className="h-5 w-5" aria-hidden="true" fill={p.liked ? "currentColor" : "none"} />
+        </button>
+      )}
+      {p.webHref && (
+        <button
+          type="button"
+          onClick={() => openWebsite(p.webHref as string)}
+          className="fyd-glass-btn flex min-h-[48px] items-center gap-2 rounded-full px-5 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey"
+        >
+          <ExternalLink className="h-4 w-4" aria-hidden="true" />
+          <span>Website</span>
+        </button>
+      )}
+    </>
+  );
+
+  const view = (
+    <ImmersiveWebsiteView
+      portal={portal}
+      title={c.name}
+      subtitle={sub || null}
+      actions={actions}
+      onClose={p.onClose}
+      onExpand={full ? undefined : p.onExpand}
+    />
+  );
+
+  if (!full) {
+    return (
+      <>
+        <motion.div
+          key="backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: p.reduceMotion ? 0 : 0.2 }}
+          onClick={p.onClose}
+          aria-hidden="true"
+          className="fixed inset-0 z-[94] bg-black/55"
+          style={{ WebkitBackdropFilter: "blur(2px)", backdropFilter: "blur(2px)" }}
+        />
+        <motion.div
+          key="compact"
+          role="dialog"
+          aria-modal="true"
+          aria-label={c.name}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.94 }}
+          transition={p.reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 34 }}
+          className="fyd-popup-compact fixed z-[95] overflow-hidden"
+          style={{
+            left: "50%",
+            top: "50%",
+            x: "-50%",
+            y: "-50%",
+            width: "min(92vw, 380px)",
+            height: "min(62vh, 540px)",
+            borderRadius: 28,
+            boxShadow:
+              "0 0 0 1px rgba(255,255,255,0.16), 0 30px 80px rgba(0,0,0,0.6)",
+          }}
+        >
+          {view}
+        </motion.div>
+      </>
+    );
+  }
 
   return (
     <motion.div
-      ref={sheetRef}
+      key="full"
       role="dialog"
       aria-modal="true"
       aria-label={c.name}
-      initial={{ y: "100%" }}
-      animate={{ y: 0 }}
-      exit={{ y: "100%" }}
-      transition={p.reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 380, damping: 38 }}
-      className="pointer-events-auto fixed inset-x-0 bottom-0 z-[95] max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-border-soft bg-surface shadow-[0_-18px_60px_rgba(0,0,0,0.45)]"
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={p.reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 34 }}
+      className="fyd-popup-full fixed inset-0 z-[95] bg-neutral-950"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="sticky top-0 flex items-center justify-between bg-surface px-4 pb-2 pt-3">
-        <span aria-hidden="true" className="mx-auto h-1 w-10 rounded-full bg-border-soft" />
-        <button
-          ref={closeRef}
-          type="button"
-          onClick={p.onClose}
-          aria-label={`Close ${c.name}`}
-          className="absolute right-3 top-3 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-accent/70 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey"
-        >
-          <X className="h-5 w-5" aria-hidden="true" />
-        </button>
-      </div>
-
-      {/* Nolan 2026-10-02: the sheet shows the LIVE website (same-origin
-          proxy embed), not a static screenshot, whenever the portal has
-          one. The static preview is the fallback. */}
-      {p.webHref ? (
-        <div className="px-4">
-          <div className="overflow-hidden rounded-2xl border border-border-soft">
-            <div className="flex items-center gap-2 bg-black/70 px-3 py-1.5">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
-              <p className="truncate text-xs font-semibold text-white">{c.name}</p>
-              <span className="shrink-0 rounded bg-emerald-400/20 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-                Live
-              </span>
-            </div>
-            <iframe
-              src={`/api/live/${encodeURIComponent(portal.circle.id)}`}
-              title={`${c.name} live website`}
-              sandbox="allow-scripts allow-forms allow-popups"
-              loading="lazy"
-              className="h-[52vh] w-full border-0 bg-white"
-            />
-          </div>
-        </div>
-      ) : (
-        preview && (
-          <div className="px-4">
-            <img
-              src={preview.thumbSrc ?? preview.src}
-              srcSet={preview.srcSet}
-              sizes="(max-width: 640px) 100vw, 480px"
-              alt={`${c.name} website preview`}
-              decoding="async"
-              className="aspect-[16/9] w-full rounded-2xl object-cover"
-              style={{ objectPosition: focalToObjectPosition({ x: preview.focalX, y: preview.focalY }) }}
-            />
-          </div>
-        )
-      )}
-
-      <div className="px-5 pb-6 pt-4">
-        <h2 className="text-xl font-bold leading-tight text-accent">{c.name}</h2>
-        {sub ? <p className="mt-1 text-sm text-accent/70">{sub}</p> : null}
-        {c.tagline ? <p className="mt-2 text-sm leading-relaxed text-accent/85">{c.tagline}</p> : null}
-        {facts.length > 0 && (
-          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Top services">
-            {facts.map((f) => (
-              <li
-                key={f}
-                className="rounded-full border border-border-soft bg-surface-2 px-3 py-1.5 text-xs font-medium text-accent"
-              >
-                {f}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {p.canAsk && (
-            <button
-              type="button"
-              onClick={() => p.onAskRequest(c.id)}
-              className="flex min-h-[44px] items-center gap-2 rounded-full bg-honey px-5 text-sm font-semibold text-honey-foreground hover:bg-honey-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey"
-            >
-              <MessageCircleQuestion className="h-4 w-4" aria-hidden="true" />
-              Ask FYD
-            </button>
-          )}
-          {p.canFollow && (
-            <button
-              type="button"
-              onClick={p.onToggleFollow}
-              aria-pressed={!!p.following}
-              className="flex min-h-[44px] items-center gap-2 rounded-full border border-border-soft px-4 text-sm font-medium text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey"
-            >
-              {p.following ? (
-                <UserCheck className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <UserPlus className="h-4 w-4" aria-hidden="true" />
-              )}
-              {p.following ? "Following" : "Follow"}
-            </button>
-          )}
-          {p.canLike && (
-            <button
-              type="button"
-              onClick={p.onToggleLike}
-              aria-pressed={!!p.liked}
-              aria-label={p.liked ? "Liked" : "Like"}
-              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-border-soft text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey"
-            >
-              <Heart className="h-4 w-4" aria-hidden="true" fill={p.liked ? "currentColor" : "none"} />
-            </button>
-          )}
-          {p.webHref && (
-            <button
-              type="button"
-              onClick={() => openWebsite(p.webHref as string)}
-              className="flex min-h-[44px] items-center gap-2 rounded-full border border-border-soft px-4 text-sm font-medium text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-honey"
-            >
-              <ExternalLink className="h-4 w-4" aria-hidden="true" />
-              Website
-            </button>
-          )}
-        </div>
-
-        <p className="mt-4 border-t border-border-soft/60 pt-3 text-xs leading-relaxed text-accent/60">
-          <span className="font-semibold text-accent/75">Evidence: </span>
-          {c.provenanceLabel}
-          {c.provenanceDetail ? ` ${c.provenanceDetail}` : ""}
-        </p>
-      </div>
+      {view}
     </motion.div>
   );
 }
@@ -724,28 +765,33 @@ function EngagedPortal(p: EngagedProps) {
   // headers), so what renders is the live site, not a screenshot.
   const liveSrc = p.webHref ? `/api/live/${encodeURIComponent(portal.circle.id)}` : null;
 
-  // Outside pointer closes. The wrap is pointer-transparent except children.
+  React.useEffect(() => {
+    wrapRef.current?.focus({ preventScroll: true });
+  }, []);
   React.useEffect(() => {
     const onDown = (e: PointerEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) p.onClose();
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) p.onDismiss();
     };
-    // Defer so the opening click does not immediately close.
-    const t = setTimeout(() => document.addEventListener("pointerdown", onDown), 50);
-    return () => {
-      clearTimeout(t);
-      document.removeEventListener("pointerdown", onDown);
-    };
-  }, [p]);
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [p.onDismiss]);
 
   const facts = portal.circle.topFacts.slice(0, 2);
   // Owner marks are irregular objects, not circles: the engaged panel
   // morphs from the cutout's own edge, not from a round badge.
   const engagedFromRadius = portal.logo?.ownerSupplied ? 12 : "50%";
+  const originTransform = portalOriginTransform(p.origin, center, d);
+  const stationary = { x: 0, y: 0, scaleX: 1, scaleY: 1 };
 
   return (
-    <div
+    <motion.div
       ref={wrapRef}
-      className="pointer-events-none fixed z-[90]"
+      tabIndex={-1}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: p.reduceMotion ? 0 : 0.2 }}
+      className="pointer-events-none fixed z-[90] outline-none"
       style={{
         left: center.x - wrapSize / 2,
         top: center.y - wrapSize / 2,
@@ -756,9 +802,9 @@ function EngagedPortal(p: EngagedProps) {
       aria-label={`${portal.circle.name} preview`}
     >
       <motion.div
-        initial={{ scale: COLLAPSED_D / d, opacity: 0.55, borderRadius: engagedFromRadius }}
-        animate={{ scale: 1, opacity: 1, borderRadius: liveSrc ? 28 : "50%" }}
-        exit={{ scale: COLLAPSED_D / d, opacity: 0, borderRadius: engagedFromRadius }}
+        initial={{ ...(p.reduceMotion ? stationary : originTransform), opacity: 0, borderRadius: engagedFromRadius }}
+        animate={{ ...stationary, opacity: 1, borderRadius: liveSrc ? 20 : "50%" }}
+        exit={{ ...(p.reduceMotion ? stationary : originTransform), opacity: 0, borderRadius: engagedFromRadius }}
         transition={p.txGentle}
         className={`pointer-events-auto absolute overflow-hidden bg-neutral-900${liveSrc ? "" : " rounded-full"}`}
         style={{
@@ -771,22 +817,7 @@ function EngagedPortal(p: EngagedProps) {
         }}
       >
         {liveSrc ? (
-          <>
-            <iframe
-              src={liveSrc}
-              title={`${portal.circle.name} live website`}
-              sandbox="allow-scripts allow-forms allow-popups"
-              loading="lazy"
-              className="absolute inset-0 h-full w-full border-0 bg-white"
-            />
-            <div className="absolute inset-x-0 top-0 flex items-center gap-2 bg-black/70 px-4 py-2 backdrop-blur">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
-              <p className="truncate text-xs font-semibold text-white">{portal.circle.name}</p>
-              <span className="shrink-0 rounded bg-emerald-400/20 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-                Live
-              </span>
-            </div>
-          </>
+          <PortalWebsitePreview portal={portal} href={p.webHref!} className="h-full w-full" />
         ) : preview ? (
           <img
             src={preview.src}
@@ -835,16 +866,17 @@ function EngagedPortal(p: EngagedProps) {
           </div>
         )}
 
-        {/* Evidence affordance: one subtle check, detail on demand. */}
+        {/* Evidence describes the source; it does not imply verification. */}
         {!liveSrc && (
           <button
             type="button"
             onClick={() => p.setShowEvidence(!p.showEvidence)}
-            aria-label={p.showEvidence ? "Hide verification" : "Why is this verified?"}
-            className="absolute bottom-[6%] left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-black/60 text-[13px] text-emerald-300 backdrop-blur"
+            aria-label={p.showEvidence ? "Hide evidence" : "Show evidence"}
+            aria-expanded={p.showEvidence}
+            className="absolute bottom-[6%] left-1/2 flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-full bg-black/60 text-[13px] text-stone-200 backdrop-blur focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey"
             style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.18)" }}
           >
-            {p.showEvidence ? <X size={13} /> : <Check size={13} />}
+            {p.showEvidence ? <X size={13} /> : <Info size={13} />}
           </button>
         )}
         {p.showEvidence && !liveSrc && (
@@ -861,6 +893,7 @@ function EngagedPortal(p: EngagedProps) {
       {p.canFollow && (
         <PerimeterButton
           label="Follow"
+          disabled={p.following === null}
           activeLabel="Following"
           active={!!p.following}
           receded={!!p.following}
@@ -900,6 +933,7 @@ function EngagedPortal(p: EngagedProps) {
       {p.canLike && (
         <PerimeterButton
           label="Like"
+          disabled={p.liked === null}
           activeLabel="Liked"
           active={!!p.liked}
           receded={!!p.liked}
@@ -922,6 +956,6 @@ function EngagedPortal(p: EngagedProps) {
       >
         <X size={16} />
       </PerimeterButton>
-    </div>
+    </motion.div>
   );
 }
