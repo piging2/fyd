@@ -100,7 +100,7 @@ import {
   parseOwnerCommand,
   OwnerCommandError,
 } from "@/fyd/object/owner-store";
-import { CorruptOwnerLogError } from "@/fyd/object/owner-events";
+import { CorruptOwnerLogError, OwnerLogConflictError, readOwnerEvents } from "@/fyd/object/owner-events";
 import {
   getPingObjectGraphSync,
   getVerifiedPublicProjectionSync,
@@ -543,6 +543,11 @@ export async function POST(
         { status: 409 },
       );
     }
+    // F02: pin the owner-log length the digest check just approved. The
+    // capability evaluation below awaits, so a concurrent approve could
+    // interleave; the append refuses (compare-and-swap) if the log moved.
+    // This read is synchronous with the check above: no await between them.
+    const approveBaseLength = readOwnerEvents(objectId).length;
     try {
       // SESSION -> PING IDENTITY -> CONTROL RELATIONSHIP -> CAPABILITY.
       // The verdict is the only gate to the apply step: authentication
@@ -580,7 +585,7 @@ export async function POST(
       // never a verified identity. The chain audit above labels it demo
       // scaffolding; this field is the seam where real owner identity
       // will attach.
-      let opts: { sourceValue?: string | null; actorLabel?: string } | undefined;
+      let opts: { sourceValue?: string | null; actorLabel?: string; expectedLength?: number } | undefined;
       if (
         command.type === "set-contact-field" ||
         command.type === "confirm-contact-field" ||
@@ -605,6 +610,7 @@ export async function POST(
         opts = {
           sourceValue,
           actorLabel: actor.label,
+          expectedLength: approveBaseLength,
         };
       }
       // PROPOSE/APPLY RULE -> EVENT -> PROJECTION: the apply appends one
@@ -656,6 +662,18 @@ export async function POST(
         chain: audit,
       });
     } catch (err) {
+      if (err instanceof OwnerLogConflictError) {
+        return NextResponse.json(
+          {
+            ...ctx.responseLabel(),
+            ok: false,
+            code: "owner_log_conflict",
+            error:
+              "The owner log changed since this proposal was approved. Nothing was written. Propose again against the current state.",
+          },
+          { status: 409 },
+        );
+      }
       if (err instanceof CorruptOwnerLogError) {
         return NextResponse.json(
           { ...ctx.responseLabel(), ok: false, error: "OWNER_LOG_CORRUPT", detail: err.reason },

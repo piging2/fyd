@@ -27,6 +27,7 @@ import {
   fydOwnerEventId,
   migrateV1ToEvents,
   CorruptOwnerLogError,
+  OwnerLogConflictError,
   readOwnerEvents,
   reduceOwnerEvents,
   type OwnerEvent,
@@ -375,5 +376,34 @@ describe("corrupt owner log (F01)", () => {
     const event = appendOwnerEvent(oid, draft());
     expect(event.seq).toBe(0);
     expect(readOwnerEvents(oid)).toHaveLength(1);
+  });
+});
+
+describe("owner log compare-and-swap (F02)", () => {
+  const oid = "happy-place";
+
+  test("append with matching expectedLength succeeds", () => {
+    appendOwnerEvent(oid, draft());
+    const event = appendOwnerEvent(oid, draft(), { expectedLength: 1 });
+    expect(event.seq).toBe(1);
+  });
+
+  test("append with stale expectedLength refuses and writes nothing", () => {
+    appendOwnerEvent(oid, draft());
+    appendOwnerEvent(oid, draft()); // concurrent write lands first
+    expect(() => appendOwnerEvent(oid, draft(), { expectedLength: 1 })).toThrow(OwnerLogConflictError);
+    try {
+      appendOwnerEvent(oid, draft(), { expectedLength: 1 });
+    } catch (err) {
+      expect(err).toBeInstanceOf(OwnerLogConflictError);
+      expect((err as OwnerLogConflictError).code).toBe("OWNER_LOG_CONFLICT");
+    }
+    expect(readOwnerEvents(oid)).toHaveLength(2); // refused append wrote nothing
+  });
+
+  test("append without expectedLength keeps legacy behavior", () => {
+    appendOwnerEvent(oid, draft());
+    const event = appendOwnerEvent(oid, draft());
+    expect(event.seq).toBe(1);
   });
 });

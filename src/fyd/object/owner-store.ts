@@ -140,6 +140,12 @@ export function confirmationSourceDrifted(
 export interface ApplyCommandOpts {
   sourceValue?: string | null;
   actorLabel?: string;
+  /**
+   * Compare-and-swap pin for the approve path: the owner-log length the
+   * caller verified before its await points. The append refuses with
+   * OwnerLogConflictError if the log moved since. Unset = no check.
+   */
+  expectedLength?: number;
 }
 
 function demoActor(label?: string): OwnerEventActor {
@@ -660,7 +666,7 @@ export function applyOwnerCommand(
       throw new OwnerCommandError("Unknown command.");
   }
 
-  appendOwnerEvent(objectId, draft);
+  appendOwnerEvent(objectId, draft, { expectedLength: opts?.expectedLength });
   return readOverrides(objectId);
 }
 

@@ -735,17 +735,53 @@ function writeLogFile(objectId: string, events: OwnerEvent[]): void {
 }
 
 /**
+ * Typed failure for a compare-and-swap refusal: the log moved between the
+ * caller's check and the append. Nothing was written. Code
+ * OWNER_LOG_CONFLICT.
+ */
+export class OwnerLogConflictError extends Error {
+  readonly code = "OWNER_LOG_CONFLICT" as const;
+  readonly objectId: string;
+  readonly expectedLength: number;
+  readonly actualLength: number;
+  constructor(objectId: string, expectedLength: number, actualLength: number) {
+    super(
+      "Owner log for " +
+        objectId +
+        " changed since approval (expected length " +
+        expectedLength +
+        ", found " +
+        actualLength +
+        "); nothing was written.",
+    );
+    this.name = "OwnerLogConflictError";
+    this.objectId = objectId;
+    this.expectedLength = expectedLength;
+    this.actualLength = actualLength;
+  }
+}
+
+/**
  * Append one event draft to the object's log. Assigns seq, computes the
  * content-hash ID, and persists the whole log atomically. Failures throw
  * before anything is written. A corrupt existing log throws
  * CorruptOwnerLogError and the original bytes are retained: the append
  * never overwrites an untrusted log with a fresh one.
+ *
+ * When opts.expectedLength is set, the append is a compare-and-swap: the
+ * log is re-read and the write is refused with OwnerLogConflictError if
+ * its length moved since the caller pinned it. This closes the
+ * check-then-await-then-append race in the approve path.
  */
 export function appendOwnerEvent(
   objectId: string,
   draft: OwnerEventDraft,
+  opts?: { expectedLength?: number },
 ): OwnerEvent {
   const current = readOwnerEvents(objectId);
+  if (opts?.expectedLength !== undefined && current.length !== opts.expectedLength) {
+    throw new OwnerLogConflictError(objectId, opts.expectedLength, current.length);
+  }
   const body = { ...draft, objectId, seq: current.length };
   const event: OwnerEvent = { ...body, id: fydOwnerEventId(body) };
   writeLogFile(objectId, [...current, event]);
