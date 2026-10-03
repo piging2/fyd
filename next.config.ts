@@ -45,6 +45,17 @@ const nextConfig: NextConfig = {
   },
   // Allow browser preview for development
   allowedDevOrigins: ['127.0.0.1'],
+  // DEPLOY-2026-10-02: outputFileTracingIncludes bundles the file-backed
+  // data the API routes read at request time into serverless functions.
+  // /sites pages and / are static (build-time reads, full tree present);
+  // /api/live and Ask FYD read at request time and need these files.
+  outputFileTracingIncludes: {
+    "/api/**/*": [
+      "./fyd-projections/*.json",
+      "./src/fyd/preview/manifests/*.json",
+      "./src/fyd/media/manifests/*.json",
+    ],
+  },
   async redirects() {
     return [
       {

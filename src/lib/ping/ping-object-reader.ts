@@ -55,6 +55,8 @@ import {
   signAsIdentity,
   storeDevKeypair,
 } from "./dev-signer";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 // ---------------------------------------------------------------------------
 // Typed errors: every failure mode the UI must render as an ERROR state.
@@ -274,26 +276,32 @@ class GatewayPingObjectReader implements PingObjectReader {
     }
   }
 
-  async queryFydSiteOverlays(siteId: string): Promise<FydJournalOverlay[]> {
-    if (!siteId || !siteId.trim()) throw new BadRequestError("siteId is required");
-    // Server-side tenant scoping: the gateway enforces ?tenant= exactly
-    // (fail-closed without it). The event_data.siteId filter below stays
-    // as defense in depth.
-    const res = await this.gwFyd(
-      `/events/${encodeURIComponent("FYD_SITE_OVERLAY")}?tenant=${encodeURIComponent(siteId)}`,
-    );
-    if (res.status === 404) {
-      throw new GatewayNotReadyError("event query route /events/FYD_SITE_OVERLAY is not exposed");
+  /**
+   * DEPLOY-2026-10-02: bundled journal snapshot fallback for static
+   * deployments (e.g. Vercel) where the FYD journal gateway is unreachable.
+   * FYD_OVERLAY_SNAPSHOT points at a JSON file shaped like the journal
+   * response ({ events: [...] }) exported from the real journal at deploy
+   * time. The events are real (event_ids, timestamps, ops preserved), so
+   * provenance and citations stay truthful; the data is a deploy-time
+   * snapshot, exactly like the statically generated site pages. When the
+   * gateway is reachable the snapshot is never consulted.
+   */
+  private readOverlaySnapshotList(siteId: string): unknown[] | null {
+    const raw = process.env.FYD_OVERLAY_SNAPSHOT;
+    if (!raw || !raw.trim()) return null;
+    try {
+      const p = raw.trim();
+      const abs = p.startsWith("/") ? p : join(process.cwd(), p);
+      const parsed: unknown = JSON.parse(readFileSync(abs, "utf8"));
+      const rec = asRecord(parsed);
+      const list = Array.isArray(parsed) ? parsed : (rec?.events ?? rec?.items ?? rec?.data);
+      return Array.isArray(list) ? (list as unknown[]) : null;
+    } catch {
+      return null;
     }
-    if (!res.ok) {
-      throw new GatewayUnreachableError(`event query returned HTTP ${res.status}`);
-    }
-    const data: unknown = await res.json().catch(() => null);
-    const rec = asRecord(data);
-    const list = Array.isArray(data) ? data : rec?.events ?? rec?.items ?? rec?.data;
-    if (!Array.isArray(list)) {
-      throw new GatewayNotReadyError("unexpected shape from /events/FYD_SITE_OVERLAY");
-    }
+  }
+
+  private parseOverlayList(list: unknown[], siteId: string): FydJournalOverlay[] {
     const out: FydJournalOverlay[] = [];
     for (const raw of list) {
       const ev = asRecord(raw);
@@ -320,6 +328,38 @@ class GatewayPingObjectReader implements PingObjectReader {
           : 1,
     );
     return out;
+  }
+
+  async queryFydSiteOverlays(siteId: string): Promise<FydJournalOverlay[]> {
+    if (!siteId || !siteId.trim()) throw new BadRequestError("siteId is required");
+    // Server-side tenant scoping: the gateway enforces ?tenant= exactly
+    // (fail-closed without it). The event_data.siteId filter below stays
+    // as defense in depth.
+    try {
+      const res = await this.gwFyd(
+        `/events/${encodeURIComponent("FYD_SITE_OVERLAY")}?tenant=${encodeURIComponent(siteId)}`,
+      );
+      if (res.status === 404) {
+        throw new GatewayNotReadyError("event query route /events/FYD_SITE_OVERLAY is not exposed");
+      }
+      if (!res.ok) {
+        throw new GatewayUnreachableError(`event query returned HTTP ${res.status}`);
+      }
+      const data: unknown = await res.json().catch(() => null);
+      const rec = asRecord(data);
+      const list = Array.isArray(data) ? data : (rec?.events ?? rec?.items ?? rec?.data);
+      if (!Array.isArray(list)) {
+        throw new GatewayNotReadyError("unexpected shape from /events/FYD_SITE_OVERLAY");
+      }
+      return this.parseOverlayList(list as unknown[], siteId);
+    } catch (gwErr) {
+      const snap = this.readOverlaySnapshotList(siteId);
+      if (!snap) throw gwErr;
+      console.warn(
+        `queryFydSiteOverlays: journal gateway unreachable; serving ${snap.length} bundled snapshot events for "${siteId}" (FYD_OVERLAY_SNAPSHOT)`,
+      );
+      return this.parseOverlayList(snap, siteId);
+    }
   }
 
   /** Temporary read source: the existing gateway event query route. */
