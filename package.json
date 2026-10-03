@@ -30,7 +30,7 @@
     "googleapis": "^144.0.0",
     "jsonld": "9.0.0",
     "lucide-react": "^1.25.0",
-    "next": "15.5.24",
+    "next": "^15.5.27",
     "node-html-parser": "^9.0.4",
     "pg": "^8.23.1",
     "react": "^18.3.1",
