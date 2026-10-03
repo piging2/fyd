@@ -283,9 +283,15 @@ export function ImmersiveWebsiteView({
           />
         )}
       </div>
+      {/* Non-blocking load status: the object identity and actions in the
+          overlay above remain visible and tappable while the site loads.
+          pointer-events-none + no opaque backdrop = loading never blocks
+          useful object interaction. */}
       {!loaded && !crashed && !slow && (
-        <div role="status" className="absolute inset-0 flex items-center justify-center bg-neutral-950 text-xs tracking-wide text-stone-300">
-          Loading website…
+        <div role="status" className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span className="rounded-full bg-black/60 px-4 py-2 text-xs tracking-wide text-stone-300 backdrop-blur-sm">
+            Loading website…
+          </span>
         </div>
       )}
 

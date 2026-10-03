@@ -6,7 +6,7 @@
  *
  * Phase 1: Infrastructure - Never changes navigation behavior, never blocks rendering
  * Phase 2: Conservative prefetch targets - Only high-intent pages
- * Phase 3: Conservative prerender - Estimate only, desktop only
+ * Phase 3: Prerender REMOVED 2026-10-03 - not proven safe; prefetch only
  * Phase 4: Hover prediction - Only after user intent is clear (moderate eagerness)
  * Phase 5: Exclusions - Admin, API, auth routes excluded
  * Phase 6: Accessibility - No interference with screen readers or focus
@@ -55,30 +55,16 @@ export function SpeculationRules() {
       });
     }
 
-    // Phase 2 & 3: Conservative prefetch and prerender targets
+    // Phase 2: prefetch only, valid list-source format. Prerender is
+    // REMOVED (Nolan 2026-10-03): do not enable prerender until side
+    // effects are proven safe. The old rules used an invalid `source`
+    // (a URL string); the API requires source:"list" with urls.
     const rules = {
       prefetch: [
         {
-          source: "/estimate",
+          source: "list",
+          urls: ["/estimate", "/contact", "/reviews", "/about"],
           eagerness: "moderate", // Phase 4: Hover prediction
-        },
-        {
-          source: "/contact",
-          eagerness: "moderate",
-        },
-        {
-          source: "/reviews",
-          eagerness: "moderate",
-        },
-        {
-          source: "/about",
-          eagerness: "moderate",
-        },
-      ],
-      prerender: [
-        {
-          source: "/estimate",
-          eagerness: "conservative", // Phase 3: Conservative prerender
         },
       ],
     };
