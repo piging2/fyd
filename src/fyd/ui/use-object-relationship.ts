@@ -120,7 +120,11 @@ export function useObjectRelationship(objectId: string, kind: RelationshipKind, 
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   useEffect(() => {
     if (enabled) void controller.load();
-    return controller.cancel;
+    // Intentionally no per-consumer cancel: the controller is shared across
+    // every mounted control for this object+kind, and one consumer unmounting
+    // (or toggling enabled) must not discard in-flight reads/writes still
+    // serving the remaining consumers. Cancellation belongs to session
+    // rotation and explicit cache teardown, which bump the generation.
   }, [controller, enabled]);
   return { ...snapshot, toggle: controller.toggle, retry: controller.retry };
 }
