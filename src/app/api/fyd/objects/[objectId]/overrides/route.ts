@@ -126,6 +126,7 @@ import {
   ownerContextRefusalLabel,
   type OwnerContext,
 } from "./owner-context";
+import { isDevOwnerHost } from "@/fyd/owner-mode/gate";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -439,6 +440,31 @@ export async function POST(
   // Stage 2: approve a previously proposed typed command. This is the only
   // stage that mutates the owner store.
   if (stage === "approve") {
+    // P0 2026-10-03: the approve stage mutates the owner store, so it is
+    // DEVELOPMENT OWNER MODE only: NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 on a
+    // localhost/private-network/explicit dev host. A spoofed public Host
+    // gets 403 here, before any input is processed. DEMO OWNER MODE - not
+    // real authentication; no identity was verified.
+    const demoEnabled = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1";
+    const reqHost = request.headers?.get("host") ?? "";
+    const hostPrivate = isDevOwnerHost(reqHost);
+    if (!demoEnabled || !hostPrivate) {
+      return NextResponse.json(
+        {
+          ...ctx.responseLabel(),
+          ok: false,
+          code: "demo_owner_mode_required",
+          error:
+            "Owner overrides approvals require DEV/DEMO OWNER MODE " +
+            "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+            "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+            "this mode is for explicit development hosts only.",
+          demoOwnerMode: demoEnabled,
+          hostPrivate,
+        },
+        { status: 403 },
+      );
+    }
     const rawCommand = record.command;
     const presentedBase =
       typeof record.baseStateDigest === "string" ? record.baseStateDigest : "";

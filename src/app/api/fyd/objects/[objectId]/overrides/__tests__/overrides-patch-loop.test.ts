@@ -44,7 +44,10 @@ interface ContactView {
 
 function req(body: unknown, objectId = "happy-place") {
   return {
-    req: { json: async () => body } as unknown as NextRequest,
+    req: {
+      json: async () => body,
+      headers: new Headers({ host: "localhost:3000" }),
+    } as unknown as NextRequest,
     params: Promise.resolve({ objectId }),
   };
 }
@@ -55,8 +58,19 @@ async function call(body: unknown, objectId = "happy-place") {
   return { status: resp.status, body: (await resp.json()) as Record<string, unknown> };
 }
 
+const ORIGINAL_DEMO_MODE = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE;
+
 beforeEach(() => {
   process.env.FYD_OWNER_DIR = mkdtempSync(join(tmpdir(), "fyd-owner-test-"));
+  // The approve stage is DEVELOPMENT OWNER MODE only (P0 2026-10-03):
+  // the mock carries a localhost host so these tests exercise the
+  // approve logic behind the gate.
+  process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE = "1";
+});
+
+afterEach(() => {
+  if (ORIGINAL_DEMO_MODE === undefined) delete process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE;
+  else process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE = ORIGINAL_DEMO_MODE;
 });
 
 describe("G4: tenant from the trusted route path", () => {
