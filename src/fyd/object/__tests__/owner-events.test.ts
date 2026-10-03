@@ -26,6 +26,7 @@ import {
   digestOwnerState,
   fydOwnerEventId,
   migrateV1ToEvents,
+  CorruptOwnerLogError,
   readOwnerEvents,
   reduceOwnerEvents,
   type OwnerEvent,
@@ -335,5 +336,44 @@ describe("fail closed", () => {
       ),
     ).toThrow(OwnerCommandError);
     expect(readOwnerEvents("happy-place")).toEqual([]);
+  });
+});
+
+describe("corrupt owner log (F01)", () => {
+  const oid = "happy-place";
+  const logPath = () => join(process.env.FYD_OWNER_DIR!, oid + ".json");
+
+  test("missing file still yields []", () => {
+    expect(readOwnerEvents(oid)).toEqual([]);
+  });
+
+  test("invalid JSON throws CorruptOwnerLogError, not []", () => {
+    writeFileSync(logPath(), "{not json", "utf8");
+    expect(() => readOwnerEvents(oid)).toThrow(CorruptOwnerLogError);
+    try {
+      readOwnerEvents(oid);
+    } catch (err) {
+      expect(err).toBeInstanceOf(CorruptOwnerLogError);
+      expect((err as CorruptOwnerLogError).code).toBe("OWNER_LOG_CORRUPT");
+      expect((err as CorruptOwnerLogError).reason).toBe("invalid JSON");
+    }
+  });
+
+  test("objectId mismatch throws CorruptOwnerLogError", () => {
+    writeFileSync(logPath(), JSON.stringify({ version: 2, objectId: "other-shop", events: [] }), "utf8");
+    expect(() => readOwnerEvents(oid)).toThrow(CorruptOwnerLogError);
+  });
+
+  test("append on a corrupt log refuses mutation and retains the bytes", () => {
+    const corrupt = "{corrupt";
+    writeFileSync(logPath(), corrupt, "utf8");
+    expect(() => appendOwnerEvent(oid, draft())).toThrow(CorruptOwnerLogError);
+    expect(readFileSync(logPath(), "utf8")).toBe(corrupt);
+  });
+
+  test("append on a missing log still works (fresh log)", () => {
+    const event = appendOwnerEvent(oid, draft());
+    expect(event.seq).toBe(0);
+    expect(readOwnerEvents(oid)).toHaveLength(1);
   });
 });

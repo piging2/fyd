@@ -654,24 +654,54 @@ export function migrateV1ToEvents(v1: OwnerOverrides): OwnerEventDraft[] {
 }
 
 /**
+ * Typed failure for an owner log that exists but cannot be trusted.
+ * The bytes are retained on disk; callers must refuse mutation and
+ * surface this instead of projecting empty state. Code OWNER_LOG_CORRUPT.
+ */
+export class CorruptOwnerLogError extends Error {
+  readonly code = "OWNER_LOG_CORRUPT" as const;
+  readonly objectId: string;
+  readonly logPath: string;
+  readonly reason: string;
+  constructor(objectId: string, logPath: string, reason: string) {
+    super(
+      "Owner log for " + objectId + " is corrupt (" + reason + "); bytes retained at " + logPath + ".",
+    );
+    this.name = "CorruptOwnerLogError";
+    this.objectId = objectId;
+    this.logPath = logPath;
+    this.reason = reason;
+  }
+}
+
+/**
  * Read this object's event log. A v1 (mutable) file is migrated
- * transparently in memory; a missing or invalid file yields [].
- * Reads never write.
+ * transparently in memory. A MISSING file yields []. A file that exists
+ * but is unreadable, unparseable, or structurally invalid throws
+ * CorruptOwnerLogError: missing and corrupt are never conflated, and
+ * reads never write.
  */
 export function readOwnerEvents(objectId: string): OwnerEvent[] {
-  let parsed: unknown = null;
+  const path = ownerPath(objectId);
+  let raw: string;
   try {
-    const raw = readFileSync(ownerPath(objectId), "utf8");
+    raw = readFileSync(path, "utf8");
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException)?.code === "ENOENT") return [];
+    throw new CorruptOwnerLogError(objectId, path, "unreadable file");
+  }
+  let parsed: unknown;
+  try {
     parsed = JSON.parse(raw);
   } catch {
-    return [];
+    throw new CorruptOwnerLogError(objectId, path, "invalid JSON");
   }
   if (
     typeof parsed === "object" &&
     parsed !== null &&
     (parsed as { objectId?: unknown }).objectId !== objectId
   ) {
-    return [];
+    throw new CorruptOwnerLogError(objectId, path, "objectId mismatch");
   }
   if (isValidLogFile(parsed)) {
     const events = parsed.events
@@ -684,7 +714,7 @@ export function readOwnerEvents(objectId: string): OwnerEvent[] {
     // the returned log is identical to what the first append will persist.
     return finalizeDrafts(objectId, migrateV1ToEvents(parsed));
   }
-  return [];
+  throw new CorruptOwnerLogError(objectId, path, "unrecognized log shape");
 }
 
 function finalizeDrafts(objectId: string, drafts: OwnerEventDraft[]): OwnerEvent[] {
@@ -707,7 +737,9 @@ function writeLogFile(objectId: string, events: OwnerEvent[]): void {
 /**
  * Append one event draft to the object's log. Assigns seq, computes the
  * content-hash ID, and persists the whole log atomically. Failures throw
- * before anything is written.
+ * before anything is written. A corrupt existing log throws
+ * CorruptOwnerLogError and the original bytes are retained: the append
+ * never overwrites an untrusted log with a fresh one.
  */
 export function appendOwnerEvent(
   objectId: string,

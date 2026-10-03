@@ -100,6 +100,7 @@ import {
   parseOwnerCommand,
   OwnerCommandError,
 } from "@/fyd/object/owner-store";
+import { CorruptOwnerLogError } from "@/fyd/object/owner-events";
 import {
   getPingObjectGraphSync,
   getVerifiedPublicProjectionSync,
@@ -655,6 +656,12 @@ export async function POST(
         chain: audit,
       });
     } catch (err) {
+      if (err instanceof CorruptOwnerLogError) {
+        return NextResponse.json(
+          { ...ctx.responseLabel(), ok: false, error: "OWNER_LOG_CORRUPT", detail: err.reason },
+          { status: 500 },
+        );
+      }
       const message = err instanceof OwnerCommandError ? err.message : "Could not apply the change.";
       return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: message }, { status: 400 });
     }
