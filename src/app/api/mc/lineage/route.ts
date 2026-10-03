@@ -28,7 +28,7 @@ import { callerScope } from '../_lib/mc-tenant-gate';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function bad(status: number, error: string, detail?: string) {
+function bad(status: number, error: string, detail?: string | null) {
   return Response.json({ ok: false, error, detail: detail ?? null }, { status });
 }
 
