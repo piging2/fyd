@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLenis } from "@/components/lenis-provider";
 
 /** Host controls only; events inside a sandboxed website frame do not bubble here. */
 export function useObjectDialog(
@@ -12,9 +13,13 @@ export function useObjectDialog(
   // Tracks the last presented stage so expanding compact<->full does not
   // steal focus the user already placed inside the dialog.
   const lastStageRef = React.useRef<string | null>(null);
+  const { setModalScrollLock } = useLenis();
   React.useEffect(() => {
     if (!present || !ref.current) return;
     const root = ref.current;
+    // Suspend page smooth-scrolling while the object dialog is open so the
+    // sheet owns scroll; body overflow lock alone does not stop Lenis.
+    setModalScrollLock(true);
     const stageChanged = lastStageRef.current !== null && lastStageRef.current !== stage;
     lastStageRef.current = stage;
     const previousOverflow = document.body.style.overflow;
@@ -46,9 +51,10 @@ export function useObjectDialog(
     window.addEventListener("keydown", onKey);
     document.addEventListener("focusin", onFocus);
     return () => {
+      setModalScrollLock(false);
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("focusin", onFocus);
     };
-  }, [ref, present, stage, onClose]);
+  }, [ref, present, stage, onClose, setModalScrollLock]);
 }

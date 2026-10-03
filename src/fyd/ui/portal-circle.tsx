@@ -226,25 +226,21 @@ function PortalCircleContent(props: PortalCircleProps) {
     }
   }, [engaged]);
 
+  // Viewport changes (rotation, address-bar show/hide, keyboard) must not
+  // dismiss the object: the popup shell is viewport-relative (dvh +
+  // safe-area insets) and recalculates its own geometry. Only an explicit
+  // close, Escape, or parent release dismisses it.
   React.useEffect(() => {
     if (!engaged) return;
     const onScroll = () => { if (!popupStage) closePortal(); };
-    let t: ReturnType<typeof setTimeout> | null = null;
-    const onResize = () => {
-      if (t) clearTimeout(t);
-      t = setTimeout(closePortal, 200);
-    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeAndFocus();
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize);
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
       window.removeEventListener("keydown", onKey);
-      if (t) clearTimeout(t);
     };
   }, [engaged, popupStage, closePortal, closeAndFocus]);
 

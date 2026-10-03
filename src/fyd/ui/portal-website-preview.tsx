@@ -5,6 +5,8 @@ import { ExternalLink, Info, X, Maximize2 } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import type { PortalProjection } from "@/fyd/preview/types";
 import { CRASH_BEACON_MESSAGE_TYPE } from "./storage-shim";
+import { resolveObjectPresentationIdentity } from "@/fyd/presentation/identity";
+import { isObjectDisplayContextValid, ObjectPlacementDisclosure, ObjectDiscoveryExplanation, type ObjectDisplayContext } from "@/fyd/presentation/object-context";
 
 /**
  * Listens for the proxy-injected crash beacon (see storage-shim.ts): when the
@@ -54,14 +56,17 @@ export function EmbedCrashFallback({ name, href }: { name: string; href: string 
 }
 
 /** Shared by the desktop expansion and mobile sheet; the asset stays intact. */
-export function PortalWebsitePreview({ portal, href, className = "" }: {
+export function PortalWebsitePreview({ portal, href, displayContext, relationshipFeedback, className = "" }: {
   portal: PortalProjection;
+  relationshipFeedback?: React.ReactNode;
+  displayContext?: ObjectDisplayContext;
   href: string;
   className?: string;
 }) {
   const [state, setState] = React.useState<"loading" | "loaded" | "slow" | "error">("loading");
   const [evidenceOpen, setEvidenceOpen] = React.useState(false);
-  const { circle, logo } = portal;
+  const { circle } = portal;
+  const { mark: logo } = resolveObjectPresentationIdentity({ id: circle.id, name: circle.name, logo: portal.logo });
   const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
   // The sandboxed location-probe crash ("Application error" inside the
   // iframe) is unshimmable; the beacon reports it and we swap the dead iframe
@@ -73,8 +78,11 @@ export function PortalWebsitePreview({ portal, href, className = "" }: {
     return () => clearTimeout(timer);
   }, [circle.id]);
 
+  const presentationNow = Date.now();
+  if (!isObjectDisplayContextValid(circle.id, displayContext, presentationNow)) return null;
   return (
     <div className={`flex min-h-0 flex-col overflow-hidden bg-[#171613] text-stone-100 ${className}`}>
+      {displayContext?.sponsorship && <div className="shrink-0 px-3 pt-2"><ObjectPlacementDisclosure objectId={circle.id} context={displayContext} now={presentationNow} /></div>}
       <header className="flex min-h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2">
         {logo && <img src={logo.src} alt="" aria-hidden="true" draggable={false}
           className="h-9 w-12 shrink-0 object-contain"
@@ -92,6 +100,7 @@ export function PortalWebsitePreview({ portal, href, className = "" }: {
       {evidenceOpen && <div className="max-h-28 shrink-0 overflow-y-auto border-b border-white/10 px-3 py-3 text-xs leading-relaxed text-stone-300">
         <p>{circle.provenanceLabel}</p>
         {circle.provenanceDetail && <p className="mt-1 break-words text-stone-400">{circle.provenanceDetail}</p>}
+        <ObjectDiscoveryExplanation objectId={circle.id} context={displayContext} now={presentationNow} />
       </div>}
       <div className="relative min-h-0 flex-1 bg-white">
         {state === "error" ? (
@@ -107,6 +116,7 @@ export function PortalWebsitePreview({ portal, href, className = "" }: {
           Loading website…
         </div>}
       </div>
+      {relationshipFeedback && <div className="max-h-28 shrink-0 overflow-y-auto border-t border-white/10">{relationshipFeedback}</div>}
       <footer className="flex min-h-11 shrink-0 items-center justify-between gap-2 border-t border-white/10 px-3 py-1.5 text-[11px] text-stone-400">
         <span role="status">{state === "slow" || state === "error" ? "Preview unavailable?" : "Website preview"}</span>
         <a href={href} target="_blank" rel="noopener noreferrer"
@@ -131,6 +141,8 @@ export function PortalWebsitePreview({ portal, href, className = "" }: {
  */
 export function ImmersiveWebsiteView({
   portal,
+  displayContext,
+  relationshipFeedback,
   title,
   subtitle,
   actions,
@@ -141,6 +153,8 @@ export function ImmersiveWebsiteView({
   drift = true,
 }: {
   portal: PortalProjection;
+  relationshipFeedback?: React.ReactNode;
+  displayContext?: ObjectDisplayContext;
   title: string;
   subtitle?: string | null;
   /** Action buttons rendered over the live site (bottom). Null hides the row. */
@@ -153,24 +167,35 @@ export function ImmersiveWebsiteView({
   drift?: boolean;
 }) {
   const { circle } = portal;
+  const { mark } = resolveObjectPresentationIdentity({ id: circle.id, name: circle.name, logo: portal.logo });
   const reduceMotion = useReducedMotion();
   const [loaded, setLoaded] = React.useState(false);
   const [crashed, setCrashed] = React.useState(false);
+  const [slow, setSlow] = React.useState(false);
   const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
   // A crashed background iframe would show "Application error" through the
   // overlay; drop it and keep the neutral backdrop instead.
   useEmbedCrashBeacon(iframeRef, () => setCrashed(true));
   const driftOn = drift && !reduceMotion;
+  React.useEffect(() => {
+    setLoaded(false);
+    setCrashed(false);
+    setSlow(false);
+    const timer = setTimeout(() => setSlow(true), 12000);
+    return () => clearTimeout(timer);
+  }, [circle.id]);
 
+  const presentationNow = Date.now();
+  if (!isObjectDisplayContextValid(circle.id, displayContext, presentationNow)) return null;
   return (
-    <div className={`relative h-full w-full overflow-hidden bg-neutral-950 text-white ${className}`}>
+    <div className={`fyd-object-sheet relative h-full w-full overflow-hidden bg-neutral-950 text-white ${className}`}>
       <style>{`
         @keyframes fyd-drift {
           0% { transform: scale(1.02) translate(0, 0); }
           50% { transform: scale(1.14) translate(-2.2%, 1.8%); }
           100% { transform: scale(1.02) translate(0, 0); }
         }
-        .fyd-drift { animation: fyd-drift 26s ease-in-out infinite; will-change: transform; }
+        .fyd-drift { animation: fyd-drift 26s ease-in-out 1; }
         @keyframes fyd-sheen {
           0% { background-position: -220% center; }
           100% { background-position: 220% center; }
@@ -182,7 +207,7 @@ export function ImmersiveWebsiteView({
           background-clip: text;
           color: transparent;
           -webkit-text-stroke: 1.5px rgba(26, 15, 4, 0.92);
-          animation: fyd-sheen 6s linear infinite;
+          animation: fyd-sheen 1.4s ease-out 1;
         }
         .fyd-shiny-sub {
           color: #fff;
@@ -196,7 +221,7 @@ export function ImmersiveWebsiteView({
           isolation: isolate;
           background: linear-gradient(135deg, #ffedb0 0%, #f7c04a 45%, #dd941f 100%);
           color: #241503;
-          animation: fyd-btn-glow 3.4s ease-in-out infinite;
+          box-shadow: 0 0 0 1px rgba(255,255,255,0.35), 0 6px 16px rgba(0,0,0,0.35);
         }
         .fyd-shiny-btn::after {
           content: "";
@@ -205,7 +230,7 @@ export function ImmersiveWebsiteView({
           z-index: 1;
           background: linear-gradient(100deg, transparent 25%, rgba(255,255,255,0.7) 50%, transparent 75%);
           transform: translateX(-130%);
-          animation: fyd-btn-sheen 3.4s ease-in-out infinite;
+          animation: fyd-btn-sheen 1.4s ease-out 1;
           pointer-events: none;
         }
         .fyd-shiny-btn > * { position: relative; z-index: 2; }
@@ -226,6 +251,20 @@ export function ImmersiveWebsiteView({
         @media (prefers-reduced-motion: reduce) {
           .fyd-drift, .fyd-shiny-text, .fyd-shiny-btn, .fyd-shiny-btn::after { animation: none !important; }
         }
+        /* Container queries: the sheet's own width drives typography and
+           spacing, so a small object on a wide desktop never gets oversized
+           viewport-based type. Identity and close controls stay stable;
+           secondary content adapts. */
+        .fyd-object-sheet { container-type: inline-size; container-name: fyd-sheet; }
+        @container fyd-sheet (min-width: 420px) {
+          .fyd-sheet-pad { padding: 1.25rem; }
+          .fyd-sheet-title { font-size: 2.25rem; }
+          .fyd-sheet-sub { font-size: 0.875rem; }
+          .fyd-sheet-actions { gap: 0.75rem; }
+        }
+        @container fyd-sheet (max-width: 419px) {
+          .fyd-sheet-title { font-size: 1.7rem; }
+        }
       `}</style>
 
       {/* Live site, full-bleed, drifting. Non-interactive: the overlay owns taps. */}
@@ -238,30 +277,31 @@ export function ImmersiveWebsiteView({
             tabIndex={-1}
             sandbox="allow-scripts allow-forms allow-popups"
             onLoad={() => setLoaded(true)}
+            onError={() => setCrashed(true)}
             className="pointer-events-none border-0 bg-neutral-900"
             style={{ position: "absolute", inset: "-6%", width: "112%", height: "112%" }}
           />
         )}
       </div>
-      {!loaded && !crashed && (
+      {!loaded && !crashed && !slow && (
         <div role="status" className="absolute inset-0 flex items-center justify-center bg-neutral-950 text-xs tracking-wide text-stone-300">
-          Loading live site…
+          Loading website…
         </div>
       )}
 
       {/* Overlay: big bold outlined shiny text + buttons over the live site. */}
       <div
-        className="absolute inset-0 flex flex-col"
+        className="absolute inset-0 flex flex-col overflow-y-auto overscroll-contain"
         onClick={onExpand}
-        role={onExpand ? "button" : undefined}
-        aria-label={onExpand ? expandLabel : undefined}
-        tabIndex={onExpand ? 0 : undefined}
-        onKeyDown={onExpand ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onExpand(); } } : undefined}
       >
-        <div className="flex items-start justify-between gap-3 p-4 sm:p-5">
+        <div className="fyd-sheet-pad flex shrink-0 items-start justify-between gap-3 bg-gradient-to-b from-black/65 to-transparent p-4">
           <div className="min-w-0 pt-1">
-            <p className="fyd-shiny-text text-3xl font-black leading-[1.05] sm:text-4xl">{title}</p>
-            {subtitle ? <p className="fyd-shiny-sub mt-1.5 text-[13px] font-semibold sm:text-sm">{subtitle}</p> : null}
+            <ObjectPlacementDisclosure objectId={circle.id} context={displayContext} now={presentationNow} />
+            {mark && <img src={mark.src} alt="" aria-hidden="true" draggable={false}
+              className="mb-2 h-12 w-16 object-contain"
+              style={{ background: "transparent", borderRadius: 0, filter: "drop-shadow(0 3px 4px rgba(0,0,0,.25))" }} />}
+            <p className="fyd-shiny-text fyd-sheet-title text-3xl font-black leading-[1.05]">{title}</p>
+            {subtitle ? <p className="fyd-shiny-sub fyd-sheet-sub mt-1.5 text-[13px] font-semibold">{subtitle}</p> : null}
           </div>
           <div className="flex shrink-0 gap-2">
             {onExpand && (
@@ -276,6 +316,7 @@ export function ImmersiveWebsiteView({
             )}
             <button
               type="button"
+              data-object-close
               onClick={(e) => { e.stopPropagation(); onClose(); }}
               aria-label={`Close ${title}`}
               className="fyd-glass-btn flex h-12 w-12 items-center justify-center rounded-full text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey"
@@ -285,11 +326,28 @@ export function ImmersiveWebsiteView({
           </div>
         </div>
 
-        <div className="flex-1" />
+        <div className="min-h-6 flex-1" />
+
+        <div className="shrink-0 px-4 pb-3" onClick={(event) => event.stopPropagation()}>
+          {relationshipFeedback && <div className="mb-2 rounded-lg bg-black/75">{relationshipFeedback}</div>}
+          {(crashed || (slow && !loaded)) && <p role="status" className="mb-2 rounded-lg bg-black/75 px-3 py-2 text-xs text-stone-200">
+            Website preview unavailable. {portal.websiteHref && <a href={portal.websiteHref} target="_blank" rel="noopener noreferrer" className="underline">Open site</a>}
+          </p>}
+          <details className="rounded-lg bg-black/75 px-3 text-xs text-stone-200">
+            <summary className="flex min-h-11 cursor-pointer items-center gap-2 focus-visible:outline-2 focus-visible:outline-honey"><Info size={14} aria-hidden="true" /> About this object</summary>
+            <div className="max-h-28 overflow-y-auto pb-3 leading-relaxed">
+              {circle.tagline && <p className="mb-2">{circle.tagline}</p>}
+              {circle.topFacts.length > 0 && <p className="mb-2">{circle.topFacts.slice(0, 3).join(" · ")}</p>}
+              <p>{circle.provenanceLabel}</p>
+              {circle.provenanceDetail && <p className="mt-1 break-words text-stone-300">{circle.provenanceDetail}</p>}
+              <ObjectDiscoveryExplanation objectId={circle.id} context={displayContext} now={presentationNow} />
+            </div>
+          </details>
+        </div>
 
         {actions && (
           <div
-            className="flex flex-wrap items-center justify-center gap-2.5 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 sm:gap-3"
+            className="fyd-sheet-actions flex shrink-0 flex-wrap items-center justify-center gap-2.5 bg-gradient-to-t from-black/65 to-transparent px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2"
             onClick={(e) => e.stopPropagation()}
           >
             {actions}
