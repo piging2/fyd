@@ -74,3 +74,23 @@ export function isPrivateHost(host: string): boolean {
     return true;
   return false;
 }
+
+/**
+ * DEPLOY-2026-10-02: explicit dev-host allowlist for the public demo
+ * deployment. isPrivateHost alone refuses every public host, which is the
+ * correct default. Setting FYD_DEV_OWNER_HOSTS (comma-separated hostnames,
+ * compared against the request Host header without the port) explicitly
+ * opts those hosts into DEVELOPMENT OWNER MODE. Server-side only, never a
+ * blanket public opening. Empty/unset = localhost and private networks
+ * only, exactly as before.
+ */
+export function isDevOwnerHost(host: string): boolean {
+  if (isPrivateHost(host)) return true;
+  const allow = (process.env.FYD_DEV_OWNER_HOSTS ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (allow.length === 0) return false;
+  const h = host.split(":")[0].trim().toLowerCase();
+  return allow.includes(h);
+}

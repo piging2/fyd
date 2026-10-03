@@ -25,7 +25,7 @@ import {
   projectClaimForViewer,
   type ClaimViewerKind,
 } from "@/fyd/claim/claim-projection";
-import { isPrivateHost } from "@/fyd/owner-mode/gate";
+import { isDevOwnerHost } from "@/fyd/owner-mode/gate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,7 +37,7 @@ export const dynamic = "force-dynamic";
 function resolveClaimViewerKind(req: NextRequest): ClaimViewerKind {
   const enabled = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1";
   const host = req.headers.get("host") ?? "";
-  if (enabled && isPrivateHost(host)) return "owner";
+  if (enabled && isDevOwnerHost(host)) return "owner";
   return "anonymous";
 }
 

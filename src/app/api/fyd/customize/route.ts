@@ -32,7 +32,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { isPrivateHost } from "@/fyd/owner-mode/gate";
+import { isDevOwnerHost } from "@/fyd/owner-mode/gate";
 import {
   DEMO_OWNER_ACTOR,
   answerAuthorization,
@@ -69,12 +69,12 @@ export const dynamic = "force-dynamic";
 
 const NOT_REAL_AUTH =
   "DEMO OWNER MODE - not real authentication. No identity was verified; " +
-  "this mode is for localhost/private-network demonstration only.";
+  "this mode is for explicit development hosts only.";
 
 async function demoDenied(req: Request, siteId: string, action: string) {
   const enabled = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1";
   const host = req.headers.get("host") ?? "";
-  const privateNet = isPrivateHost(host);
+  const privateNet = isDevOwnerHost(host);
   if (!enabled || !privateNet) {
     return NextResponse.json(
       {
