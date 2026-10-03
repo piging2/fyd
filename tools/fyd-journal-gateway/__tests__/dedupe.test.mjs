@@ -7,6 +7,11 @@
  *  - 20 concurrent same-request_id POSTs -> exactly one stored event
  *  - torn last line -> reads keep working, dedupe intact
  *  - malformed request_id -> 400
+ *
+ * NOTE (2026-10-03): the K2 bearer-token patch requires
+ * FYD_JOURNAL_WRITE_TOKEN on POST /events (503 without it). This suite
+ * spawns its gateway with a test token and presents it, so the dedupe
+ * behaviors are tested through the real auth gate.
  */
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
@@ -21,6 +26,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const SERVER = join(HERE, "..", "server.mjs");
 const STORE_DIR = mkdtempSync(join(tmpdir(), "gw-test-"));
 const STORE = join(STORE_DIR, "events.jsonl");
+const WRITE_TOKEN = "dedupe-test-token";
 
 let proc = null;
 let base = "";
@@ -44,7 +50,12 @@ async function startServer() {
     const port = 18300 + Math.floor(Math.random() * 90);
     const url = `http://127.0.0.1:${port}`;
     const p = spawn(process.execPath, [SERVER], {
-      env: { ...process.env, FYD_JOURNAL_PORT: String(port), FYD_JOURNAL_STORE: STORE },
+      env: {
+        ...process.env,
+        FYD_JOURNAL_PORT: String(port),
+        FYD_JOURNAL_STORE: STORE,
+        FYD_JOURNAL_WRITE_TOKEN: WRITE_TOKEN,
+      },
       stdio: ["ignore", "pipe", "pipe"],
     });
     try {
@@ -80,7 +91,10 @@ async function stopServer() {
 async function postEvent(body) {
   const r = await fetch(base + "/events", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${WRITE_TOKEN}`,
+    },
     body: JSON.stringify(body),
   });
   return { status: r.status, doc: await r.json() };
@@ -89,6 +103,7 @@ async function postEvent(body) {
 function eventBody(requestId, n = 0) {
   return {
     event_type: "FYD_SITE_OVERLAY",
+    tenant_id: "test",
     aggregate_id: "fyd-site:test",
     aggregate_type: "fyd_site",
     event_data: { siteId: "test", n },
@@ -97,7 +112,7 @@ function eventBody(requestId, n = 0) {
 }
 
 async function storedEvents() {
-  const r = await fetch(base + "/events/FYD_SITE_OVERLAY?limit=10000");
+  const r = await fetch(base + "/events/FYD_SITE_OVERLAY?tenant=test&limit=10000");
   assert.equal(r.status, 200);
   return (await r.json()).events;
 }

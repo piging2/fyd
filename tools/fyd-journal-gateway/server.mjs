@@ -38,21 +38,27 @@
  *     request_id gets the original event instead of a duplicate. A
  *     DIFFERENT tenant reusing the request_id gets a 400
  *     request_id_tenant_conflict WITHOUT learning the original event_id
- *     (zero disclosure). The in-memory index is rebuilt from the store at
- *     startup (first record wins), so dedupe survives restarts. The
- *     check -> append -> index-update sequence is synchronous (no awaits
- *     between), so concurrent same-request_id POSTs cannot both append.
+ *     (zero disclosure).
  *     Used by src/fyd/customize/server.ts emitOverlayEvent to journal
  *     owner-approved presentation-intent overlays.
  *   GET  /  -> 200 { ok: true, service, store, journal } (health +
  *     FYD-037 journal identity assertion; `journal` is live-derived from
- *     the store path, never a static string)
+ *     the backing store, never a static string)
  *   Anything else -> 404 { error }
  *
- * Storage: append-only JSONL at FYD_JOURNAL_STORE (default
- *   <repo>/data/fyd-journal/events.jsonl), one event object per line.
- *   Loopback only (default 127.0.0.1); no auth, same trust model the reader
- *   already assumes (it issues unauthenticated fetches).
+ * Storage (env-selected; semantics do not change with the backing):
+ *   - default: append-only JSONL at FYD_JOURNAL_STORE (default
+ *     <repo>/data/fyd-journal/events.jsonl), one event object per line.
+ *     Node builtins only; the per-process in-memory request_id index is
+ *     rebuilt from the store at startup (first record wins), so dedupe
+ *     survives restarts of a single instance.
+ *   - FYD_JOURNAL_PG_URL (preferred) or DATABASE_URL set: Postgres via
+ *     ./pg-store.mjs (the repo's existing `pg` dependency, imported
+ *     lazily). Same contract; request_id dedupe is a Postgres partial
+ *     unique index, so it is atomic across processes, restarts, and
+ *     instances. Idempotent DDL (plpgsql only, no triggers) runs at boot.
+ *   Loopback only (default 127.0.0.1); no auth on reads, same trust model
+ *   the reader already assumes (it issues unauthenticated fetches).
  *
  * Seeded content: the 7 happy-place FYD_SITE_OVERLAY events. The original
  * demo journal was lost before this gateway was (re)built; the seeded ops
@@ -77,6 +83,12 @@ const STORE =
   join(HERE, "..", "..", "data", "fyd-journal", "events.jsonl");
 const MAX_BODY = 1024 * 1024;
 
+// Postgres backing (env-selected). FYD_JOURNAL_PG_URL wins; DATABASE_URL is
+// the generic fallback. Unset -> the JSONL backend below. Only connectivity
+// is env-selected; the journal contract is identical on both backings.
+const PG_URL =
+  process.env.FYD_JOURNAL_PG_URL || process.env.DATABASE_URL || "";
+
 // Write-side tenant-smuggling fix (Q-P0-06 finding #2): POST /events
 // requires server-side caller verification. The gateway and its one
 // trusted writer (the :3100 FYD site server's emitOverlayEvent) share a
@@ -89,21 +101,6 @@ const MAX_BODY = 1024 * 1024;
 // `Authorization: Bearer <token>` from the trusted writer before restart,
 // or legitimate overlay emits will be denied.
 const WRITE_TOKEN = process.env.FYD_JOURNAL_WRITE_TOKEN || "";
-
-// FYD-037: the journal asserts its own identity on GET /. Live-derived
-// from the runtime store path at startup (never a static string): two
-// gateway processes serving different stores assert different markers,
-// so an emit/dump pre-flight can tell the FYD demo journal apart from
-// any other journal, including the main PING journal. Callers compare
-// against their EXPECTED_OVERLAY_JOURNAL_MARKER ("fyd-demo-journal",
-// suffix after "@" allowed to vary) and fail closed on mismatch or on
-// an unreadable marker.
-const JOURNAL_MARKER =
-  "fyd-demo-journal@" +
-  createHash("sha256")
-    .update("fyd-journal-gateway|" + STORE, "utf8")
-    .digest("hex")
-    .slice(0, 12);
 
 const TENANT_ID_PATTERN = /^[a-z0-9-]{1,64}$/;
 
@@ -158,8 +155,7 @@ function loadEvents() {
 // there is no two-file atomicity problem. Rebuilt from disk at startup
 // (tenantIdOf backfills legacy records in memory); updated synchronously
 // on every append.
-const requestIndex = new Map();
-function rebuildRequestIndex() {
+function rebuildRequestIndex(requestIndex) {
   requestIndex.clear();
   for (const e of loadEvents()) {
     if (e && typeof e.request_id === "string" && e.request_id && !requestIndex.has(e.request_id)) {
@@ -167,7 +163,84 @@ function rebuildRequestIndex() {
     }
   }
 }
-rebuildRequestIndex();
+
+class RequestIdTenantConflict extends Error {
+  constructor() {
+    super("request_id is already bound to a different tenant");
+    this.code = "request_id_tenant_conflict";
+  }
+}
+
+/**
+ * The JSONL backend. Same store interface as ./pg-store.mjs:
+ *   { kind, identity(), storeLabel(), loadPage({stream, tenant, limit, offset}),
+ *     append(rec) -> { event_id, deduped } | throws RequestIdTenantConflict }
+ * Keeps the original single-process semantics byte for byte: in-memory
+ * request_id index rebuilt from disk at startup (first record wins),
+ * synchronous check -> append -> index update (no awaits between), torn
+ * trailing lines skipped on load.
+ */
+function jsonlBackend() {
+  const requestIndex = new Map();
+  rebuildRequestIndex(requestIndex);
+  mkdirSync(dirname(STORE), { recursive: true });
+  return {
+    kind: "jsonl",
+    identity: () => STORE,
+    storeLabel: () => STORE,
+    loadPage: async ({ stream, tenant, limit, offset }) => {
+      const all = loadEvents().filter(
+        (e) => e.event_type === stream && (!tenant || tenantIdOf(e) === tenant),
+      );
+      return all.slice(offset, offset + limit);
+    },
+    append: async (rec) => {
+      const requestId = rec.request_id;
+      if (requestId) {
+        const prior = requestIndex.get(requestId);
+        if (prior) {
+          if (prior.tenantId && prior.tenantId === rec.tenant_id) {
+            // Idempotent replay by the same tenant: the original event, no new append.
+            return { event_id: prior.eventId, deduped: true };
+          }
+          // A different tenant is reusing another tenant's request_id.
+          // Reject without disclosing the original event_id.
+          throw new RequestIdTenantConflict();
+        }
+      }
+      appendFileSync(STORE, JSON.stringify(rec) + "\n", "utf8");
+      if (requestId)
+        requestIndex.set(requestId, { tenantId: rec.tenant_id, eventId: rec.event_id });
+      return { event_id: rec.event_id, deduped: false };
+    },
+  };
+}
+
+// Backend selection happens once at boot. FYD-037 identity below is derived
+// from whichever backing was selected, so two gateway processes serving
+// different stores assert different markers.
+let store;
+if (PG_URL) {
+  const { initPgStore } = await import("./pg-store.mjs");
+  store = await initPgStore(PG_URL);
+} else {
+  store = jsonlBackend();
+}
+
+// FYD-037: the journal asserts its own identity on GET /. Live-derived
+// from the runtime backing at startup (never a static string): two
+// gateway processes serving different stores assert different markers,
+// so an emit/dump pre-flight can tell the FYD demo journal apart from
+// any other journal, including the main PING journal. Callers compare
+// against their EXPECTED_OVERLAY_JOURNAL_MARKER ("fyd-demo-journal",
+// suffix after "@" allowed to vary) and fail closed on mismatch or on
+// an unreadable marker.
+const JOURNAL_MARKER =
+  "fyd-demo-journal@" +
+  createHash("sha256")
+    .update("fyd-journal-gateway|" + store.identity(), "utf8")
+    .digest("hex")
+    .slice(0, 12);
 
 function mintId(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${randomBytes(6).toString("hex")}`;
@@ -213,7 +286,7 @@ const server = createServer(async (req, res) => {
       send(res, 200, {
         ok: true,
         service: "fyd-journal-gateway",
-        store: STORE,
+        store: store.storeLabel(),
         journal: JOURNAL_MARKER,
       });
       return;
@@ -233,15 +306,11 @@ const server = createServer(async (req, res) => {
           });
           return;
         }
-        const all = loadEvents().filter(
-          (e) => e.event_type === stream && tenantIdOf(e) === tenant,
-        );
-        const page = all.slice(offset, offset + limit);
+        const page = await store.loadPage({ stream, tenant, limit, offset });
         send(res, 200, { events: page, stream, count: page.length, limit, offset, tenant });
         return;
       }
-      const all = loadEvents().filter((e) => e.event_type === stream);
-      const page = all.slice(offset, offset + limit);
+      const page = await store.loadPage({ stream, tenant: null, limit, offset });
       send(res, 200, { events: page, stream, count: page.length, limit, offset });
       return;
     }
@@ -313,21 +382,6 @@ const server = createServer(async (req, res) => {
           return;
         }
         requestId = doc.request_id.trim();
-        const prior = requestIndex.get(requestId);
-        if (prior) {
-          if (prior.tenantId && prior.tenantId === tenant_id) {
-            // Idempotent replay by the same tenant: the original event, no new append.
-            send(res, 200, { event_id: prior.eventId, deduped: true });
-            return;
-          }
-          // A different tenant is reusing another tenant's request_id.
-          // Reject without disclosing the original event_id.
-          send(res, 400, {
-            error: "request_id_tenant_conflict",
-            detail: "request_id is already bound to a different tenant",
-          });
-          return;
-        }
       }
       const rec = {
         event_id: mintId("fyd-ovl"),
@@ -339,10 +393,20 @@ const server = createServer(async (req, res) => {
         event_data,
         request_id: requestId,
       };
-      mkdirSync(dirname(STORE), { recursive: true });
-      appendFileSync(STORE, JSON.stringify(rec) + "\n", "utf8");
-      if (requestId) requestIndex.set(requestId, { tenantId: tenant_id, eventId: rec.event_id });
-      send(res, 200, { event_id: rec.event_id, deduped: false });
+      try {
+        const outcome = await store.append(rec);
+        send(res, 200, { event_id: outcome.event_id, deduped: outcome.deduped });
+      } catch (err) {
+        if (err && err.code === "request_id_tenant_conflict") {
+          // Zero disclosure: the original event_id is never returned.
+          send(res, 400, {
+            error: "request_id_tenant_conflict",
+            detail: "request_id is already bound to a different tenant",
+          });
+          return;
+        }
+        throw err;
+      }
       return;
     }
 
@@ -352,7 +416,6 @@ const server = createServer(async (req, res) => {
   }
 });
 
-mkdirSync(dirname(STORE), { recursive: true });
 server.listen(PORT, HOST, () => {
-  console.log(`[fyd-journal-gateway] listening on http://${HOST}:${PORT} store=${STORE}`);
+  console.log(`[fyd-journal-gateway] listening on http://${HOST}:${PORT} store=${store.storeLabel()} backend=${store.kind}`);
 });
