@@ -4,6 +4,54 @@ import * as React from "react";
 import { ExternalLink, Info, X, Maximize2 } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import type { PortalProjection } from "@/fyd/preview/types";
+import { CRASH_BEACON_MESSAGE_TYPE } from "./storage-shim";
+
+/**
+ * Listens for the proxy-injected crash beacon (see storage-shim.ts): when the
+ * embedded site dies from the unshimmable sandbox location-probe crash, the
+ * iframe's beacon postMessages the parent and onCrash fires. The parent
+ * validates event.source against its own iframe element; the opaque iframe
+ * origin ("null") is expected and is never allow-listed by origin.
+ */
+function useEmbedCrashBeacon(
+  iframeRef: React.RefObject<HTMLIFrameElement | null>,
+  onCrash: () => void,
+) {
+  const onCrashRef = React.useRef(onCrash);
+  onCrashRef.current = onCrash;
+  React.useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (!event.data || event.data.type !== CRASH_BEACON_MESSAGE_TYPE) return;
+      const frame = iframeRef.current;
+      if (!frame || event.source !== frame.contentWindow) return;
+      onCrashRef.current();
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [iframeRef]);
+}
+
+/**
+ * Graceful fallback shown when the embedded site cannot run inside the
+ * sandboxed preview. Same promise as the /api/live fallback page: the live
+ * site is one tap away in a new tab.
+ */
+export function EmbedCrashFallback({ name, href }: { name: string; href: string }) {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-[#171613] p-6 text-center">
+      <div>
+        <p className="text-sm font-semibold text-stone-200">Live preview unavailable</p>
+        <p className="mx-auto mt-1 max-w-60 text-xs leading-relaxed text-stone-400">
+          {name} cannot load inside this preview. Open the live site in a new tab instead.
+        </p>
+        <a href={href} target="_blank" rel="noopener noreferrer"
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-white/10 px-4 text-xs font-semibold text-stone-100 hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-honey">
+          Open site <ExternalLink size={13} aria-hidden="true" />
+        </a>
+      </div>
+    </div>
+  );
+}
 
 /** Shared by the desktop expansion and mobile sheet; the asset stays intact. */
 export function PortalWebsitePreview({ portal, href, className = "" }: {
@@ -14,6 +62,11 @@ export function PortalWebsitePreview({ portal, href, className = "" }: {
   const [state, setState] = React.useState<"loading" | "loaded" | "slow" | "error">("loading");
   const [evidenceOpen, setEvidenceOpen] = React.useState(false);
   const { circle, logo } = portal;
+  const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
+  // The sandboxed location-probe crash ("Application error" inside the
+  // iframe) is unshimmable; the beacon reports it and we swap the dead iframe
+  // for the graceful fallback instead.
+  useEmbedCrashBeacon(iframeRef, () => setState("error"));
   React.useEffect(() => {
     setState("loading");
     const timer = setTimeout(() => setState((s) => s === "loading" ? "slow" : s), 12000);
@@ -41,11 +94,15 @@ export function PortalWebsitePreview({ portal, href, className = "" }: {
         {circle.provenanceDetail && <p className="mt-1 break-words text-stone-400">{circle.provenanceDetail}</p>}
       </div>}
       <div className="relative min-h-0 flex-1 bg-white">
-        <iframe src={`/api/live/${encodeURIComponent(circle.id)}`}
-          title={`${circle.name} website preview`}
-          sandbox="allow-scripts allow-forms allow-popups"
-          onLoad={() => setState("loaded")} onError={() => setState("error")}
-          className="absolute inset-0 h-full w-full border-0 bg-white" />
+        {state === "error" ? (
+          <EmbedCrashFallback name={circle.name} href={href} />
+        ) : (
+          <iframe ref={iframeRef} src={`/api/live/${encodeURIComponent(circle.id)}`}
+            title={`${circle.name} website preview`}
+            sandbox="allow-scripts allow-forms allow-popups"
+            onLoad={() => setState("loaded")} onError={() => setState("error")}
+            className="absolute inset-0 h-full w-full border-0 bg-white" />
+        )}
         {state === "loading" && <div role="status" className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#171613] text-xs text-stone-300">
           Loading website…
         </div>}
@@ -98,6 +155,11 @@ export function ImmersiveWebsiteView({
   const { circle } = portal;
   const reduceMotion = useReducedMotion();
   const [loaded, setLoaded] = React.useState(false);
+  const [crashed, setCrashed] = React.useState(false);
+  const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
+  // A crashed background iframe would show "Application error" through the
+  // overlay; drop it and keep the neutral backdrop instead.
+  useEmbedCrashBeacon(iframeRef, () => setCrashed(true));
   const driftOn = drift && !reduceMotion;
 
   return (
@@ -168,17 +230,20 @@ export function ImmersiveWebsiteView({
 
       {/* Live site, full-bleed, drifting. Non-interactive: the overlay owns taps. */}
       <div className={driftOn ? "fyd-drift absolute inset-0" : "absolute inset-0"} aria-hidden="true">
-        <iframe
-          src={`/api/live/${encodeURIComponent(circle.id)}`}
-          title=""
-          tabIndex={-1}
-          sandbox="allow-scripts allow-forms allow-popups"
-          onLoad={() => setLoaded(true)}
-          className="pointer-events-none border-0 bg-neutral-900"
-          style={{ position: "absolute", inset: "-6%", width: "112%", height: "112%" }}
-        />
+        {!crashed && (
+          <iframe
+            ref={iframeRef}
+            src={`/api/live/${encodeURIComponent(circle.id)}`}
+            title=""
+            tabIndex={-1}
+            sandbox="allow-scripts allow-forms allow-popups"
+            onLoad={() => setLoaded(true)}
+            className="pointer-events-none border-0 bg-neutral-900"
+            style={{ position: "absolute", inset: "-6%", width: "112%", height: "112%" }}
+          />
+        )}
       </div>
-      {!loaded && (
+      {!loaded && !crashed && (
         <div role="status" className="absolute inset-0 flex items-center justify-center bg-neutral-950 text-xs tracking-wide text-stone-300">
           Loading live site…
         </div>

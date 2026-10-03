@@ -1,5 +1,5 @@
 /**
- * FYD storage shim (portal lane, 2026-10-02).
+ * FYD embed shims (portal lane, 2026-10-02).
  *
  * Problem: generated sites proxied through /api/live/[siteId] render inside a
  * sandboxed iframe (sandbox="allow-scripts allow-forms allow-popups", no
@@ -8,11 +8,24 @@
  * that touch storage during hydration die with a user-visible
  * "Application error".
  *
- * Fix: this module builds a tiny self-contained <script> that the live proxy
- * route injects as the FIRST script in <head>. It probes storage availability
- * inside try/catch and installs graceful in-memory fallbacks, so downstream
- * page scripts never see storage throw. No new design; the iframe sandbox is
- * never loosened.
+ * This module builds tiny self-contained <script>s that the live proxy route
+ * injects as the first scripts in <head>:
+ *
+ *  1. STORAGE SHIM: probes storage availability inside try/catch and installs
+ *     graceful in-memory fallbacks, so downstream page scripts never see
+ *     storage throw. No new design; the iframe sandbox is never loosened.
+ *
+ *  2. CRASH BEACON: some embedded apps probe ACROSS the frame boundary
+ *     (e.g. Happy Place's VisualSlot reading window.parent.location.origin
+ *     in a mount effect). In the sandbox that read is a browser-enforced
+ *     SecurityError no same-document script can prevent: window.parent is
+ *     unforgeable, the throwing code lives in origin-served chunks the proxy
+ *     never rewrites, and the read throws during eager argument evaluation
+ *     inside React's commit phase, straight into Next.js's global error
+ *     boundary ("Application error"). The beacon cannot stop that crash, so
+ *     instead it reports it: on a matching sandbox location-probe error it
+ *     postMessages the parent, which swaps the dead iframe for FYD's graceful
+ *     fallback UI.
  */
 
 /** Marker id used on the injected <script> tag (also used by route tests). */
@@ -89,6 +102,87 @@ export function injectStorageShim(html: string): string {
   if (htmlAt !== -1) return html.slice(0, htmlAt) + tag + html.slice(htmlAt);
   return html;
 }
+
+// ==== FYD CRASH BEACON (portal lane 2026-10-02): begin ====
+// Reports the unshimmable sandbox location-probe crash (see module docstring)
+// to the embedding FYD page via postMessage, so the parent can swap the dead
+// iframe for its graceful fallback UI instead of showing "Application error".
+
+/** Marker id used on the injected beacon <script> tag. */
+export const CRASH_BEACON_ID = "fyd-crash-beacon";
+
+/**
+ * postMessage type the beacon sends and the portal preview listens for.
+ * The parent validates event.source against its own iframe element; the
+ * opaque iframe origin ("null") is expected and must NOT be allow-listed
+ * by origin.
+ */
+export const CRASH_BEACON_MESSAGE_TYPE = "fyd-embed-crash";
+
+/**
+ * Raw JS payload for the crash beacon. ES5-style like the storage shim.
+ * Matches only the sandbox location-probe failure mode (SecurityError
+ * reading 'origin' from the parent frame's Location); every other error is
+ * left alone so unrelated page bugs keep their normal behavior.
+ */
+export const CRASH_BEACON_JS = `;(function () {
+  'use strict';
+  var MESSAGE_TYPE = '${CRASH_BEACON_MESSAGE_TYPE}';
+  function messageOf(err) {
+    try {
+      if (err == null) return '';
+      if (typeof err === 'string') return err;
+      return String(err.message || err);
+    } catch (e) { return ''; }
+  }
+  function isSandboxLocationCrash(err) {
+    var msg = messageOf(err);
+    if (msg.indexOf('SecurityError') === -1) return false;
+    return msg.indexOf("from 'Location'") !== -1 ||
+      msg.indexOf('Sandbox access violation') !== -1;
+  }
+  function report(reason) {
+    try {
+      window.parent.postMessage({ type: MESSAGE_TYPE, reason: String(reason).slice(0, 200) }, '*');
+    } catch (e) { /* parent unreachable: nothing to report to */ }
+  }
+  try {
+    window.addEventListener('error', function (ev) {
+      var err = ev && (ev.error || ev.message);
+      if (isSandboxLocationCrash(err)) report(messageOf(err).slice(0, 200));
+    }, true);
+    window.addEventListener('unhandledrejection', function (ev) {
+      if (ev && isSandboxLocationCrash(ev.reason)) {
+        report('unhandledrejection: ' + messageOf(ev.reason).slice(0, 160));
+      }
+    });
+  } catch (e) { /* never break page boot */ }
+})();`;
+
+/**
+ * Inject the crash beacon <script> immediately after the opening <head> tag,
+ * with the same placement/idempotency contract as injectStorageShim.
+ */
+export function injectCrashBeacon(html: string): string {
+  if (!html || html.indexOf(CRASH_BEACON_ID) !== -1) return html;
+  const tag = `<script id="${CRASH_BEACON_ID}" data-fyd-crash-beacon="1">${CRASH_BEACON_JS}</script>`;
+  const headAt = findTagEnd(html, "head");
+  if (headAt !== -1) return html.slice(0, headAt) + tag + html.slice(headAt);
+  const htmlAt = findTagEnd(html, "html");
+  if (htmlAt !== -1) return html.slice(0, htmlAt) + tag + html.slice(htmlAt);
+  return html;
+}
+
+/**
+ * Apply every embed shim the live proxy injects. The storage shim stays the
+ * first script after <head> (its documented contract); the crash beacon
+ * follows it. Idempotent: re-running over an already-shimmed document is a
+ * no-op.
+ */
+export function injectEmbedShims(html: string): string {
+  return injectStorageShim(injectCrashBeacon(html));
+}
+// ==== FYD CRASH BEACON (portal lane 2026-10-02): end ====
 
 /** Index just past the closing ">" of the first <tag ...>, or -1. */
 function findTagEnd(html: string, tag: string): number {

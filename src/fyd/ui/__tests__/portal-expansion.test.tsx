@@ -2,7 +2,7 @@ import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { parse } from "node-html-parser";
 import { compactEngagedDiameter, FIRST_STAGE_MAX_D, portalOriginTransform } from "../portal-motion";
-import { ImmersiveWebsiteView, PortalWebsitePreview } from "../portal-website-preview";
+import { ImmersiveWebsiteView, PortalWebsitePreview, EmbedCrashFallback } from "../portal-website-preview";
 import { MobileImmersivePopup, PortalCircle } from "../portal-circle";
 import type { PortalProjection } from "../../preview/types";
 
@@ -142,5 +142,43 @@ describe("two-stage expansion (Nolan 2026-10-02)", () => {
     expect(iframe.getAttribute("src")).toBe(`/api/live/${encodeURIComponent("happy-place")}`);
     // Non-interactive: the overlay owns taps.
     expect(iframe.getAttribute("class")).toContain("pointer-events-none");
+  });
+});
+
+describe("embed crash fallback", () => {
+  const crashPortal = {
+    circle: {
+      id: "happy-place", name: "Happy Place", category: "Carpentry", locationLabel: null,
+      tagline: "", topFacts: [], capabilities: [{ kind: "view" }], sampleQuestions: [],
+      provenanceLabel: "Information from the business website", provenanceDetail: "",
+      background: { kind: "gradient", css: "none", digest: "", observedAt: "", basis: "" },
+    },
+    logo: null,
+    preview: null,
+    websiteHref: "https://happy-place-platform.vercel.app/",
+  } as unknown as PortalProjection;
+
+  test("fallback renders the honest message and the safe external escape", () => {
+    const html = renderToStaticMarkup(
+      <EmbedCrashFallback name={crashPortal.circle.name} href={crashPortal.websiteHref!} />,
+    );
+    const dom = parse(html);
+    expect(dom.text).toContain("Live preview unavailable");
+    expect(dom.text).toContain("Happy Place");
+    const link = dom.querySelector("a")!;
+    expect(link.getAttribute("href")).toBe("https://happy-place-platform.vercel.app/");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(link.text).toContain("Open site");
+  });
+
+  test("the crashed iframe keeps the locked-down sandbox attribute", () => {
+    const html = renderToStaticMarkup(
+      <PortalWebsitePreview portal={crashPortal} href={crashPortal.websiteHref!} />,
+    );
+    const dom = parse(html);
+    expect(dom.querySelector("iframe")?.getAttribute("sandbox")).toBe(
+      "allow-scripts allow-forms allow-popups",
+    );
   });
 });

@@ -1,6 +1,6 @@
-// ==== FYD STORAGE SHIM (portal lane 2026-10-02): begin ====
-import { injectStorageShim } from "@/fyd/ui/storage-shim";
-// ==== FYD STORAGE SHIM (portal lane 2026-10-02): end ====
+// ==== FYD EMBED SHIMS (portal lane 2026-10-02): begin ====
+import { injectEmbedShims } from "@/fyd/ui/storage-shim";
+// ==== FYD EMBED SHIMS (portal lane 2026-10-02): end ====
 import { NextRequest, NextResponse } from "next/server";
 import { buildPortalProjection } from "@/fyd/preview/pipeline";
 import { isSafeWebHref } from "@/fyd/preview/types";
@@ -98,14 +98,16 @@ export async function GET(
     }
 
     const headers = new Headers();
-    // ==== FYD STORAGE SHIM (portal lane 2026-10-02): begin ====
+    // ==== FYD EMBED SHIMS (portal lane 2026-10-02): begin ====
     // Proxied generated sites (e.g. Happy Place) crash with a user-visible
-    // "Application error" inside FYD's sandboxed iframe (no allow-same-origin)
-    // because window.localStorage/sessionStorage access throws SecurityError.
-    // The shim installs in-memory fallbacks as the first script in <head> so
-    // page scripts never see storage throw. Never loosen the iframe sandbox.
-    html = injectStorageShim(html);
-    // ==== FYD STORAGE SHIM (portal lane 2026-10-02): end ====
+    // "Application error" inside FYD's sandboxed iframe (no allow-same-origin):
+    // storage access throws (fixed by the storage shim's in-memory fallbacks)
+    // and cross-frame location probes (window.parent.location.origin) throw a
+    // browser-enforced SecurityError no same-document script can prevent
+    // (reported by the crash beacon so the portal swaps the dead iframe for
+    // its graceful fallback UI). Never loosen the iframe sandbox.
+    html = injectEmbedShims(html);
+    // ==== FYD EMBED SHIMS (portal lane 2026-10-02): end ====
 
     headers.set("content-type", "text/html; charset=utf-8");
     headers.set("cache-control", "public, max-age=120");
