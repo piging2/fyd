@@ -1,3 +1,6 @@
+// ==== FYD STORAGE SHIM (portal lane 2026-10-02): begin ====
+import { injectStorageShim } from "@/fyd/ui/storage-shim";
+// ==== FYD STORAGE SHIM (portal lane 2026-10-02): end ====
 import { NextRequest, NextResponse } from "next/server";
 import { buildPortalProjection } from "@/fyd/preview/pipeline";
 import { isSafeWebHref } from "@/fyd/preview/types";
@@ -95,6 +98,15 @@ export async function GET(
     }
 
     const headers = new Headers();
+    // ==== FYD STORAGE SHIM (portal lane 2026-10-02): begin ====
+    // Proxied generated sites (e.g. Happy Place) crash with a user-visible
+    // "Application error" inside FYD's sandboxed iframe (no allow-same-origin)
+    // because window.localStorage/sessionStorage access throws SecurityError.
+    // The shim installs in-memory fallbacks as the first script in <head> so
+    // page scripts never see storage throw. Never loosen the iframe sandbox.
+    html = injectStorageShim(html);
+    // ==== FYD STORAGE SHIM (portal lane 2026-10-02): end ====
+
     headers.set("content-type", "text/html; charset=utf-8");
     headers.set("cache-control", "public, max-age=120");
     // Strip frame-ancestors only; keep the rest of the site's CSP.
