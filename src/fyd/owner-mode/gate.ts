@@ -50,7 +50,20 @@ export function isDemoOwnerModeEnabled(): boolean {
  * .local/.internal/.lan names.
  */
 export function isPrivateHost(host: string): boolean {
-  const h = host.split(":")[0].trim().toLowerCase().replace(/^\[|\]$/g, "");
+  const raw = host.trim().toLowerCase();
+  // Extract the host without the port. Bracketed IPv6 ([::1]:3000) unwraps
+  // to the literal; a bare IPv6 literal keeps its colons; otherwise strip
+  // :port. (F03: the old code split(":")[0] first, so "::1" and "fe80:"
+  // could never match and the fc/fd prefix test below saw only fragments.)
+  let h: string;
+  const bracketed = raw.match(/^\[([^\]]+)\](?::\d+)?$/);
+  if (bracketed) {
+    h = bracketed[1];
+  } else if ((raw.match(/:/g) ?? []).length > 1) {
+    h = raw;
+  } else {
+    h = raw.split(":")[0];
+  }
   if (h === "localhost" || h === "127.0.0.1" || h === "::1") return true;
   const v4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (v4) {
@@ -63,16 +76,16 @@ export function isPrivateHost(host: string): boolean {
     if (a === 169 && b === 254) return true; // link-local
     return false;
   }
-  if (
-    h.startsWith("fc") ||
-    h.startsWith("fd") ||
-    h.startsWith("fe80:") ||
-    h.endsWith(".local") ||
-    h.endsWith(".internal") ||
-    h.endsWith(".lan")
-  )
-    return true;
-  return false;
+  if (h.includes(":")) {
+    // IPv6 unique-local fc00::/7 and link-local fe80::/10, matched on the
+    // first hextet of the full literal. (F03: the old h.startsWith("fc") /
+    // h.startsWith("fd") matched ANY DNS name beginning fc/fd, e.g.
+    // fcdemo.example.com — a public host classified private.)
+    if (/^f[cd][0-9a-f]*:/.test(h)) return true;
+    if (/^fe[89ab][0-9a-f]*:/.test(h)) return true;
+    return false;
+  }
+  return h.endsWith(".local") || h.endsWith(".internal") || h.endsWith(".lan");
 }
 
 /**
