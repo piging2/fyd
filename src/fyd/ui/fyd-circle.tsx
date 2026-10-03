@@ -1,4 +1,6 @@
 "use client";
+import { useObjectRelationship } from "./use-object-relationship";
+import { resolveObjectPresentationIdentity } from "../presentation/identity";
 
 /**
  * FydCircle: the true FYD circle. A literal circle with concentric expansion.
@@ -283,7 +285,6 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
   const suppressFocusPeekRef = React.useRef(false);
   const returnFocusRef = React.useRef(false);
   const askingRef = React.useRef(false);
-  const followBusyRef = React.useRef(false);
 
   const [vw, setVw] = React.useState<number>(() =>
     typeof window === "undefined" ? 1024 : window.innerWidth
@@ -291,7 +292,6 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
   const [question, setQuestion] = React.useState("");
   const [askStatus, setAskStatus] = React.useState<AskStatus>("idle");
   const [answer, setAnswer] = React.useState("");
-  const [followState, setFollowState] = React.useState<FollowState>("unknown");
 
   /* Viewport width feeds the min(208px, 56vw) expanded clamp. */
   React.useEffect(() => {
@@ -344,22 +344,7 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
   );
   const hasFollowCap = actions.some((a) => a.kind === "follow");
 
-  /* Follow status is fetched once per object, only when the capability exists. */
-  React.useEffect(() => {
-    if (!hasFollowCap) return;
-    let alive = true;
-    fetch("/api/fyd/follow?objectId=" + encodeURIComponent(projection.id))
-      .then((r) => r.json())
-      .then((d) => {
-        if (alive) setFollowState(d && d.ok && d.following ? "on" : "off");
-      })
-      .catch(() => {
-        if (alive) setFollowState("unavailable");
-      });
-    return () => {
-      alive = false;
-    };
-  }, [projection.id, hasFollowCap]);
+  const follow = useObjectRelationship(projection.id, "follow", hasFollowCap);
 
   const recentlyTouched = () => Date.now() - lastTouchRef.current < TOUCH_DEDUP_MS;
 
@@ -471,29 +456,6 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
     dialogRef.current?.focus({ preventScroll: true });
   };
 
-  const toggleFollow = async () => {
-    if (followBusyRef.current) return;
-    if (followState !== "on" && followState !== "off") return;
-    followBusyRef.current = true;
-    const action = followState === "on" ? "unfollow" : "follow";
-    try {
-      const res = await fetch("/api/fyd/follow", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objectId: projection.id, action }),
-      });
-      const data = await res.json();
-      // Fail closed: only a confirmed ok flips the toggle; anything else
-      // lands on the disabled "unavailable" state, never a fake toggle.
-      if (data && data.ok === true) setFollowState(action === "follow" ? "on" : "off");
-      else setFollowState("unavailable");
-    } catch {
-      setFollowState("unavailable");
-    } finally {
-      followBusyRef.current = false;
-    }
-  };
-
   const renderAction = (a: CircleAction) => {
     if (a.kind === "ask") {
       return (
@@ -509,33 +471,17 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
       );
     }
     if (a.kind === "follow") {
-      if (followState === "unavailable") {
-        return (
-          <button
-            key="follow"
-            type="button"
-            className="fydc-follow-na"
-            disabled
-            aria-label="Follow unavailable"
-          >
-            Follow unavailable
-          </button>
-        );
-      }
-      const on = followState === "on";
-      return (
-        <button
-          key="follow"
-          type="button"
-          className="fydc-act"
-          aria-pressed={on}
-          aria-label={on ? "Following " + name + ". Select to unfollow." : "Follow " + name}
-          disabled={followState === "unknown"}
-          onClick={toggleFollow}
-        >
-          {on ? <IconCheck /> : <IconPlus />}
+      const retry = follow.status === "retryable-error";
+      const busy = follow.status === "loading" || follow.status === "pending";
+      return <span key="follow" className="inline-flex flex-col items-center">
+        <button type="button" className="fydc-act" aria-pressed={follow.state === true}
+          aria-busy={busy} title={follow.message} aria-label={retry ? "Retry follow" : "Follow " + name}
+          disabled={busy || follow.status === "terminal-error"}
+          onClick={retry ? follow.retry : follow.toggle}>
+          {follow.state ? <IconCheck /> : <IconPlus />}
         </button>
-      );
+        <span role="status" style={{ fontSize: "0.045em", maxWidth: "3em" }}>{retry ? "Retry" : busy ? "Saving…" : follow.status === "terminal-error" ? "Unavailable" : "Demo"}</span>
+      </span>;
     }
     const icon =
       a.kind === "call" ? <IconPhone /> : a.kind === "email" ? <IconMail /> : <IconGlobe />;
@@ -660,8 +606,10 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
   const shownAnswer =
     answer.length > ANSWER_TRUNCATE ? answer.slice(0, ANSWER_TRUNCATE - 3) + "..." : answer;
   const bg = projection.background;
+  const identity = resolveObjectPresentationIdentity(projection);
   const bgStyle: React.CSSProperties =
-    bg.kind === "image" ? { backgroundImage: 'url("' + bg.src + '")' } : { background: bg.css };
+    identity.mark ? { backgroundImage: `url("${identity.mark.src}")`, backgroundSize: "contain", borderRadius: 0 }
+      : bg.kind === "image" ? { backgroundImage: 'url("' + bg.src + '")' } : { background: bg.css };
   const circleTransform = "scale(" + scale + ")";
 
   return (
@@ -678,7 +626,7 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
         ref={buttonRef}
         type="button"
         className="fydc-circle"
-        style={{ transform: circleTransform }}
+        style={{ transform: circleTransform, ...(identity.mark ? { borderRadius: 0, overflow: "visible" } : {}) }}
         aria-label={name}
         aria-expanded={open}
         tabIndex={open ? -1 : 0}
@@ -688,7 +636,9 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
         onClick={onButtonClick}
       >
         <span className="fydc-bg" style={bgStyle} aria-hidden="true" />
-        {machine.state === "peek" ? (
+        {machine.state === "peek" && identity.mark ? (
+          <span aria-hidden="true" style={{ position: "absolute", left: "50%", top: "100%", transform: "translateX(-50%)", width: "max-content", maxWidth: "4em", padding: ".3em .5em", borderRadius: ".3em", background: "#171613", fontSize: ".10em", lineHeight: 1.3 }}>{name}</span>
+        ) : machine.state === "peek" ? (
           <span className="fydc-layer" aria-hidden="true">
             <span className="fydc-scrim" />
             <span className="fydc-peek-name">{name}</span>
@@ -702,7 +652,7 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
         <div
           ref={dialogRef}
           className="fydc-circle fydc-dialog"
-          style={{ transform: circleTransform }}
+          style={{ transform: circleTransform, ...(identity.mark ? { borderRadius: 3, background: "#171613" } : {}) }}
           role="dialog"
           aria-label={name}
           tabIndex={-1}
@@ -710,8 +660,13 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
           onMouseLeave={onMouseLeave}
           onTouchStart={onTouchStart}
         >
-          <span className="fydc-bg" style={bgStyle} aria-hidden="true" />
-          <span className="fydc-scrim" aria-hidden="true" />
+          {identity.mark ? (
+            <img src={identity.mark.src} srcSet={identity.mark.srcSet} alt="" aria-hidden="true" draggable={false}
+              style={{ position: "absolute", left: "50%", top: ".02em", transform: "translateX(-50%)", width: ".16em", height: ".12em", objectFit: "contain" }} />
+          ) : <>
+            <span className="fydc-bg" style={bgStyle} aria-hidden="true" />
+            <span className="fydc-scrim" aria-hidden="true" />
+          </>}
           {machine.state === "ask" ? renderAsk() : renderExpanded()}
         </div>
       ) : null}

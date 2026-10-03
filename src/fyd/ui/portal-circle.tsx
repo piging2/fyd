@@ -122,6 +122,9 @@ function PortalCircleContent(props: PortalCircleProps) {
   // (expand button or the preview) blows up to full screen. Same identity,
   // same actions, no forced geometry.
   const [popupStage, setPopupStage] = React.useState<"compact" | "full" | null>(null);
+  // Measured trigger center at open time: the sheet scales from the object,
+  // not the viewport center. Architectural continuity, not decoration.
+  const [popupOrigin, setPopupOrigin] = React.useState<{ x: number; y: number } | null>(null);
   const [engagedSide, setEngagedSide] = React.useState<EngagedSide>("dock");
   const [orbitPad, setOrbitPad] = React.useState(26);
   const [orbitBtn, setOrbitBtn] = React.useState(44);
@@ -169,6 +172,8 @@ function PortalCircleContent(props: PortalCircleProps) {
     // also open the compact popup: no safe footprint exists for spatial
     // expansion there.
     if (window.innerWidth < 640 || props.peek) {
+      const r = el.getBoundingClientRect();
+      setPopupOrigin({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
       setPopupStage("compact");
       props.onEngageRequest(id);
       return;
@@ -184,6 +189,8 @@ function PortalCircleContent(props: PortalCircleProps) {
       { x: r.x + r.width / 2, y: r.y + r.height / 2 },
     );
     if (!g) {
+      const r = el.getBoundingClientRect();
+      setPopupOrigin({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
       setPopupStage("compact");
       props.onEngageRequest(id);
       return;
@@ -257,6 +264,7 @@ function PortalCircleContent(props: PortalCircleProps) {
   const collapsedBg = ownerLogo ? (
     <img
       src={ownerLogo.src}
+      srcSet={ownerLogo.srcSet}
       alt=""
       aria-hidden="true"
       decoding="async"
@@ -283,6 +291,7 @@ function PortalCircleContent(props: PortalCircleProps) {
   ) : identity.mark ? (
     <img
       src={identity.mark.src}
+      srcSet={identity.mark.srcSet}
       alt=""
       aria-hidden="true"
       decoding="async"
@@ -409,6 +418,7 @@ function PortalCircleContent(props: PortalCircleProps) {
                   onExpand={() => setPopupStage("full")}
                   onClose={closeAndFocus}
                   reduceMotion={!!reduceMotion}
+                  origin={popupOrigin}
                 />
               )}
             </AnimatePresence>,
@@ -600,6 +610,8 @@ export interface MobilePopupProps {
   onExpand: () => void;
   onClose: () => void;
   reduceMotion: boolean;
+  /** Viewport coords of the trigger center: the shell scales from here. */
+  origin?: { x: number; y: number } | null;
 }
 
 export function MobileImmersivePopup(p: MobilePopupProps) {
@@ -690,6 +702,23 @@ export function MobileImmersivePopup(p: MobilePopupProps) {
     ? undefined
     : "width 0.34s cubic-bezier(0.32, 0.72, 0, 1), height 0.34s cubic-bezier(0.32, 0.72, 0, 1), top 0.34s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.34s ease, padding-top 0.34s ease";
 
+  // The shell opens from the measured object position: scale emanates from
+  // the trigger point. Recomputed per stage (compact geometry vs full-bleed).
+  const transformOrigin = React.useMemo(() => {
+    const o = p.origin;
+    if (!o || typeof window === "undefined") return "50% 50%";
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    if (full) return `${Math.min(100, Math.max(0, (o.x / vw) * 100))}% ${Math.min(100, Math.max(0, (o.y / vh) * 100))}%`;
+    const w = Math.min(vw * 0.92, 380);
+    const h = Math.min(vh * 0.62, 540);
+    const left = vw / 2 - w / 2;
+    const top = vh / 2 - h / 2;
+    const cx = Math.min(100, Math.max(0, ((o.x - left) / w) * 100));
+    const cy = Math.min(100, Math.max(0, ((o.y - top) / h) * 100));
+    return `${cx}% ${cy}%`;
+  }, [p.origin, full]);
+
   return (
     <>
       <motion.div
@@ -731,6 +760,7 @@ export function MobileImmersivePopup(p: MobilePopupProps) {
             ? "none"
             : "0 0 0 1px rgba(255,255,255,0.16), 0 30px 80px rgba(0,0,0,0.6)",
           transition: geometryTransition,
+          transformOrigin,
         }}
       >
         {view}
