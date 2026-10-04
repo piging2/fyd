@@ -22,6 +22,10 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import {
+  listStuckMissions,
+  getPipelineCounts,
+} from "../_lib/mc-ping-journal";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -185,6 +189,20 @@ export async function GET() {
   const dirty = await gitDirtyCount();
   if (dirty === null) degraded.push("git dirty state unreadable");
 
+  // 8. ORCA narrow lane: stuck missions (impossible to miss) + pipeline counts
+  let stuckMissions: unknown[] = [];
+  let pipeline: Record<string, unknown> = {};
+  try {
+    stuckMissions = await listStuckMissions();
+  } catch {
+    degraded.push("stuck missions unreadable");
+  }
+  try {
+    pipeline = (await getPipelineCounts()) as unknown as Record<string, unknown>;
+  } catch {
+    degraded.push("pipeline counts unreadable");
+  }
+
   return NextResponse.json({
     ok: true,
     generatedAt: new Date().toISOString(),
@@ -226,6 +244,23 @@ export async function GET() {
         dirtyFiles: dirty,
         note: "Dirty files are inventoried by owning lane, never swept.",
       },
+    },
+    problems: {
+      status: "PROVEN" as Health,
+      stuckMissions: {
+        count: (stuckMissions as unknown[]).length,
+        missions: stuckMissions,
+        note: "Non-terminal missions. Must be zero.",
+      },
+      evidenceFailures: (pipeline as Record<string, unknown>).evidenceFailures ?? null,
+    },
+    pipeline: {
+      status: "PROVEN" as Health,
+      note: "OBSERVE -> EVIDENCE -> LEARNING chain, today (UTC).",
+      observations: (pipeline as Record<string, unknown>).observations ?? null,
+      missionsCreated: (pipeline as Record<string, unknown>).missions_created ?? null,
+      missionsCompleted: (pipeline as Record<string, unknown>).missions_completed ?? null,
+      claimsCreated: (pipeline as Record<string, unknown>).claims_created ?? null,
     },
     prototype: [
       "opportunities-found (marketing intelligence feed) not yet wired to a backend projection",

@@ -20,6 +20,7 @@
  */
 
 import { execFileSync } from 'child_process';
+import * as fs from 'fs';
 import { Pool } from 'pg';
 import type { QueueMissionInput } from './mc-queue-project';
 
@@ -82,18 +83,37 @@ function dbPassword(): string {
   if (passwordCache !== null) return passwordCache;
   // Same-plane config: the live gateway's own container env. The value is
   // used only as the pg Pool password and is never logged or returned.
-  const env = execFileSync(
-    'docker',
-    ['inspect', 'ping-gateway', '--format', '{{range .Config.Env}}{{println .}}{{end}}'],
-    { encoding: 'utf8', timeout: 15000 },
-  );
-  const line = env
-    .split('\n')
-    .find((l) => l.startsWith('POSTGRES_PASSWORD='));
-  if (!line) throw new Error('ping_journal_credential_missing');
-  passwordCache = line.slice('POSTGRES_PASSWORD='.length);
-  if (passwordCache.length === 0) throw new Error('ping_journal_credential_missing');
-  return passwordCache;
+  // Fallback: file credential (for contexts where docker CLI is unavailable,
+  // e.g. Next.js server runtime). File has 600 permissions, nolan-only.
+  try {
+    const env = execFileSync(
+      'docker',
+      ['inspect', 'ping-gateway', '--format', '{{range .Config.Env}}{{println .}}{{end}}'],
+      { encoding: 'utf8', timeout: 15000 },
+    );
+    const line = env
+      .split('\n')
+      .find((l) => l.startsWith('POSTGRES_PASSWORD='));
+    if (line) {
+      const pw = line.slice('POSTGRES_PASSWORD='.length);
+      if (pw.length > 0) {
+        passwordCache = pw;
+        return passwordCache;
+      }
+    }
+  } catch {
+    // fall through to file
+  }
+  try {
+    const pw = fs.readFileSync('/home/nolan/.ping-postgres-password', 'utf8').trim();
+    if (pw.length > 0) {
+      passwordCache = pw;
+      return passwordCache;
+    }
+  } catch {
+    // fall through
+  }
+  throw new Error('ping_journal_credential_missing');
 }
 
 let poolCache: Pool | null = null;
@@ -318,4 +338,82 @@ export async function listPingQueueMissions(): Promise<QueueMissionInput[]> {
     event_count: Number(r.event_count ?? 0),
     lifecycle_event_count: Number(r.lifecycle_event_count ?? 0),
   }));
+}
+
+/**
+ * ORCA narrow lane (2026-10-04): stuck-mission signal for Mission Control.
+ * Returns missions in any non-terminal status. Empty = healthy.
+ */
+export interface StuckMission {
+  mission_id: string;
+  mission_type: string | null;
+  status: string | null;
+  created_at: string | null;
+  created_by: string | null;
+  age_hours: number | null;
+}
+
+export async function listStuckMissions(): Promise<StuckMission[]> {
+  const rows = await query<Record<string, unknown>>(
+    `SELECT mission_id, mission_type, status, created_at, created_by,
+            EXTRACT(EPOCH FROM (NOW() - created_at))/3600 AS age_hours
+     FROM ping_missions
+     WHERE status NOT IN ('completed', 'failed')
+     ORDER BY created_at ASC`,
+  );
+  return rows.map((r) => ({
+    mission_id: String(r.mission_id),
+    mission_type: (r.mission_type as string) ?? null,
+    status: (r.status as string) ?? null,
+    created_at: iso(r.created_at),
+    created_by: (r.created_by as string) ?? null,
+    age_hours: r.age_hours == null ? null : Number(r.age_hours),
+  }));
+}
+
+/**
+ * ORCA narrow lane (2026-10-04): today's pipeline counts for the
+ * OBSERVE -> EVIDENCE -> LEARNING chain. All counts are for the current
+ * UTC date. Used by /api/mc/today problems + pipeline sections.
+ */
+export interface PipelineCounts {
+  observations: number;      // BEE_*_CAPTURED + DOCUMENT_OBSERVED + OBSERVATION_CREATED
+  missions_created: number;  // CLAIM_GENERATE missions created today
+  missions_completed: number;
+  missions_failed: number;
+  claims_created: number;    // CLAIM_CREATED events
+  evidence_failures: number; // missions failed today
+}
+
+export async function getPipelineCounts(): Promise<PipelineCounts> {
+  const rows = await query<Record<string, unknown>>(
+    `SELECT
+       (SELECT count(*)::int FROM ping_events
+        WHERE timestamp >= CURRENT_DATE
+          AND event_type IN ('BEE_CONVERSATION_CAPTURED','BEE_FACT_CAPTURED',
+                             'BEE_FACT_UNCONFIRMED','BEE_TODO_CAPTURED',
+                             'DOCUMENT_OBSERVED','OBSERVATION_CREATED')) AS observations,
+       (SELECT count(*)::int FROM ping_missions
+        WHERE created_at >= CURRENT_DATE
+          AND mission_type = 'CLAIM_GENERATE') AS missions_created,
+       (SELECT count(*)::int FROM ping_missions
+        WHERE completed_at >= CURRENT_DATE
+          AND mission_type = 'CLAIM_GENERATE'
+          AND status = 'completed') AS missions_completed,
+       (SELECT count(*)::int FROM ping_missions
+        WHERE created_at >= CURRENT_DATE
+          AND status = 'failed') AS missions_failed,
+       (SELECT count(*)::int FROM ping_events
+        WHERE timestamp >= CURRENT_DATE
+          AND event_type = 'CLAIM_CREATED') AS claims_created`,
+  );
+  const r = rows[0] || {};
+  return {
+    observations: Number(r.observations ?? 0),
+    missions_created: Number(r.missions_created ?? 0),
+    missions_completed: Number(r.missions_completed ?? 0),
+    missions_failed: Number(r.missions_failed ?? 0),
+    claims_created: Number(r.claims_created ?? 0),
+    evidence_failures: Number(r.missions_failed ?? 0),
+  };
 }
