@@ -27,6 +27,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { slotRegistry, type RegisteredSlot } from '@/lib/slot-registry';
 
+/**
+ * Read the parent frame origin for postMessage targeting.
+ * In a sandboxed iframe without allow-same-origin (the /api/live preview
+ * embed), window.parent.location is unreadable and the browser throws a
+ * SecurityError. The parent validates inbound messages by event.source,
+ * not by origin, so falling back to '*' keeps the slot bridge working
+ * instead of crashing the component. Never loosen the iframe sandbox.
+ */
+function safeParentOrigin(): string {
+  try {
+    return window.parent.location.origin;
+  } catch {
+    return "*";
+  }
+}
+
 interface VisualSlotProps {
   id: string;
   route: string;
@@ -132,15 +148,15 @@ export function VisualSlot({
         type: 'SLOT_REGISTER',
         slot: { id, route, page, section, slotName, currentMediaId, component },
       };
-      const targetOrigin = window.parent.location.origin;
+      const targetOrigin = safeParentOrigin();
       console.log('[VS_FORENSIC] REGISTER_MESSAGE_CONSTRUCTED', {
         messageType: registerMessage.type,
         messageShape: Object.keys(registerMessage),
         slotShape: Object.keys(registerMessage.slot),
         targetOrigin,
-        parentOrigin: window.parent.location?.origin,
+        parentOrigin: safeParentOrigin(),
         currentOrigin: window.location.origin,
-        originsMatch: window.parent.location?.origin === window.location.origin,
+        originsMatch: safeParentOrigin() === window.location.origin,
         timestamp: Date.now(),
       });
       console.log('[VS_FORENSIC] REGISTER_SENT', {
@@ -158,7 +174,7 @@ export function VisualSlot({
         parentExists: !!window.parent,
         parentWindowExists: window.parent !== window,
         iframeOrigin: window.location.origin,
-        parentOrigin: window.parent.location?.origin,
+        parentOrigin: safeParentOrigin(),
         timestamp: Date.now(),
       });
       window.parent.postMessage(registerMessage, targetOrigin);
@@ -199,7 +215,7 @@ export function VisualSlot({
         // Re-register with current mediaId to sync state
         slotRegistry.register(slot);
         if (window.parent !== window) {
-          const targetOrigin = window.parent.location.origin;
+          const targetOrigin = safeParentOrigin();
           window.parent.postMessage({
             type: 'SLOT_REGISTER',
             slot: { id, route, page, section, slotName, currentMediaId, component },
@@ -347,14 +363,14 @@ export function VisualSlot({
     // window.dispatchEvent() inside iframe only dispatches on iframe's own Window
 
     const slotData = { id, route, page, section, slotName, currentMediaId };
-    const targetOrigin = window.parent.location.origin;
+    const targetOrigin = safeParentOrigin();
 
     console.log('[SLOT_CLICK] POSTMESSAGE_PATH', {
       slotId: id,
       method: 'postMessage',
-      parentOrigin: window.parent.location?.origin,
+      parentOrigin: safeParentOrigin(),
       currentOrigin: window.location.origin,
-      originsMatch: window.parent.location?.origin === window.location.origin,
+      originsMatch: safeParentOrigin() === window.location.origin,
     });
 
     window.parent.postMessage(
@@ -537,7 +553,7 @@ export function VisualSlot({
 
           // Send SLOT_REORDER event to parent
           if (window.parent !== window) {
-            const targetOrigin = window.parent.location.origin;
+            const targetOrigin = safeParentOrigin();
             window.parent.postMessage({
               type: 'SLOT_REORDER',
               sourceSlotId: parsed.sourceSlotId,
@@ -622,7 +638,7 @@ export function VisualSlot({
 
         // Send GALLERY_ADD event to parent with full applicationData
         if (window.parent !== window) {
-          const targetOrigin = window.parent.location.origin;
+          const targetOrigin = safeParentOrigin();
           window.parent.postMessage({
             type: 'GALLERY_ADD',
             slot: { id, route, page, section, slotName, currentMediaId, component },
@@ -722,7 +738,7 @@ export function VisualSlot({
 
       // Send SLOT_DROP event to parent with full applicationData
       if (window.parent !== window) {
-        const targetOrigin = window.parent.location.origin;
+        const targetOrigin = safeParentOrigin();
         window.parent.postMessage({
           type: 'SLOT_DROP',
           slot: { id, route, page, section, slotName, currentMediaId, component },
