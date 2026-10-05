@@ -1,0 +1,119 @@
+{
+  "schema": "ping.logo-harvest@1",
+  "sourcePage": "https://www.coppersmithplumbing.com/",
+  "observedAt": "2026-10-04T12:12:28.205Z",
+  "objectIds": [
+    "coppersmith-plumbing",
+    "website-business-2f1327c09d622175"
+  ],
+  "authorization": "Nolan explicitly authorized harvesting and presentation of the Coppersmith site logo in this session.",
+  "ownerSupplied": false,
+  "cutout": true,
+  "procedure": "Download official PNG; verify alpha; crop alpha-empty margins with 2px transparent padding; resize down using Lanczos3; encode lossless WebP; preserve original PNG and SHA-256 lineage.",
+  "sources": [
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2024/04/coppersmith-logo-black-n-copper.png",
+      "originalPath": "sources/coppersmith/coppersmith-logo-black-n-copper.png",
+      "originalSha256": "36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668",
+      "bytes": 21837,
+      "width": 400,
+      "height": 262,
+      "transparentPixels": 84156,
+      "semiTransparentPixels": 10419,
+      "crop": {
+        "left": 18,
+        "top": 12,
+        "width": 364,
+        "height": 238
+      },
+      "padding": 2,
+      "master": {
+        "file": "coppersmith-logo-on-light.png",
+        "sha256": "9da55277db46b0e5d8192656f1a60c4f5a136990caff4b3ca4ca21301d9c02f8",
+        "width": 368,
+        "height": 242
+      },
+      "variants": [
+        {
+          "file": "coppersmith-logo-on-light.webp",
+          "density": 1,
+          "width": 96,
+          "height": 63,
+          "bytes": 5266,
+          "sha256": "1815313db84b1de1599a5e16a273284f4f1fcde54815585dce832fcc84ca5477",
+          "derivedFrom": "36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668"
+        },
+        {
+          "file": "coppersmith-logo-on-light@2x.webp",
+          "density": 2,
+          "width": 192,
+          "height": 126,
+          "bytes": 13472,
+          "sha256": "5a8552156a3a0087d323a7c21622b76417ed156d3b8724e96f856191158f1fe8",
+          "derivedFrom": "36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668"
+        },
+        {
+          "file": "coppersmith-logo-on-light@3x.webp",
+          "density": 3,
+          "width": 288,
+          "height": 189,
+          "bytes": 23858,
+          "sha256": "008123feace83c8b35459c7783653fe851fd5a35c716700760fefe7def19097a",
+          "derivedFrom": "36e4ff5cab1bafa809ab3d555bdf4b85617157da2ed0e88311e184d942eba668"
+        }
+      ]
+    },
+    {
+      "sourceUrl": "https://www.coppersmithplumbing.com/wp-content/uploads/2024/04/coppersmith-new-logo-white.png",
+      "originalPath": "sources/coppersmith/coppersmith-new-logo-white.png",
+      "originalSha256": "381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb",
+      "bytes": 21488,
+      "width": 400,
+      "height": 262,
+      "transparentPixels": 84156,
+      "semiTransparentPixels": 10419,
+      "crop": {
+        "left": 18,
+        "top": 12,
+        "width": 364,
+        "height": 238
+      },
+      "padding": 2,
+      "master": {
+        "file": "coppersmith-logo-on-dark.png",
+        "sha256": "a241adc8d63521b1a669b15316e0e513cb3ded80f1ee2bbbe24d53ed4620ab1c",
+        "width": 368,
+        "height": 242
+      },
+      "variants": [
+        {
+          "file": "coppersmith-logo-on-dark.webp",
+          "density": 1,
+          "width": 96,
+          "height": 63,
+          "bytes": 4664,
+          "sha256": "916a3f7b62b1c72761453e666ed7d89c503e6061e5231d67d3ddff4c14a58e13",
+          "derivedFrom": "381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb"
+        },
+        {
+          "file": "coppersmith-logo-on-dark@2x.webp",
+          "density": 2,
+          "width": 192,
+          "height": 126,
+          "bytes": 12158,
+          "sha256": "ff353f6e3c6279c348e3d371f9ff5916cf0e63f3379d62f4118272bed28c6d5c",
+          "derivedFrom": "381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb"
+        },
+        {
+          "file": "coppersmith-logo-on-dark@3x.webp",
+          "density": 3,
+          "width": 288,
+          "height": 189,
+          "bytes": 20742,
+          "sha256": "2ecce6879dcad1d96859fab640652a13137e9d1f7f61bd9d7d41a0b531afd5f4",
+          "derivedFrom": "381a361fbdbd5713b5e02661c2c4f26b88203d6a49f2cdb5cd7acf48d00ebfeb"
+        }
+      ]
+    }
+  ]
+}

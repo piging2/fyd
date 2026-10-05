@@ -2,6 +2,7 @@
  * Portal preview types (client-safe: no node imports).
  */
 import type { CircleProjection } from "../object/types";
+import type { PresentationMark } from "../presentation/identity";
 
 export type PreviewMode = "snapshot" | "interactive" | "native";
 
@@ -28,18 +29,8 @@ export interface PreviewRecord {
   provenance: PreviewProvenance;
 }
 
-export interface PortalLogo {
-  src: string;
-  digest: string;
-  basis: string;
-  /**
-   * True when the logo is an owner-supplied asset (not ingested site
-   * media). Owner assets render as irregular cutouts: no badge
-   * background disc, and they win over the preview photo in the
-   * collapsed mark. Nolan 2026-10-02: HPP = tape measure.
-   */
-  ownerSupplied?: boolean;
-}
+/** Shared artwork, provenance and explicit cutout geometry. */
+export type PortalLogo = PresentationMark;
 
 export interface PortalProjection {
   circle: CircleProjection;

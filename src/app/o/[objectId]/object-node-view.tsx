@@ -21,13 +21,8 @@ import { LikeButton } from "@/fyd/ui/like-button";
 import { WhyThis } from "@/fyd/ui/why-this";
 import type { ObjectCapability, ObjectView } from "@/fyd/object/types";
 import { resolveSafeLink } from "@/fyd/sitespec/safe-link";
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? "?";
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
-  return (first + last).toUpperCase();
-}
+import { ObjectIdentityMark } from "@/fyd/presentation/object-identity-mark";
+import { ObjectDiscoveryExplanation, ObjectPlacementDisclosure, isObjectDisplayContextValid, type ObjectDisplayContext } from "@/fyd/presentation/object-context";
 
 function ActionButtons({ view }: { view: ObjectView }) {
   const render = (cap: ObjectCapability, i: number) => {
@@ -125,12 +120,16 @@ function displayActorLabel(actorLabel: string): string {
 export function ObjectNodeView({
   view,
   tenantId,
+  displayContext,
 }: {
   view: ObjectView;
   tenantId: string | null;
+  /** Deep links do not infer paid status from query parameters. */
+  displayContext?: ObjectDisplayContext;
 }) {
+  const presentationNow = Date.now();
+  if (!isObjectDisplayContextValid(view.id, displayContext, presentationNow)) return null;
   const hero = view.media.find((m) => m.role === "hero" || m.role === "gallery");
-  const logo = view.media.find((m) => m.role === "logo");
   const visibleServices = view.services.filter((s) => s.visible);
   const showLocality =
     view.contact.addressVisibility === "public" && view.contact.locality;
@@ -153,16 +152,7 @@ export function ObjectNodeView({
       <header className="border-b border-stone-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
-            {logo ? (
-              <img src={logo.src} alt="" aria-hidden="true" className="h-8 w-8 rounded-full bg-white object-contain" />
-            ) : (
-              <span
-                aria-hidden="true"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-900"
-              >
-                {initials(view.name)}
-              </span>
-            )}
+            <ObjectIdentityMark object={view} size={40} decorative />
             <span className="truncate text-sm font-semibold">{view.name}</span>
           </div>
           {/* Owner control-plane entry. The demo distinction the DEV badge
@@ -179,6 +169,8 @@ export function ObjectNodeView({
       </header>
 
       <main className="mx-auto max-w-4xl px-4 pb-20 sm:px-6">
+        <ObjectPlacementDisclosure objectId={view.id} context={displayContext} now={presentationNow} />
+        <ObjectDiscoveryExplanation objectId={view.id} context={displayContext} now={presentationNow} />
         {/* Hero */}
         <div className="pt-8">
           {hero ? (
@@ -192,9 +184,7 @@ export function ObjectNodeView({
               aria-hidden="true"
               className="flex h-56 w-full items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 via-stone-200 to-stone-300 sm:h-72"
             >
-              <span className="flex h-24 w-24 items-center justify-center rounded-full bg-white/70 text-3xl font-bold text-amber-900">
-                {initials(view.name)}
-              </span>
+              <ObjectIdentityMark object={view} size={96} decorative />
             </div>
           )}
           <p className="mt-5 text-sm font-medium uppercase tracking-widest text-amber-800">

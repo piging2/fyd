@@ -256,10 +256,10 @@ function PortalCircleContent(props: PortalCircleProps) {
 
   const preview = portal.preview;
   const focalPos = preview ? focalToObjectPosition({ x: preview.focalX, y: preview.focalY }) : "50% 30%";
-  // Nolan 2026-10-02: an owner-supplied logo (irregular cutout) wins over
+  // A reviewed transparent logo (irregular cutout) wins over
   // the preview photo in the collapsed mark and renders with NO badge
   // background, so the cutout's own edge is the visible shape.
-  const identity = resolveObjectPresentationIdentity({ id, name: portal.circle.name, logo: portal.logo });
+  const identity = resolveObjectPresentationIdentity({ id, name: portal.circle.name, logo: portal.logo }, "dark");
   const ownerLogo = identity.shapeMode === "cutout" ? identity.mark : null;
   const collapsedBg = ownerLogo ? (
     <img
@@ -800,7 +800,8 @@ function EngagedPortal(p: EngagedProps) {
   const facts = portal.circle.topFacts.slice(0, 2);
   // Owner marks are irregular objects, not circles: the engaged panel
   // morphs from the cutout's own edge, not from a round badge.
-  const engagedFromRadius = portal.logo?.ownerSupplied ? 12 : "50%";
+  const engagedIdentity = resolveObjectPresentationIdentity({ id: portal.circle.id, name: portal.circle.name, logo: portal.logo }, "dark");
+  const engagedFromRadius = engagedIdentity.shapeMode === "cutout" ? 12 : "50%";
   const originTransform = portalOriginTransform(p.origin, center, d);
   const stationary = { x: 0, y: 0, scaleX: 1, scaleY: 1 };
 

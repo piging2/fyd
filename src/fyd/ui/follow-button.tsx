@@ -1,74 +1,33 @@
 "use client";
 
-/**
- * FollowButton: follow/unfollow this object via /api/fyd/follow.
- * The button reflects real state (GET on mount) and toggles via POST.
- * Never a dead button: it only renders for capabilities the schema
- * granted, and it talks to the real follows store.
- */
-
-import { useCallback, useEffect, useState } from "react";
+import { useId } from "react";
 import { UserPlus, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useObjectRelationship } from "./use-object-relationship";
 
-export function FollowButton({
-  objectId,
-  className,
-}: {
-  objectId: string;
-  className?: string;
-}) {
-  const [following, setFollowing] = useState<boolean | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    let live = true;
-    fetch("/api/fyd/follow?objectId=" + encodeURIComponent(objectId))
-      .then((r) => r.json())
-      .then((d) => {
-        if (live && typeof d.following === "boolean") setFollowing(d.following);
-      })
-      .catch(() => {});
-    return () => {
-      live = false;
-    };
-  }, [objectId]);
-
-  const toggle = useCallback(async () => {
-    if (busy || following === null) return;
-    setBusy(true);
-    try {
-      const res = await fetch("/api/fyd/follow", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          objectId,
-          action: following ? "unfollow" : "follow",
-        }),
-      });
-      const d = await res.json();
-      if (d.ok && typeof d.following === "boolean") setFollowing(d.following);
-    } catch {
-      // Network failure: leave state unchanged, never fake it.
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, following, objectId]);
-
+export function FollowButton({ objectId, className }: { objectId: string; className?: string }) {
+  const relationship = useObjectRelationship(objectId, "follow");
+  const messageId = useId();
+  const pending = relationship.status === "pending" || relationship.status === "loading";
+  const retryable = relationship.status === "retryable-error";
+  const terminal = relationship.status === "terminal-error";
   return (
-    <button
-      type="button"
-      className={cn(className)}
-      onClick={toggle}
-      disabled={busy || following === null}
-      aria-pressed={following === true}
-    >
-      {following === true ? (
-        <UserCheck className="h-5 w-5" aria-hidden="true" />
-      ) : (
-        <UserPlus className="h-5 w-5" aria-hidden="true" />
-      )}
-      {following === true ? "Following" : "Follow"}
-    </button>
+    <span className="inline-flex flex-col items-start gap-1">
+      <button
+        type="button"
+        className={cn("focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-60", className)}
+        onClick={retryable ? relationship.retry : relationship.toggle}
+        disabled={pending || terminal || (relationship.state === null && !retryable)}
+        aria-pressed={relationship.state === true}
+        aria-busy={pending}
+        aria-describedby={messageId}
+        data-relationship-status={relationship.status}
+        data-relationship-scope={relationship.scope ?? "unknown"}
+      >
+        {relationship.state ? <UserCheck className="h-5 w-5" aria-hidden="true" /> : <UserPlus className="h-5 w-5" aria-hidden="true" />}
+        {pending ? (relationship.status === "loading" ? "Loading…" : "Saving…") : retryable ? "Retry follow" : terminal ? "Follow unavailable" : relationship.state ? "Following" : "Follow"}
+      </button>
+      <span id={messageId} role="status" className="max-w-64 text-xs opacity-70">{relationship.message}</span>
+    </span>
   );
 }

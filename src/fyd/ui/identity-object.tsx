@@ -37,13 +37,15 @@ import {
 } from "./circle-machine";
 import { EvidenceStateLabel } from "./evidence-state";
 import { WhyThis } from "./why-this";
-import { executeFollow } from "@/fyd/capabilities/runtime";
+import { FollowButton } from "./follow-button";
 import type {
   ObjectProjection,
   RelatedRef,
 } from "@/fyd/object/object-projection";
 import type { AskFydCitation } from "@/fyd/ask/visitor-answer";
 import { cn } from "@/lib/utils";
+import { ObjectIdentityMark } from "../presentation/object-identity-mark";
+import { resolveObjectPresentationIdentity } from "../presentation/identity";
 
 /** Circle face resolved server-side through the rights-gated media seam. */
 export type CircleFace =
@@ -88,12 +90,17 @@ function gradientFaceFor(name: string, id: string): CircleFace {
 function CircleFaceView({
   face,
   name,
+  objectId,
   size,
 }: {
   face: CircleFace;
   name: string;
+  objectId: string;
   size: "lg" | "md";
 }) {
+  const identity = resolveObjectPresentationIdentity({ id: objectId, name,
+    logo: face.kind === "logo" ? { src: face.src, alt: face.alt, digest: "", basis: "Authorized object face" } : null });
+  if (identity.mark) return <ObjectIdentityMark identity={identity} size={size === "lg" ? 64 : 48} />;
   const dims = size === "lg" ? "h-16 w-16" : "h-12 w-12";
   if (face.kind === "logo") {
     return (
@@ -188,37 +195,16 @@ function ActionRow({
   const p = handle.projection;
   const caps = p.capabilities;
   const has = (kind: string) => caps.some((c) => c.kind === kind);
-  const [following, setFollowing] = React.useState(false);
-  const [busy, setBusy] = React.useState(false);
   const linkCaps = caps.filter(
     (c): c is LinkCap =>
       c.kind === "call" || c.kind === "email" || c.kind === "website",
   );
 
-  async function toggleFollow() {
-    if (busy) return;
-    setBusy(true);
-    try {
-      setFollowing(await executeFollow(p.id, following));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const btn =
     "inline-flex min-h-[44px] items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-700 focus-visible:ring-offset-2 disabled:opacity-50";
   return (
     <div className="mt-4 flex flex-wrap gap-2">
-      {has("follow") ? (
-        <button
-          type="button"
-          onClick={toggleFollow}
-          disabled={busy}
-          className={btn + " bg-purple-700 text-white hover:bg-purple-800"}
-        >
-          {following ? "Following" : "Follow"}
-        </button>
-      ) : null}
+      {has("follow") ? <FollowButton objectId={p.id} className={btn + " bg-purple-700 text-white hover:bg-purple-800"} /> : null}
       {has("ask") ? (
         <button
           type="button"
@@ -465,7 +451,7 @@ function ExpansionCard({
         </div>
 
         <div className="flex items-start gap-3">
-          <CircleFaceView face={face} name={p.name} size="md" />
+          <CircleFaceView face={face} objectId={p.id} name={p.name} size="md" />
           <div className="min-w-0">
             <p className="text-base font-bold leading-tight text-stone-900">
               {p.name}
@@ -793,8 +779,10 @@ export function IdentityObject({ handle }: { handle: ObjectHandle }) {
         }
         className="group flex flex-col items-center gap-1.5 rounded-2xl focus-visible:outline-none"
       >
-        <span className="block rounded-full ring-2 ring-purple-700/50 ring-offset-2 transition-transform duration-200 group-hover:scale-105 group-focus-visible:ring-purple-700">
-          <CircleFaceView face={handle.face} name={p0.name} size="lg" />
+        <span className={resolveObjectPresentationIdentity(p0).mark
+          ? "block transition-transform duration-200 group-hover:scale-105 group-focus-visible:outline group-focus-visible:outline-purple-700"
+          : "block rounded-full ring-2 ring-purple-700/50 ring-offset-2 transition-transform duration-200 group-hover:scale-105 group-focus-visible:ring-purple-700"}>
+          <CircleFaceView face={handle.face} objectId={p0.id} name={p0.name} size="lg" />
         </span>
         <span className="w-24 text-center">
           <span className="block truncate text-xs font-semibold text-stone-900">

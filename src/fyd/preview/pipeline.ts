@@ -23,6 +23,7 @@ import { getVerifiedPublicProjectionSync } from "../data/ping-object-source";
 import { resolveFocal } from "./focal";
 import { isSafeWebHref } from "./types";
 import type { PortalProjection, PreviewMode, PreviewRecord } from "./types";
+import { resolveObjectPresentationIdentity } from "../presentation/identity";
 
 export type { PortalProjection, PreviewMode, PreviewRecord };
 export { isSafeWebHref };
@@ -73,31 +74,10 @@ interface ManifestMedia {
   variants?: Array<{ name: string; url: string; bytes: number; width?: number }>;
 }
 
-/**
- * Owner-supplied logo assets, by portal object id. Presentation config:
- * the semantic pipeline never names these. Add entries as owners supply
- * art; the generic ingested-logo path below stays the fallback.
- */
-const OWNER_LOGO_OVERRIDES: Record<string, string> = {
-  // Happy Place Carpentry: the owner's real hand-drawn tape measure
-  // (transparent irregular cutout webp, black knocked out).
-  "happy-place": "/marks/happy-place-tape-measure.webp",
-};
-
-/** Resolve the ingested logo (role "logo"), smallest variant. Null when none. */
+/** Resolve a display logo at 72 CSS pixels and up to 3x density. */
 function resolveLogo(objectId: string): PortalProjection["logo"] {
-  // Nolan 2026-10-02 (binding): owner-supplied logo assets win over
-  // ingested media. HPP = the real tape-measure cutout. Served from the
-  // site's own public dir; the semantic pipeline is untouched.
-  const ownerSrc = OWNER_LOGO_OVERRIDES[objectId];
-  if (ownerSrc) {
-    return {
-      src: ownerSrc,
-      digest: "",
-      basis: "Owner-supplied logo asset",
-      ownerSupplied: true,
-    };
-  }
+  const configured = resolveObjectPresentationIdentity({ id: objectId, name: "" }).mark;
+  if (configured) return configured;
   try {
     const raw = readFileSync(
       join(process.cwd(), "src", "fyd", "media", "manifests", objectId + ".json"),
@@ -107,13 +87,31 @@ function resolveLogo(objectId: string): PortalProjection["logo"] {
     const media = Array.isArray(parsed.media) ? parsed.media : [];
     const logos = media.filter((m) => (m.roles ?? []).includes("logo"));
     if (logos.length === 0) return null;
-    // Deterministic: first logo entry wins; smallest variant by bytes.
+    // Deterministic: first logo entry wins. Blur placeholders never become
+    // display marks, even when they are the only available variants.
     const logo = logos[0];
-    const variants = (logo.variants ?? []).filter((v) => typeof v.url === "string");
+    const variants = (logo.variants ?? []).filter((v) =>
+      typeof v.url === "string" && v.url.length > 0 && !/^blur(?:$|[-_])/i.test(v.name),
+    );
     if (variants.length === 0) return null;
-    const smallest = variants.reduce((a, b) => (a.bytes <= b.bytes ? a : b));
+    const knownWidths = variants.filter((v) => typeof v.width === "number" && Number.isFinite(v.width) && v.width > 0);
+    const targetWidth = 72 * 3;
+    const suitable = knownWidths.filter((v) => v.width! >= targetWidth);
+    const candidates = suitable.length > 0 ? suitable : knownWidths.length > 0 ? knownWidths : variants;
+    const selected = [...candidates].sort((a, b) => {
+      if (knownWidths.length > 0) {
+        const widthOrder = suitable.length > 0 ? a.width! - b.width! : b.width! - a.width!;
+        if (widthOrder !== 0) return widthOrder;
+        if (a.bytes !== b.bytes) return a.bytes - b.bytes;
+      } else if (a.bytes !== b.bytes) {
+        // Legacy manifests lack dimensions: bytes are only a fallback
+        // quality proxy, so prefer the largest non-placeholder asset.
+        return b.bytes - a.bytes;
+      }
+      return a.url < b.url ? -1 : a.url > b.url ? 1 : 0;
+    })[0];
     return {
-      src: smallest.url,
+      src: selected.url,
       digest: logo.digest ?? "",
       basis: "Ingested site logo, no owner upload",
     };
@@ -170,15 +168,12 @@ export function buildPortalProjection(objectId: string): PortalProjection | null
 }
 
 /**
- * Staged rollout gate for homepage Circles (Nolan, 2026-09-22): HAPPY PLACE
- * ONLY until Nolan personally approves the next identity. This is product
- * configuration, not customer branching: every listed site id flows through
- * the identical buildPortalProjection -> CircleProjection -> PortalCircle
- * path with no per-customer behavior. Approving Circle #2 (Coppersmith)
- * Circle #2 (Coppersmith) approved by Nolan 2026-09-22: "Margins Are the
- * Object Layer" object proof.
+ * Reviewed homepage placements: Happy Place, Coppersmith, and PING's own
+ * FYD object (Nolan, 2026-10-04). Every entry uses the same projection and
+ * presentation path. Filesystem test tenants and duplicate acquisition
+ * fixtures do not become public placements merely by existing on disk.
  */
-export const HOMEPAGE_CIRCLE_SITE_IDS: string[] = ["happy-place", "coppersmith-plumbing"];
+export const HOMEPAGE_CIRCLE_SITE_IDS: string[] = ["happy-place", "coppersmith-plumbing", "ping-fyd"];
 
 /** Object ids with portal projections available. Derived from the authoritative
  * object registry, never a hardcoded customer list. */

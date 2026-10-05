@@ -20,7 +20,7 @@ import { describe, it, expect } from "@jest/globals";
 import {
   escapeHtml,
   safeWebHref,
-} from "@/app/api/live/[siteId]/route";
+} from "@/fyd/preview/fallback-html";
 
 describe("live fallback HTML sink (P1-1 stored-XSS regression)", () => {
   describe("escapeHtml", () => {

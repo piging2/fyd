@@ -66,7 +66,7 @@ export function PortalWebsitePreview({ portal, href, displayContext, relationshi
   const [state, setState] = React.useState<"loading" | "loaded" | "slow" | "error">("loading");
   const [evidenceOpen, setEvidenceOpen] = React.useState(false);
   const { circle } = portal;
-  const { mark: logo } = resolveObjectPresentationIdentity({ id: circle.id, name: circle.name, logo: portal.logo });
+  const { mark: logo } = resolveObjectPresentationIdentity({ id: circle.id, name: circle.name, logo: portal.logo }, "dark");
   const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
   // The sandboxed location-probe crash ("Application error" inside the
   // iframe) is unshimmable; the beacon reports it and we swap the dead iframe
@@ -84,7 +84,7 @@ export function PortalWebsitePreview({ portal, href, displayContext, relationshi
     <div className={`flex min-h-0 flex-col overflow-hidden bg-[#171613] text-stone-100 ${className}`}>
       {displayContext?.sponsorship && <div className="shrink-0 px-3 pt-2"><ObjectPlacementDisclosure objectId={circle.id} context={displayContext} now={presentationNow} /></div>}
       <header className="flex min-h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2">
-        {logo && <img src={logo.src} alt="" aria-hidden="true" draggable={false}
+        {logo && <img src={logo.src} srcSet={logo.srcSet} alt="" aria-hidden="true" draggable={false}
           className="h-9 w-12 shrink-0 object-contain"
           style={{ background: "transparent", borderRadius: 0, filter: "drop-shadow(0 3px 4px rgba(0,0,0,.25))" }} />}
         <div className="min-w-0 flex-1">
@@ -167,7 +167,7 @@ export function ImmersiveWebsiteView({
   drift?: boolean;
 }) {
   const { circle } = portal;
-  const { mark } = resolveObjectPresentationIdentity({ id: circle.id, name: circle.name, logo: portal.logo });
+  const { mark } = resolveObjectPresentationIdentity({ id: circle.id, name: circle.name, logo: portal.logo }, "dark");
   const reduceMotion = useReducedMotion();
   const [loaded, setLoaded] = React.useState(false);
   const [crashed, setCrashed] = React.useState(false);
@@ -303,7 +303,7 @@ export function ImmersiveWebsiteView({
         <div className="fyd-sheet-pad flex shrink-0 items-start justify-between gap-3 bg-gradient-to-b from-black/65 to-transparent p-4">
           <div className="min-w-0 pt-1">
             <ObjectPlacementDisclosure objectId={circle.id} context={displayContext} now={presentationNow} />
-            {mark && <img src={mark.src} alt="" aria-hidden="true" draggable={false}
+            {mark && <img src={mark.src} srcSet={mark.srcSet} alt="" aria-hidden="true" draggable={false}
               className="mb-2 h-12 w-16 object-contain"
               style={{ background: "transparent", borderRadius: 0, filter: "drop-shadow(0 3px 4px rgba(0,0,0,.25))" }} />}
             <p className="fyd-shiny-text fyd-sheet-title text-3xl font-black leading-[1.05]">{title}</p>

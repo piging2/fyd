@@ -22,17 +22,20 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import type { ObjectProjection } from "./object-projection";
+import { ObjectIdentityMark } from "../presentation/object-identity-mark";
+import { ObjectDiscoveryExplanation, ObjectPlacementDisclosure, isObjectDisplayContextValid, type ObjectDisplayContext } from "../presentation/object-context";
 import {
   CapabilityActions,
   EvidenceMark,
   FactRow,
-  InitialsMark,
   RelatedRow,
 } from "./evidence-chrome";
 
 export interface ObjectNodeProps {
   /** The generic object projection: Business, Person, or Service. */
   projection: ObjectProjection;
+  /** Supplied by the placement resolver; absent for organic/deep-link views. */
+  displayContext?: ObjectDisplayContext;
   /** Node href; defaults to /o/<id>. */
   nodeHref?: string;
   className?: string;
@@ -70,16 +73,7 @@ function Center({ projection }: { projection: ObjectProjection }) {
         />
       )}
       <div className="flex items-start gap-4">
-        {logo ? (
-          <img
-            src={logo.src}
-            alt={projection.name + " logo"}
-            loading="lazy"
-            className="h-16 w-16 shrink-0 rounded-full bg-white object-contain p-1 ring-1 ring-stone-200"
-          />
-        ) : (
-          <InitialsMark name={projection.name} size="lg" />
-        )}
+        <ObjectIdentityMark object={projection} size={64} />
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold text-stone-900">{projection.name}</h1>
           {subline && <p className="mt-1 text-sm text-stone-500">{subline}</p>}
@@ -226,7 +220,9 @@ function Margins({
   );
 }
 
-export function ObjectNode({ projection, nodeHref, className }: ObjectNodeProps) {
+export function ObjectNode({ projection, nodeHref, className, displayContext }: ObjectNodeProps) {
+  const presentationNow = Date.now();
+  if (!isObjectDisplayContextValid(projection.id, displayContext, presentationNow)) return null;
   const href = nodeHref ?? "/o/" + encodeURIComponent(projection.id);
   return (
     <div
@@ -234,6 +230,8 @@ export function ObjectNode({ projection, nodeHref, className }: ObjectNodeProps)
       data-object-id={projection.id}
       data-object-schema={projection.schema}
     >
+      <ObjectPlacementDisclosure objectId={projection.id} context={displayContext} now={presentationNow} />
+      <ObjectDiscoveryExplanation objectId={projection.id} context={displayContext} now={presentationNow} />
       {/* CENTER/MARGINS: a wrapping flex row. Geometry decides placement:
           margins fall below the center when the container narrows. No
           hardcoded pixel breakpoints. */}

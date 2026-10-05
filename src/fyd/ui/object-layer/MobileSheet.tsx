@@ -26,6 +26,8 @@ import { useViewportCapabilities } from "./viewport";
 import { identityTransitionName, transitionViews } from "./view-transitions";
 import { fyd } from "./fyd-tokens";
 import type { MarginObjectDescriptor } from "./types";
+import { ObjectIdentityMark } from "../../presentation/object-identity-mark";
+import { resolveObjectPresentationIdentity } from "../../presentation/identity";
 
 /**
  * The list row's avatar. It carries the object's shared identity name
@@ -34,6 +36,8 @@ import type { MarginObjectDescriptor } from "./types";
  */
 function IdentityAvatar({ object }: { object: MarginObjectDescriptor }) {
   const o = object;
+  const identity = resolveObjectPresentationIdentity({ id: o.objectId, name: o.name,
+    image: o.imageSrc ? { src: o.imageSrc } : null });
   const ref = React.useCallback(
     (el: HTMLSpanElement | null) => {
       if (el) el.style.setProperty("view-transition-name", identityTransitionName(o.objectId));
@@ -43,9 +47,9 @@ function IdentityAvatar({ object }: { object: MarginObjectDescriptor }) {
   return (
     <span
       ref={ref}
-      className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-full bg-neutral-200"
+      className={identity.mark ? "relative block h-11 w-11 shrink-0" : "relative block h-11 w-11 shrink-0 overflow-hidden rounded-full bg-neutral-200"}
     >
-      {o.imageSrc ? (
+      {identity.mark ? <ObjectIdentityMark identity={identity} size={44} decorative /> : o.imageSrc ? (
         <img
           src={o.imageSrc}
           srcSet={o.imageSrcSet ?? undefined}

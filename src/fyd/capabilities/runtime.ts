@@ -14,6 +14,7 @@
 
 import type { PortalProjection } from "@/fyd/preview/types";
 import { isSafeWebHref } from "@/fyd/preview/types";
+import { setObjectRelationship } from "./relationship-client";
 
 export type CapabilityKind = "follow" | "like" | "ask" | "website";
 
@@ -34,16 +35,6 @@ async function postJson<T>(path: string, body: unknown): Promise<T | null> {
   }
 }
 
-interface FollowBody {
-  ok?: boolean;
-  following?: unknown;
-}
-
-interface LikeBody {
-  ok?: boolean;
-  liked?: unknown;
-}
-
 interface AskBody {
   ok?: boolean;
   answer?: unknown;
@@ -55,22 +46,16 @@ interface AskBody {
  * so the Circle keeps the last server-confirmed state.
  */
 export async function executeFollow(objectId: string, current: boolean): Promise<boolean> {
-  const d = await postJson<FollowBody>("/api/fyd/follow", {
-    objectId,
-    action: current ? "unfollow" : "follow",
-  });
-  return d && d.ok === true ? !!d.following : current;
+  const result = await setObjectRelationship(objectId, "follow", !current);
+  return result.ok ? result.state : current;
 }
 
 /**
  * POST /api/fyd/like. Fail-closed: returns `current` on any failure.
  */
 export async function executeLike(objectId: string, current: boolean): Promise<boolean> {
-  const d = await postJson<LikeBody>("/api/fyd/like", {
-    objectId,
-    action: current ? "unlike" : "like",
-  });
-  return d && d.ok === true ? !!d.liked : current;
+  const result = await setObjectRelationship(objectId, "like", !current);
+  return result.ok ? result.state : current;
 }
 
 export interface AskResult {

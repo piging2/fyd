@@ -12,6 +12,8 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { spring } from "@/motion/motionTokens";
 import type { SpatialNode } from "@/fyd/spatial/object-space";
+import { resolveObjectPresentationIdentity } from "../../presentation/identity";
+import { ObjectIdentityMark } from "../../presentation/object-identity-mark";
 
 export function SpatialNodeButton({
   node,
@@ -37,6 +39,7 @@ export function SpatialNodeButton({
   buttonRef: (el: HTMLButtonElement | null) => void;
 }) {
   const d = Math.max(2 * r, 44);
+  const identity = resolveObjectPresentationIdentity({ id: node.objectId, name: node.label }, "dark");
   return (
     <motion.button
       type="button"
@@ -52,7 +55,7 @@ export function SpatialNodeButton({
       className="absolute left-0 top-0 flex flex-col items-center focus-visible:outline-none"
       style={{ width: d }}
     >
-      <span
+      {identity.mark ? <ObjectIdentityMark identity={identity} size={d} decorative /> : <span
         aria-hidden="true"
         className="flex items-center justify-center rounded-full border border-amber-200/40 bg-purple-950/90 shadow-[0_0_18px_rgba(232,180,90,0.25)] backdrop-blur-sm transition-none"
         style={{ width: d, height: d }}
@@ -60,7 +63,7 @@ export function SpatialNodeButton({
         <span className="px-1 text-center text-base font-bold leading-tight text-amber-100">
           {glyph}
         </span>
-      </span>
+      </span>}
       <span className="mt-1 max-w-full truncate text-[11px] font-medium text-purple-100/90">
         {label}
       </span>

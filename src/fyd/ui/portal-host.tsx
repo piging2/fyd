@@ -48,13 +48,15 @@ import {
   proximityScore,
   resolveSemanticTargets,
 } from "@/fyd/spatial/semantic-targets";
-import { rankCandidates } from "@/fyd/rank/object-ranker";
+import { rankCandidates, type RankReason } from "@/fyd/rank/object-ranker";
+import { readObjectRelationship } from "@/fyd/capabilities/relationship-client";
 import { AttentionController } from "@/fyd/attention/controller";
 import { reconcileEngagementOnModeChange } from "@/fyd/placement/engagement-reconcile";
 import { PortalCircle } from "./portal-circle";
 import type { PortalProjection } from "@/fyd/preview/types";
 
 interface Assignment {
+  rankReasons?: readonly RankReason[];
   portal: PortalProjection;
   slot: PeripheralSlot | null;
   /** Viewport X (== document X: no horizontal scroll on host pages). */
@@ -120,11 +122,10 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
     );
     let cancelled = false;
     portals.forEach((p) => {
-      fetch(`/api/fyd/follow?objectId=${encodeURIComponent(p.circle.id)}`)
-        .then((r) => r.json())
+      readObjectRelationship(p.circle.id, "follow")
         .then((d) => {
           if (!cancelled && d && d.ok === true) {
-            setFollowed((prev) => ({ ...prev, [p.circle.id]: !!d.following }));
+            setFollowed((prev) => ({ ...prev, [p.circle.id]: d.state }));
           }
         })
         .catch(() => {});
@@ -187,6 +188,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
               return {
                 objectId: p.circle.id,
                 semanticProximity: proximityScore(t?.rect ?? null, slot.rect),
+                semanticTargetPresent: !!t?.rect,
                 followed: !!followed[p.circle.id],
                 liked: false,
                 capabilityCount: p.circle.capabilities.length,
@@ -251,7 +253,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
             slot.rect.y + Math.max(0, slot.rect.height - 64),
           );
         }
-        out.push({ portal, slot, x, y, d, peek });
+        out.push({ portal, slot, x, y, d, peek, rankReasons: winner.reasons });
       }
       if (placedThisRound === 0) break;
     }
@@ -392,6 +394,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
           >
             <PortalCircle
               portal={portal}
+              displayContext={{ surface: "ping-margin", selectionReason: "Included in this page’s featured businesses" }}
               slot={null}
               peek
               aware={awareId === portal.circle.id}
@@ -459,6 +462,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
               <div className="relative">
                 <PortalCircle
                   portal={a.portal}
+                  displayContext={{ surface: "ping-margin", rankReasons: a.rankReasons }}
                   slot={a.slot}
                   peek={a.peek}
                   aware={awareId === a.portal.circle.id}
