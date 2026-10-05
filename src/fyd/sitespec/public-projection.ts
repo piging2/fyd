@@ -44,6 +44,8 @@ import { readOverrides } from "../object/owner-store";
 import {
   applyFieldVisibility,
   applyHideTraversal,
+  isAddressFamilyField,
+  normalizeHiddenValue,
   type FieldVisibilityDecision,
 } from "./field-visibility";
 import type { ObjectGraph } from "./types";
@@ -225,6 +227,25 @@ export function decisionsForGraph(
         decisions.push({ ...d, objectId: r.object });
       }
     }
+  }
+  // VALUE-LEVEL HIDE (Item 8, O2): for hide decisions on address-family
+  // fields, capture the hidden values from the graph at decision time.
+  // applyFieldVisibility suppresses the identical normalized string
+  // wherever it appears, so a duplicated fact cannot defeat the hide.
+  const byId = new Map(graph.objects.map((o) => [o.id, o]));
+  for (const d of decisions) {
+    if (d.policy !== "hide" || !isAddressFamilyField(d.field)) continue;
+    const obj = byId.get(d.objectId);
+    if (!obj) continue;
+    const vals: string[] = [];
+    for (const [key, value] of Object.entries(obj.fields)) {
+      if (!isAddressFamilyField(key)) continue;
+      const elems = Array.isArray(value) ? value : [value];
+      for (const v of elems) {
+        if (typeof v === "string" && v.trim()) vals.push(normalizeHiddenValue(v));
+      }
+    }
+    if (vals.length > 0) d.hiddenValues = [...new Set(vals)];
   }
   return decisions;
 }

@@ -42,6 +42,25 @@ export interface FieldVisibilityDecision {
   decidedAt: string; // ISO 8601
   source: "owner_override";
   version: number;
+  /**
+   * VALUE-LEVEL HIDE (Item 8, O2): normalized address values captured from
+   * the graph at decision time. Only populated on hide decisions for
+   * address-family fields. When present, the projection drops ANY field on
+   * ANY object whose normalized value matches: the owner's intent is
+   * "this address must not be public", and a duplicated fact holding the
+   * identical string must not defeat it. Absent = fact-level hide only.
+   * Values are normalized with normalizeHiddenValue; comparison is exact
+   * on the normalized form (no fuzzy matching, by design).
+   */
+  hiddenValues?: string[];
+}
+
+/**
+ * Normalize a value for hidden-value comparison: case-insensitive,
+ * whitespace-collapsed. Deterministic, pure.
+ */
+export function normalizeHiddenValue(value: string): string {
+  return value.toLowerCase().trim().replace(/\s+/g, " ");
 }
 
 /**
@@ -164,9 +183,25 @@ export function applyFieldVisibility(
   graph: ObjectGraph,
   decisions: FieldVisibilityDecision[],
 ): ObjectGraph {
+  // VALUE-LEVEL HIDE (Item 8, O2): collect every hidden value from hide
+  // decisions once. A field is dropped when any of its values matches a
+  // hidden value, regardless of which object or fact carries it.
+  const hiddenValues = new Set<string>();
+  for (const d of decisions) {
+    if (d.policy === "hide" && d.hiddenValues) {
+      for (const v of d.hiddenValues) hiddenValues.add(v);
+    }
+  }
+  const valueIsHidden = (value: string | string[]): boolean => {
+    const elems = Array.isArray(value) ? value : [value];
+    return elems.some(
+      (v) => typeof v === "string" && hiddenValues.has(normalizeHiddenValue(v)),
+    );
+  };
   const objects: PingObject[] = graph.objects.map((o) => {
     const fields: Record<string, string | string[]> = {};
     for (const [key, value] of Object.entries(o.fields)) {
+      if (hiddenValues.size > 0 && valueIsHidden(value)) continue; // value-level hide
       const { policy } = resolveFieldVisibility(o.id, key, decisions, value);
       if (policy === "hide") continue; // drop the field
       if (policy === "coarse") {
