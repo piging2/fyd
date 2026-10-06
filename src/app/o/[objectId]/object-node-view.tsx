@@ -171,28 +171,43 @@ export function ObjectNodeView({
       <main className="mx-auto max-w-4xl px-4 pb-20 sm:px-6">
         <ObjectPlacementDisclosure objectId={view.id} context={displayContext} now={presentationNow} />
         <ObjectDiscoveryExplanation objectId={view.id} context={displayContext} now={presentationNow} />
-        {/* Hero */}
-        <div className="pt-8">
+        {/* Hero: the object's living banner. Logo wears the ornate
+            royal-purple + gold ring; the band breathes with a slow
+            gradient drift. Every object arrives with its brand. */}
+        <style>{`@keyframes fyd-hero-drift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}@keyframes fyd-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}@keyframes fyd-ring-glow{0%,100%{box-shadow:0 0 0 3px rgba(212,175,55,.85),0 0 28px rgba(107,33,168,.45)}50%{box-shadow:0 0 0 3px rgba(212,175,55,.85),0 0 44px rgba(107,33,168,.65)}}.fyd-hero-band{animation:fyd-hero-drift 14s ease-in-out infinite;background-size:220% 220%}.fyd-rise{animation:fyd-rise .7s cubic-bezier(.22,.8,.3,1) both}.fyd-rise-1{animation-delay:.08s}.fyd-rise-2{animation-delay:.16s}.fyd-rise-3{animation-delay:.26s}.fyd-ornate-ring{animation:fyd-ring-glow 5s ease-in-out infinite;border-radius:9999px;padding:6px;background:linear-gradient(135deg,#6b21a8,#a855f7 40%,#d4af37 75%,#f5e08c)}`}</style>
+        <div className="fyd-hero-band relative mt-6 overflow-hidden rounded-3xl bg-gradient-to-br from-stone-950 via-[#2a1650] to-amber-950">
           {hero ? (
             <img
               src={hero.src}
-              alt={hero.alt}
-              className="h-56 w-full rounded-2xl object-cover sm:h-72"
-            />
-          ) : (
-            <div
+              alt=""
               aria-hidden="true"
-              className="flex h-56 w-full items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 via-stone-200 to-stone-300 sm:h-72"
-            >
-              <ObjectIdentityMark object={view} size={96} decorative />
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"
+            />
+          ) : null}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="relative px-6 py-10 sm:px-10 sm:py-14">
+            <div className="fyd-rise flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+              <div className="fyd-ornate-ring shrink-0">
+                <span className="flex items-center justify-center rounded-full bg-white/95" style={{ width: 120, height: 120 }}>
+                  <ObjectIdentityMark object={view} size={88} />
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="fyd-rise fyd-rise-1 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200/90">
+                  {[view.category, view.locationLabel].filter(Boolean).join(" · ")}
+                </p>
+                <h1 className="fyd-rise fyd-rise-2 mt-2 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+                  {view.name}
+                </h1>
+              </div>
             </div>
-          )}
-          <p className="mt-5 text-sm font-medium uppercase tracking-widest text-amber-800">
-            {[view.category, view.locationLabel].filter(Boolean).join(" · ")}
-          </p>
-          <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl">{view.name}</h1>
-          <p className="mt-4 max-w-2xl text-lg leading-relaxed text-stone-700">{view.summary}</p>
-          <ActionButtons view={view} />
+            <p className="fyd-rise fyd-rise-3 mt-6 max-w-2xl text-lg leading-relaxed text-stone-200">
+              {view.summary}
+            </p>
+            <div className="fyd-rise fyd-rise-3 mt-6">
+              <ActionButtons view={view} />
+            </div>
+          </div>
         </div>
 
         {visibleServices.length > 0 && (
