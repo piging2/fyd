@@ -25,6 +25,13 @@ export interface ObjectIdentityInput {
   media?: readonly (PresentationImage & { role: string; digest?: string; rightsBasis?: string })[];
   logo?: PresentationMark | null;
   image?: PresentationImage | null;
+  /**
+   * Parent business mark, used when the object has no mark of its own.
+   * Resolved from the object graph's parent relationships (offers/located_at),
+   * never inferred from names. A service of Coppersmith shows the Coppersmith
+   * logo; the service remains its own object.
+   */
+  fallbackMark?: PresentationMark | null;
 }
 
 export interface ObjectPresentationIdentity {
@@ -95,8 +102,17 @@ function initials(name: string): string {
   return ((words[0]?.[0] ?? "?") + (words.length > 1 ? words[words.length - 1][0] : "")).toUpperCase();
 }
 
+/**
+ * Reviewed presentation mark for an exact object id, or null.
+ * Shared lookup so graph-composed views can inherit a parent business mark
+ * without duplicating the allowlist.
+ */
+export function findConfiguredMark(objectId: string): PresentationMark | null {
+  return PRESENTATION_MARKS.find((entry) => entry.objectIds.includes(objectId))?.mark ?? null;
+}
+
 export function resolveObjectPresentationIdentity(input: ObjectIdentityInput, surface: "light" | "dark" = "light"): ObjectPresentationIdentity {
-  const configured = PRESENTATION_MARKS.find((entry) => entry.objectIds.includes(input.id))?.mark;
+  const configured = findConfiguredMark(input.id);
   const mediaLogo = input.media?.find((media) => media.role === "logo");
   const mark = configured ?? input.logo ?? (mediaLogo ? {
     src: mediaLogo.src,
@@ -106,7 +122,7 @@ export function resolveObjectPresentationIdentity(input: ObjectIdentityInput, su
     height: mediaLogo.height,
     digest: mediaLogo.digest ?? "",
     basis: mediaLogo.rightsBasis ?? "Object logo media",
-  } : null);
+  } : null) ?? input.fallbackMark ?? null;
   const image = input.image ?? input.media?.find((media) => media.role === "hero" || media.role === "gallery") ?? null;
   return {
     mark: mark ? { ...mark, ...(surface === "dark" ? mark.onDark : {}) } : null,
