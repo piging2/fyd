@@ -1,24 +1,32 @@
 /**
  * /sites index (dev surface, not a product page).
  *
- * Nolan's directive: rapid switching between the two authorized FYD demo
- * nodes. No customer facts are hardcoded here beyond the two demo tenant
- * IDs; each tenant's display name is resolved at render time from its own
+ * Live observability: the available sites are discovered dynamically from
+ * the projection directory at render time. No hardcoded site list.
+ * Each tenant's display name is resolved at render time from its own
  * PING-backed object graph.
  */
 
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Container, Section, SectionHeading } from "@/components/section";
-import { getVerifiedPublicProjection } from "@/fyd/data/ping-object-source";
+import {
+  getVerifiedPublicProjection,
+  listPingSiteIdsSync,
+} from "@/fyd/data/ping-object-source";
 
 export const metadata: Metadata = {
   title: "FYD demo sites | PING",
   description: "Index of the authorized FYD Social demo sites.",
 };
 
-/** The two authorized FYD demo tenants. */
-const DEMO_SITES = ["happy-place", "coppersmith-plumbing"] as const;
+/**
+ * All available FYD sites, discovered dynamically from the projection
+ * directory. No hardcoded site list: adding a projection JSON file
+ * automatically adds the site. This is live observability of the
+ * available object graphs.
+ */
+const DEMO_SITES: readonly string[] = listPingSiteIdsSync();
 
 function ownerName(
   graph: { objects: { schema: string; visibility: string; title: string }[] },
@@ -46,7 +54,7 @@ export default async function SitesIndexPage() {
           <SectionHeading
             eyebrow="/sites"
             title="FYD demo sites"
-            description="The two authorized demo tenants. Names resolve from each tenant's PING-backed object graph at render time."
+            description="Available FYD sites, discovered live from the projection directory. Names resolve from each tenant's PING-backed object graph at render time."
           />
           <div className="mt-10 grid gap-6 sm:grid-cols-2">
             {sites.map(({ siteId, name }) => (
