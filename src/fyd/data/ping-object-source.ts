@@ -28,6 +28,8 @@
 
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import { statSync } from "node:fs";
+import { join } from "node:path";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { canonicalize } from "@/lib/ping/ask-composer";
@@ -92,9 +94,18 @@ export interface PingSourceOpts {
 }
 
 function projectionDir(): string {
-  return (
-    process.env.FYD_PROJECTION_DIR ?? "/home/nolan/ping/var/fyd-projections"
-  );
+  // Priority: explicit env override -> Pig path (when present) -> bundled
+  // fyd-projections/ in the repo (Vercel serverless). The bundled directory
+  // is populated by the deploy pipeline from verified public projections.
+  const envDir = process.env.FYD_PROJECTION_DIR;
+  if (envDir) return envDir;
+  const pigDir = "/home/nolan/ping/var/fyd-projections";
+  try {
+    if (statSync(pigDir).isDirectory()) return pigDir;
+  } catch {
+    // Pig path absent (e.g. Vercel): fall through to bundled.
+  }
+  return join(process.cwd(), "fyd-projections");
 }
 
 function fail(siteId: string, reason: string): never {
