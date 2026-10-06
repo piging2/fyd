@@ -70,6 +70,16 @@ const nextConfig: NextConfig = {
       "./src/fyd/preview/manifests/*.json",
       "./src/fyd/media/manifests/*.json",
     ],
+    "/o": [
+      "./fyd-projections/*.json",
+      "./src/fyd/preview/manifests/*.json",
+      "./src/fyd/media/manifests/*.json",
+    ],
+    "/o/**/*": [
+      "./fyd-projections/*.json",
+      "./src/fyd/preview/manifests/*.json",
+      "./src/fyd/media/manifests/*.json",
+    ],
   },
   async redirects() {
     return [
