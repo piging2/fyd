@@ -10,6 +10,8 @@
  */
 
 import type { FYDFinding } from "./types";
+import { componentsForSchema } from "../components/registry";
+import { schemaRole, type FYDSchemaRole } from "./schema-roles";
 
 export type FYDFieldType = "string" | "string[]" | "url";
 
@@ -112,47 +114,14 @@ export function getSchemaDef(schemaId: string): FYDSchemaDef | undefined {
 }
 
 // ---------------------------------------------------------------------------
-// Schema roles: the site compiler reasons over roles, not single schema ids.
-//
-// The ping.social.* vocabulary above is the proof vocabulary: three
-// definitions driving everything. The ping.knowledge.* vocabulary is the
-// constitutional website-ingestion vocabulary (knowledge adapter, no new
-// authority): knowledge objects project onto the same site-compiler roles.
-// This mapping is a projection, not a second set of definitions; nothing
-// here mints a schema, and the proof stays exactly Business, Service, Post.
+// Schema roles: re-exported from the leaf module ./schema-roles.
+// The component registry builds its mapping from these roles; the leaf
+// module keeps the sitespec -> components -> schema-roles import graph
+// acyclic. Existing importers keep importing from here unchanged.
 // ---------------------------------------------------------------------------
 
-export type FYDSchemaRole =
-  | "business"
-  | "service"
-  | "product"
-  | "location"
-  | "person"
-  | "post"
-  | "article";
-
-export const SCHEMA_ROLES: Record<FYDSchemaRole, string[]> = {
-  business: ["ping.social.business@1", "ping.knowledge.business@1"],
-  service: ["ping.social.service@1", "ping.knowledge.service@1"],
-  product: ["ping.social.product@1"],
-  location: ["ping.social.location@1", "ping.knowledge.location@1"],
-  person: ["ping.social.person@1", "ping.knowledge.person@1"],
-  // Content splits into short-form posts and long-form articles so the
-  // generator can tell them apart through the role map instead of
-  // hardcoded schema ids. The knowledge vocabulary projects onto both.
-  post: ["ping.social.post@1", "ping.knowledge.post@1"],
-  article: ["ping.social.article@1", "ping.knowledge.article@1"],
-};
-
-/** The site-compiler role a schema id plays, or null when it plays none. */
-export function schemaRole(schemaId: string): FYDSchemaRole | null {
-  const roles = Object.keys(SCHEMA_ROLES) as FYDSchemaRole[];
-  for (const role of roles) {
-    if (SCHEMA_ROLES[role].includes(schemaId)) return role;
-  }
-  return null;
-}
-
+export { SCHEMA_ROLES, schemaRole, ROLE_PREDICATES, ownerRelationshipTarget } from "./schema-roles";
+export type { FYDSchemaRole } from "./schema-roles";
 // ---------------------------------------------------------------------------
 // Derivation 1: VALIDATOR. Schema -> findings over a field record.
 // ---------------------------------------------------------------------------
@@ -237,51 +206,22 @@ export function validateAgainstSchema(
 
 // ---------------------------------------------------------------------------
 // Derivation 2: COMPONENT ELIGIBILITY. Schema -> component names.
-// (The registry itself owns the mapping; this is the schema-side view used
-// by the generator to ask "which components may render this schema?")
+// DERIVED: the component registry (components/registry.ts DEFINITIONS) is
+// the single hand-written schema<->component mapping; this is its
+// inversion. The old hand-written SCHEMA_COMPONENTS table was deleted
+// 2026-09-23 (lane E): it had drifted from the registry in four places
+// (business/service/location/knowledge-website vs RecentObjects/
+// ObjectRail). One mapping, two directions, zero drift.
 // ---------------------------------------------------------------------------
 
-/** Component names eligible for each schema. Unknown schemas get GenericObjectCard. */
-const SCHEMA_COMPONENTS: Record<string, string[]> = {
-  "ping.social.business@1": [
-    "Hero",
-    "IdentityCard",
-    "BusinessSummary",
-    "Contact",
-    "CTA",
-    "Links",
-    "SocialProof",
-    "AskFYD",
-    "ObjectGrid",
-    "ObjectFeed",
-  ],
-  "ping.social.service@1": ["Services", "ObjectGrid", "ObjectFeed", "CTA", "ObjectRail"],
-  "ping.social.post@1": ["Posts", "ObjectGrid", "ObjectFeed", "RecentObjects", "ObjectRail"],
-  "ping.social.product@1": ["Products", "ObjectGrid", "ObjectFeed", "ObjectRail"],
-  "ping.social.location@1": ["Locations", "ObjectGrid", "ObjectFeed"],
-  "ping.social.person@1": ["People", "ObjectGrid", "ObjectFeed", "ObjectRail"],
-  "ping.social.article@1": ["Posts", "ObjectGrid", "ObjectFeed", "RecentObjects", "ObjectRail"],
-  // Knowledge vocabulary: the website object is a public object like any
-  // other; the generic list components may render it. Role-projected
-  // schemas (business/service/location/person/post/article) resolve through
-  // schemaRole() in eligibleComponents below and need no entries here.
-  "ping.knowledge.website@1": ["ObjectGrid", "ObjectFeed"],
-};
-
+/**
+ * Component names eligible for a schema, in registry order. Unknown
+ * schemas get GenericObjectCard (unknown schemas render through the
+ * fallback, never fail).
+ */
 export function eligibleComponents(schemaId: string): string[] {
-  const direct = SCHEMA_COMPONENTS[schemaId];
-  if (direct) return direct;
-  // Knowledge vocabulary projects onto the proof vocabulary's roles, so a
-  // knowledge service is eligible for exactly the service components.
-  const role = schemaRole(schemaId);
-  if (role) {
-    const proofId = SCHEMA_ROLES[role][0];
-    const viaRole = SCHEMA_COMPONENTS[proofId];
-    if (viaRole) return viaRole;
-  }
-  return ["GenericObjectCard"];
+  return componentsForSchema(schemaId);
 }
-
 // ---------------------------------------------------------------------------
 // Derivation 3: RELATIONSHIP RULES. Schema -> allowed predicates.
 // ---------------------------------------------------------------------------
@@ -311,12 +251,18 @@ export type FYDActionKind =
   | "reply"
   | "propose_update"
   | "open_website"
-  | "site_propose";
+  | "site_propose"
+  | "call"
+  | "email"
+  | "directions";
 
 export interface CapabilityInput {
   viewerId: string | null;
   controllerId: string;
   hasWebsite: boolean;
+  hasPhone?: boolean;
+  hasEmail?: boolean;
+  hasLocality?: boolean;
 }
 
 export function capabilityOptions(def: FYDSchemaDef, input: CapabilityInput): FYDActionKind[] {
@@ -337,7 +283,96 @@ export function capabilityOptions(def: FYDSchemaDef, input: CapabilityInput): FY
   if (input.hasWebsite) {
     actions.push("open_website");
   }
+  if (input.hasPhone) {
+    actions.push("call");
+  }
+  if (input.hasEmail) {
+    actions.push("email");
+  }
+  if (input.hasLocality) {
+    actions.push("directions");
+  }
   return actions;
+}
+
+/**
+ * Role-derived fallback definitions for schemas without a registered
+ * FYDSchemaDef. NOT registered in FYD_SCHEMAS: the proof keeps exactly
+ * three registered schemas, and role fallbacks exist only so capability
+ * resolution never needs a second decision table in the view layer.
+ * person is identity-backed (follow, as persons render today); product
+ * and article are likeable content (matching the service/post proof
+ * schemas they project from).
+ */
+const ROLE_FALLBACK_DEFS: Partial<Record<FYDSchemaRole, FYDSchemaDef>> = {
+  person: {
+    id: "ping.social.person@1",
+    label: "Person",
+    summary: "Role-derived fallback: a person identity.",
+    fields: [],
+    relationships: [],
+    identityBacked: true,
+    likeable: false,
+  },
+  product: {
+    id: "ping.social.product@1",
+    label: "Product",
+    summary: "Role-derived fallback: product content.",
+    fields: [],
+    relationships: [],
+    identityBacked: false,
+    likeable: true,
+  },
+  article: {
+    id: "ping.social.article@1",
+    label: "Article",
+    summary: "Role-derived fallback: article content.",
+    fields: [],
+    relationships: [],
+    identityBacked: false,
+    likeable: true,
+  },
+};
+
+const UNKNOWN_FALLBACK_DEF: FYDSchemaDef = {
+  id: "ping.social.unknown@1",
+  label: "Object",
+  summary: "Fallback: unclassified object, minimal action set.",
+  fields: [],
+  relationships: [],
+  identityBacked: false,
+  likeable: false,
+};
+
+/**
+ * Capability resolution for an arbitrary schema id (G4).
+ *
+ * The single entry point for OBJECT + VIEWER + CONTEXT -> allowed
+ * actions. Known schema ids resolve to their registered definition; ids
+ * without a definition fall back to a role-derived definition; ids with
+ * no known role get the minimal action set with contact actions withheld
+ * (INV-08: we do not offer to call, email, or link an object we cannot
+ * classify).
+ */
+export function capabilityOptionsForSchema(
+  schemaId: string,
+  input: CapabilityInput,
+): FYDActionKind[] {
+  const def = getSchemaDef(schemaId);
+  if (def) return capabilityOptions(def, input);
+  const role = schemaRole(schemaId);
+  const fallback =
+    (role ? ROLE_FALLBACK_DEFS[role] : undefined) ?? UNKNOWN_FALLBACK_DEF;
+  if (!role) {
+    // Unknown schema: contact actions are withheld even when values
+    // exist. The authority is conservative about what it cannot classify.
+    return capabilityOptions(fallback, {
+      viewerId: input.viewerId,
+      controllerId: input.controllerId,
+      hasWebsite: false,
+    });
+  }
+  return capabilityOptions(fallback, input);
 }
 
 // ---------------------------------------------------------------------------

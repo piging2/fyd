@@ -25,12 +25,21 @@ export const runtime = "nodejs";
  * - mode "owner": accepted for a future authenticated lane; until that lane
  *   exists it is treated as visitor-safe and grants nothing.
  *
- * Response: { ok: true, answer, answerClass, refusal, citations,
- *   unknowns, suggestedActions, proposal, tenantId }
+ * Response: { ok: true, answer, answerClass, answerState, refusal,
+ *   citations, claims, objectRefs, evidenceRefs, sourceRefs, unknowns,
+ *   suggestedActions, proposal, tenantId }
+ *   claims is the OUTPUT "CLAIMS" element of the Ask FYD binding contract
+ *   (contract.ts): each claim with its support class and evidence ref ids.
+ *   The contract seam asserts the served answer before it leaves.
  *   unknowns is string[]; suggestedActions is the available-actions list
  *   ([] when none); proposal is a draft AskProposal or null.
- *   answerClass is "supported" | "derived" | "unknown" (unknown = refusal).
- *   Every citation carries claimClass ("supported" | "derived").
+ *   answerClass is exactly one of "SUPPORTED DIRECTLY" | "SUPPORTED BY
+ *   MULTIPLE EVIDENCE" | "DERIVED" | "CONFLICTED" | "UNSUPPORTED"
+ *   ("UNSUPPORTED" = refusal). answerState is the coarse state fed by it:
+ *   "KNOWN" | "CONFLICTED" | "UNKNOWN".
+ *   Every citation carries claimClass ("SUPPORTED DIRECTLY" | "DERIVED" |
+ *   "CONFLICTED"). objectRefs, evidenceRefs, sourceRefs are structured,
+ *   citation-backed refs; nothing here is ever invented.
  */
 export async function POST(
   request: NextRequest,

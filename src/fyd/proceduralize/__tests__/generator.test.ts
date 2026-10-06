@@ -140,8 +140,9 @@ describe("generateSiteSpec determinism", () => {
     const query = services.sections[0].query;
     expect(query.kind).toBe("related");
     if (query.kind !== "related") return;
-    // The query matches both vocabulary dialects, in canonical order.
-    expect(query.predicates).toEqual(["provides", "offers"]);
+    // The query matches both vocabulary dialects, in canonical order,
+    // forward predicates first, then the inverse (direction-agnostic).
+    expect(query.predicates).toEqual(["provides", "offers", "provided_by"]);
     expect(query.schemas).toEqual(["ping.social.service@1", "ping.knowledge.service@1"]);
     const resolved = resolveQuery(query, HAPPY_PLACE_RICH_GRAPH, spec.ownerObjectId);
     expect(resolved.map((o) => o.title)).toEqual([
@@ -215,7 +216,7 @@ describe("generateSiteSpec determinism", () => {
       "ping.social.article@1",
       "ping.knowledge.article@1",
     ]);
-    expect(query.predicates).toEqual(["publishes"]);
+    expect(query.predicates).toEqual(["publishes", "published_by"]);
     const resolved = resolveQuery(query, graph, spec.ownerObjectId);
     expect(resolved.map((o) => o.id).sort()).toEqual(["art-1", "post-1"]);
   });
@@ -229,5 +230,152 @@ describe("generateSiteSpec determinism", () => {
     const spec = generateSiteSpec(onlyArticle, OPTS);
     const home = spec.pages.find((p) => p.slug === "home")!;
     expect(home.sections.map((s) => s.component)).toContain("RecentObjects");
+  });
+
+  /**
+   * The first broken step, pinned at the generator level: a person joined
+   * to the owner ONLY by works_for (person -> business, the direction
+   * website-ingested graphs record) must still select a People section.
+   * Before the fix this relationship was dropped by the forward-only
+   * traversal and materially different graphs compiled to identical specs.
+   */
+  function worksForGraph(linked: boolean): { objects: PingObject[]; relationships: PingRelationship[] } {
+    const provenance = {
+      kind: "website-derived" as const,
+      ref: "website-ingestion:test",
+      derivedAt: CONTENT_AT,
+    };
+    const owner: PingObject = {
+      id: "owner-wf",
+      schema: "ping.social.business@1",
+      controllerId: "c1",
+      visibility: "public",
+      title: "Solo Electric",
+      description: "One-person shop.",
+      fields: {},
+      createdAt: CONTENT_AT,
+      updatedAt: CONTENT_AT,
+      provenance,
+    };
+    const tech: PingObject = {
+      ...owner,
+      id: "person-sam",
+      schema: "ping.social.person@1",
+      title: "Sam Torres",
+      description: "",
+    };
+    const relationships: PingRelationship[] = linked
+      ? [
+          {
+            id: "r-wf",
+            subject: "person-sam",
+            predicate: "works_for",
+            object: "owner-wf",
+            status: "active",
+            createdAt: CONTENT_AT,
+            evidenceRef: "ev",
+          },
+        ]
+      : [];
+    return { objects: [owner, tech], relationships };
+  }
+
+  test("a person linked only by works_for selects a People section", () => {
+    const graph = worksForGraph(true);
+    const spec = generateSiteSpec(graph, OPTS);
+    const home = spec.pages.find((p) => p.slug === "home")!;
+    const people = home.sections.find((s) => s.component === "People");
+    expect(people).toBeDefined();
+    // The section binds the person through the inverse edge.
+    const resolved = resolveQuery(people!.query, graph, spec.ownerObjectId);
+    expect(resolved.map((o) => o.id)).toEqual(["person-sam"]);
+  });
+
+  test("the same person object with no relationship selects no People section", () => {
+    const graph = worksForGraph(false);
+    const spec = generateSiteSpec(graph, OPTS);
+    const components = spec.pages.flatMap((p) => p.sections.map((s) => s.component));
+    expect(components).not.toContain("People");
+  });
+
+  test("a pair linked in both directions resolves once, not twice", () => {
+    // The rich fixture links each person twice: business employs person
+    // (forward) and person member_of business (backward).
+    const spec = generateSiteSpec(HAPPY_PLACE_RICH_GRAPH, OPTS);
+    const home = spec.pages.find((p) => p.slug === "home")!;
+    const people = home.sections.find((s) => s.component === "People")!;
+    const resolved = resolveQuery(people.query, HAPPY_PLACE_RICH_GRAPH, spec.ownerObjectId);
+    expect(resolved.map((o) => o.id)).toEqual([
+      "object_5b5b3d32bca8145b",
+      "object_9f01b2dede1da5d0",
+    ]);
+  });
+});
+
+describe("generateSiteSpec Gallery emission (media-backed)", () => {
+  /** Minimal graph: one public business owner, no related objects. */
+  function ownerOnlyGraph() {
+    const owner: PingObject = {
+      id: "owner-1",
+      schema: "ping.social.business@1",
+      controllerId: "c1",
+      visibility: "public",
+      title: "Acme Plumbing",
+      description: "We fix pipes.",
+      fields: {},
+      createdAt: CONTENT_AT,
+      updatedAt: CONTENT_AT,
+      provenance: {
+        kind: "website-derived" as const,
+        ref: "website-ingestion:test",
+        derivedAt: CONTENT_AT,
+      },
+    };
+    return { objects: [owner], relationships: [] as PingRelationship[] };
+  }
+
+  const homeComponents = (spec: ReturnType<typeof generateSiteSpec>) =>
+    spec.pages.find((p) => p.slug === "home")!.sections.map((s) => s.component);
+
+  test("emits a Gallery section when the site manifest has gallery assets", () => {
+    const spec = generateSiteSpec(ownerOnlyGraph(), {
+      ...OPTS,
+      siteId: "coppersmith-plumbing",
+    });
+    const home = spec.pages.find((p) => p.slug === "home")!;
+    const gallery = home.sections.find((s) => s.component === "Gallery");
+    expect(gallery).toBeDefined();
+    // Deterministic section id following the pageSlug:component:index law.
+    const idx = home.sections.indexOf(gallery!);
+    expect(gallery!.id).toBe("home:Gallery:" + idx);
+    // Static query: the gallery resolves no graph objects; its media
+    // arrives via the render context (same seam as heroMedia).
+    expect(gallery!.query).toEqual({ kind: "static" });
+  });
+
+  test("emits no Gallery section when the site manifest has no gallery assets", () => {
+    const spec = generateSiteSpec(ownerOnlyGraph(), {
+      ...OPTS,
+      siteId: "happy-place",
+    });
+    expect(homeComponents(spec)).not.toContain("Gallery");
+  });
+
+  test("emits no Gallery section for an unknown site id (no manifest)", () => {
+    const spec = generateSiteSpec(ownerOnlyGraph(), {
+      ...OPTS,
+      siteId: "no-such-site",
+    });
+    expect(homeComponents(spec)).not.toContain("Gallery");
+  });
+
+  test("emits no Gallery section without siteId: byte-identical pure-graph compile", () => {
+    const without = generateSiteSpec(ownerOnlyGraph(), OPTS);
+    const withUnknownSite = generateSiteSpec(ownerOnlyGraph(), {
+      ...OPTS,
+      siteId: "no-such-site",
+    });
+    expect(homeComponents(without)).not.toContain("Gallery");
+    expect(JSON.stringify(without)).toBe(JSON.stringify(withUnknownSite));
   });
 });

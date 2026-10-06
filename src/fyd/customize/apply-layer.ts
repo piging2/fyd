@@ -21,7 +21,9 @@
  *     ambiguous or absent match is unresolved, never guessed.
  *  4. Applying the same journal twice is idempotent: reorder to an index
  *     the section already occupies, hide an already-hidden section, and
- *     feature an already-featured object are all no-ops.
+ *     feature an already-featured object are all no-ops. Deactivating an
+ *     already-deactivated object rewrites the same hidden set, also a
+ *     no-op.
  */
 
 import {
@@ -29,6 +31,7 @@ import {
   proposalDigest,
   type SitePatchBody,
 } from "../proceduralize/patch";
+import { reviewCardForSiteIntent, type ReviewCard } from "./propose";
 import type { FYDSiteSpec, ObjectGraph } from "../sitespec/types";
 import type {
   PresentationIntentBlock,
@@ -38,6 +41,14 @@ import type {
 export interface AppliedDirective {
   intentId: string;
   summary: string;
+  /**
+   * The before/after review card for this directive, computed against the
+   * spec snapshot just before it applied (with the resolved section id).
+   * This is the causal read-back: proposal id + before/after + the
+   * directive's approval lineage say what changed and why. Null when the
+   * intent kind has no presentation card.
+   */
+  reviewCard: ReviewCard | null;
 }
 
 export interface UnresolvedDirective {
@@ -65,6 +76,10 @@ function summarize(d: PresentationIntentDirective): string {
       return (si.hidden ? "hide " : "show ") + "section " + si.sectionId;
     case "set_featured":
       return "feature [" + si.objectIds.join(", ") + "] in " + si.sectionId;
+    case "reorder_object":
+      return "order objects [" + si.objectIds.join(", ") + "] in " + si.sectionId;
+    case "deactivate_object":
+      return "hide object " + si.objectId + " in " + si.sectionId;
     case "edit_copy":
       return "copy edit on " + si.sectionId;
     case "set_theme_token":
@@ -165,8 +180,14 @@ export function applyPresentationIntent(
         continue;
       }
     }
-    if (si.kind === "set_featured") {
-      const missing = si.objectIds.filter((id) => !objectIds.has(id));
+    if (
+      si.kind === "set_featured" ||
+      si.kind === "reorder_object" ||
+      si.kind === "deactivate_object"
+    ) {
+      const ids =
+        si.kind === "deactivate_object" ? [si.objectId] : si.objectIds;
+      const missing = ids.filter((id) => !objectIds.has(id));
       if (missing.length > 0) {
         nope(
           "objects [" + missing.join(", ") + "] are no longer in the site's " +
@@ -175,9 +196,16 @@ export function applyPresentationIntent(
         continue;
       }
     }
-    // 5. Apply the exact approved proposal. Pure: returns a new spec.
+    // 5. Capture the before/after card against the pre-apply snapshot,
+    //    then apply the exact approved proposal. Pure: returns a new spec.
     //    Rewrite the proposal's targetSection to the resolved id so a
     //    position-shifted section still applies to the right section.
+    const resolvedIntent = {
+      ...si,
+      pageSlug: target.pageSlug,
+      sectionId: target.sectionId,
+    };
+    const reviewCard = reviewCardForSiteIntent(current, resolvedIntent, graph);
     const proposalForApply: SitePatchBody = {
       ...d.proposal,
       targetSection: target.sectionId,
@@ -185,7 +213,7 @@ export function applyPresentationIntent(
     };
     const after = applySitePatch(current, proposalForApply);
     current = after;
-    applied.push({ intentId: d.intentId, summary: summarize(d) });
+    applied.push({ intentId: d.intentId, summary: summarize(d), reviewCard });
   }
 
   return { spec: current, applied, unresolved };

@@ -1,0 +1,53 @@
+{
+  "schema": "ping.logo-background-extraction@1",
+  "createdAt": "2026-10-04T13:05:52.574Z",
+  "source": "/images/ping-social-logo.png",
+  "sourceSha256": "2e53d82a3da5255f56a4f180a5d21498a6d935eeeec24c6413e0917d6ac71c91",
+  "sourceClaim": "Existing site asset; component describes it as the official PING Social logo sourced from Facebook. No independent Facebook ownership verification in this pass.",
+  "authorization": "User requested removing the dark background and using the logo in the original top-left and PING FYD object.",
+  "method": "imagegen background extraction, then alpha-empty margin crop, transparent padding, downsize and lossless WebP conversion. AI-edited derivative; not byte-identical to original artwork.",
+  "generatedSha256": "592119f3fe61f916c9ab9787e93d2dfe6674b76b95f398478dbcb247707c18cf",
+  "sourceSize": {
+    "width": 1536,
+    "height": 1024
+  },
+  "fullyTransparentPixels": 868386,
+  "crop": {
+    "left": 0,
+    "top": 17,
+    "width": 1510,
+    "height": 977
+  },
+  "master": {
+    "path": "/marks/ping-social-cutout.png",
+    "sha256": "14ee41e1d100a752d34934075c8168c1bcce073804e89ad5d2348cbd0f288719",
+    "width": 1518,
+    "height": 985
+  },
+  "variants": [
+    {
+      "path": "/marks/ping-social-cutout.webp",
+      "density": 1,
+      "width": 96,
+      "height": 62,
+      "sha256": "bbd0a20fe68015ec5540cc77764ea0043b665ae14cdcc13d2ce30b90065d97b3",
+      "bytes": 11304
+    },
+    {
+      "path": "/marks/ping-social-cutout@2x.webp",
+      "density": 2,
+      "width": 192,
+      "height": 125,
+      "sha256": "81971084a84a723ed62164c284f2259a3294171261eed995c14f6f3192b52900",
+      "bytes": 30584
+    },
+    {
+      "path": "/marks/ping-social-cutout@3x.webp",
+      "density": 3,
+      "width": 288,
+      "height": 187,
+      "sha256": "2135f955390b38a7e94dac6f300468bbd3a93a5946da0e1f8bd0ea823781e328",
+      "bytes": 57678
+    }
+  ]
+}

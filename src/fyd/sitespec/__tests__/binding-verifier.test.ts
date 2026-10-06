@@ -85,11 +85,16 @@ describe("BindingVerifier", () => {
       expect(report.verdicts).toHaveLength(5);
       expect(report.unbound).toHaveLength(0);
       const sources = report.bound.map((v) => v.source).sort();
+      // LANE-CLAIM H3: the phone field carries an owner correction, so a
+      // direct binding on it verifies through the owner-assertion path,
+      // not as direct evidence. The owner's value is owner-attested;
+      // grading it "evidence-ref" would launder owner authorship as
+      // source evidence.
       expect(sources).toEqual([
-        "evidence-ref",
         "evidence-ref",
         "generated-presentation",
         "object-field",
+        "owner-assertion",
         "owner-assertion",
       ]);
       for (const v of report.bound) {

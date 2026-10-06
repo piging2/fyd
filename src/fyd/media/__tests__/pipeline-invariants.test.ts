@@ -9,12 +9,15 @@
  *   rights basis;
  * - every derivative variant is served FYD-local (/fyd-media/...) and the
  *   bytes on disk sha256-match the manifest entry;
- * - unacquired (rights-rejected) references never surface as media:
- *   happy-place has zero acquired assets, so listObjectMedia is empty,
- *   heroMediaFor is null, and the circle background is the deterministic
- *   gradient, never the external hero URL that exists only as an
- *   unacquired reference in the business fields;
- * - end to end: loadObjectViewById("coppersmith-plumbing", businessId)
+ * - unacquired (rights-rejected) references never surface as media: the
+ *   gstatic logo reference for happy-place is recorded rejected, and the
+ *   unacquired hero URL that exists only as a reference in the business
+ *   fields never becomes a src;
+ * - demo-authorized acquisition (Nolan 2026-09-25): happy-place media
+ *   exists ONLY for the five explicitly demo-authorized sources, each
+ *   carrying the demo authorization basis, full provenance, digest, and
+ *   FYD-local derivatives;
+ * - end to end: loadObjectViewById(projection, "coppersmith-plumbing", businessId)
  *   lists all 11 assets with local srcs, and the circle adapter picks the
  *   logo/hero derivative for the background.
  *
@@ -27,7 +30,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
+import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
 import { loadObjectViewById } from "../../object/by-id";
 import { objectViewToCircleProjection } from "../../object/circle-adapter";
 import {
@@ -35,13 +38,18 @@ import {
   getPipelineManifest,
   validatePipelineManifest,
 } from "../bundle-media";
-import {
-  GRADIENT_BASIS,
-  gradientFor,
-  resolveCircleBackground,
-} from "../circle-background";
+import { resolveCircleBackground } from "../circle-background";
 import { heroMediaFor, listObjectMedia } from "../select";
 import { isAcquirable, MEDIA_MODULE_VERSION } from "../types";
+
+/** Anonymous verified projection for a fixture slug (null when unknown). */
+const projOrNull = (slug: string) => {
+  try {
+    return getVerifiedPublicProjectionSync(slug, "anonymous");
+  } catch {
+    return null;
+  }
+};
 
 const PROJECTIONS = join(
   __dirname,
@@ -112,44 +120,72 @@ describe("committed manifest provenance + rights invariants", () => {
   });
 });
 
-describe("unacquired references never surface as media", () => {
-  test("happy-place: rights gate acquired nothing; observations record the rejections", () => {
+describe("demo-authorized acquisition: happy-place (Nolan 2026-09-25)", () => {
+  test("happy-place: every acquired asset is demo-authorized with full provenance", () => {
     const manifest = getPipelineManifest(HAPPY.site);
     expect(manifest).not.toBeNull();
-    expect(manifest!.media).toEqual([]);
-    expect(manifest!.observations.length).toBeGreaterThan(0);
-    for (const o of manifest!.observations) {
-      expect(o.outcome).toBe("rejected");
+    expect(manifest!.media.length).toBeGreaterThan(0);
+    for (const m of manifest!.media) {
+      // Only the explicit demo authorization may mint media for this site.
+      expect(m.rightsSource).toBe("public-demo-source");
+      expect(m.rightsBasis).toContain("Demo authorization (Nolan 2026-09-25)");
+      expect(m.provenance.sourceUrl).toMatch(/^https:\/\//);
+      expect(m.provenance.observedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      expect(m.digest).toMatch(HEX64);
+      expect(m.variants.length).toBeGreaterThan(0);
+      for (const v of m.variants) {
+        // FYD-served derivative, never a hotlink; lineage is data.
+        expect(v.url.startsWith("/fyd-media/")).toBe(true);
+        expect(v.derivedFrom).toBe(m.digest);
+        // Proof: the bytes on disk sha256-match the manifest entry.
+        const file = join(process.cwd(), "public", v.url);
+        expect(existsSync(file)).toBe(true);
+        expect(sha256File(file)).toBe(v.digest);
+      }
+    }
+    // Observations record the full evidence trail: the gstatic reference
+    // stays rejected; the authorized sources are ingested.
+    const outcomes = manifest!.observations.map((o) => o.outcome);
+    expect(outcomes).toContain("rejected");
+    expect(outcomes).toContain("ingested");
+    for (const o of manifest!.observations.filter((o) => o.outcome === "ingested")) {
+      expect(o.digest).toMatch(HEX64);
     }
   });
 
-  test("happy-place: no media surfaces through any selector", () => {
-    const graph = getPingObjectGraphSync(HAPPY.site).graph;
-    expect(listObjectMedia(HAPPY.site, graph, HAPPY.business)).toEqual([]);
-    expect(heroMediaFor(HAPPY.site, graph, HAPPY.business)).toBeNull();
-    expect(getMediaManifest(HAPPY.site)?.items).toEqual([]);
-    const view = loadObjectViewById(HAPPY.site, HAPPY.business);
+  test("happy-place: only demo-authorized media surfaces through any selector", () => {
+    const graph = getVerifiedPublicProjectionSync(HAPPY.site, "anonymous").graph;
+    const media = listObjectMedia(HAPPY.site, graph, HAPPY.business);
+    expect(media.length).toBeGreaterThan(0);
+    for (const d of media) {
+      expect(d.src.startsWith("/fyd-media/")).toBe(true);
+      expect(d.rightsSource).toBe("public-demo-source");
+    }
+    const hero = heroMediaFor(HAPPY.site, graph, HAPPY.business);
+    expect(hero).not.toBeNull();
+    expect(hero!.src.startsWith("/fyd-media/")).toBe(true);
+    expect(hero!.role).not.toBe("logo");
+    expect(getMediaManifest(HAPPY.site)?.items.length).toBeGreaterThan(0);
+    const view = loadObjectViewById(projOrNull(HAPPY.site), HAPPY.site, HAPPY.business);
     expect(view).not.toBeNull();
-    expect(view!.media).toEqual([]);
+    expect(view!.media.length).toBeGreaterThan(0);
     // The unacquired hero URL is ingest observation only: never a src.
     expect(JSON.stringify(view!.media)).not.toContain(HAPPY_UNACQUIRED_HERO);
   });
 
-  test("happy-place: circle background is the deterministic gradient fallback", () => {
+  test("happy-place: circle background is the acquired demo-authorized image", () => {
     const bg = resolveCircleBackground(HAPPY.site);
-    expect(bg.kind).toBe("gradient");
-    if (bg.kind === "gradient") {
-      expect(bg.css).toBe(gradientFor(HAPPY.site).css);
-      expect(bg.basis).toBe(GRADIENT_BASIS);
-      // No fake imagery: the gradient is a css value, not an image URL.
-      expect(bg.css).toMatch(/^radial-gradient\(/);
+    expect(bg.kind).toBe("image");
+    if (bg.kind === "image") {
+      expect(bg.src.startsWith("/fyd-media/")).toBe(true);
+      expect(bg.digest).toMatch(HEX64);
     }
   });
 });
 
 describe("coppersmith end to end: object view media + circle adapter", () => {
   test("loadObjectViewById lists all 11 assets with local srcs", () => {
-    const view = loadObjectViewById(COPPER.site, COPPER.business);
+    const view = loadObjectViewById(projOrNull(COPPER.site), COPPER.site, COPPER.business);
     expect(view).not.toBeNull();
     expect(view!.media).toHaveLength(11);
     // Logos lead, then heroes, then gallery: stable content-driven order.
@@ -166,7 +202,7 @@ describe("coppersmith end to end: object view media + circle adapter", () => {
   });
 
   test("heroMediaFor picks the hero-role derivative, never a logo", () => {
-    const graph = getPingObjectGraphSync(COPPER.site).graph;
+    const graph = getVerifiedPublicProjectionSync(COPPER.site, "anonymous").graph;
     const hero = heroMediaFor(COPPER.site, graph, COPPER.business);
     expect(hero).not.toBeNull();
     expect(hero!.role).toBe("hero");
@@ -174,7 +210,7 @@ describe("coppersmith end to end: object view media + circle adapter", () => {
   });
 
   test("circle adapter picks the logo derivative for the background", () => {
-    const view = loadObjectViewById(COPPER.site, COPPER.business);
+    const view = loadObjectViewById(projOrNull(COPPER.site), COPPER.site, COPPER.business);
     expect(view).not.toBeNull();
     const circle = objectViewToCircleProjection(view!);
     const bg = circle.background;

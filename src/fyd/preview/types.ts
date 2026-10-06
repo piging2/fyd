@@ -2,6 +2,7 @@
  * Portal preview types (client-safe: no node imports).
  */
 import type { CircleProjection } from "../object/types";
+import type { PresentationMark } from "../presentation/identity";
 
 export type PreviewMode = "snapshot" | "interactive" | "native";
 
@@ -28,11 +29,8 @@ export interface PreviewRecord {
   provenance: PreviewProvenance;
 }
 
-export interface PortalLogo {
-  src: string;
-  digest: string;
-  basis: string;
-}
+/** Shared artwork, provenance and explicit cutout geometry. */
+export type PortalLogo = PresentationMark;
 
 export interface PortalProjection {
   circle: CircleProjection;

@@ -14,7 +14,7 @@
  * mutations run as a seeded demo actor, no owner identity is verified.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { OwnerCommand } from "@/fyd/object/types";
 
 type Phase = "idle" | "proposing" | "proposed" | "approving" | "applied" | "failed";
@@ -40,6 +40,18 @@ interface Receipt {
   appliedField: string | null;
 }
 
+/**
+ * PROD-8: an owner correction that is active in the journal but applies
+ * to nothing in the current graph. Served by the overrides route GET;
+ * the panel renders each as a warning so the owner knows the correction
+ * is ineffective. The journal itself is never modified.
+ */
+interface OrphanedCorrectionWarning {
+  target: string;
+  reason: string;
+  detail: string;
+}
+
 function shortDigest(d: string): string {
   return d.length > 12 ? d.slice(0, 12) + "..." : d;
 }
@@ -51,9 +63,40 @@ export function OwnerPanel({ siteId }: { siteId: string }) {
   const [proposal, setProposal] = useState<ProposalData | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [failure, setFailure] = useState<{ code?: string; message: string; stale: boolean } | null>(null);
+  const [orphans, setOrphans] = useState<OrphanedCorrectionWarning[]>([]);
+  const [orphanError, setOrphanError] = useState<string | null>(null);
 
   const endpoint = "/api/fyd/objects/" + encodeURIComponent(siteId) + "/overrides";
   const busy = phase === "proposing" || phase === "approving";
+
+  // PROD-8: when the customize panel loads, check for orphaned
+  // corrections (active in the journal, applying to nothing) so the
+  // owner sees a warning instead of a silently ineffective correction.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(endpoint);
+        const data = (await res.json()) as {
+          ok?: boolean;
+          orphanedCorrections?: OrphanedCorrectionWarning[];
+        };
+        if (cancelled) return;
+        if (data && data.ok === true && Array.isArray(data.orphanedCorrections)) {
+          setOrphans(data.orphanedCorrections);
+          setOrphanError(null);
+        } else {
+          setOrphanError("Could not check existing corrections.");
+        }
+      } catch (e) {
+        if (!cancelled) setOrphanError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, endpoint]);
 
   async function post(body: unknown): Promise<{ status: number; data: Record<string, unknown> }> {
     const res = await fetch(endpoint, {
@@ -209,6 +252,28 @@ export function OwnerPanel({ siteId }: { siteId: string }) {
           DEMO OWNER CONTEXT: changes here run as a seeded demo actor. No owner
           identity was verified. Not a production owner API.
         </p>
+
+        {orphanError ? (
+          <p className="mt-3 text-xs text-neutral-500">
+            Correction check unavailable: {orphanError}
+          </p>
+        ) : null}
+        {orphans.map((o, i) => (
+          <div
+            key={o.target + "-" + i}
+            role="alert"
+            data-testid="orphan-warning"
+            className="mt-3 rounded border border-amber-400 bg-amber-50 px-3 py-2"
+          >
+            <p className="text-sm font-semibold text-amber-900">
+              A saved correction is not being applied
+            </p>
+            <p className="mt-1 text-sm text-amber-900">{o.detail}</p>
+            <p className="mt-1 font-mono text-xs text-amber-700">
+              target: {o.target} · reason: {o.reason}
+            </p>
+          </div>
+        ))}
 
         {phase === "idle" || phase === "proposing" ? (
           <div className="mt-4">

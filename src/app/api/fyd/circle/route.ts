@@ -3,12 +3,16 @@
  *
  * GET /api/fyd/circle?id=<objectId> returns { ok: true, projection } where
  * projection is the public-safe CircleProjection built by loadCircleProjection
- * (see src/fyd/object/view.ts). CORS is open for public embedding; the
- * projection carries public-safe data only.
+ * over a VERIFIED public projection (Q-C-01). CORS is open for public
+ * embedding; the projection carries public-safe data only.
  */
 
 import { NextResponse } from "next/server";
-import { loadCircleProjection } from "@/fyd/object/view";
+import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
+import {
+  CIRCLE_PROJECTION_CONTRACT_VERSION,
+  loadCircleProjection,
+} from "@/fyd/object/view";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -41,9 +45,25 @@ export async function GET(request: Request): Promise<NextResponse> {
   if (!id || id.trim().length === 0) {
     return json({ ok: false, error: "missing or invalid id" }, 400);
   }
-  const projection = loadCircleProjection(id);
+  let projection = null;
+  try {
+    projection = loadCircleProjection(
+      getVerifiedPublicProjectionSync(id, "anonymous"),
+      id,
+    );
+  } catch {
+    projection = null;
+  }
   if (!projection) {
     return json({ ok: false, error: "object not found" }, 404);
   }
-  return json({ ok: true, projection }, 200);
+  return json(
+    {
+      ok: true,
+      contractVersion: CIRCLE_PROJECTION_CONTRACT_VERSION,
+      projection,
+    },
+    200,
+  );
 }
+

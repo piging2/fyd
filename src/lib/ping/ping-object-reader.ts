@@ -44,7 +44,7 @@ import type {
 } from "./types";
 import { planActions as planActionsPure } from "./action-planner";
 import { grantsForViewer, isSiteCapableSchema } from "./grants";
-import { buildAskContext, composeAnswer, verifyProposalDigest } from "./ask-composer";
+import { buildAskContext, composeAnswer, stripInternalIds, verifyProposalDigest } from "./ask-composer";
 import { compareRanked, rankScore } from "./feed-rank";
 import { getWebsiteObjects, getWebsiteRelationships } from "./website-objects";
 import {
@@ -55,6 +55,8 @@ import {
   signAsIdentity,
   storeDevKeypair,
 } from "./dev-signer";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 // ---------------------------------------------------------------------------
 // Typed errors: every failure mode the UI must render as an ERROR state.
@@ -274,21 +276,32 @@ class GatewayPingObjectReader implements PingObjectReader {
     }
   }
 
-  async queryFydSiteOverlays(siteId: string): Promise<FydJournalOverlay[]> {
-    if (!siteId || !siteId.trim()) throw new BadRequestError("siteId is required");
-    const res = await this.gwFyd(`/events/${encodeURIComponent("FYD_SITE_OVERLAY")}`);
-    if (res.status === 404) {
-      throw new GatewayNotReadyError("event query route /events/FYD_SITE_OVERLAY is not exposed");
+  /**
+   * DEPLOY-2026-10-02: bundled journal snapshot fallback for static
+   * deployments (e.g. Vercel) where the FYD journal gateway is unreachable.
+   * FYD_OVERLAY_SNAPSHOT points at a JSON file shaped like the journal
+   * response ({ events: [...] }) exported from the real journal at deploy
+   * time. The events are real (event_ids, timestamps, ops preserved), so
+   * provenance and citations stay truthful; the data is a deploy-time
+   * snapshot, exactly like the statically generated site pages. When the
+   * gateway is reachable the snapshot is never consulted.
+   */
+  private readOverlaySnapshotList(siteId: string): unknown[] | null {
+    const raw = process.env.FYD_OVERLAY_SNAPSHOT;
+    if (!raw || !raw.trim()) return null;
+    try {
+      const p = raw.trim();
+      const abs = p.startsWith("/") ? p : join(process.cwd(), p);
+      const parsed: unknown = JSON.parse(readFileSync(abs, "utf8"));
+      const rec = asRecord(parsed);
+      const list = Array.isArray(parsed) ? parsed : (rec?.events ?? rec?.items ?? rec?.data);
+      return Array.isArray(list) ? (list as unknown[]) : null;
+    } catch {
+      return null;
     }
-    if (!res.ok) {
-      throw new GatewayUnreachableError(`event query returned HTTP ${res.status}`);
-    }
-    const data: unknown = await res.json().catch(() => null);
-    const rec = asRecord(data);
-    const list = Array.isArray(data) ? data : rec?.events ?? rec?.items ?? rec?.data;
-    if (!Array.isArray(list)) {
-      throw new GatewayNotReadyError("unexpected shape from /events/FYD_SITE_OVERLAY");
-    }
+  }
+
+  private parseOverlayList(list: unknown[], siteId: string): FydJournalOverlay[] {
     const out: FydJournalOverlay[] = [];
     for (const raw of list) {
       const ev = asRecord(raw);
@@ -315,6 +328,38 @@ class GatewayPingObjectReader implements PingObjectReader {
           : 1,
     );
     return out;
+  }
+
+  async queryFydSiteOverlays(siteId: string): Promise<FydJournalOverlay[]> {
+    if (!siteId || !siteId.trim()) throw new BadRequestError("siteId is required");
+    // Server-side tenant scoping: the gateway enforces ?tenant= exactly
+    // (fail-closed without it). The event_data.siteId filter below stays
+    // as defense in depth.
+    try {
+      const res = await this.gwFyd(
+        `/events/${encodeURIComponent("FYD_SITE_OVERLAY")}?tenant=${encodeURIComponent(siteId)}`,
+      );
+      if (res.status === 404) {
+        throw new GatewayNotReadyError("event query route /events/FYD_SITE_OVERLAY is not exposed");
+      }
+      if (!res.ok) {
+        throw new GatewayUnreachableError(`event query returned HTTP ${res.status}`);
+      }
+      const data: unknown = await res.json().catch(() => null);
+      const rec = asRecord(data);
+      const list = Array.isArray(data) ? data : (rec?.events ?? rec?.items ?? rec?.data);
+      if (!Array.isArray(list)) {
+        throw new GatewayNotReadyError("unexpected shape from /events/FYD_SITE_OVERLAY");
+      }
+      return this.parseOverlayList(list as unknown[], siteId);
+    } catch (gwErr) {
+      const snap = this.readOverlaySnapshotList(siteId);
+      if (!snap) throw gwErr;
+      console.warn(
+        `queryFydSiteOverlays: journal gateway unreachable; serving ${snap.length} bundled snapshot events for "${siteId}" (FYD_OVERLAY_SNAPSHOT)`,
+      );
+      return this.parseOverlayList(snap, siteId);
+    }
   }
 
   /** Temporary read source: the existing gateway event query route. */
@@ -1285,7 +1330,40 @@ class GatewayPingObjectReader implements PingObjectReader {
       relationships: rel,
       plan,
     });
-    return composeAnswer(ctx, question);
+    const ans = composeAnswer(ctx, question);
+    // PROD-4 (repaired PROD-3+4-REPAIR): this path returns the composer
+    // answer directly, so it applies the same id-strip post-processing as
+    // the visitor pipeline: no raw internal ids in user-facing text.
+    // Known ids resolve to their object titles; anything unrecognized
+    // becomes "the site record". Structured refs stay intact.
+    const idLabels = new Map<string, string>();
+    const titleOf = (o: { id: string; title: string }): void => {
+      const t = o.title.trim();
+      if (t.length > 0 && !idLabels.has(o.id)) idLabels.set(o.id, t);
+    };
+    if (target) titleOf(target);
+    for (const o of related) titleOf(o);
+    for (const o of objects) titleOf(o);
+    return {
+      ...ans,
+      answer: stripInternalIds(ans.answer, idLabels),
+      // The visitor layer maps evidenceRefs to stripped citation labels;
+      // this path exposes evidenceRefs directly, so their labels get the
+      // same strip. Structured ref ids and details stay intact.
+      evidenceRefs: ans.evidenceRefs.map((e) => ({ ...e, label: stripInternalIds(e.label, idLabels) })),
+      // PROD-3+4-REPAIR-R2: claim labels ride the ...ans spread
+      // unstripped; the API claims surface must never carry raw ids, so
+      // claim strings get the same strip. Structured evidenceRefIds stay
+      // intact.
+      claimClassifications: (ans.claimClassifications ?? []).map((c) => ({
+        ...c,
+        claim: stripInternalIds(c.claim, idLabels),
+      })),
+      unknowns: ans.unknowns.map((u) => stripInternalIds(u, idLabels)),
+      proposal: ans.proposal
+        ? { ...ans.proposal, note: stripInternalIds(ans.proposal.note, idLabels) }
+        : null,
+    };
   }
 
   /**

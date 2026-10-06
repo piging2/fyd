@@ -1,6 +1,6 @@
 import * as React from "react";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { resolveObjectPresentationIdentity } from "@/fyd/presentation/identity";
 
 interface PingWordmarkProps {
   className?: string;
@@ -9,19 +9,24 @@ interface PingWordmarkProps {
 }
 
 /**
- * Official PING Social logo, sourced from the Facebook page.
- * Replaces the previous text-based wordmark.
+ * The same transparent PING Social artwork used by its business object.
+ * Header and page branding keep the artwork's natural aspect ratio.
  */
 export function PingWordmark({ className }: PingWordmarkProps) {
+  const { mark } = resolveObjectPresentationIdentity({ id: "ping-fyd", name: "PING Social" });
+  if (!mark) return null;
   return (
     <span className={cn("relative inline-flex items-center", className)}>
-      <Image
-        src="/images/ping-social-logo.png"
+      <img
+        src={mark.src}
+        srcSet={mark.srcSet}
         alt="PING Social"
-        width={120}
-        height={80}
-        className="h-10 w-auto"
-        priority
+        width={mark.width}
+        height={mark.height}
+        className="h-10 w-auto object-contain"
+        style={{ background: "transparent", border: "none", borderRadius: 0, padding: 0 }}
+        decoding="async"
+        loading="eager"
       />
     </span>
   );

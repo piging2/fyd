@@ -1,18 +1,344 @@
 {
   "siteId": "happy-place",
-  "generatedAt": "2026-09-21T22:25:39.584Z",
+  "generatedAt": "2026-09-25T17:55:04.748Z",
   "generator": "fyd-media@2",
-  "ingestRunId": "744d36e4-24fa-422b-8565-91816f88adf9",
+  "ingestRunId": "028f88ce-e510-4adc-91a9-5e12039aa39d",
   "pipelineVersion": "fyd-media@2",
   "preview": false,
   "observations": [
     {
       "sourceUrl": "https://ssl.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_74x24dp.png",
-      "sourcePage": "https://accounts.google.com/v3/signin/identifier?continue=https://mail.google.com/mail/u/0/&emr=1&followup=https://mail.google.com/mail/u/0/&osid=1&passive=1209600&service=mail&flowName=WebLiteSignIn&flowEntry=ServiceLogin&dsh=S2063938280:1790029541541155",
-      "observedAt": "2026-09-21T22:25:41.893Z",
+      "sourcePage": "https://accounts.google.com/v3/signin/identifier?continue=https://mail.google.com/mail/u/0/&emr=1&followup=https://mail.google.com/mail/u/0/&osid=1&passive=1209600&service=mail&flowName=WebLiteSignIn&flowEntry=ServiceLogin&dsh=S-366088179:1790358904678323",
+      "observedAt": "2026-09-25T17:55:05.572Z",
       "outcome": "rejected",
       "reason": "Rights gate (unclear-reference-only): Hosted off-site (ssl.gstatic.com); authorization unclear. Retained as a reference only; not acquired, derived, or served as FYD media."
+    },
+    {
+      "sourceUrl": "https://8zci9xnviilmi6qj.public.blob.vercel-storage.com/2a1d4ae6e3b81282259174af113bac3c-1080-d420ae91d8e4.webp",
+      "sourcePage": "https://happyplacecarpentry.com/ (site snapshot 2026-09-21)",
+      "observedAt": "2026-09-25T17:55:05.572Z",
+      "outcome": "ingested",
+      "reason": "Demo-authorized source (Nolan 2026-09-25)",
+      "digest": "d420ae91d8e4e32d36fd63ebe56acb1a4bd363f38879616ca8b5f460d777fbdd"
+    },
+    {
+      "sourceUrl": "https://8zci9xnviilmi6qj.public.blob.vercel-storage.com/6fd33914d4c27fbf71871bbc6405ff1c-1080-77bad689a781.webp",
+      "sourcePage": "https://happyplacecarpentry.com/ (site snapshot 2026-09-21)",
+      "observedAt": "2026-09-25T17:55:06.222Z",
+      "outcome": "ingested",
+      "reason": "Demo-authorized source (Nolan 2026-09-25)",
+      "digest": "77bad689a7812c3381526933bae967e3ef86ec1deefbd15612768e1b5d214d91"
+    },
+    {
+      "sourceUrl": "https://8zci9xnviilmi6qj.public.blob.vercel-storage.com/8151ae20b8c6b889b35dbd5571fa4d84-1080-93a3c6b3011d.webp",
+      "sourcePage": "https://happyplacecarpentry.com/ (site snapshot 2026-09-21)",
+      "observedAt": "2026-09-25T17:55:06.499Z",
+      "outcome": "ingested",
+      "reason": "Demo-authorized source (Nolan 2026-09-25)",
+      "digest": "93a3c6b3011dcc76637dcd34ccd37b47e1763d799955fb7718a4ae6f046afd1e"
+    },
+    {
+      "sourceUrl": "https://8zci9xnviilmi6qj.public.blob.vercel-storage.com/f3272a08fa5696f588d0780b26d34381-1080-65195680aa8d.webp",
+      "sourcePage": "https://happyplacecarpentry.com/ (site snapshot 2026-09-21)",
+      "observedAt": "2026-09-25T17:55:06.761Z",
+      "outcome": "ingested",
+      "reason": "Demo-authorized source (Nolan 2026-09-25)",
+      "digest": "65195680aa8dd73a103096cd3d2fc872a2dff42f65b4f99df5b1cb0a68364d25"
+    },
+    {
+      "sourceUrl": "https://8zci9xnviilmi6qj.public.blob.vercel-storage.com/a2e488b435a03af26f7f75df8606f517-1080-fe45a5cee603.webp",
+      "sourcePage": "https://happyplacecarpentry.com/ (site snapshot 2026-09-21)",
+      "observedAt": "2026-09-25T17:55:06.991Z",
+      "outcome": "ingested",
+      "reason": "Demo-authorized source (Nolan 2026-09-25)",
+      "digest": "fe45a5cee6032bdadc231959ec191c3304b63bc92445f15735eff732a5f649e2"
     }
   ],
-  "media": []
+  "media": [
+    {
+      "id": "fyd-media-d420ae91d8e4e32d",
+      "schema": "ping.social.media@1",
+      "title": "Happy Place Carpentry project photo 1",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Demo authorization (Nolan 2026-09-25): public marketing imagery of the authorized demo business Happy Place Carpentry, observed on the business's own website 2026-09-21 (live origin currently unreachable), hosted in the business's own public Vercel blob bucket. Acquired for the FYD demo only. FYD claims no copyright; the business retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://8zci9xnviilmi6qj.public.blob.vercel-storage.com/2a1d4ae6e3b81282259174af113bac3c-1080-d420ae91d8e4.webp",
+        "sourcePage": "https://happyplacecarpentry.com/ (site snapshot 2026-09-21)",
+        "observedAt": "2026-09-25T17:55:05.572Z"
+      },
+      "digest": "d420ae91d8e4e32d36fd63ebe56acb1a4bd363f38879616ca8b5f460d777fbdd",
+      "originalFormat": "webp",
+      "width": 1080,
+      "height": 1440,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 480,
+          "height": 640,
+          "format": "webp",
+          "url": "/fyd-media/d420ae91d8e4e32d36fd63ebe56acb1a4bd363f38879616ca8b5f460d777fbdd/thumbnail-480w.webp",
+          "bytes": 77232,
+          "digest": "3e5ac9bf6c16066eae6c780820a75e3d5c8412bf7bb9b334adb4423cbca7d325",
+          "derivedFrom": "d420ae91d8e4e32d36fd63ebe56acb1a4bd363f38879616ca8b5f460d777fbdd"
+        },
+        {
+          "name": "card",
+          "width": 768,
+          "height": 1024,
+          "format": "webp",
+          "url": "/fyd-media/d420ae91d8e4e32d36fd63ebe56acb1a4bd363f38879616ca8b5f460d777fbdd/card-768w.webp",
+          "bytes": 180480,
+          "digest": "d8e62996ce9d50731a0d084e0dd463b8e67395b3adcec0e46d3067bd23a2a8c2",
+          "derivedFrom": "d420ae91d8e4e32d36fd63ebe56acb1a4bd363f38879616ca8b5f460d777fbdd"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 13,
+          "format": "webp",
+          "url": "/fyd-media/d420ae91d8e4e32d36fd63ebe56acb1a4bd363f38879616ca8b5f460d777fbdd/blur-10w.webp",
+          "bytes": 92,
+          "digest": "5c4ac2df6f2b350319d82a7aa7c61cd5b531591f12d43d29de06a2473a268b3b",
+          "derivedFrom": "d420ae91d8e4e32d36fd63ebe56acb1a4bd363f38879616ca8b5f460d777fbdd"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-77bad689a7812c33",
+      "schema": "ping.social.media@1",
+      "title": "Happy Place Carpentry project photo 2",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Demo authorization (Nolan 2026-09-25): public marketing imagery of the authorized demo business Happy Place Carpentry, observed on the business's own website 2026-09-21 (live origin currently unreachable), hosted in the business's own public Vercel blob bucket. Acquired for the FYD demo only. FYD claims no copyright; the business retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://8zci9xnviilmi6qj.public.blob.vercel-storage.com/6fd33914d4c27fbf71871bbc6405ff1c-1080-77bad689a781.webp",
+        "sourcePage": "https://happyplacecarpentry.com/ (site snapshot 2026-09-21)",
+        "observedAt": "2026-09-25T17:55:06.222Z"
+      },
+      "digest": "77bad689a7812c3381526933bae967e3ef86ec1deefbd15612768e1b5d214d91",
+      "originalFormat": "webp",
+      "width": 1080,
+      "height": 1440,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 480,
+          "height": 640,
+          "format": "webp",
+          "url": "/fyd-media/77bad689a7812c3381526933bae967e3ef86ec1deefbd15612768e1b5d214d91/thumbnail-480w.webp",
+          "bytes": 60484,
+          "digest": "bd5077bb86e703ad5936ba280572ad3be4fa43933a5515ef6833b36ea0a23f66",
+          "derivedFrom": "77bad689a7812c3381526933bae967e3ef86ec1deefbd15612768e1b5d214d91"
+        },
+        {
+          "name": "card",
+          "width": 768,
+          "height": 1024,
+          "format": "webp",
+          "url": "/fyd-media/77bad689a7812c3381526933bae967e3ef86ec1deefbd15612768e1b5d214d91/card-768w.webp",
+          "bytes": 136250,
+          "digest": "288dcaf7fba9225892e364060d017fb29e066024298cdb481237bbadd161b4e5",
+          "derivedFrom": "77bad689a7812c3381526933bae967e3ef86ec1deefbd15612768e1b5d214d91"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 13,
+          "format": "webp",
+          "url": "/fyd-media/77bad689a7812c3381526933bae967e3ef86ec1deefbd15612768e1b5d214d91/blur-10w.webp",
+          "bytes": 92,
+          "digest": "f78b81b1fae39914ca16fa3c37ed01e9e75385ac9a67b8ece38f59445c8790b7",
+          "derivedFrom": "77bad689a7812c3381526933bae967e3ef86ec1deefbd15612768e1b5d214d91"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-93a3c6b3011dcc76",
+      "schema": "ping.social.media@1",
+      "title": "Happy Place Carpentry project photo 3",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Demo authorization (Nolan 2026-09-25): public marketing imagery of the authorized demo business Happy Place Carpentry, observed on the business's own website 2026-09-21 (live origin currently unreachable), hosted in the business's own public Vercel blob bucket. Acquired for the FYD demo only. FYD claims no copyright; the business retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://8zci9xnviilmi6qj.public.blob.vercel-storage.com/8151ae20b8c6b889b35dbd5571fa4d84-1080-93a3c6b3011d.webp",
+        "sourcePage": "https://happyplacecarpentry.com/ (site snapshot 2026-09-21)",
+        "observedAt": "2026-09-25T17:55:06.499Z"
+      },
+      "digest": "93a3c6b3011dcc76637dcd34ccd37b47e1763d799955fb7718a4ae6f046afd1e",
+      "originalFormat": "webp",
+      "width": 1080,
+      "height": 1440,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 480,
+          "height": 640,
+          "format": "webp",
+          "url": "/fyd-media/93a3c6b3011dcc76637dcd34ccd37b47e1763d799955fb7718a4ae6f046afd1e/thumbnail-480w.webp",
+          "bytes": 52642,
+          "digest": "d6577ae2eae02946d27859c37236f4798168be459309fe7c4beaf3dcd47914c3",
+          "derivedFrom": "93a3c6b3011dcc76637dcd34ccd37b47e1763d799955fb7718a4ae6f046afd1e"
+        },
+        {
+          "name": "card",
+          "width": 768,
+          "height": 1024,
+          "format": "webp",
+          "url": "/fyd-media/93a3c6b3011dcc76637dcd34ccd37b47e1763d799955fb7718a4ae6f046afd1e/card-768w.webp",
+          "bytes": 112586,
+          "digest": "46a8c16c9da07bb074702072a18daebd97927eaeefa004d509b563517ae194a8",
+          "derivedFrom": "93a3c6b3011dcc76637dcd34ccd37b47e1763d799955fb7718a4ae6f046afd1e"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 13,
+          "format": "webp",
+          "url": "/fyd-media/93a3c6b3011dcc76637dcd34ccd37b47e1763d799955fb7718a4ae6f046afd1e/blur-10w.webp",
+          "bytes": 90,
+          "digest": "d7e96ce7c0f6a2ce1a1f242dc9410bbf879ae24b2bb3f24c55e3ea421a204c9f",
+          "derivedFrom": "93a3c6b3011dcc76637dcd34ccd37b47e1763d799955fb7718a4ae6f046afd1e"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-65195680aa8dd73a",
+      "schema": "ping.social.media@1",
+      "title": "Happy Place Carpentry project photo 4",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Demo authorization (Nolan 2026-09-25): public marketing imagery of the authorized demo business Happy Place Carpentry, observed on the business's own website 2026-09-21 (live origin currently unreachable), hosted in the business's own public Vercel blob bucket. Acquired for the FYD demo only. FYD claims no copyright; the business retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://8zci9xnviilmi6qj.public.blob.vercel-storage.com/f3272a08fa5696f588d0780b26d34381-1080-65195680aa8d.webp",
+        "sourcePage": "https://happyplacecarpentry.com/ (site snapshot 2026-09-21)",
+        "observedAt": "2026-09-25T17:55:06.761Z"
+      },
+      "digest": "65195680aa8dd73a103096cd3d2fc872a2dff42f65b4f99df5b1cb0a68364d25",
+      "originalFormat": "webp",
+      "width": 1080,
+      "height": 1440,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 480,
+          "height": 640,
+          "format": "webp",
+          "url": "/fyd-media/65195680aa8dd73a103096cd3d2fc872a2dff42f65b4f99df5b1cb0a68364d25/thumbnail-480w.webp",
+          "bytes": 35972,
+          "digest": "3f4e1910f174533c3fe490725ba8f0b23d164d8a8f4d445424588ac41141f448",
+          "derivedFrom": "65195680aa8dd73a103096cd3d2fc872a2dff42f65b4f99df5b1cb0a68364d25"
+        },
+        {
+          "name": "card",
+          "width": 768,
+          "height": 1024,
+          "format": "webp",
+          "url": "/fyd-media/65195680aa8dd73a103096cd3d2fc872a2dff42f65b4f99df5b1cb0a68364d25/card-768w.webp",
+          "bytes": 67610,
+          "digest": "66ac4a54481542bafa06c6cf4d38f27417b306477e627a197d0ac404fa1daf44",
+          "derivedFrom": "65195680aa8dd73a103096cd3d2fc872a2dff42f65b4f99df5b1cb0a68364d25"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 13,
+          "format": "webp",
+          "url": "/fyd-media/65195680aa8dd73a103096cd3d2fc872a2dff42f65b4f99df5b1cb0a68364d25/blur-10w.webp",
+          "bytes": 90,
+          "digest": "ed732370c61a2d08a0d09373fbcc85720ac8676ffe250f19ea6c8a89ffe976b7",
+          "derivedFrom": "65195680aa8dd73a103096cd3d2fc872a2dff42f65b4f99df5b1cb0a68364d25"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    },
+    {
+      "id": "fyd-media-fe45a5cee6032bda",
+      "schema": "ping.social.media@1",
+      "title": "Happy Place Carpentry project photo 5",
+      "mediaType": "image",
+      "roles": [
+        "gallery"
+      ],
+      "rightsSource": "public-demo-source",
+      "rightsBasis": "Demo authorization (Nolan 2026-09-25): public marketing imagery of the authorized demo business Happy Place Carpentry, observed on the business's own website 2026-09-21 (live origin currently unreachable), hosted in the business's own public Vercel blob bucket. Acquired for the FYD demo only. FYD claims no copyright; the business retains all rights.",
+      "lifecycle": "published",
+      "provenance": {
+        "sourceUrl": "https://8zci9xnviilmi6qj.public.blob.vercel-storage.com/a2e488b435a03af26f7f75df8606f517-1080-fe45a5cee603.webp",
+        "sourcePage": "https://happyplacecarpentry.com/ (site snapshot 2026-09-21)",
+        "observedAt": "2026-09-25T17:55:06.991Z"
+      },
+      "digest": "fe45a5cee6032bdadc231959ec191c3304b63bc92445f15735eff732a5f649e2",
+      "originalFormat": "webp",
+      "width": 1080,
+      "height": 1440,
+      "variants": [
+        {
+          "name": "thumbnail",
+          "width": 480,
+          "height": 640,
+          "format": "webp",
+          "url": "/fyd-media/fe45a5cee6032bdadc231959ec191c3304b63bc92445f15735eff732a5f649e2/thumbnail-480w.webp",
+          "bytes": 33390,
+          "digest": "0ab75fc4c28a9d365c80dbd57085d77fc000b7c8b1d52bc3eae5437e0f1608c3",
+          "derivedFrom": "fe45a5cee6032bdadc231959ec191c3304b63bc92445f15735eff732a5f649e2"
+        },
+        {
+          "name": "card",
+          "width": 768,
+          "height": 1024,
+          "format": "webp",
+          "url": "/fyd-media/fe45a5cee6032bdadc231959ec191c3304b63bc92445f15735eff732a5f649e2/card-768w.webp",
+          "bytes": 74102,
+          "digest": "b1292fc137dbb17bbef645fa2b3d4fc1e8b91c212a5fb14581d8d7481aa002d3",
+          "derivedFrom": "fe45a5cee6032bdadc231959ec191c3304b63bc92445f15735eff732a5f649e2"
+        },
+        {
+          "name": "blur",
+          "width": 10,
+          "height": 13,
+          "format": "webp",
+          "url": "/fyd-media/fe45a5cee6032bdadc231959ec191c3304b63bc92445f15735eff732a5f649e2/blur-10w.webp",
+          "bytes": 88,
+          "digest": "33bd320ae6d59f7984a650314a7643756915f556f3705c2efbab540526da493e",
+          "derivedFrom": "fe45a5cee6032bdadc231959ec191c3304b63bc92445f15735eff732a5f649e2"
+        }
+      ],
+      "depicts": [],
+      "altText": null,
+      "altTextSource": "none",
+      "visibility": "public"
+    }
+  ]
 }

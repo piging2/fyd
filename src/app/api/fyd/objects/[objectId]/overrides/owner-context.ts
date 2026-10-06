@@ -26,6 +26,14 @@ import {
   resolveOwnerCorrectionChain,
   type OwnerCorrectionChain,
 } from "@/fyd/owner-mode/demo-chain";
+import {
+  answerAuthorization,
+  demoAuthorizationQuestion,
+  listOwnerCapabilities,
+  type DemoActor,
+  type OwnerCapability,
+} from "@/fyd/owner-mode/capability";
+import { resolveOwnerIdentity } from "@/fyd/owner-mode/owner-identity";
 import { requireTenantContext } from "@/fyd/tenant/tenant-context";
 import {
   demoActorContext,
@@ -157,17 +165,44 @@ export class DemoOwnerContext implements OwnerContext {
   }
 
   async evaluateCapability(
-    _objectId: string,
-    _capability: string,
+    objectId: string,
+    capability: string,
   ): Promise<OwnerCapabilityEvaluation> {
-    // Demo: the verdict comes from the seeded demo chain, which evaluates
-    // owner.correct-fact for the seeded actor. The capability argument is
-    // part of the interface for the future PING implementation; the demo
-    // chain knows only owner.correct-fact.
+    // The typed authorization question carries the full ask: actor,
+    // identity, control relationship, capability, resource, and action.
+    // The demo authority answers from the hard-coded demo relationship
+    // mapping plus the capability rules (the single demo authority; no
+    // new authority class). Unknown capabilities fail closed.
+    const known = listOwnerCapabilities() as string[];
+    if (!known.includes(capability)) {
+      return {
+        capability,
+        allowed: false,
+        reason:
+          "demo: deny - '" +
+          capability +
+          "' is not a demo capability (deny-by-default).",
+      };
+    }
+    const actor: DemoActor = { id: this.actor.actorId, label: this.actor.label };
+    const action = capability.includes(".")
+      ? capability.slice(capability.indexOf(".") + 1)
+      : capability;
+    const answer = answerAuthorization(
+      demoAuthorizationQuestion(
+        actor,
+        this.tenantId,
+        capability as OwnerCapability,
+        action,
+        await resolveOwnerIdentity(),
+        objectId,
+      ),
+    );
     return {
-      capability: this.chain.verdict.capability,
-      allowed: this.chain.verdict.allowed,
-      reason: this.chain.verdict.reason,
+      capability: answer.capability,
+      allowed: answer.allowed,
+      reason:
+        answer.reason + " [demo scaffolding; " + answer.identityNote + "]",
     };
   }
 

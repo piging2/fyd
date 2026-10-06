@@ -14,8 +14,13 @@
  * signed envelope as the viewer identity.
  */
 
-import { createHash } from "node:crypto";
+import { canonicalize, sha256Hex } from "./digest";
 import { ownerCorrectionForObject } from "@/fyd/object/owner-overlay";
+import {
+  coarsenAddress,
+  isAddressFamilyField,
+  valueLooksLikeAddress,
+} from "@/fyd/sitespec/field-visibility";
 import type {
   AskAnswer,
   AskClaimClassification,
@@ -52,18 +57,7 @@ const PROPOSABLE_FIELDS: Record<string, string> = {
 // Canonical JSON + digest (sha256-canonical-json-v1)
 // ---------------------------------------------------------------------------
 
-export function canonicalize(value: unknown): string {
-  if (value === null || value === undefined) return "null";
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
-  if (typeof value === "object") {
-    const rec = value as Record<string, unknown>;
-    const keys = Object.keys(rec).sort();
-    return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalize(rec[k])}`).join(",")}}`;
-  }
-  return "null";
-}
+export { canonicalize };
 
 export interface ObjectProposalBody {
   kind: "object_update" | "object_create";
@@ -80,7 +74,7 @@ export interface ObjectProposalBody {
 export type ProposalBody = ObjectProposalBody | SitePatchProposalBody;
 
 export function proposalDigest(body: ProposalBody): string {
-  return createHash("sha256").update(canonicalize(body), "utf8").digest("hex");
+  return sha256Hex(canonicalize(body));
 }
 
 export function verifyProposalDigest(proposal: AskProposal): boolean {
@@ -210,7 +204,12 @@ export function buildAskContext(input: AskContextInput): AskContext {
     evidenceRefs.push({
       kind: "relationship",
       id: r.id,
-      label: `${r.subject.slice(0, 12)} ${r.predicate} ${r.object.slice(0, 12)} (${r.status})`,
+      // FYD P1: full endpoint ids (no truncation). The subject and object
+      // of overlay relationships share a "website-" prefix, so truncating
+      // both to 12 chars rendered every relationship as the identical
+      // "website-busi <pred> website-busi", making the consulted-evidence
+      // line useless as an evidence-transparency surface.
+      label: `${r.subject} ${r.predicate} ${r.object} (${r.status})`,
       detail: `event ${r.evidenceRef}`,
     });
   }
@@ -276,6 +275,22 @@ function fieldOf(obj: PingObject, ...names: string[]): string | null {
   return null;
 }
 
+/**
+ * TITLE-SHAPE RULE (Q-P0-01 leak 4): the located_at branch names the
+ * location object by its TITLE, which never passes through field
+ * visibility. When the title is address-shaped ("123 Main St, Grand
+ * Junction, CO") it is coarsened exactly like an address field; a
+ * business-name title ("Acme Plumbing") passes through unchanged. A
+ * title that IS pure street ("123 Main St") coarsens to "" and returns
+ * null so the caller falls back to the locality field — fail closed on
+ * the title itself. Pure, deterministic, no I/O, no clock.
+ */
+function coarsenLocationTitle(title: string | null | undefined): string | null {
+  if (!title) return null;
+  if (!valueLooksLikeAddress(title)) return title;
+  return coarsenAddress(title) || null;
+}
+
 function hasWord(q: string, ...words: string[]): boolean {
   return words.some((w) => new RegExp(`\\b${w}\\b`).test(q));
 }
@@ -305,6 +320,34 @@ const GENERIC_WORDS: ReadonlySet<string> = new Set([
   "just", "really", "please", "very", "quite",
   "tell", "know", "kinds", "kind", "types", "type", "many", "much", "more", "most",
   "list", "name", "names", "like",
+  "handle", "handles", "handling",
+]);
+
+/**
+ * Words the hours branch answers: schedule, availability, emergency. The
+ * services branch excludes these from its unmatched-topic reporting so
+ * the hours branch owns them (no double coverage, no UNKNOWN inflation).
+ */
+const HOURS_WORDS = new Set([
+  "hour", "hours", "emergency", "weekend", "weekends", "saturday", "sunday",
+  "open", "close", "closing", "schedule",
+]);
+
+/**
+ * Words that name the people/association intent itself (the people branch's
+ * own triggers) plus identity words the person listing answers (the recorded
+ * name). Excluded from the people branch's grounded-topic check so a general
+ * people question ("who works here?", "what is the owner's name?") is not
+ * treated as naming an ungrounded specific topic.
+ */
+const PEOPLE_TRIGGER_WORDS: ReadonlySet<string> = new Set([
+  "person", "people", "owner", "owners", "owns", "owned",
+  "founder", "founders", "staff", "team", "employee", "employees",
+  "member", "members", "employs",
+  "works", "working", "runs", "manages",
+  "associated", "associate", "associates", "association",
+  "affiliated", "affiliate", "affiliation", "connected", "linked",
+  "name", "names",
 ]);
 
 /**
@@ -321,6 +364,266 @@ function topicWords(q: string): string[] {
   return out;
 }
 
+/**
+ * PROD-3: out-of-scope topics. These name things with no bearing on any
+ * business Ask FYD answers for (elections, general knowledge, weather
+ * forecasts, news, sports, markets). A question naming one is refused with
+ * the scope refusal ("I can only answer questions about X"), never
+ * answered with a business blurb. The lexicon is a certain-signal list:
+ * anything NOT on it flows to the normal branch logic, which refuses
+ * honestly when ungrounded (fail-closed: uncertain scope never
+ * confabulates).
+ *
+ * PROD-3+4-REPAIR: the ambiguous words "weather", "temperature", "news",
+ * "stock"/"stocks" are NOT bare words here; they are context-sensitive
+ * (see the names* helpers below) because bare matching over-fired on
+ * legitimate business questions ("Do you have this part in stock?",
+ * "What temperature should my water heater be set to?").
+ */
+const OUT_OF_SCOPE_WORDS: ReadonlySet<string> = new Set([
+  // Elections and politics.
+  "election", "elections", "president", "presidential", "senator", "senators",
+  "congress", "congressman", "governor", "mayor", "ballot", "vote", "votes",
+  "voting", "voter", "voters", "democrat", "democrats", "republican",
+  "republicans", "referendum", "polls",
+  // Weather as general knowledge (not business operations).
+  "forecast", "forecasts", "fahrenheit", "celsius",
+  "tornado", "hurricane", "blizzard",
+  // Sports, entertainment.
+  "sports", "football", "basketball", "baseball", "soccer", "olympics",
+  // Markets.
+  "bitcoin", "crypto", "cryptocurrency", "nasdaq",
+  // Lottery, horoscope.
+  "lottery", "horoscope",
+]);
+
+/**
+ * Multi-word out-of-scope topics (matched as substrings of the lowercased
+ * question). PROD-3+4-REPAIR: "how tall is" is context-sensitive
+ * (see namesUnanchoredHeight) because it over-fired on "how tall is your
+ * building?".
+ */
+const OUT_OF_SCOPE_PHRASES: readonly string[] = [
+  "capital of",
+  "population of",
+  "who won",
+  "who will win",
+  "who is winning",
+  "who wrote",
+  "who invented",
+  "who discovered",
+  "world cup",
+  "super bowl",
+];
+
+/**
+ * Words that anchor a question to the business even when it also names an
+ * out-of-scope topic ("What are your hours on election day?"). Business
+ * nouns and the business name itself are checked separately via
+ * namesBusiness / titleWords; these are the concrete business facets and
+ * operation words.
+ */
+const SCOPE_ANCHOR_WORDS: ReadonlySet<string> = new Set([
+  "hour", "hours", "open", "close", "closing", "schedule", "appointment",
+  "appointments", "saturday", "sunday", "weekend", "weekends",
+  "phone", "email", "address", "location", "located", "website", "contact",
+  "price", "pricing", "cost", "costs", "rate", "rates", "quote", "estimate",
+  "estimates", "service", "services", "offer", "offers", "offering",
+  "offerings", "provide", "provides", "providing",
+  "owner", "owners", "staff", "team", "employee", "employees",
+  "emergency", "review", "reviews", "rating", "ratings",
+  "work", "working", "job", "jobs", "operate", "operates", "hire", "hiring",
+  // PROD-3+4-REPAIR: testimonials are a business facet (social proof).
+  "testimonial", "testimonials",
+]);
+
+/**
+ * PROD-3+4-REPAIR: context-sensitive out-of-scope topics. These words are
+ * ambiguous alone, so each only names an out-of-scope topic with
+ * disambiguating context:
+ * - "stock"/"stocks": market context only, never inventory ("this part in
+ *   stock" is a business question).
+ * - "temperature": forecast context only, never appliance settings ("what
+ *   temperature should my water heater be set to" is a business question).
+ * - "news": headlines/current-events context only, never job status ("any
+ *   news on my repair" is a business question).
+ * - "weather": forecast context only, never damage repair ("do you repair
+ *   weather damage" is a business question).
+ * - "how tall is": only when not anchored to a business facet ("how tall
+ *   is your building" is a business question).
+ */
+
+/** Market-context phrases that make singular "stock" out-of-scope. */
+const STOCK_MARKET_PHRASES: readonly string[] = [
+  "stock market",
+  "stock price",
+  "stock prices",
+  "share price",
+  "share prices",
+];
+
+/** "stock"/"stocks": out-of-scope only with market context, never inventory. */
+function namesStockMarket(q: string): boolean {
+  if (!hasWord(q, "stock", "stocks")) return false;
+  if (hasWord(q, "stocks")) return true;
+  return STOCK_MARKET_PHRASES.some((p) => q.includes(p));
+}
+
+/** Words that put "temperature"/"weather" in a weather-forecast frame. */
+const FORECAST_CONTEXT_WORDS: readonly string[] = [
+  "forecast", "forecasts", "outside", "today", "tomorrow", "tonight",
+];
+
+/** "temperature": out-of-scope only with forecast context, never appliance settings. */
+function namesForecastTemperature(q: string): boolean {
+  if (!hasWord(q, "temperature")) return false;
+  return hasWord(q, ...FORECAST_CONTEXT_WORDS);
+}
+
+/** "weather": out-of-scope only with forecast context, never damage repair. */
+function namesForecastWeather(q: string): boolean {
+  if (!hasWord(q, "weather")) return false;
+  if (hasWord(q, ...FORECAST_CONTEXT_WORDS)) return true;
+  // A bare "what is the weather"-style question is a forecast question.
+  return topicWords(q).every((w) => w === "weather");
+}
+
+/** Job-status words that keep "news" about the business in scope. */
+const NEWS_JOB_STATUS_WORDS: readonly string[] = [
+  "repair", "repairs", "order", "orders", "job", "jobs",
+  "project", "projects", "appointment", "appointments",
+  "service", "services", "update", "updates", "status",
+];
+
+/** "news": out-of-scope only with headlines/current-events context, never job status. */
+function namesHeadlineNews(q: string): boolean {
+  if (!hasWord(q, "news")) return false;
+  if (hasWord(q, ...NEWS_JOB_STATUS_WORDS)) return false;
+  if (
+    hasWord(q, "headlines", "headline", "breaking", "latest", "world", "national", "today", "tonight")
+  ) return true;
+  return topicWords(q).every((w) => w === "news");
+}
+
+/** Business-facet nouns that anchor "how tall is" to the business. */
+const HEIGHT_FACET_WORDS: readonly string[] = [
+  "your", "yours",
+  "building", "buildings", "sign", "signs", "fence", "fences",
+  "wall", "walls", "shop", "store", "business", "company",
+  "house", "home", "ceiling", "door", "doors",
+];
+
+/**
+ * "how tall is": out-of-scope only when it asks about something other than
+ * the business ("how tall is the Eiffel Tower?"). A business-facet anchor
+ * ("how tall is your building") keeps it in scope.
+ */
+function namesUnanchoredHeight(q: string): boolean {
+  if (!q.includes("how tall is")) return false;
+  return !hasWord(q, ...HEIGHT_FACET_WORDS);
+}
+
+/**
+ * PROD-3+4-REPAIR-R2: trades/service vocabulary. A question naming
+ * trades or service work is always business scope, never an out-of-scope
+ * topic for the ambiguous words (temperature/weather/stock/news):
+ * "The outside unit shows a temperature fault, can you come look at it
+ * today?" names a condenser fault and a service visit, not a weather
+ * forecast. Business signal wins over out-of-scope signal: the refusal
+ * fires only on a strong out-of-scope signal with zero business/trades
+ * signal. Some of these words also anchor via SCOPE_ANCHOR_WORDS; they
+ * are listed here as the documented trades signal anyway.
+ */
+const TRADES_VOCABULARY_WORDS: readonly string[] = [
+  "unit", "units", "fault", "faults",
+  "repair", "repairs", "service", "services",
+  "install", "installs", "installed", "installation",
+  "fix", "fixes", "fixing", "fixed", "broken",
+  "schedule", "schedules", "scheduling",
+  "appointment", "appointments",
+  "estimate", "estimates", "quote", "quotes",
+  // PROD-3+4-REPAIR-R3: missing trades vocabulary. Legitimate questions
+  // like "Will tomorrow's weather affect the maintenance visit?" were
+  // wrongly refused because no trades word was recognized.
+  "maintenance", "visit", "visits", "tune-up",
+  "diagnostic", "diagnostics", "technician", "technicians",
+  "warranty", "inspection", "inspections",
+  "replacement", "replacements", "upgrade", "upgrades",
+  "servicing",
+  // "tech" (technician shorthand) is a word, not a phrase: word-boundary
+  // matching so "technology"/"technical" do not count as trades signal.
+  "tech",
+];
+const TRADES_VOCABULARY_PHRASES: readonly string[] = [
+  "not working",
+  "come look",
+  "come by",
+  "take a look",
+  "have a look",
+  "stop by",
+  // PROD-3+4-REPAIR-R3: multi-word trades phrases.
+  "maintenance visit",
+  "tune up",
+];
+
+/** True when the question names trades/service work (business scope). */
+function namesTradesWork(q: string): boolean {
+  if (hasWord(q, ...TRADES_VOCABULARY_WORDS)) return true;
+  return TRADES_VOCABULARY_PHRASES.some((p) => q.includes(p));
+}
+
+/**
+ * PROD-3+4-REPAIR-R3: the raw out-of-scope topic-naming test, WITHOUT the
+ * trades/business anchor guards. The profile branch uses this stricter
+ * test: a business blurb must never answer a question whose subject is an
+ * out-of-scope topic, even when trades words are present ("Who will win
+ * the election, fix this?" names trades work via "fix", but the election
+ * is the subject, so it must refuse, not blurb).
+ */
+function namesOutOfScopeTopic(q: string): boolean {
+  for (const w of OUT_OF_SCOPE_WORDS) {
+    if (hasWord(q, w)) return true;
+  }
+  for (const p of OUT_OF_SCOPE_PHRASES) {
+    if (q.includes(p)) return true;
+  }
+  // PROD-3+4-REPAIR: context-sensitive topics; bare words over-fired.
+  return (
+    namesStockMarket(q) ||
+    namesForecastTemperature(q) ||
+    namesForecastWeather(q) ||
+    namesHeadlineNews(q) ||
+    namesUnanchoredHeight(q)
+  );
+}
+
+/**
+ * PROD-3 scope check. True when the question names an out-of-scope topic
+ * AND is not anchored to the business (it neither names the business nor
+ * asks about a concrete business facet). A hit refuses; anything uncertain
+ * flows through to the branch logic, which refuses honestly when it cannot
+ * ground an answer.
+ */
+function isOutOfScopeQuestion(q: string, titleWords: string[]): boolean {
+  if (!namesOutOfScopeTopic(q)) return false;
+  // PROD-3+4-REPAIR-R2: business signal wins over out-of-scope signal.
+  // A question naming trades/service work is never out-of-scope for the
+  // ambiguous topics (temperature/weather/stock/news), regardless of
+  // context words: "outside", "today", "tomorrow" are ordinary trades
+  // words too ("The outside unit shows a temperature fault, can you come
+  // look at it today?"). The refusal fires only on a strong out-of-scope
+  // signal with zero business/trades signal.
+  if (namesTradesWork(q)) return false;
+  if (
+    hasWord(q, "business", "businesses", "company", "companies", "shop", "store", "firm", "contractor") ||
+    titleWords.some((w) => hasWord(q, w))
+  ) return false;
+  for (const w of SCOPE_ANCHOR_WORDS) {
+    if (hasWord(q, w)) return false;
+  }
+  return true;
+}
+
 /** Words describing the services on record (services field, titles, descriptions). */
 function serviceVocabulary(target: PingObject, relatedServices: PingObject[]): Set<string> {
   const vocab = new Set<string>();
@@ -334,6 +637,28 @@ function serviceVocabulary(target: PingObject, relatedServices: PingObject[]): S
   for (const o of relatedServices) {
     add(o.title);
     add(o.description);
+  }
+  return vocab;
+}
+
+/** Words describing the person records on record (titles, descriptions, field values). */
+function peopleVocabulary(persons: PingObject[]): Set<string> {
+  const vocab = new Set<string>();
+  const add = (text: string | null | undefined): void => {
+    if (!text) return;
+    for (const w of text.toLowerCase().split(/[^a-z0-9]+/)) {
+      if (w.length > 2 && !GENERIC_WORDS.has(w)) vocab.add(w);
+    }
+  };
+  for (const p of persons) {
+    add(p.title);
+    add(p.description);
+    for (const [k, v] of Object.entries(p.fields)) {
+      // claimKind is epistemic metadata, not person content.
+      if (k === "claimKind") continue;
+      if (typeof v === "string") add(v);
+      else if (Array.isArray(v)) for (const s of v) if (typeof s === "string") add(s);
+    }
   }
   return vocab;
 }
@@ -404,7 +729,7 @@ function noEvidenceAnswer(ctx: AskContext, question: string, unknowns: string[] 
     ...baseAnswer(ctx),
     unknowns,
     answer: [
-      "I do not have evidence for that in the current context, so I will not guess.",
+      "I cannot answer that: nothing in the site record covers it, and I will not guess.",
       consulted,
       "Open an object to give me something concrete to answer from, or ask about what is listed below.",
     ].join("\n\n"),
@@ -413,7 +738,59 @@ function noEvidenceAnswer(ctx: AskContext, question: string, unknowns: string[] 
   };
 }
 
-export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
+/**
+ * Optional composer inputs.
+ *
+ * conflictedFields: public fields suppressed from the projection because
+ * of an unresolved field conflict (FYD-Q1). The composer must never state
+ * a disputed value; the contact/location/coverage branches describe the
+ * field with the locked copy "Contact information is being verified."
+ * instead. evidenceIndices point at pre-registered conflict-observation
+ * evidence refs, so both evidence chains survive in the Why-this surface.
+ */
+export interface ComposeAnswerOpts {
+  conflictedFields?: { objectId: string; field: string; evidenceIndices: number[] }[];
+}
+
+/**
+ * PROD-4: user-facing display name for the target object. Never an
+ * internal id: a missing or blank title degrades to the given neutral
+ * noun, never to a raw id prefix like "website-bus".
+ */
+function displayTarget(target: PingObject, fallbackNoun: string): string {
+  const t = target.title.trim();
+  return t.length > 0 ? t : fallbackNoun;
+}
+
+/**
+ * PROD-4 (repaired PROD-3+4-REPAIR, hardened PROD-3+4-REPAIR-R2):
+ * internal-id shapes. Matches ONLY actual id shapes: website-business |
+ * service | location followed by a hex hash (8+ hex chars, the observed
+ * id form, e.g. website-business-6fa5ebd99d72c4cb) plus any further
+ * hyphenated id segments (-location, -service-<hex>, -post-<hex>),
+ * fyd-media ids of the same form, or the standalone truncated prefix
+ * "website-bus". The hex hash is the whole gate: plain English words
+ * after the prefix ("website-business-rentals", "website-business-program",
+ * "fyd-media-kit", "Website-Business-99") are never ids and always survive
+ * intact. Once the hex hash confirms an id, trailing hyphenated segments
+ * are consumed as part of it, so suffixed ids never leak a tail. The
+ * trailing (?![-\w]) guard never matches a prefix of a longer hyphenated
+ * word.
+ */
+export const INTERNAL_ID_RE =
+  /\bwebsite-(?:business|service|location)-[0-9a-f]{8,}(?:-[a-z0-9]+)*\b(?![-\w])|\bfyd-media-[0-9a-f]{8,}(?:-[a-z0-9]+)*\b(?![-\w])|\bwebsite-bus\b(?![-\w])/gi;
+
+/**
+ * PROD-4: strip internal identifiers from user-facing text. Known ids
+ * resolve to their object titles; anything unrecognized becomes
+ * "the site record". Structured refs (citation ids, objectRefs) are not
+ * text surfaces and stay intact for the Why-this panel.
+ */
+export function stripInternalIds(text: string, labels: ReadonlyMap<string, string>): string {
+  return text.replace(INTERNAL_ID_RE, (id) => labels.get(id) ?? "the site record");
+}
+
+export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAnswerOpts = {}): AskAnswer {
   const q = question.toLowerCase().trim();
   const target = ctx.target;
   const base = baseAnswer(ctx);
@@ -467,12 +844,17 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       ...body,
       digest: proposalDigest(body),
       digestAlgorithm: "sha256-canonical-json-v1",
-      note: `Approving publishes one post as ${ctx.viewer.displayName ?? "your identity"} replying to ${target.id.slice(0, 12)}. The gateway governs the write.`,
+      note: `Approving publishes one post as ${ctx.viewer.displayName ?? "your identity"} replying to ${displayTarget(target, "this post")}. The gateway governs the write.`,
+      // PROD-4 (repaired): the user-facing rendering of the reply target
+      // goes through displayTarget. changes.replyTo keeps the raw id: it is
+      // digest-bound and the governed write + reply-edge derivation consume
+      // it as an id. This label is display-only, never digested or submitted.
+      displayChangeLabels: { replyTo: displayTarget(target, "this post") },
     };
     return {
       ...base,
       answer: [
-        cite(`I drafted a reply to the post ${target.title || target.id.slice(0, 12)}.`, [0]),
+        cite(`I drafted a reply to the post ${displayTarget(target, "this post")}.`, [0]),
         "Review the exact text in the proposal below. Approving publishes it as you through the governed event path. I cannot publish it myself.",
       ].join("\n\n"),
       proposal,
@@ -487,7 +869,7 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       return {
         ...base,
         answer: [
-          cite(`Only the controlling identity of ${target.title || target.id.slice(0, 12)} can update it.`, [0]),
+          cite(`Only the controlling identity of ${displayTarget(target, "this record")} can update it.`, [0]),
           "You are not signed in as that identity, so I did not draft a proposal.",
         ].join("\n\n"),
         proposal: null,
@@ -515,12 +897,12 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       ...body,
       digest: proposalDigest(body),
       digestAlgorithm: "sha256-canonical-json-v1",
-      note: `Approving applies this exact change to ${target.id.slice(0, 12)} as ${ctx.viewer.displayName ?? "your identity"}. The gateway governs the write.`,
+      note: `Approving applies this exact change to ${displayTarget(target, "this record")} as ${ctx.viewer.displayName ?? "your identity"}. The gateway governs the write.`,
     };
     return {
       ...base,
       answer: [
-        cite(`I drafted an update to the ${field} of ${target.title || target.id.slice(0, 12)}.`, [0]),
+        cite(`I drafted an update to the ${field} of ${displayTarget(target, "this record")}.`, [0]),
         "Review the exact change in the proposal below. Approving applies it through the governed event path. I cannot apply it myself.",
       ].join("\n\n"),
       proposal,
@@ -532,7 +914,41 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
   if (target) {
     const sentences: Sentence[] = [];
     const claimClassifications: AskClaimClassification[] = [];
-    const title = target.title || target.id;
+    // Topics the question named that no branch can answer stay UNKNOWN:
+    // branches append here; the final assembly carries them on the answer.
+    const branchUnknowns: string[] = [];
+    const noteUnknown = (w: string): void => {
+      if (!branchUnknowns.includes(w)) branchUnknowns.push(w);
+    };
+    // PROD-3+4-REPAIR-R2: the title feeds user-facing sentences AND
+    // claim labels, so a missing title degrades to a neutral noun via
+    // displayTarget, never to the raw object id ("website-business-<hex>
+    // business profile" was leaking into claimClassifications[].claim).
+    const title = displayTarget(target, "this record");
+    const conflictedFields = opts.conflictedFields ?? [];
+    const conflictIndicesFor = (objectId: string, fields: string[]): number[] => {
+      const out: number[] = [];
+      for (const c of conflictedFields) {
+        if (c.objectId === objectId && fields.includes(c.field)) out.push(...c.evidenceIndices);
+      }
+      return out;
+    };
+    const isFieldConflicted = (objectId: string, field: string): boolean =>
+      conflictedFields.some((c) => c.objectId === objectId && c.field === field);
+    // FYD-Q1 locked public copy for a field with an unresolved conflict.
+    // The field is described as unverified, never filled with a disputed
+    // value, never reported as merely absent. Internal evidence mechanics
+    // stay out of the copy.
+    const pushConflictPendingClaim = (objectId: string, fields: string[], claimLabel: string): void => {
+      pushClaim(
+        "Contact information is being verified.",
+        conflictIndicesFor(objectId, fields),
+        claimLabel,
+        target,
+        fields[0] ?? "contact",
+        "DERIVED_FACT",
+      );
+    };
     const desc = target.description || fieldOf(target, "bio", "summary");
 
     /**
@@ -565,6 +981,30 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       });
     };
 
+    // Business-name words: defined before the people branch because the
+    // people branch's grounded-topic guard excludes them (a business name
+    // in the question is identity, never a people topic).
+    const titleWords = title
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 2);
+
+    // PROD-3: out-of-scope questions ("Who will win the election?", "What
+    // is the weather today?") are refused with the scope refusal, never
+    // answered with a business blurb. partial: true with no citations
+    // marks it a refusal downstream (answerClass UNSUPPORTED). The name in
+    // the refusal is the business title, never an internal id.
+    if (isOutOfScopeQuestion(q, titleWords)) {
+      const scopeName = target.title.trim().length > 0 ? target.title.trim() : "this business";
+      return {
+        ...base,
+        unknowns: [],
+        answer: `I can only answer questions about ${scopeName}.`,
+        proposal: null,
+        partial: true,
+      };
+    }
+
     // People questions are answerable only from Person objects. A
     // description dump names nobody, so when the site data has no person
     // records the honest answer says so explicitly instead of guessing.
@@ -572,13 +1012,33 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
     // and from the active relationships incident to the target. A related
     // object's evidence informs the answer but is cited as THAT object's
     // evidence, never merged into the target's record.
-    if (
+    //
+    // Association triggers ("associated", "linked", ...) keep the
+    // incident-relationship listing. Pure people questions ("who works
+    // here?", "who owns this?") do not dump unrelated associations, and
+    // say explicitly when no person records exist instead of answering
+    // around the question.
+    const asksAssociation = hasWord(
+      q,
+      "associated",
+      "associate",
+      "associates",
+      "association",
+      "affiliated",
+      "affiliate",
+      "affiliation",
+      "connected",
+      "linked",
+    );
+    const asksPeople =
       hasWord(
         q,
         "person",
         "people",
         "owner",
         "owners",
+        "owns",
+        "owned",
         "founder",
         "founders",
         "staff",
@@ -587,28 +1047,50 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
         "employees",
         "member",
         "members",
-        "associated",
-        "associate",
-        "associates",
-        "association",
-        "affiliated",
-        "affiliate",
-        "affiliation",
-        "connected",
-        "linked",
-      )
-    ) {
+        "employs",
+      ) ||
+      (hasWord(q, "who") && hasWord(q, "works", "working", "runs", "manages"));
+    const persons = [target, ...ctx.relatedObjects].filter((o) =>
+      o.schema.toLowerCase().includes("person"),
+    );
+    // The person listing answers identity/association questions ("who works
+    // here?", "what is the owner's name?"). When the question names a
+    // SPECIFIC topic beyond the people triggers ("what is the owner's
+    // favorite food?") that no person record grounds, the listing would cite
+    // a person record for a question it does not answer, mislabeling the
+    // whole answer "supported": the branch skips instead, the unmatched
+    // topics join unknowns, and the question falls through to the honest
+    // fallback. Mirrors the services branch grounded-topic guard. Identity
+    // words (the business name) never count as a people topic.
+    const peopleNameWords = new Set(titleWords);
+    const peopleMatchable = topicWords(q).filter(
+      (w) => !peopleNameWords.has(w) && !PEOPLE_TRIGGER_WORDS.has(w),
+    );
+    const peopleGrounded =
+      peopleMatchable.length === 0 ||
+      peopleMatchable.some((w) => peopleVocabulary(persons).has(w));
+    // The unmatched topics join unknowns only for people-intent questions:
+    // other branches own their own topics ("phone number" is the contact
+    // branch's, never the people branch's unknown).
+    if ((asksPeople || asksAssociation) && !peopleGrounded) {
+      for (const w of peopleMatchable) noteUnknown(w);
+    }
+    if ((asksPeople || asksAssociation) && peopleGrounded) {
       const seenIds = new Set<string>();
-      const persons = [target, ...ctx.relatedObjects].filter((o) =>
-        o.schema.toLowerCase().includes("person"),
-      );
+      // Claim grouping for the 5-class contract: every person record and
+      // every incident association is a distinct direct citation behind
+      // the SAME claim (these are associated with the business), so the
+      // reducer can honestly report SUPPORTED BY MULTIPLE EVIDENCE.
+      // Per-entry classifications stay per-entry: each citation keeps its
+      // own epistemic basis via first-match lookup in buildCitations.
+      const associationsClaim = `${title} associations`;
       for (const p of persons) {
         seenIds.add(p.id);
         const i = ctx.evidenceRefs.findIndex((e) => e.id === p.id);
         pushClaim(
           `Person on record: ${p.title || p.id}.`,
           i >= 0 ? [i] : [],
-          `${p.title || p.id} is associated with ${title}`,
+          associationsClaim,
           p,
           "name",
         );
@@ -634,7 +1116,11 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
                 : 1,
         );
       let associations = 0;
-      for (const { predicate, otherId } of incident) {
+      // The incident-relationship listing answers association questions;
+      // for a pure people question it is unrelated noise, so it only
+      // runs when the question asked about associations.
+      const incidentToList = asksAssociation ? incident : [];
+      for (const { predicate, otherId } of incidentToList) {
         if (seenIds.has(otherId)) continue;
         const other = ctx.relatedObjects.find((o) => o.id === otherId);
         if (!other) continue;
@@ -645,13 +1131,17 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
         pushClaim(
           `Associated with ${title} (${predicate.replace(/_/g, " ")}): ${other.title || other.id}.`,
           [i],
-          `${other.title || other.id} is associated with ${title} via ${predicate}`,
+          associationsClaim,
           other,
           "name",
           "relationship_fact",
         );
       }
-      if (persons.length === 0 && associations === 0) {
+      // A pure people question with no person records is an honest
+      // unknown even when other associations exist: listing services or
+      // locations does not answer "who works here?". Association
+      // questions keep the listing behavior (associations are the answer).
+      if (persons.length === 0 && (associations === 0 || !asksAssociation)) {
         return {
           ...base,
           unknowns: ["people associated with this business"],
@@ -670,10 +1160,6 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
     // context cannot ground ("what is the owner blood type?"): the
     // description does not answer those, and dumping it here is filler
     // that also suppresses the refusal signal downstream.
-    const titleWords = title
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((w) => w.length > 2);
     const namesBusiness =
       hasWord(q, "business", "company", "shop", "store", "firm", "contractor") ||
       titleWords.some((w) => hasWord(q, w));
@@ -690,27 +1176,192 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
     // explicit AND here: either word alone ("what services...") is not a
     // profile question.
     const asksWhatIs = hasWord(q, "what") && hasWord(q, "is");
+    // PROD-3: the single-word triggers ("who", "tell", "about", ...)
+    // fired on questions with no bearing on the business ("Who will win
+    // the election?" answered with a business blurb). A profile question
+    // must be anchored to the business: name it, or address it directly
+    // (this / it / they / you / your).
+    // PROD-3+4-REPAIR-R2: structural "this" rule (replaces the
+    // PROD-3+4-REPAIR enumerated time-noun list, which was whack-a-mole:
+    // "this season", "this quarter", "this semester" evaded it). "this"
+    // anchors to the business only when it determines a business noun
+    // ("this business", "this shop", "this service", "this post") or
+    // stands bare for the object on the page ("What is this?", "Can you
+    // fix this?"). "this" + any other noun ("this fall", "this season",
+    // "this quarter", "this morning") is a time expression or something
+    // else entirely and never anchors. The business name itself is covered
+    // by namesBusiness.
+    const thisBusinessNoun =
+      /\bthis\s+(business|businesses|company|companies|shop|shops|store|stores|service|services|firm|firms|contractor|contractors|place|post|posts|record|records|page|site|team|owner|owners|product|products|offer|offers|offering|offerings)\b/.test(
+        q,
+      );
+    const thisBare = /\bthis\b[^a-z]*$/.test(q);
+    const thisAnchors = thisBusinessNoun || thisBare;
+    const anchoredToBusiness =
+      (hasWord(q, "this") && thisAnchors) ||
+      hasWord(q, "it", "they", "you", "your", "yours") ||
+      namesBusiness;
     const profileIntent =
-      hasWord(q, "who", "describe", "tell", "about", "profile") ||
-      (asksWhatIs && (hasWord(q, "this", "it", "they", "you", "your") || namesBusiness));
+      (hasWord(q, "who", "describe", "tell", "about", "profile") && anchoredToBusiness) ||
+      (asksWhatIs && anchoredToBusiness);
 
     if (profileIntent) {
-      if (desc)
-        pushClaim(`${title}: ${desc}`, [0], `${title} business profile`, target, "description");
-      else
+      // PROD-3+4-REPAIR-R3: the profile branch is stricter than the general
+      // scope check. The general check lets trades/service words defeat an
+      // out-of-scope topic ("Who will win the election, fix this?" names
+      // trades work via "fix"), but a business blurb is never the right
+      // answer when the question's subject is an out-of-scope topic.
+      // Refuse with the same scope refusal, never blurb.
+      if (namesOutOfScopeTopic(q)) {
+        const scopeName = title.trim().length > 0 ? title.trim() : "this business";
+        return {
+          ...base,
+          unknowns: [],
+          answer: `I can only answer questions about ${scopeName}.`,
+          proposal: null,
+          partial: true,
+        };
+      }
+      // ASK-FYD RELEVANCE (2026-10-03): the profile branch answers "what
+      // is this business"-style questions from the description/location/
+      // category facets. A business-anchored question that names a SPECIFIC
+      // topic those facets do not address ("Who is the CEO and what did
+      // they have for breakfast?", "What is the business owners favorite
+      // color?") must not be answered with a profile dump: citing the
+      // business object for a question it does not answer mislabels the
+      // whole answer SUPPORTED. Mirror the services/people grounded-topic
+      // guards: when the question names specific topics and none of them
+      // appear in the profile facets, skip the branch; the named topics
+      // join unknowns and the question falls through to the honest
+      // fallback.
+      const profileVocab = new Set<string>();
+      const addProfileWords = (text: string | null): void => {
+        if (!text) return;
+        for (const w of text.toLowerCase().split(/[^a-z0-9]+/)) {
+          if (w.length > 2 && !GENERIC_WORDS.has(w)) profileVocab.add(w);
+        }
+      };
+      addProfileWords(desc);
+      addProfileWords(fieldOf(target, "location"));
+      addProfileWords(fieldOf(target, "category", "businessCategory"));
+      const profileMatchable = topicWords(q).filter((w) => !titleWords.includes(w));
+      const profileGrounded =
+        profileMatchable.length === 0 || profileMatchable.some((w) => profileVocab.has(w));
+      if (!profileGrounded) {
+        for (const w of profileMatchable) noteUnknown(w);
+      } else {
+        if (desc)
+          pushClaim(`${title}: ${desc}`, [0], `${title} business profile`, target, "description");
+        else
+          pushClaim(
+            `${title} is a ${ctx.schemaLabel} with no description on record.`,
+            [0],
+            `${title} has no description on record`,
+            target,
+            "description",
+          );
+        const loc = fieldOf(target, "location");
+        if (loc)
+          pushClaim(`Location on record: ${loc}.`, [0], `${title} location`, target, "location");
+        const cat = fieldOf(target, "category", "businessCategory");
+        if (cat)
+          pushClaim(`Category on record: ${cat}.`, [0], `${title} category`, target, "category");
+      }
+    }
+
+    // Coverage questions ("what don't you know?") get an evidence-bound
+    // limitations answer, not a refusal: which facets the packet supports
+    // and which are absent. Missing facets name categories the packet can
+    // establish (services, phone, email, website, hours, location, people,
+    // pricing, reviews, emergency) without guessing. Fields under an
+    // unresolved conflict are described as being verified, never as merely
+    // absent. Placed before the services branch: "what don't you know?"
+    // names no service topic, so the services branch would otherwise claim
+    // it with a general listing.
+    const asksCoverage =
+      (hasWord(q, "what", "which") &&
+        /don't|dont|do not|cannot|can't|will not/.test(q) &&
+        hasWord(q, "know", "answer", "tell", "say")) ||
+      (hasWord(q, "what", "which", "list") &&
+        hasWord(q, "missing", "unknown", "unknowns", "coverage", "limitations", "lacking", "gaps"));
+    if (asksCoverage) {
+      const serviceObjs = ctx.relatedObjects.filter((o) =>
+        ["ping.social.service@1", "ping.social.product@1"].includes(o.schema),
+      );
+      const located = ctx.relationships.some(
+        (r) =>
+          r.status === "active" &&
+          r.predicate === "located_at" &&
+          (r.subject === target.id || r.object === target.id),
+      );
+      const conflictFacets = new Set<string>();
+      for (const c of conflictedFields) {
+        if (c.objectId !== target.id) continue;
+        if (c.field === "phone" || c.field === "email" || c.field === "website")
+          conflictFacets.add(c.field);
+        else if (isAddressFamilyField(c.field)) conflictFacets.add("address");
+        else conflictFacets.add(c.field);
+      }
+      const covered: string[] = [];
+      const missing: string[] = [];
+      const facet = (label: string, present: boolean, conflictKey?: string): void => {
+        if (conflictKey && conflictFacets.has(conflictKey)) return;
+        (present ? covered : missing).push(label);
+      };
+      facet("services", serviceObjs.length > 0 || !!fieldOf(target, "services"));
+      facet("phone", !!fieldOf(target, "phone"), "phone");
+      facet("email", !!fieldOf(target, "email"), "email");
+      facet("website", !!fieldOf(target, "website", "url", "domain"), "website");
+      facet("hours", !!fieldOf(target, "hours", "businessHours", "openingHours"));
+      facet("location", located || !!fieldOf(target, "location", "address", "city", "locality"), "address");
+      facet(
+        "people",
+        [target, ...ctx.relatedObjects].some((o) => o.schema.toLowerCase().includes("person")),
+      );
+      facet("pricing", !!fieldOf(target, "price", "pricing", "cost", "rates", "rate", "estimate", "quote"));
+      facet("reviews", !!fieldOf(target, "review", "reviews", "rating", "testimonial"));
+      const emBlob = [
+        target.title,
+        target.description ?? "",
+        ...serviceObjs.map((o) => `${o.title} ${o.description ?? ""}`),
+      ].join(" ");
+      facet("emergency service", /emergency/i.test(emBlob));
+      pushClaim(
+        `Here is what I can and cannot answer about ${title}, based only on the site record.`,
+        [0],
+        `${title} coverage summary`,
+        target,
+        "coverage",
+      );
+      if (covered.length > 0)
+        pushClaim(`On record: ${covered.join("; ")}.`, [0], `${title} covered facets`, target, "coverage");
+      if (missing.length > 0) {
+        for (const m of missing) noteUnknown(m);
         pushClaim(
-          `${title} is a ${ctx.schemaLabel} with no description on record.`,
-          [0],
-          `${title} has no description on record`,
+          `Not on record: ${missing.join("; ")}. I will not guess at these.`,
+          [],
+          `${title} missing facets`,
           target,
-          "description",
+          "coverage",
+          "INFERENCE",
         );
-      const loc = fieldOf(target, "location");
-      if (loc)
-        pushClaim(`Location on record: ${loc}.`, [0], `${title} location`, target, "location");
-      const cat = fieldOf(target, "category", "businessCategory");
-      if (cat)
-        pushClaim(`Category on record: ${cat}.`, [0], `${title} category`, target, "category");
+      }
+      if (conflictFacets.size > 0) {
+        pushConflictPendingClaim(
+          target.id,
+          conflictedFields.filter((c) => c.objectId === target.id).map((c) => c.field),
+          `${title} coverage conflict pending`,
+        );
+      }
+      // The coverage answer is complete: no other branch may append.
+      return {
+        ...base,
+        answer: sentences.map((s) => cite(s.text, s.cites)).join("\n\n"),
+        claimClassifications,
+        unknowns: [...branchUnknowns],
+        proposal: null,
+        partial: false,
+      };
     }
 
     // A profile question about a service object ("tell me about this
@@ -720,6 +1371,12 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
     const asksServices =
       hasWord(q, "service", "services", "offer", "offers", "provide") ||
       (hasWord(q, "do") && !asksProvenance);
+    // Services-intent ownership: when the services branch sees a genuine
+    // services-intent question (strong triggers, not the loose "do"
+    // fallback) whose topics match nothing on record, it skips; the flag
+    // stops the contact branch below from re-consuming those same words
+    // ("website") as contact triggers.
+    let servicesIntentUngrounded = false;
     if (asksServices && !(targetIsService && profileIntent)) {
       const services = fieldOf(target, "services");
       const relatedServices = ctx.relatedObjects.filter((o) =>
@@ -731,8 +1388,21 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       // ("financing") skips the branch, so the question falls through to
       // the honest fallback instead of dumping unrelated offerings.
       const topics = topicWords(q);
+      // Identity words (the business name) never count as a service topic:
+      // "What services does Coppersmith offer?" is a general services
+      // question, not a claim about a "coppersmith" service.
+      const nameWords = new Set(titleWords);
+      const matchable = topics.filter((w) => !nameWords.has(w));
       const vocab = serviceVocabulary(target, relatedServices);
-      const grounded = topics.length === 0 || topics.some((w) => vocab.has(w));
+      // ASK-FYD RELEVANCE (2026-10-03): a specific-topic services question
+      // is answerable only when the record grounds EVERY named topic. The
+      // old "some" rule let a single generic word ("repairs") trigger a
+      // full listing for "Do you offer roof replacement, plumbing repairs,
+      // and electrical panel upgrades?", citing evidence for claims the
+      // question never made and mislabeling the answer SUPPORTED. Hours
+      // words stay owned by the hours branch: they never ground a services
+      // listing here.
+      const grounded = matchable.length === 0 || matchable.every((w) => vocab.has(w));
       if (grounded) {
         if (services)
           pushClaim(
@@ -743,33 +1413,81 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
             "services",
           );
         // Offers are evidence-chain nodes, not services: the answer names
-        // only service/product objects. Classifications cover exactly the
-        // claims the answer states.
+        // only service/product objects. Each offering carries its own
+        // evidence marker in listing order, so every named offering binds
+        // to its own service record.
         const named = relatedServices.filter(
           (o) => o.schema !== "ping.social.offer@1",
         );
         if (named.length > 0) {
-          const evIdx = ctx.evidenceRefs.findIndex((e) => e.id === named[0].id);
+          // Every named offering binds to its own service record: the
+          // context caps related-object refs, so register any missing
+          // service ref here (same shape as buildAskContext) rather than
+          // leaving an offering uncited.
+          const cites = named.map((s) => {
+            let idx = ctx.evidenceRefs.findIndex((e) => e.id === s.id);
+            if (idx < 0) {
+              idx = ctx.evidenceRefs.length;
+              ctx.evidenceRefs.push({
+                kind: "object",
+                id: s.id,
+                label: `${schemaLabel(s.schema)}: ${s.title || s.id}`,
+              });
+            }
+            return idx;
+          });
+          // No sentence-level classification here: each marker must
+          // resolve to its own per-service classification below, so a
+          // demo-synthetic service keeps its demo basis instead of
+          // inheriting the target's website-statement basis.
           sentences.push({
             text: `Related offerings: ${named.map((o) => o.title).join("; ")}.`,
-            cites: evIdx >= 0 ? [evIdx] : [],
+            cites,
           });
+          // Claim grouping for the 5-class contract: every named service
+          // is a distinct direct citation behind the SAME claim (the
+          // business offers these services), so the reducer can honestly
+          // report SUPPORTED BY MULTIPLE EVIDENCE. Per-service
+          // classifications stay per-entry: each citation keeps its own
+          // epistemic basis (a demo-synthetic service keeps its demo
+          // basis) via first-match lookup in buildCitations.
+          const servicesClaim = `${title} offers these services`;
           for (const s of named) {
             const refId = ctx.evidenceRefs.find((e) => e.id === s.id)?.id;
             claimClassifications.push({
-              claim: `${title} offers ${s.title}`,
+              claim: servicesClaim,
               classification: claimClassification(ctx.fieldClasses, s, "name"),
               evidenceRefIds: refId ? [refId] : [],
             });
           }
         }
+        // Every named topic is grounded here (the grounded rule above is
+        // every-or-refusal), so there are no unmatched topics to report:
+        // a question naming anything the record cannot address takes the
+        // ungrounded path instead and refuses honestly.
         if (!services && named.length === 0) {
           return noEvidenceAnswer(ctx, question, ["services offered by this business"]);
         }
+      } else if (hasWord(q, "service", "services", "offer", "offers", "provide")) {
+        // Genuine services intent (strong triggers, not the loose "do"
+        // fallback) with nothing on record ("Does PING offer website
+        // design?"): the named topics stay UNKNOWN with the same filter
+        // the grounded path uses (hours words belong to the hours
+        // branch), and the contact branch below must not re-consume them
+        // as contact triggers. A loose-"do" question ("Do you have a
+        // website?") is contact intent: it keeps its old routing and its
+        // unknowns stay empty.
+        for (const w of matchable.filter((w) => !vocab.has(w) && !HOURS_WORDS.has(w))) noteUnknown(w);
+        servicesIntentUngrounded = true;
       }
     }
 
-    if (hasWord(q, "website", "contact", "email", "phone", "call", "site")) {
+    // Negative guard: a genuine services-intent question whose topics the
+    // services branch could not ground must not be re-consumed here as a
+    // contact question ("Does PING offer website design?" is not a request
+    // for the business website). The loose "do" fallback ("Do you have a
+    // website?") still routes here: it is not services intent.
+    if (hasWord(q, "website", "contact", "email", "phone", "call", "site") && !servicesIntentUngrounded) {
       const site = fieldOf(target, "website", "url", "domain");
       const email = fieldOf(target, "email");
       const phone = fieldOf(target, "phone");
@@ -808,10 +1526,19 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
           "owner_override",
         );
       };
+      // FYD-Q1: a contact field with an unresolved conflict is suppressed
+      // in the projection, so site/email/phone read null here. The field
+      // is described as being verified: never filled with a disputed value
+      // and never reported as merely absent.
+      const conflictedContact = (["website", "email", "phone"] as const).filter((f) =>
+        isFieldConflicted(target.id, f),
+      );
       if (site) pushContactClaim("Website", "website", site);
       if (email) pushContactClaim("Email", "email", email);
       if (phone) pushContactClaim("Phone", "phone", phone);
-      if (!site && !email && !phone) {
+      if (conflictedContact.length > 0) {
+        pushConflictPendingClaim(target.id, [...conflictedContact], `${title} contact conflict pending`);
+      } else if (!site && !email && !phone) {
         pushClaim(
           `${title} lists no public contact details in the current context.`,
           [0],
@@ -822,7 +1549,72 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
       }
     }
 
+    // Hours and availability: schedule words, weekend words, and the
+    // emergency qualifier are owned here. Hours on record are stated with
+    // their evidence; emergency service with no record is an explicit
+    // UNKNOWN, never inferred from a general plumbing offering.
+    const asksCloseTime =
+      hasWord(q, "close", "closing") &&
+      hasWord(q, "what", "when", "time", "hour", "hours", "open", "do", "does");
+    if (
+      hasWord(
+        q,
+        "hour", "hours", "emergency", "weekend", "weekends",
+        "saturday", "sunday", "open", "schedule",
+      ) ||
+      asksCloseTime
+    ) {
+      const hours = fieldOf(target, "hours", "businessHours", "openingHours");
+      if (hours)
+        pushClaim(`Hours on record: ${hours}.`, [0], `${title} hours`, target, "hours");
+      else
+        pushClaim(
+          `No hours are on record for ${title}.`,
+          [0],
+          `${title} has no hours on record`,
+          target,
+          "hours",
+        );
+      const blob = [
+        target.title,
+        target.description ?? "",
+        ...ctx.relatedObjects.map((o) => `${o.title} ${o.description ?? ""}`),
+      ].join(" ");
+      if (/emergency/i.test(blob)) {
+        const emIdx = ctx.relatedObjects.findIndex((o) =>
+          /emergency/i.test(`${o.title} ${o.description ?? ""}`),
+        );
+        const emRefIdx =
+          emIdx >= 0 ? ctx.evidenceRefs.findIndex((e) => e.id === ctx.relatedObjects[emIdx].id) : -1;
+        pushClaim(
+          `Emergency service is mentioned in the site data.`,
+          emRefIdx >= 0 ? [emRefIdx] : [0],
+          `${title} emergency service mentioned`,
+          target,
+          "services",
+        );
+      } else {
+        noteUnknown("emergency");
+        pushClaim(
+          `${title} does not offer emergency service: nothing in the site record mentions it.`,
+          [0],
+          `${title} does not offer emergency service`,
+          target,
+          "services",
+          "INFERENCE",
+        );
+      }
+    }
+
     if (hasWord(q, "where", "location", "address", "based")) {
+      // FYD-Q1: an unresolved address conflict suppresses the value in the
+      // projection. Describe it as being verified; never select a side.
+      const addressConflictFields = conflictedFields
+        .filter((c) => c.objectId === target.id && isAddressFamilyField(c.field))
+        .map((c) => c.field);
+      if (addressConflictFields.length > 0) {
+        pushConflictPendingClaim(target.id, addressConflictFields, `${title} address conflict pending`);
+      } else {
       // located_at direction: the subject is the located thing, the object
       // is the location. From the target's perspective the location object
       // is either a related object (target is the subject) or the target
@@ -837,12 +1629,12 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
           const o = ctx.relatedObjects.find((x) => x.id === r.object);
           if (o) {
             locationObj = o;
-            locationName = o.title || fieldOf(o, "locality");
+            locationName = coarsenLocationTitle(o.title) || fieldOf(o, "locality");
             break;
           }
         } else if (r.object === target.id && r.subject !== target.id) {
           locationObj = target;
-          locationName = target.title || fieldOf(target, "locality");
+          locationName = coarsenLocationTitle(target.title) || fieldOf(target, "locality");
           locationSelf = true;
           break;
         }
@@ -887,6 +1679,7 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
             target,
             "location",
           );
+      }
       }
     }
 
@@ -971,6 +1764,7 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
         ...base,
         answer: sentences.map((s) => cite(s.text, s.cites)).join("\n\n"),
         claimClassifications,
+        unknowns: [...branchUnknowns],
         proposal: null,
         partial: false,
       };
@@ -979,8 +1773,9 @@ export function composeAnswer(ctx: AskContext, question: string): AskAnswer {
     // Fallback: no branch had grounded content answering the question.
     // Say so explicitly with no citations, so the visitor layer surfaces
     // a refusal. The description is deliberately not dumped here: citing
-    // it would look like an answer while answering nothing.
-    return noEvidenceAnswer(ctx, question);
+    // it would look like an answer while answering nothing. Topics a branch
+    // named but could not ground ride along as unknowns (honest scoping).
+    return noEvidenceAnswer(ctx, question, [...branchUnknowns]);
   }
 
   // -- No target -------------------------------------------------------------

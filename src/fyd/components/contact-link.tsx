@@ -5,11 +5,12 @@
  * sites must link to FYD, not be dead text. A ContactMethod therefore never
  * renders as a top-level tel:/mailto: anchor. It renders as an FYD
  * affordance (the value itself, as a disclosure toggle) that opens the FYD
- * contact flow: an evidence-backed surface showing the value, a compact
- * provenance line with progressive disclosure (tap to expand the full
- * evidence lineage), and the real Call / Send email action INSIDE the
+ * contact flow: an evidence-backed surface with a compact provenance
+ * line with progressive disclosure (tap to expand the full evidence
+ * lineage), and the real Call / Send email action INSIDE the
  * flow. No tel:/mailto: href exists outside a contact flow on the
- * generated surface.
+ * generated surface. PROD-6: the value renders exactly once per
+ * affordance (the toggle); the flow does not repeat it.
  *
  * Seam decision (CONTACT lane, 2026-09-22): the flow is an inline
  * <details>/<summary> disclosure, not a JS popover/sheet and not a
@@ -53,7 +54,7 @@ function sourceRefs(evidence: ClaimEvidence): string[] {
 }
 
 /**
- * Compact one-line provenance, e.g. "Verified from example.com · 2 sources".
+ * Compact one-line provenance, e.g. "Observed example.com · 2 sources".
  * The count is honest: distinct Source steps in the lineage. No em dashes;
  * the "·" separator matches existing surface copy.
  */
@@ -63,7 +64,7 @@ export function compactProvenanceLine(evidence: ClaimEvidence): string {
   const count = n > 0 ? ` · ${n} source${n === 1 ? "" : "s"}` : "";
   switch (evidence.state) {
     case "observed":
-      return `Verified from ${receipt}${count}`;
+      return `Observed ${receipt}${count}`;
     case "inferred":
       return `Inferred from ${receipt}${count}`;
     case "unverified":
@@ -80,7 +81,7 @@ export function compactProvenanceLine(evidence: ClaimEvidence): string {
 /**
  * MAKE EVIDENCE BEAUTIFUL: progressive disclosure for provenance.
  *
- * Claim line -> compact "Verified from business website · N sources" ->
+ * Claim line -> compact "Observed business website · N sources" ->
  * tap expands the full evidence lineage. Trust without clutter. When the
  * lineage is empty there is nothing to expand, so the compact line
  * renders as plain text rather than a dead toggle.
@@ -140,28 +141,38 @@ export function ProvenanceLine({
 /**
  * The FYD contact flow: the evidence-backed contact surface.
  *
- * Shows the value (the claim line), the compact provenance line (tap to
- * expand the full lineage), and the real action INSIDE: the tel:/mailto:
- * button. This is the only place the method's actionUri becomes an href.
+ * Shows the compact provenance line (tap to expand the full lineage) and
+ * the real action INSIDE: the tel:/mailto: button. This is the only place
+ * the method's actionUri becomes an href.
+ *
+ * PROD-6 (2026-09-27): one clean rendering per fact. The value renders
+ * here only when showValue is true. FydContactLink already shows the
+ * value as its disclosure toggle, so it passes showValue={false};
+ * standalone uses (the object-layer contact tab) keep the value line as
+ * the flow's only value rendering.
  */
 export function ContactFlow({
   method,
   theme,
+  showValue = true,
 }: {
   method: ContactMethod;
   theme?: FYDThemeTokens;
+  showValue?: boolean;
 }) {
   return (
     <div
       data-fyd-contact-flow={method.kind}
       className="mt-3 rounded-lg border border-zinc-200 bg-white p-4"
     >
-      <p
-        className="text-lg font-semibold"
-        style={theme ? { color: theme.ink } : undefined}
-      >
-        {method.value}
-      </p>
+      {showValue ? (
+        <p
+          className="text-lg font-semibold"
+          style={theme ? { color: theme.ink } : undefined}
+        >
+          {method.value}
+        </p>
+      ) : null}
       <div className="mt-2">
         <ProvenanceLine evidence={method.evidence} theme={theme} />
       </div>
@@ -225,7 +236,7 @@ export function FydContactLink({
           {method.value}
         </summary>
       )}
-      <ContactFlow method={method} theme={theme} />
+      <ContactFlow method={method} theme={theme} showValue={false} />
     </details>
   );
 }

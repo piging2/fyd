@@ -7,8 +7,9 @@
  *     vocabulary (ping.social.*, the proof vocabulary) and the knowledge
  *     vocabulary (ping.knowledge.*, the constitutional website-ingestion
  *     vocabulary) project onto the same roles. Services/products via
- *     provides/offers, locations via located_at/has_location, people via
- *     employs/has_member, posts/articles via publishes.
+ *     provides/offers/provided_by, locations via located_at/has_location,
+ *     people via employs/works_for (matched in either direction),
+ *     posts/articles via publishes/published_by.
  *  3. Emit pages in fixed order (home, about, services, explore), but a
  *     page exists only when its data exists. Missing data means the page
  *     or section does not exist; nothing is invented.
@@ -20,8 +21,13 @@
  *     Happy Place. Any business graph compiles through the same rules.
  *
  * Determinism: same graph (same object ids, fields, relationships) yields
- * byte-identical specs. The only non-graph input is generatedAt, which is
- * passed in so tests can pin it.
+ * byte-identical specs. The non-graph inputs are generatedAt, which is
+ * passed in so tests can pin it, and the optional siteId. When siteId is
+ * provided, the media-manifest read behind Gallery emission is the same
+ * deterministic disk input the render seam uses (no network, no mutation),
+ * so same graph + same manifest yields the same spec. Without siteId the
+ * generator never consults media state and output is byte-identical to the
+ * pure-graph compile.
  */
 
 import type { PingObject } from "@/lib/ping/types";
@@ -33,17 +39,34 @@ import {
   type FYDSiteSpec,
   type ObjectGraph,
 } from "../sitespec/types";
-import { SCHEMA_ROLES, eligibleComponents, type FYDSchemaRole } from "../sitespec/schemas";
+import {
+  SCHEMA_ROLES,
+  ROLE_PREDICATES,
+  ownerRelationshipTarget,
+  eligibleComponents,
+  type FYDSchemaRole,
+} from "../sitespec/schemas";
 import { resolveWebsiteUrl } from "../sitespec/graph";
 import { applyArchetype } from "../archetypes/apply";
 import type { ArchetypeProfile } from "../archetypes/profiles";
+import { galleryMediaFor } from "../media/select";
 
-export const GENERATOR_VERSION = "1.0.0";
+export const GENERATOR_VERSION = "1.1.0";
 
 export interface GeneratorOptions {
   generatedAt: string;
   /** Acceptance-sequence window of the ingestion events, when known. */
   eventSequences?: [number, number];
+  /**
+   * Site id for media-backed section emission. Optional: absent, the
+   * generator never consults the media manifest and output is
+   * byte-identical to the pure-graph compile. Present, the generator
+   * emits a Gallery section if and only if the site has >=1 acquired
+   * gallery asset (galleryMediaFor: logos, heroes, and thumbnails are
+   * excluded). The manifest lookup is keyed by site id only: no
+   * customer-specific branching anywhere in the generator.
+   */
+  siteId?: string;
   /**
    * Optional archetype profile for composition. Absent: today output,
    * byte-identical. Present: applyArchetype composes the spec
@@ -64,21 +87,6 @@ interface Grouped {
 
 const byId = (a: PingObject, b: PingObject) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
-/**
- * Predicates that populate each role, in canonical order. The social path
- * uses provides/located_at/employs; the knowledge path uses
- * offers/located_at/employs. Both are matched; the first is the primary.
- */
-const ROLE_PREDICATES: Record<FYDSchemaRole, string[]> = {
-  business: [],
-  service: ["provides", "offers"],
-  product: ["provides", "offers"],
-  location: ["located_at", "has_location"],
-  person: ["employs", "has_member"],
-  post: ["publishes"],
-  article: ["publishes"],
-};
-
 function group(graph: ObjectGraph): Grouped {
   const objects = new Map(graph.objects.map((o) => [o.id, o]));
   const businesses = graph.objects
@@ -86,15 +94,22 @@ function group(graph: ObjectGraph): Grouped {
     .sort(byId);
   const owner = businesses[0] ?? null;
 
+  // Direction-agnostic role membership: a member is whichever endpoint of
+  // an active relationship is not the owner, for any predicate in the
+  // role's vocabulary (employs or works_for, provides or provided_by,
+  // publishes or published_by). Website-ingested graphs record employment
+  // as person works_for business; matching only the owner-subject direction
+  // silently deleted the team from composition.
   const related = (role: FYDSchemaRole): PingObject[] => {
     if (!owner) return [];
     const out = new Map<string, PingObject>();
     const predicates = ROLE_PREDICATES[role];
     const schemas = SCHEMA_ROLES[role];
     for (const r of graph.relationships) {
-      if (r.subject !== owner.id || r.status !== "active") continue;
       if (!predicates.includes(r.predicate)) continue;
-      const target = objects.get(r.object);
+      const memberId = ownerRelationshipTarget(r, owner.id);
+      if (memberId === null) continue;
+      const target = objects.get(memberId);
       if (target && schemas.includes(target.schema) && target.visibility === "public") {
         out.set(target.id, target);
       }
@@ -156,8 +171,8 @@ function roleQuery(from: string, role: FYDSchemaRole, limit?: number): FYDQuery 
   };
 }
 
-/** HOME: Hero, BusinessSummary, Services, Products, Locations, People, RecentObjects, Contact, Links, CTA, AskFYD, ObjectRail. */
-function homePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
+/** HOME: Hero, BusinessSummary, Services, Products, Locations, People, Gallery, RecentObjects, Contact, Links, CTA, AskFYD, ObjectRail. */
+function homePage(g: Grouped, graph: ObjectGraph, opts: GeneratorOptions): FYDPage | null {
   if (!g.owner) return null;
   const ownerId = g.owner.id;
   const sections: FYDSection[] = [];
@@ -180,6 +195,16 @@ function homePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
   }
   if (g.people.length > 0) {
     add("People", roleQuery(ownerId, "person"));
+  }
+  // Gallery: emitted if and only if the site carries >=1 acquired gallery
+  // asset. The manifest is keyed by site id; an absent siteId means no
+  // lookup, no Gallery, byte-identical output. The Gallery section renders
+  // nothing on empty media, but the generator never emits an empty gallery:
+  // the section exists exactly when its data exists. Query kind "static":
+  // the section resolves no graph objects (its media arrives via the render
+  // context, like heroMedia), mirroring AskFYD.
+  if (opts.siteId && galleryMediaFor(opts.siteId, graph, ownerId).length > 0) {
+    add("Gallery", { kind: "static" });
   }
   if (g.articles.length > 0 || g.posts.length > 0) {
     add("RecentObjects", roleQueryUnion(ownerId, ["post", "article"], 6));
@@ -289,7 +314,7 @@ function explorePage(g: Grouped, graph: ObjectGraph): FYDPage | null {
 export function generateSiteSpec(graph: ObjectGraph, opts: GeneratorOptions): FYDSiteSpec {
   const g = group(graph);
   const pages: FYDPage[] = [];
-  const home = homePage(g, graph);
+  const home = homePage(g, graph, opts);
   const about = aboutPage(g);
   const services = servicesPage(g);
   const explore = explorePage(g, graph);

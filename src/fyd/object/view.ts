@@ -33,12 +33,15 @@ import {
   getPingObjectGraphSync,
   listPingSiteIdsSync,
 } from "@/fyd/data/ping-object-source";
-import { SCHEMA_ROLES } from "../sitespec/schemas";
+import { SCHEMA_ROLES, capabilityOptionsForSchema, schemaRole } from "../sitespec/schemas";
+import { resolveSafeLink } from "../sitespec/safe-link";
 import type { ObjectGraph } from "../sitespec/types";
 import type { PingObject } from "../../lib/ping/types";
 import { readOverrides } from "./owner-store";
+import type { VerifiedPublicProjection } from "../sitespec/public-projection";
 import { resolveCircleBackground } from "../media/circle-background";
 import { listObjectMedia } from "../media/select";
+import { findConfiguredMark } from "../presentation/identity";
 import type {
   CircleProjection,
   FieldCorrectionView,
@@ -56,6 +59,34 @@ import type {
  * exactly the services the rendered pages show.
  */
 const SERVICE_PREDICATES = ["provides", "offers"];
+
+/**
+ * Parent business of an object, via the graph's own relationships.
+ * A service/location offered by a business resolves to that business;
+ * a person works_for a business. Data-driven, never name-inferred.
+ * Returns the business object id, or null.
+ */
+function findParentBusinessId(graph: ObjectGraph, objectId: string): string | null {
+  const byId = new Map(graph.objects.map((o) => [o.id, o]));
+  for (const r of graph.relationships) {
+    if (r.status !== "active") continue;
+    // business --offers/provides/located_at--> object
+    if (r.object === objectId && ["offers", "provides", "located_at"].includes(r.predicate)) {
+      const parent = byId.get(r.subject);
+      if (parent && SCHEMA_ROLES.business.includes(parent.schema) && parent.visibility === "public") {
+        return parent.id;
+      }
+    }
+    // person --works_for--> business
+    if (r.subject === objectId && r.predicate === "works_for") {
+      const parent = byId.get(r.object);
+      if (parent && SCHEMA_ROLES.business.includes(parent.schema) && parent.visibility === "public") {
+        return parent.id;
+      }
+    }
+  }
+  return null;
+}
 
 /** Site ids this loader can serve: the PING-backed projections on disk. */
 export function listObjectIds(): string[] {
@@ -166,19 +197,50 @@ function buildServices(
   };
 }
 
+/**
+ * Capability resolution for one object (G4).
+ *
+ * OBJECT + VIEWER + CONTEXT -> CAPABILITY RESOLUTION -> AVAILABLE ACTIONS
+ * -> RENDER MODEL. The allowed action set comes from
+ * capabilityOptionsForSchema (the capability authority in
+ * ../sitespec/schemas); this function only maps each allowed kind to its
+ * render model and applies executability gates (evidence for ask,
+ * safe-link resolution for contact actions). There is no role switch
+ * here: schema decides the actions, the view layer renders them.
+ *
+ * Executability notes:
+ * - "open" is demoted: the full customer page is not a capability action.
+ * - "ask" requires evidence (summary or visible services).
+ * - contact kinds (call/email/website/directions) require a safe,
+ *   evidence-backed value; resolveSafeLink "navigate" refuses hostile or
+ *   non-public values, so no dead or unsafe button is emitted.
+ * - "reply" is not emitted: no reply backend exists, and a button
+ *   without a working action is a lie.
+ * - "propose_update"/"site_propose" are owner-surface actions with no
+ *   customer render model; they are allowed by the authority but not
+ *   rendered here.
+ */
+export interface CapabilityViewer {
+  viewerId: string | null;
+  controllerId: string;
+}
+
 export function buildCapabilities(
+  schemaId: string,
+  objectId: string,
   contact: ObjectContactView,
   evidence: { summary: string; services: ObjectServiceView[] },
+  viewer: CapabilityViewer = { viewerId: null, controllerId: "" },
 ): ObjectCapability[] {
-  // "view" is demoted: the full customer page is no longer a capability
-  // (the type variant stays for compatibility, but it is never emitted).
-  // "follow" is a PING relationship, always available for a business object.
-  // call/email/website appear only when the underlying value exists.
-  // "ask" is evidence-gated: the ask pipeline answers from the object's
-  // own record (summary, services, contact), so a circle offers ask only
-  // when the object carries something to answer from. No ask evidence ->
-  // no ask action, never a dead question box.
-  const caps: ObjectCapability[] = [{ kind: "follow" }, { kind: "like" }];
+  const allowed = capabilityOptionsForSchema(schemaId, {
+    viewerId: viewer.viewerId,
+    controllerId: viewer.controllerId,
+    hasWebsite: contact.website !== null,
+    hasPhone: contact.phone !== null,
+    hasEmail: contact.email !== null,
+    hasLocality: contact.locality !== null,
+  });
+  const caps: ObjectCapability[] = [];
   const hasAskEvidence =
     evidence.summary.trim().length > 0 ||
     evidence.services.some((s) => s.visible) ||
@@ -186,10 +248,68 @@ export function buildCapabilities(
     contact.email !== null ||
     contact.website !== null ||
     contact.locality !== null;
-  if (hasAskEvidence) caps.unshift({ kind: "ask" });
-  if (contact.phone) caps.push({ kind: "call", href: "tel:" + contact.phone.replace(/\s/g, ""), label: "Call" });
-  if (contact.email) caps.push({ kind: "email", href: "mailto:" + contact.email, label: "Email" });
-  if (contact.website) caps.push({ kind: "website", href: contact.website, label: "Website" });
+  for (const kind of allowed) {
+    switch (kind) {
+      case "open":
+        // Demoted: the full customer page is not a capability action.
+        break;
+      case "ask":
+        if (hasAskEvidence) caps.push({ kind: "ask" });
+        break;
+      case "reference":
+        caps.push({ kind: "reference", objectId });
+        break;
+      case "follow":
+        caps.push({ kind: "follow" });
+        break;
+      case "like":
+        caps.push({ kind: "like" });
+        break;
+      case "reply":
+        // No reply backend: never render a button without a working action.
+        break;
+      case "propose_update":
+      case "site_propose":
+        // Owner-surface actions; no customer render model.
+        break;
+      case "open_website": {
+        const resolved = resolveSafeLink(contact.website, "navigate");
+        if (resolved.kind === "safe" && contact.website) {
+          caps.push({ kind: "website", href: resolved.href, label: "Website" });
+        }
+        break;
+      }
+      case "call": {
+        const resolved = resolveSafeLink(contact.phone, "call");
+        if (resolved.kind === "safe" && contact.phone) {
+          caps.push({ kind: "call", href: resolved.href, label: "Call" });
+        }
+        break;
+      }
+      case "email": {
+        const resolved = resolveSafeLink(contact.email, "email");
+        if (resolved.kind === "safe" && contact.email) {
+          caps.push({ kind: "email", href: resolved.href, label: "Email" });
+        }
+        break;
+      }
+      case "directions": {
+        // The locality is encoded into a Google Maps query; it never
+        // becomes a navigated URL, so no safe-link gate applies. This
+        // matches the pre-G4 construction exactly.
+        if (contact.locality) {
+          caps.push({
+            kind: "directions",
+            href:
+              "https://www.google.com/maps/search/?api=1&query=" +
+              encodeURIComponent(contact.locality),
+            label: "Directions",
+          });
+        }
+        break;
+      }
+    }
+  }
   return caps;
 }
 
@@ -209,14 +329,22 @@ export function buildCapabilities(
  * Not a public loader on its own: use loadObjectView / loadObjectViewById,
  * which enforce the tenant/object honesty gates (unknown tenant, unknown
  * id, non-public object).
+ *
+ * The first parameter is the VERIFIED public projection (Q-C-01): the object
+ * is resolved from the projection's own graph, so there is no path that
+ * composes a view over an unprojected object. Returns null when the object
+ * is absent from the projection (unknown id, or hidden from this viewer).
  */
 export function composeObjectView(
-  graph: ObjectGraph,
+  projection: VerifiedPublicProjection,
   siteId: string,
-  obj: PingObject,
+  objectId: string,
   viewId: string,
   overridesKey: string,
-): ObjectView {
+): ObjectView | null {
+  const graph = projection.graph;
+  const obj = graph.objects.find((o) => o.id === objectId);
+  if (!obj) return null;
   const overrides = readOverrides(overridesKey);
   const description = field(obj, "description") ?? obj.description ?? "";
   const website = field(obj, "website");
@@ -253,7 +381,13 @@ export function composeObjectView(
     email,
     website,
     locality,
-    addressVisibility: overrides.addressVisibility,
+    // UI-facing display contract stays two-state (Public/Hidden): an
+    // explicit SHOW surfaces as "public"; the show-vs-default
+    // distinction lives in the owner store + projection seam, not in
+    // this chip.
+    addressVisibility:
+      overrides.addressVisibility === "hide" ? "hidden" : "public",
+    addressVisibilityPreference: overrides.addressVisibility,
   };
 
   const domain = domainOf(website);
@@ -276,10 +410,23 @@ export function composeObjectView(
     locationLabel: locality,
     summary: description,
     media,
+    // Every object wears a logo: the object's own configured mark when it
+    // has one, else the parent business's mark via graph relationships.
+    // A service stays its own object; it just shows the business brand.
+    fallbackMark: findConfiguredMark(obj.id) ?? (() => {
+      const parentId = findParentBusinessId(graph, obj.id);
+      return parentId ? findConfiguredMark(parentId) : null;
+    })(),
     services,
     serviceArea: parseServiceArea(field(obj, "area_served")),
     contact,
-    capabilities: buildCapabilities(contact, { summary: description, services }),
+    capabilities: buildCapabilities(
+      obj.schema,
+      obj.id,
+      contact,
+      { summary: description, services },
+      { viewerId: null, controllerId: obj.controllerId },
+    ),
     provenance: {
       kind: obj.provenance?.kind ?? "unknown",
       ref: obj.provenance?.ref ?? "",
@@ -297,23 +444,25 @@ export function composeObjectView(
 }
 
 /**
- * Load the public ObjectView for a site slug from the PING-backed
- * projection. This is the canonical read-model loader; Card/Node lanes
- * should reuse it. Returns null for unknown slugs (the route turns this
- * into a 404). Throws only on programmer error, never on missing data.
+ * Load the public ObjectView for a site slug from a VERIFIED public
+ * projection (Q-C-01). This is the canonical read-model loader; Card/Node
+ * lanes should reuse it. The caller resolves the projection through
+ * getVerifiedPublicProjectionSync (unknown tenant -> null projection ->
+ * the route answers 404). Returns null when the slug's business is absent
+ * from the projection. Throws only on programmer error, never on missing
+ * data.
  */
-export function loadObjectView(slug: string): ObjectView | null {
-  let graph: ObjectGraph;
-  try {
-    graph = getPingObjectGraphSync(slug).graph;
-  } catch {
-    return null;
-  }
+export function loadObjectView(
+  projection: VerifiedPublicProjection | null,
+  slug: string,
+): ObjectView | null {
+  if (!projection) return null;
+  const graph = projection.graph;
   const business = graph.objects.find(
     (o) => SCHEMA_ROLES.business.includes(o.schema) && o.visibility === "public",
   );
   if (!business) return null;
-  return composeObjectView(graph, slug, business, slug, slug);
+  return composeObjectView(projection, slug, business.id, slug, slug);
 }
 
 /**
@@ -358,8 +507,19 @@ export function trimTagline(summary: string, maxChars: number): string {
  * background. Returns null for unknown slugs (the route turns this into a
  * 404).
  */
-export function loadCircleProjection(slug: string): CircleProjection | null {
-  const view = loadObjectView(slug);
+/**
+ * Version of the served Circle projection envelope (Q-C-03). Bump when
+ * the CircleProjection shape changes; inv-13 pins the current value so
+ * a shape change without a bump fails the suite.
+ */
+export const CIRCLE_PROJECTION_CONTRACT_VERSION = "fyd.circle-projection@1";
+
+export function loadCircleProjection(
+  projection: VerifiedPublicProjection | null,
+  slug: string,
+): CircleProjection | null {
+  if (!projection) return null;
+  const view = loadObjectView(projection, slug);
   if (!view) return null;
   return {
     id: view.id,

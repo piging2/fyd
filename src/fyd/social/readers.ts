@@ -273,7 +273,11 @@ export async function readFeed(
         p.schema === "ping.social.post@1" &&
         typeof p.controller === "string" &&
         visibleAuthors.has(p.controller) &&
-        (p.visibility || "public") === "public" &&
+        // Fail-closed visibility: a post whose visibility is missing or
+        // anything other than "public" is never served publicly. (Was a
+        // fail-open `|| "public"` default: a malformed journal event
+        // would have published itself.)
+        p.visibility === "public" &&
         p.status !== "tombstoned",
     )
     .map((p) => {

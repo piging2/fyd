@@ -7,8 +7,7 @@ import { NewsletterSignup } from "@/components/newsletter-signup";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { BlueprintGrid } from "@/components/blueprint-grid";
 import { MaturityLabel, type Maturity } from "@/components/maturity-label";
-import { buildPortalProjection } from "@/fyd/preview/pipeline";
-import { listObjectIds } from "@/fyd/object/view";
+import { buildPortalProjection, HOMEPAGE_CIRCLE_SITE_IDS } from "@/fyd/preview/pipeline";
 import { PortalHost } from "@/fyd/ui/portal-host";
 import {
   KnowledgeLoop,
@@ -141,7 +140,7 @@ const CHANGELOG = [
 
 export default function HomePage() {
   const tenant = getTenant();
-  const portalProjections = listObjectIds().flatMap((id) => { const pr = buildPortalProjection(id); return pr ? [pr] : []; });
+  const portalProjections = HOMEPAGE_CIRCLE_SITE_IDS.flatMap((id) => { const pr = buildPortalProjection(id); return pr ? [pr] : []; });
   return (
     <>
       {/* 01 HERO: the living system moment */}

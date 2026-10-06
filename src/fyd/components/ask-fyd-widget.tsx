@@ -8,6 +8,11 @@
  * render with a collapsed "Why this?" disclosure listing each citation's
  * source, basis, and last-checked date.
  *
+ * PROD-9: the response answer-class polarity renders as a badge above
+ * the answer: "Cannot answer" (DENIAL) or "Corrected premise"
+ * (PREMISE_REJECTED). Normal answers (ANSWER) show no badge. The
+ * "missing detail" hint shows only on DENIAL, never on a premise
+ * rejection (the corrected premise is the answer, not a gap to fill).
  * Generic: no business-specific copy or logic. The section heading/copy stay
  * in the renderer; this component only owns the interactive Q&A.
  *
@@ -24,6 +29,8 @@ interface AskApiResponse {
   ok: boolean;
   answer?: string;
   refusal?: boolean;
+  /** PROD-9: answer-class polarity for visual distinction. */
+  responseClass?: "ANSWER" | "DENIAL" | "PREMISE_REJECTED";
   citations?: AskFydCitation[];
   error?: string;
 }
@@ -40,6 +47,9 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
   const [status, setStatus] = useState<AskStatus>("idle");
   const [answer, setAnswer] = useState("");
   const [refusal, setRefusal] = useState(false);
+  const [responseClass, setResponseClass] = useState<"ANSWER" | "DENIAL" | "PREMISE_REJECTED">(
+    "ANSWER",
+  );
   const [citations, setCitations] = useState<AskFydCitation[]>([]);
   const [error, setError] = useState("");
 
@@ -72,6 +82,11 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
       }
       setAnswer(data.answer ?? "");
       setRefusal(data.refusal === true);
+      setResponseClass(
+        data.responseClass === "DENIAL" || data.responseClass === "PREMISE_REJECTED"
+          ? data.responseClass
+          : "ANSWER",
+      );
       setCitations(Array.isArray(data.citations) ? data.citations : []);
       setStatus("answered");
     } catch {
@@ -128,12 +143,29 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
         )}
         {status === "answered" && (
           <div>
+            {responseClass === "DENIAL" && (
+              <p
+                className="mt-2 inline-block rounded-full border border-dashed px-3 py-1 text-xs font-semibold uppercase tracking-wide text-background/70"
+                aria-label="Answer class: denial"
+              >
+                Cannot answer
+              </p>
+            )}
+            {responseClass === "PREMISE_REJECTED" && (
+              <p
+                className="mt-2 inline-block rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide"
+                style={{ borderColor: theme.accent, color: theme.accent }}
+                aria-label="Answer class: premise rejected"
+              >
+                Corrected premise
+              </p>
+            )}
             {paragraphs.map((p, i) => (
               <p key={i} className="mt-2 text-base leading-relaxed text-background">
                 {p}
               </p>
             ))}
-            {refusal && citations.length === 0 && (
+            {refusal && citations.length === 0 && responseClass === "DENIAL" && (
               <p className="mt-2 text-sm text-background/70">
                 FYD only answers from what the site shows. If you own this business, you can add
                 the missing detail and ask again.

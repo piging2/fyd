@@ -260,7 +260,7 @@ export function WorkspaceSheet({
         className="flex items-center gap-2.5"
         style={{ padding: `${shell.spacing.workspacePad}px ${shell.spacing.workspacePad}px 0` }}
       >
-        <FydGlyphMark name={spec.name} size={32} />
+        <FydGlyphMark identity={spec.identity} objectId={spec.objectId} name={spec.name} size={32} />
         <div className="min-w-0 flex-1">
           <p
             className="truncate font-semibold"
@@ -461,7 +461,7 @@ export function WorkspaceSheet({
                     className="flex w-full items-center gap-2.5 rounded-[10px] px-2 py-2 text-left disabled:cursor-default"
                     style={{ minHeight: 44 }}
                   >
-                    <FydGlyphMark name={r.name} size={24} />
+                    <FydGlyphMark objectId={r.id} name={r.name} size={24} />
                     <span className="min-w-0 flex-1">
                       <span
                         className="block truncate font-medium"

@@ -29,6 +29,7 @@ import { ExternalLink, Mail, MessageCircleQuestion, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ObjectCapability, ObjectView } from "../object/types";
 import styles from "./object-circle.module.css";
+import { ObjectIdentityMark } from "../presentation/object-identity-mark";
 
 interface ObjectCircleProps {
   view: ObjectView;
@@ -37,37 +38,8 @@ interface ObjectCircleProps {
   className?: string;
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? "?";
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
-  return (first + last).toUpperCase();
-}
-
 function LogoMark({ view, size }: { view: ObjectView; size: "sm" | "lg" }) {
-  const logo = view.media.find((m) => m.role === "logo");
-  const dims = size === "sm" ? "h-10 w-10" : "h-16 w-16";
-  if (logo) {
-    return (
-      <img
-        src={logo.src}
-        alt={view.name + " logo"}
-        loading="lazy"
-        className={cn(dims, "shrink-0 rounded-full bg-white object-contain p-1")}
-      />
-    );
-  }
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        dims,
-        "flex shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-900",
-      )}
-    >
-      {initials(view.name)}
-    </span>
-  );
+  return <ObjectIdentityMark object={view} size={size === "sm" ? 40 : 64} />;
 }
 
 function CapabilityActions({ view, nodeHref }: { view: ObjectView; nodeHref: string }) {

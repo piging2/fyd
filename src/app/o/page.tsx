@@ -11,6 +11,7 @@
 
 import type { Metadata } from "next";
 import { loadObjectView, listObjectIds } from "@/fyd/object/view";
+import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
 import { ObjectCircle } from "@/fyd/ui/object-circle";
 
 export const dynamic = "force-dynamic";
@@ -23,8 +24,18 @@ export const metadata: Metadata = {
 };
 
 export default function ObjectsIndexPage() {
+  // Every view is composed over the verified public projection (Q-C-01).
   const views = listObjectIds()
-    .map((id) => loadObjectView(id))
+    .map((id) => {
+      try {
+        return loadObjectView(
+          getVerifiedPublicProjectionSync(id, "anonymous"),
+          id,
+        );
+      } catch {
+        return null;
+      }
+    })
     .filter((v) => v !== null);
 
   return (

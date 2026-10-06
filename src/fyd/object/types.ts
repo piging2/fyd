@@ -52,7 +52,18 @@ export interface ObjectContactView {
   website: string | null;
   /** Coarse public location, e.g. "Adair Village, OR". */
   locality: string | null;
+  /**
+   * UI-facing display contract (Public/Hidden chips). Derived from
+   * the tri-state AddressVisibilityPreference in view.ts: "hide"
+   * -> "hidden"; "show" | "default" -> "public".
+   */
   addressVisibility: "public" | "hidden";
+  /**
+   * The owner's explicit SHOW/HIDE/DEFAULT preference (populated by
+   * view.ts). Optional so existing view constructors keep compiling;
+   * the manage surface uses it for the tri-state control.
+   */
+  addressVisibilityPreference?: AddressVisibilityPreference;
 }
 
 /**
@@ -67,7 +78,9 @@ export type ObjectCapability =
   | { kind: "like" }
   | { kind: "call"; href: string; label: string }
   | { kind: "email"; href: string; label: string }
-  | { kind: "website"; href: string; label: string };
+  | { kind: "website"; href: string; label: string }
+  | { kind: "directions"; href: string; label: string }
+  | { kind: "reference"; objectId: string };
 
 export interface ObjectProvenanceView {
   kind: string;
@@ -88,6 +101,13 @@ export interface ObjectView {
   summary: string;
   /** Only rights-authorized media; external references are excluded from display. */
   media: ObjectMediaView[];
+  /**
+   * Parent business presentation mark, for objects without their own logo.
+   * Resolved from graph parent relationships at compose time; the service
+   * remains its own object, it just wears the business brand. Null when the
+   * object has its own configured mark or no parent business is found.
+   */
+  fallbackMark?: import("../presentation/identity").PresentationMark | null;
   services: ObjectServiceView[];
   serviceArea: string[];
   contact: ObjectContactView;
@@ -116,6 +136,22 @@ export interface FieldCorrectionView extends OwnerFieldCorrection {
   sourceDrifted: boolean;
 }
 
+/**
+ * The owner's field-level visibility preference for the address
+ * (FYD product authority directive, Nolan 2026-09-25: SHOW / HIDE /
+ * DEFAULT). SOURCE FACT != OWNER PRESENTATION POLICY: the preference
+ * never mutates the source observation or deletes evidence; the
+ * public projection boundary computes the effective presentation
+ * policy from it (see ../sitespec/public-projection.ts).
+ *
+ * - "hide":    the address is omitted from the public projection.
+ * - "show":    the address is shown verbatim in the public projection.
+ * - "default": no explicit owner preference; the conservative
+ *             default applies (address-bearing fields coarsen to
+ *             city level, never verbatim street detail).
+ */
+export type AddressVisibilityPreference = "default" | "show" | "hide";
+
 /** Durable owner state. Separate file per object; never overwritten by ingest. */
 export interface OwnerOverrides {
   version: 1;
@@ -125,14 +161,17 @@ export interface OwnerOverrides {
   serviceOrder: string[];
   hiddenServices: string[];
   addedServices: { id: string; name: string }[];
-  addressVisibility: "public" | "hidden";
+  /** The owner's SHOW/HIDE/DEFAULT preference for the address field. */
+  addressVisibility: AddressVisibilityPreference;
   /**
-   * Owner-attested field corrections keyed by field ("phone" | "email" |
-   * "website"). The correction NEVER rewrites source state: the source
-   * projection keeps saying what it says; the read model composes the
-   * owner value over it (see src/fyd/object/owner-overlay.ts) and keeps
-   * the source value on the record for the SOURCE SAYS X / OWNER SAYS Y
-   * distinction.
+   * Owner-attested field corrections. Contact corrections are keyed by
+   * field ("phone" | "email" | "website") and target the business object;
+   * service-description corrections are keyed by their event target
+   * ("service-field:<serviceId>") and carry targetObjectId on the record.
+   * The correction NEVER rewrites source state: the source projection
+   * keeps saying what it says; the read model composes the owner value
+   * over it (see src/fyd/object/owner-overlay.ts) and keeps the source
+   * value on the record for the SOURCE SAYS X / OWNER SAYS Y distinction.
    */
   fieldCorrections: Record<string, OwnerFieldCorrection>;
   /**
@@ -214,9 +253,9 @@ export interface FieldConfirmation extends OwnerAssertion {
  */
 export interface AddressVisibilityAssertion extends OwnerAssertion {
   path: "contact:address";
-  operation: "hide" | "show";
-  value: "hidden" | "public";
-  visibility: "hidden" | "public";
+  operation: "hide" | "show" | "default";
+  value: "hide" | "show" | "default";
+  visibility: "hide" | "show" | "default";
 }
 
 export const EMPTY_OVERRIDES = (objectId: string): OwnerOverrides => ({
@@ -226,7 +265,7 @@ export const EMPTY_OVERRIDES = (objectId: string): OwnerOverrides => ({
   serviceOrder: [],
   hiddenServices: [],
   addedServices: [],
-  addressVisibility: "public",
+  addressVisibility: "default",
   fieldCorrections: {},
   fieldConfirmations: {},
   addressVisibilityAssertion: null,
@@ -238,10 +277,12 @@ export type OwnerCommand =
   | { type: "move-service"; id: string; to: "up" | "down" | "first" | "last" }
   | { type: "set-service-visibility"; id: string; visible: boolean }
   | { type: "add-service"; name: string }
-  | { type: "set-address-visibility"; visibility: "public" | "hidden" }
+  | { type: "set-address-visibility"; visibility: AddressVisibilityPreference }
   | { type: "set-contact-field"; field: "phone" | "email" | "website"; value: string }
   | { type: "revert-contact-field"; field: "phone" | "email" | "website" }
-  | { type: "confirm-contact-field"; field: "phone" | "email" | "website" };
+  | { type: "confirm-contact-field"; field: "phone" | "email" | "website" }
+  | { type: "set-service-description"; serviceId: string; value: string }
+  | { type: "revert-service-description"; serviceId: string };
 
 /**
  * Circle background: a tiny website-photo derivative when authorized site

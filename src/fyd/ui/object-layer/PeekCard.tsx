@@ -18,6 +18,8 @@
  */
 
 import * as React from "react";
+import { ObjectIdentityMark } from "../../presentation/object-identity-mark";
+import type { ObjectPresentationIdentity } from "../../presentation/identity";
 import { shell, shellSurface, type ShellColorScheme } from "./fyd-shell";
 import {
   peekActionsFor,
@@ -84,11 +86,17 @@ export function truncateDesc(text: string, max = PEEK_DESC_MAX): string {
 /** The small FYD glyph mark: gold edge, royal tint, initials. */
 export function FydGlyphMark({
   name,
+  objectId,
+  identity,
   size = 28,
 }: {
   name: string;
+  objectId?: string;
+  identity?: ObjectPresentationIdentity;
   size?: number;
-}) {  const initials = name
+}) {
+  if (objectId || identity) return <ObjectIdentityMark identity={identity} object={{ id: objectId ?? "", name }} size={size} decorative />;
+  const initials = name
     .trim()
     .split(/\s+/)
     .slice(0, 2)
@@ -256,7 +264,7 @@ export function PeekCard({
     >
       {/* Identity row: glyph mark + name + kind. */}
       <div ref={identityRef} className="flex items-center gap-2.5">
-        <FydGlyphMark name={spec.name} size={30} />
+        <FydGlyphMark identity={spec.identity} objectId={spec.objectId} name={spec.name} size={30} />
         <div className="min-w-0 flex-1">
           <p
             className="truncate font-semibold"

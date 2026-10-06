@@ -12,6 +12,8 @@ import {
   submitAsk,
   type CapabilityKind,
 } from "@/fyd/capabilities/runtime";
+import { setObjectRelationship } from "@/fyd/capabilities/relationship-client";
+jest.mock("@/fyd/capabilities/relationship-client", () => ({ setObjectRelationship: jest.fn() }));
 import type { PortalProjection } from "@/fyd/preview/types";
 
 function portalWith(kinds: CapabilityKind[]): PortalProjection {
@@ -42,55 +44,22 @@ describe("hasCapability", () => {
   });
 });
 
-describe("executeFollow", () => {
-  it("posts follow and returns the server-confirmed state", async () => {
-    const fetchMock = mockFetchJson({ ok: true, following: true });
-    await expect(executeFollow("happy-place", false)).resolves.toBe(true);
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/fyd/follow",
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ objectId: "happy-place", action: "follow" }),
-      }),
-    );
+describe("legacy social executor compatibility", () => {
+  test.each([
+    ["follow", executeFollow], ["like", executeLike],
+  ] as const)("%s delegates explicit state to the private-session transport", async (kind, execute) => {
+    const write = jest.mocked(setObjectRelationship);
+    write.mockResolvedValue({ ok: true, state: true, scope: "demo-session", createdAt: null, updatedAt: null });
+    expect(await execute("happy-place", false)).toBe(true);
+    expect(write).toHaveBeenLastCalledWith("happy-place", kind, true);
+    write.mockResolvedValue({ ok: true, state: false, scope: "demo-session", createdAt: null, updatedAt: null });
+    expect(await execute("happy-place", true)).toBe(false);
+    expect(write).toHaveBeenLastCalledWith("happy-place", kind, false);
   });
-
-  it("posts unfollow when already following", async () => {
-    const fetchMock = mockFetchJson({ ok: true, following: false });
-    await expect(executeFollow("happy-place", true)).resolves.toBe(false);
-    expect(fetchMock.mock.calls[0][1].body).toContain('"action":"unfollow"');
-  });
-
-  it("returns the previous state when the server says not-ok", async () => {
-    mockFetchJson({ ok: false });
-    await expect(executeFollow("happy-place", true)).resolves.toBe(true);
-    await expect(executeFollow("happy-place", false)).resolves.toBe(false);
-  });
-
-  it("returns the previous state when the network fails", async () => {
-    mockFetchReject();
-    await expect(executeFollow("happy-place", true)).resolves.toBe(true);
-    await expect(executeFollow("happy-place", false)).resolves.toBe(false);
-  });
-});
-
-describe("executeLike", () => {
-  it("posts like and returns the server-confirmed state", async () => {
-    const fetchMock = mockFetchJson({ ok: true, liked: true });
-    await expect(executeLike("happy-place", false)).resolves.toBe(true);
-    expect(fetchMock.mock.calls[0][1].body).toContain('"action":"like"');
-  });
-
-  it("posts unlike when already liked, fail-closed otherwise", async () => {
-    const fetchMock = mockFetchJson({ ok: true, liked: false });
-    await expect(executeLike("happy-place", true)).resolves.toBe(false);
-    expect(fetchMock.mock.calls[0][1].body).toContain('"action":"unlike"');
-
-    mockFetchJson({ ok: false });
-    await expect(executeLike("happy-place", true)).resolves.toBe(true);
-
-    mockFetchReject();
-    await expect(executeLike("happy-place", false)).resolves.toBe(false);
+  test.each([executeFollow, executeLike])("unconfirmed writes keep the previous state", async execute => {
+    jest.mocked(setObjectRelationship).mockResolvedValue({ ok: false, code: "NETWORK_UNAVAILABLE", message: "Retry", retryable: true, scope: null });
+    expect(await execute("happy-place", true)).toBe(true);
+    expect(await execute("happy-place", false)).toBe(false);
   });
 });
 

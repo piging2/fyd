@@ -16,17 +16,20 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import type { ObjectProjection } from "./object-projection";
+import { ObjectIdentityMark } from "../presentation/object-identity-mark";
+import { ObjectDiscoveryExplanation, ObjectPlacementDisclosure, isObjectDisplayContextValid, type ObjectDisplayContext } from "../presentation/object-context";
 import {
   CapabilityActions,
   EvidenceMark,
   FactRow,
-  InitialsMark,
   RelatedRow,
 } from "./evidence-chrome";
 
 export interface ObjectCardProps {
   /** The generic object projection: Business, Person, or Service. */
   projection: ObjectProjection;
+  /** Supplied by the placement resolver; absent for organic/deep-link views. */
+  displayContext?: ObjectDisplayContext;
   /** Node href; defaults to /o/<id>. */
   nodeHref?: string;
   className?: string;
@@ -35,18 +38,7 @@ export interface ObjectCardProps {
 }
 
 function LogoMark({ projection }: { projection: ObjectProjection }) {
-  const logo = projection.media.find((m) => m.role === "logo");
-  if (logo) {
-    return (
-      <img
-        src={logo.src}
-        alt={projection.name + " logo"}
-        loading="lazy"
-        className="h-10 w-10 shrink-0 rounded-full bg-white object-contain p-1"
-      />
-    );
-  }
-  return <InitialsMark name={projection.name} size="sm" />;
+  return <ObjectIdentityMark object={projection} size={40} />;
 }
 
 export function ObjectCard({
@@ -54,7 +46,10 @@ export function ObjectCard({
   nodeHref,
   className,
   maxFacts = 5,
+  displayContext,
 }: ObjectCardProps) {
+  const presentationNow = Date.now();
+  if (!isObjectDisplayContextValid(projection.id, displayContext, presentationNow)) return null;
   const href = nodeHref ?? "/o/" + encodeURIComponent(projection.id);
   const facts = projection.facts.slice(0, maxFacts);
   const subline = [projection.kindLabel, projection.category?.value]
@@ -69,6 +64,7 @@ export function ObjectCard({
         className,
       )}
     >
+      <ObjectPlacementDisclosure objectId={projection.id} context={displayContext} now={presentationNow} />
       <div className="flex items-start gap-3">
         <LogoMark projection={projection} />
         <div className="min-w-0 flex-1">
@@ -126,9 +122,11 @@ export function ObjectCard({
       <CapabilityActions
         capabilities={projection.capabilities}
         nodeHref={href}
+        nodeObjectId={projection.id}
         className="mt-4"
       />
 
+      <ObjectDiscoveryExplanation objectId={projection.id} context={displayContext} now={presentationNow} />
       <p className="mt-4 text-xs text-stone-400">{projection.provenance.label}</p>
     </article>
   );

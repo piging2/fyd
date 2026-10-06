@@ -77,6 +77,7 @@
  */
 
 import * as React from "react";
+import { resolveObjectPresentationIdentity } from "../../presentation/identity";
 import { createPortal } from "react-dom";
 import { motion, type Transition } from "framer-motion";
 import {
@@ -424,18 +425,25 @@ export function compactProjectionFor(projection: ObjectProjection): {
 /* ------------------------------------------------------------------ */
 
 function ObjectFace({
+  objectId,
   name,
   imageSrc,
   imageSrcSet,
   sizes,
   initialClassName,
 }: {
+  objectId: string;
   name: string;
   imageSrc: string | null;
   imageSrcSet: string | null;
   sizes: string;
   initialClassName: string;
 }) {
+  const identity = resolveObjectPresentationIdentity({ id: objectId, name,
+    image: imageSrc ? { src: imageSrc } : null });
+  if (identity.mark) return <img src={identity.mark.src} srcSet={identity.mark.srcSet} alt="" aria-hidden="true" loading="lazy"
+    width={identity.mark.width} height={identity.mark.height} decoding="async" draggable={false}
+    data-fyd-identity-shape={identity.shapeMode} className="absolute inset-0 h-full w-full object-contain" />;
   const initial = (name || "?").trim().charAt(0).toUpperCase() || "?";
   return (
     <>
@@ -634,7 +642,7 @@ export function FollowButton({
   /** Light tone for the light card surfaces. */
   light?: boolean;
 }) {
-  const { following, toggleFollow } = useObjectActions(objectId, websiteUrl);
+  const { following, toggleFollow, follow } = useObjectActions(objectId, websiteUrl);
   const [receipt, setReceipt] = React.useState(false);
   const prevRef = React.useRef<boolean | null>(null);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -670,14 +678,16 @@ export function FollowButton({
         }
       >
         <UserCheck size={14} aria-hidden="true" />
-        <span>DONE: you&apos;re following {name}</span>
+        <span>Following {name} in this demo</span>
       </span>
     );
   }
   return (
     <button
       type="button"
-      disabled={following === null}
+      disabled={["loading", "pending", "terminal-error"].includes(follow.status)}
+      aria-busy={follow.status === "pending" || follow.status === "loading"}
+      title={follow.message}
       aria-pressed={!!following}
       aria-label={following ? `Following ${name}` : `Follow ${name}`}
       onClick={(e) => {
@@ -687,7 +697,7 @@ export function FollowButton({
       className={cls}
     >
       {following ? <UserCheck size={14} aria-hidden="true" /> : <UserPlus size={14} aria-hidden="true" />}
-      <span>{following ? "Following" : "Follow"}</span>
+      <span>{follow.status === "retryable-error" ? "Retry follow" : follow.status === "pending" ? "Saving…" : follow.status === "loading" ? "Loading…" : follow.status === "terminal-error" ? "Unavailable" : following ? "Following · demo" : "Follow · demo"}</span>
     </button>
   );
 }
@@ -708,7 +718,7 @@ export function LikeButton({
   /** Light tone for the light card surfaces. */
   light?: boolean;
 }) {
-  const { liked, toggleLike } = useObjectActions(objectId, websiteUrl);
+  const { liked, toggleLike, like } = useObjectActions(objectId, websiteUrl);
   const base = light
     ? "inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold text-[#1A1729] transition-colors border border-[#E5E0D5] bg-white hover:border-[rgba(201,162,39,0.7)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C5CD6]"
     : `${ACTION_BTN} border border-white/15 bg-white/10`;
@@ -716,7 +726,9 @@ export function LikeButton({
   return (
     <button
       type="button"
-      disabled={liked === null}
+      disabled={["loading", "pending", "terminal-error"].includes(like.status)}
+      aria-busy={like.status === "pending" || like.status === "loading"}
+      title={like.message}
       aria-pressed={!!liked}
       aria-label={liked ? `Unlike ${name}` : `Like ${name}`}
       onClick={(e) => {
@@ -726,7 +738,7 @@ export function LikeButton({
       className={cls}
     >
       <Heart size={14} aria-hidden="true" fill={liked ? "currentColor" : "none"} />
-      <span>{liked ? "Liked" : "Like"}</span>
+      <span>{like.status === "retryable-error" ? "Retry like" : like.status === "pending" ? "Saving…" : like.status === "loading" ? "Loading…" : like.status === "terminal-error" ? "Unavailable" : liked ? "Liked · demo" : "Like · demo"}</span>
     </button>
   );
 }
@@ -1048,15 +1060,18 @@ export function MarginObject({
         transition={
           rm ? instantTx : { duration: circleMotion.appearDuration, ease: "easeOut" }
         }
-        className="relative block cursor-pointer overflow-hidden rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className={resolveObjectPresentationIdentity({ id: objectId, name }).mark
+          ? "relative block cursor-pointer bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          : "relative block cursor-pointer overflow-hidden rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"}
         style={{
           width: restD,
           height: restD,
           /* Quiet rest state: thin subtle identity ring, no glow. */
-          boxShadow: fyd.shadow.restRing,
+          boxShadow: resolveObjectPresentationIdentity({ id: objectId, name }).mark ? "none" : fyd.shadow.restRing,
         }}
       >
         <ObjectFace
+          objectId={objectId}
           name={name}
           imageSrc={imageSrc}
           imageSrcSet={imageSrcSet}
@@ -1235,16 +1250,19 @@ export function ClusterSlot({
               data-object-id={m.objectId}
               onClick={() => setSelected(m)}
               aria-label={`Open ${m.name}`}
-              className="absolute cursor-pointer overflow-hidden rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className={resolveObjectPresentationIdentity({ id: m.objectId, name: m.name }).mark
+                ? "absolute cursor-pointer bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                : "absolute cursor-pointer overflow-hidden rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"}
               style={{
                 left: cell.x,
                 top: cell.y,
                 width: STAR_MINI_D,
                 height: STAR_MINI_D,
-                boxShadow: fyd.shadow.restRing,
+                boxShadow: resolveObjectPresentationIdentity({ id: m.objectId, name: m.name }).mark ? "none" : fyd.shadow.restRing,
               }}
             >
               <ObjectFace
+                objectId={m.objectId}
                 name={m.name}
                 imageSrc={m.imageSrc}
                 imageSrcSet={m.imageSrcSet}

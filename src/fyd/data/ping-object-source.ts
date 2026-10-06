@@ -28,8 +28,9 @@
 
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { readFileSync, readdirSync } from "node:fs";
+import { statSync } from "node:fs";
 import { join } from "node:path";
+import { readFileSync, readdirSync } from "node:fs";
 import { canonicalize } from "@/lib/ping/ask-composer";
 import type { ObjectGraph } from "@/fyd/sitespec/types";
 import type { PingObject, PingRelationship } from "@/lib/ping/types";
@@ -38,6 +39,12 @@ import {
   type OwnerOverlayResult,
 } from "@/fyd/object/owner-overlay";
 import type { PresentationIntentBlock } from "@/fyd/customize/types";
+import {
+  decisionsForGraph,
+  verifyPublicProjection,
+  type PublicViewerKind,
+  type VerifiedPublicProjection,
+} from "@/fyd/sitespec/public-projection";
 
 export interface ProjectionMeta {
   siteId: string;
@@ -86,9 +93,18 @@ export interface PingSourceOpts {
 }
 
 function projectionDir(): string {
-  return (
-    process.env.FYD_PROJECTION_DIR ?? "/home/nolan/ping/var/fyd-projections"
-  );
+  // Priority: explicit env override -> Pig path (when present) -> bundled
+  // fyd-projections/ in the repo (Vercel serverless). The bundled directory
+  // is populated by the deploy pipeline from verified public projections.
+  const envDir = process.env.FYD_PROJECTION_DIR;
+  if (envDir) return envDir;
+  const pigDir = "/home/nolan/ping/var/fyd-projections";
+  try {
+    if (statSync(pigDir).isDirectory()) return pigDir;
+  } catch {
+    // Pig path absent (e.g. Vercel): fall through to bundled.
+  }
+  return join(process.cwd(), "fyd-projections");
 }
 
 function fail(siteId: string, reason: string): never {
@@ -317,4 +333,31 @@ export function listPingSiteIdsSync(): string[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * THE public read funnel (Q-C-01): verify the source projection and its
+ * provenance, compose owner field corrections, resolve durable owner
+ * visibility decisions, and project for the declared viewer. Every public
+ * consumer reads tenant object data through this function (or its Sync
+ * variant), never through getPingObjectGraph directly: the returned graph
+ * is the only graph public constructors accept.
+ */
+export async function getVerifiedPublicProjection(
+  siteId: string,
+  viewerKind: PublicViewerKind,
+  opts?: PingSourceOpts,
+): Promise<VerifiedPublicProjection> {
+  const { graph } = await getPingObjectGraph(siteId, opts);
+  return verifyPublicProjection(graph, decisionsForGraph(graph, siteId), viewerKind);
+}
+
+/** Synchronous variant of getVerifiedPublicProjection. */
+export function getVerifiedPublicProjectionSync(
+  siteId: string,
+  viewerKind: PublicViewerKind,
+  opts?: PingSourceOpts,
+): VerifiedPublicProjection {
+  const { graph } = getPingObjectGraphSync(siteId, opts);
+  return verifyPublicProjection(graph, decisionsForGraph(graph, siteId), viewerKind);
 }

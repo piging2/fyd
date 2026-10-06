@@ -22,7 +22,9 @@ import {
   type OwnerCommand,
 } from "../owner-store";
 import {
+  changeKindForTier,
   commandConsequenceTier,
+  consequenceNoteFor,
   describeCommand,
   interpretTextCommand,
   invertOwnerCommand,
@@ -185,18 +187,18 @@ describe("address presentation decision (SHOW/HIDE assertions)", () => {
   test("hide records a persistent HIDE assertion with the full contract", () => {
     const o = applyOwnerCommand(
       "demo-confirm-8",
-      { type: "set-address-visibility", visibility: "hidden" },
+      { type: "set-address-visibility", visibility: "hide" },
       KNOWN_IDS,
       KNOWN_NAMES,
     );
-    expect(o.addressVisibility).toBe("hidden");
+    expect(o.addressVisibility).toBe("hide");
     const a = o.addressVisibilityAssertion;
     expect(a).not.toBeNull();
     expect(a!.subject).toBe("demo-confirm-8");
     expect(a!.path).toBe("contact:address");
     expect(a!.operation).toBe("hide");
-    expect(a!.value).toBe("hidden");
-    expect(a!.visibility).toBe("hidden");
+    expect(a!.value).toBe("hide");
+    expect(a!.visibility).toBe("hide");
     expect(a!.actor.kind).toBe("demo");
     expect(a!.supersedes).toBeNull();
     expect(typeof a!.eventId).toBe("string");
@@ -205,18 +207,18 @@ describe("address presentation decision (SHOW/HIDE assertions)", () => {
   test("show supersedes hide; the assertion survives re-projection", () => {
     const hid = applyOwnerCommand(
       "demo-confirm-9",
-      { type: "set-address-visibility", visibility: "hidden" },
+      { type: "set-address-visibility", visibility: "hide" },
       KNOWN_IDS,
       KNOWN_NAMES,
     );
     const hideId = hid.addressVisibilityAssertion!.eventId;
     const shown = applyOwnerCommand(
       "demo-confirm-9",
-      { type: "set-address-visibility", visibility: "public" },
+      { type: "set-address-visibility", visibility: "show" },
       KNOWN_IDS,
       KNOWN_NAMES,
     );
-    expect(shown.addressVisibility).toBe("public");
+    expect(shown.addressVisibility).toBe("show");
     expect(shown.addressVisibilityAssertion!.operation).toBe("show");
     expect(shown.addressVisibilityAssertion!.supersedes).toBe(hideId);
     const reread = projectOwnerState("demo-confirm-9");
@@ -226,11 +228,11 @@ describe("address presentation decision (SHOW/HIDE assertions)", () => {
   });
 
   test.each([
-    ["hide the address", "hidden"],
-    ["hide the business address", "hidden"],
-    ["show the address", "public"],
-    ["show the business address", "public"],
-    ["make the address public", "public"],
+    ["hide the address", "hide"],
+    ["hide the business address", "hide"],
+    ["show the address", "show"],
+    ["show the business address", "show"],
+    ["make the address public", "show"],
   ])("interpreter: %p -> set-address-visibility(%s)", (text, visibility) => {
     const proposal = interpretTextCommand(text, "demo-confirm-1");
     expect(proposal).not.toBeNull();
@@ -241,21 +243,33 @@ describe("address presentation decision (SHOW/HIDE assertions)", () => {
   });
 });
 
-describe("authority gradient: consequence tiers", () => {
+describe("consequence tiers (locked: LOW / MEDIUM / HIGH / CRITICAL)", () => {
   test.each([
-    [{ type: "move-service", id: "svc-decks", to: "first" }, "presentation"],
-    [{ type: "set-service-visibility", id: "svc-decks", visible: false }, "presentation"],
-    [{ type: "set-address-visibility", visibility: "hidden" }, "presentation"],
-    [{ type: "set-contact-field", field: "phone", value: "x" }, "factual"],
-    [{ type: "revert-contact-field", field: "phone" }, "factual"],
-    [{ type: "confirm-contact-field", field: "phone" }, "factual"],
-    [{ type: "add-service", name: "Decks" }, "factual"],
+    [{ type: "move-service", id: "svc-decks", to: "first" }, "LOW"],
+    // Address visibility is MEDIUM (FYD product authority directive,
+    // Nolan 2026-09-25): it alters public factual presentation, so it
+    // needs explicit confirmation and no automatic LOW undo.
+    [{ type: "set-address-visibility", visibility: "hide" }, "MEDIUM"],
+    // Service visibility is MEDIUM per the locked tiers (factual
+    // visibility), not a reversible LOW presentation change.
+    [{ type: "set-service-visibility", id: "svc-decks", visible: false }, "MEDIUM"],
+    [{ type: "set-contact-field", field: "phone", value: "x" }, "MEDIUM"],
+    [{ type: "revert-contact-field", field: "phone" }, "MEDIUM"],
+    [{ type: "confirm-contact-field", field: "phone" }, "MEDIUM"],
+    [{ type: "add-service", name: "Decks" }, "MEDIUM"],
   ])("%p is tier %s", (command, tier) => {
     expect(commandConsequenceTier(command as OwnerCommand)).toBe(tier);
   });
+
+  test("LOW is change-website; MEDIUM is update-business (language law)", () => {
+    expect(changeKindForTier("LOW")).toBe("change-website");
+    expect(changeKindForTier("MEDIUM")).toBe("update-business");
+    expect(consequenceNoteFor("LOW")).toMatch(/Change the website/);
+    expect(consequenceNoteFor("MEDIUM")).toMatch(/Update the business/);
+  });
 });
 
-describe("authority gradient: exact inverses (fast undo)", () => {
+describe("consequence tiers: exact inverses (fast undo, LOW only)", () => {
   test.each([
     [
       { type: "move-service", id: "svc-decks", to: "first" },
@@ -265,48 +279,68 @@ describe("authority gradient: exact inverses (fast undo)", () => {
       { type: "move-service", id: "svc-decks", to: "up" },
       { type: "move-service", id: "svc-decks", to: "down" },
     ],
-    [
-      { type: "set-service-visibility", id: "svc-decks", visible: false },
-      { type: "set-service-visibility", id: "svc-decks", visible: true },
-    ],
-    [
-      { type: "set-address-visibility", visibility: "hidden" },
-      { type: "set-address-visibility", visibility: "public" },
-    ],
   ])("%p inverts to %p", (command, inverse) => {
     expect(invertOwnerCommand(command as OwnerCommand)).toEqual(inverse);
   });
 
   test.each([
+    { type: "set-service-visibility", id: "svc-decks", visible: false },
+    // Address visibility is MEDIUM (FYD product authority directive, Nolan
+    // 2026-09-25): no automatic undo; it unwinds via explicit DEFAULT.
+    { type: "set-address-visibility", visibility: "hide" },
     { type: "set-contact-field", field: "phone", value: "x" },
     { type: "revert-contact-field", field: "phone" },
     { type: "confirm-contact-field", field: "phone" },
     { type: "add-service", name: "Decks" },
-  ])("factual %p has no exact inverse", (command) => {
+  ])("MEDIUM %p has no exact inverse", (command) => {
     expect(invertOwnerCommand(command as OwnerCommand)).toBeNull();
   });
 
-  test("undo round trip at the store level restores presentation state", () => {
-    const hid = applyOwnerCommand(
+  test("undo round trip at the store level restores LOW presentation state", () => {
+    const moved = applyOwnerCommand(
       "demo-confirm-10",
-      { type: "set-service-visibility", id: "svc-decks", visible: false },
+      { type: "move-service", id: "svc-fences", to: "first" },
       KNOWN_IDS,
       KNOWN_NAMES,
     );
-    expect(hid.hiddenServices).toContain("svc-decks");
+    expect(moved.serviceOrder).toEqual(["svc-fences", "svc-decks"]);
     const inverse = invertOwnerCommand({
-      type: "set-service-visibility",
-      id: "svc-decks",
-      visible: false,
+      type: "move-service",
+      id: "svc-fences",
+      to: "first",
     });
     expect(inverse).not.toBeNull();
-    expect(describeCommand(inverse!, KNOWN_NAMES)).toMatch(/show decks/i);
+    expect(describeCommand(inverse!, KNOWN_NAMES)).toMatch(/Undo this website change/i);
     const undone = applyOwnerCommand(
       "demo-confirm-10",
       inverse!,
       KNOWN_IDS,
       KNOWN_NAMES,
     );
-    expect(undone.hiddenServices).not.toContain("svc-decks");
+    expect(undone.serviceOrder).toEqual(["svc-decks", "svc-fences"]);
+  });
+
+  test("address visibility (MEDIUM) has no automatic undo; explicit DEFAULT unwinds it", () => {
+    const hid = applyOwnerCommand(
+      "demo-confirm-11",
+      { type: "set-address-visibility", visibility: "hide" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+    );
+    expect(hid.addressVisibility).toBe("hide");
+    // MEDIUM: no fast undo.
+    expect(
+      invertOwnerCommand({ type: "set-address-visibility", visibility: "hide" }),
+    ).toBeNull();
+    // The explicit preference unwinds through an explicit DEFAULT command
+    // in the normal propose/approve path (append-only; the hide event stays
+    // in the log).
+    const back = applyOwnerCommand(
+      "demo-confirm-11",
+      { type: "set-address-visibility", visibility: "default" },
+      KNOWN_IDS,
+      KNOWN_NAMES,
+    );
+    expect(back.addressVisibility).toBe("default");
   });
 });

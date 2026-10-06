@@ -1,0 +1,343 @@
+/**
+ * FYD public projection boundary — SERVER ONLY (node:crypto + owner-store file reads).
+ *
+ * This module is the single public projection boundary for FYD tenant
+ * object graphs (Q-C-01):
+ *
+ *   Canonical ObjectGraph + Evidence + Owner Decisions + Viewer Policy + Capabilities
+ *     -> VerifiedProjection -> every public consumer
+ *
+ * No public route, page, or loader may serialize tenant object data that
+ * has not passed through this boundary. The output type,
+ * VerifiedPublicProjection, is branded: public-surface constructors
+ * (composeObjectView, buildObjectSheet, buildSemanticRenderModel, the
+ * public routes) take the branded type, so feeding an unprojected graph
+ * is a compile error, not a code-review hope.
+ *
+ * This is NOT a new authority. It composes the existing machinery:
+ * - source verification + owner value corrections: src/fyd/data/ping-object-source.ts
+ *   (the funnel entry points getVerifiedPublicProjection / Sync live there)
+ * - deterministic field rules: ./field-visibility.ts (pure, browser-safe core)
+ * - durable owner visibility state: ../object/owner-store.ts (readOverrides)
+ * - capability grants: the projection records the viewer-scoped grants; the
+ *   capability authority stays capabilityOptionsForSchema (./schemas.ts).
+ *
+ * Composition order (deterministic):
+ *   1. verify the source projection + provenance (ping-object-source, before this)
+ *   2. compose owner field corrections (ping-object-source, before this)
+ *   3. resolve durable owner visibility decisions for every object in the graph
+ *   4. apply field visibility (hide / coarse / conservative defaults)
+ *   5. apply hide traversal cuts (address-hidden objects lose active edges)
+ *   6. filter to public objects and endpoint-safe active relationships (anonymous only)
+ *   7. emit the versioned projection receipt (digests, viewer policy, checkpoint)
+ *
+ * Privacy is projection, not evidence deletion: the source graph and owner
+ * evidence are untouched. The owner viewer branch passes the graph through
+ * unchanged (owner-authorized context may inspect hidden fields to manage
+ * them) but still brands the output and records the owner viewer policy,
+ * so the audit trail distinguishes anonymous projections from owner ones.
+ */
+
+import { sha256Hex } from "@/lib/ping/digest";
+import { canonicalize } from "@/lib/ping/ask-composer";
+import { readOverrides } from "../object/owner-store";
+import {
+  applyFieldVisibility,
+  applyHideTraversal,
+  isAddressFamilyField,
+  normalizeHiddenValue,
+  type FieldVisibilityDecision,
+} from "./field-visibility";
+import type { ObjectGraph } from "./types";
+import { SCHEMA_ROLES } from "./schema-roles";
+
+/** Boundary version. Bump when the projection composition order or rules change. */
+export const PUBLIC_PROJECTION_VERSION = "fyd.public-projection@1" as const;
+
+/** The only viewer policies the boundary resolves. No per-request auth exists;
+ *  public routes use "anonymous"; owner-management lanes use "owner". */
+export type PublicViewerKind = "anonymous" | "owner";
+export const ANONYMOUS_VIEWER_KIND: PublicViewerKind = "anonymous";
+export const OWNER_VIEWER_KIND: PublicViewerKind = "owner";
+
+/**
+ * Capability grants resolved at projection time and recorded in the receipt.
+ * The capability authority stays capabilityOptionsForSchema (./schemas.ts);
+ * these are the viewer-scoped grants the boundary asserts. The visitor set
+ * mirrors VISITOR_ALLOWED_CAPABILITIES in ../../edge/resolve.ts (kept as a
+ * literal here because that module imports this one for buildObjectSheet's
+ * branded parameter; importing it back would be a cycle).
+ */
+export const ANONYMOUS_CAPABILITIES: readonly string[] = [
+  "ask_question",
+  "view_evidence",
+  "view_why_this",
+];
+export const OWNER_CAPABILITIES: readonly string[] = [
+  ...ANONYMOUS_CAPABILITIES,
+  "manage_objects",
+  "customize",
+  "view_owner_history",
+  "view_hidden_fields",
+];
+
+/** Versioned projection receipt. The semantic identity of a projection is
+ *  (graphDigest, decisionsDigest, viewerPolicyDigest); projectedAt is
+ *  operational metadata and is NOT part of the semantic identity. */
+export interface PublicProjectionProvenance {
+  boundaryVersion: typeof PUBLIC_PROJECTION_VERSION;
+  viewerKind: PublicViewerKind;
+  /** sha256 hex of canonicalize(source graph before projection). */
+  graphDigest: string;
+  /** sha256 hex of canonicalize(owner decisions applied). */
+  decisionsDigest: string;
+  /** sha256 hex of canonicalize({viewerKind, boundaryVersion, decisionsDigest, capabilities}). */
+  viewerPolicyDigest: string;
+  /** The meaningful snapshot id: `${graphDigest}:${decisionsDigest}`. */
+  checkpoint: string;
+  capabilities: string[];
+  projectedAt: string;
+}
+
+/**
+ * A tenant object graph that has passed the public projection boundary.
+ * Public-surface constructors take this type; raw ObjectGraph values do
+ * not satisfy it. The brand is a compile-time discriminant plus a
+ * runtime kind check (isVerifiedPublicProjection).
+ */
+export interface VerifiedPublicProjection {
+  readonly kind: typeof PUBLIC_PROJECTION_VERSION;
+  graph: ObjectGraph;
+  /**
+   * The owner decisions the projection was built under, in graph object
+   * order. Carried so downstream models (e.g. the semantic render model)
+   * record the decisions that actually shaped the graph, not a
+   * caller-supplied claim about them.
+   */
+  decisions: FieldVisibilityDecision[];
+  provenance: PublicProjectionProvenance;
+}
+
+/** Runtime brand check for defense-in-depth at trust boundaries. */
+export function isVerifiedPublicProjection(
+  value: unknown,
+): value is VerifiedPublicProjection {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { kind?: unknown }).kind === PUBLIC_PROJECTION_VERSION &&
+    typeof (value as { graph?: unknown }).graph === "object" &&
+    typeof (value as { provenance?: unknown }).provenance === "object"
+  );
+}
+
+
+/**
+ * Convert durable owner visibility state for one object into canonical
+ * field-visibility decisions. Extends the existing owner-store reads;
+ * it does NOT invent new durable state.
+ *
+ * Coverage: the owner's SHOW / HIDE / DEFAULT address preference (the
+ * durable states the owner store supports). HIDE -> a "hide" decision;
+ * SHOW -> a "show" decision; DEFAULT -> no decision, so the conservative
+ * default applies (address-bearing fields coarsen). Arbitrary field
+ * hide/coarse decisions have no durable writer yet (open product gap);
+ * this function must not invent them.
+ */
+export function objectDecisionsToFieldVisibility(
+  objectId: string,
+): FieldVisibilityDecision[] {
+  const overrides = readOverrides(objectId);
+  const decisions: FieldVisibilityDecision[] = [];
+  // decidedAt comes from durable state, never from the wall clock, so the
+  // decisions digest is replay-deterministic. The addressVisibilityAssertion
+  // carries the OwnerAssertion contract (with a durable `at` timestamp).
+  const pref = overrides.addressVisibility;
+  if (pref === "hide" || pref === "show") {
+    decisions.push({
+      objectId,
+      field: "address",
+      policy: pref,
+      decidedBy: "owner",
+      decidedAt:
+        overrides.addressVisibilityAssertion?.at ?? overrides.updatedAt,
+      source: "owner_override",
+      version: 1,
+    });
+  }
+  // "default": no owner decision is emitted; the conservative default in
+  // resolveFieldVisibility (coarse for address-bearing fields) applies.
+  return decisions;
+}
+
+/**
+ * Resolve the owner visibility decisions for every object in a graph.
+ * Deterministic given the owner store state; order follows graph object order.
+ */
+export function decisionsForGraph(
+  graph: ObjectGraph,
+  siteId?: string,
+): FieldVisibilityDecision[] {
+  const decisions: FieldVisibilityDecision[] = [];
+  const seenLog = new Set<string>();
+  for (const obj of graph.objects) {
+    decisions.push(...objectDecisionsToFieldVisibility(obj.id));
+    seenLog.add(obj.id);
+  }
+  // Site-keyed owner log bridge (privacy P0, 2026-09-25): the owner-management
+  // routes key owner state by site id (G4: the object id IS the site id), not
+  // by graph object id. A site-level visibility decision (e.g. "hide the
+  // address") is semantically about the site's business object(s). Without
+  // this bridge the decision is durable in the owner log but invisible to
+  // the public projection boundary: the owner believes the address is
+  // hidden while the public API still serves it. Re-target site-keyed
+  // decisions onto every business-role object in the graph; the
+  // zero-disclosure traversal then cuts located_at and orphaned locations.
+  if (siteId && !seenLog.has(siteId)) {
+    const businessIds = graph.objects
+      .filter((o) => SCHEMA_ROLES.business.includes(o.schema))
+      .map((o) => o.id);
+    for (const d of objectDecisionsToFieldVisibility(siteId)) {
+      for (const targetId of businessIds) {
+        decisions.push({ ...d, objectId: targetId });
+      }
+    }
+  }
+  // SHOW propagation (Track B, 2026-09-25): an address SHOW decision on a
+  // business object must reach the address-bearing field, which lives on
+  // the related location object (located_at). The conservative default
+  // coarsens address-bearing fields, so without propagation a SHOW on the
+  // business would silently keep the public projection coarsened. HIDE
+  // needs no propagation: applyHideTraversal cuts located_at traversal.
+  const businessIdSet = new Set(
+    graph.objects
+      .filter((o) => SCHEMA_ROLES.business.includes(o.schema))
+      .map((o) => o.id),
+  );
+  for (const d of decisions.filter(
+    (x) => x.policy === "show" && x.field === "address",
+  )) {
+    if (!businessIdSet.has(d.objectId)) continue;
+    for (const r of graph.relationships) {
+      if (
+        r.subject === d.objectId &&
+        r.predicate === "located_at" &&
+        r.status === "active"
+      ) {
+        decisions.push({ ...d, objectId: r.object });
+      }
+    }
+  }
+  // VALUE-LEVEL HIDE (Item 8, O2): for hide decisions on address-family
+  // fields, capture the hidden values from the graph at decision time.
+  // applyFieldVisibility suppresses the identical normalized string
+  // wherever it appears, so a duplicated fact cannot defeat the hide.
+  const byId = new Map(graph.objects.map((o) => [o.id, o]));
+  for (const d of decisions) {
+    if (d.policy !== "hide" || !isAddressFamilyField(d.field)) continue;
+    const obj = byId.get(d.objectId);
+    if (!obj) continue;
+    const vals: string[] = [];
+    for (const [key, value] of Object.entries(obj.fields)) {
+      if (!isAddressFamilyField(key)) continue;
+      const elems = Array.isArray(value) ? value : [value];
+      for (const v of elems) {
+        if (typeof v === "string" && v.trim()) vals.push(normalizeHiddenValue(v));
+      }
+    }
+    if (vals.length > 0) d.hiddenValues = [...new Set(vals)];
+  }
+  return decisions;
+}
+
+/**
+ * Run one verified projection. Pure with respect to its inputs (the only
+ * I/O is node:crypto hashing); the caller supplies the source-verified
+ * graph and the resolved owner decisions.
+ *
+ * The input graph is never mutated: the transform chain works on a
+ * structured clone.
+ */
+export function verifyPublicProjection(
+  graph: ObjectGraph,
+  decisions: FieldVisibilityDecision[],
+  viewerKind: PublicViewerKind,
+): VerifiedPublicProjection {
+  const graphDigest = sha256Hex(canonicalize(graph));
+  // OwnerOverrides are a SET: the decisions digest must not depend on
+  // caller input order. Sort canonically before hashing (explicit
+  // tie-breaker, same discipline as render-model.canonicalizeOverrides)
+  // so [A, B] and [B, A] produce the same decisionsDigest, checkpoint,
+  // and viewerPolicyDigest. This is an identity function of the decision
+  // set, not of the application order.
+  const policySubset = decisions
+    .map((d) => ({
+      objectId: d.objectId,
+      field: d.field,
+      policy: d.policy,
+      version: d.version,
+    }))
+    .sort((a, b) =>
+      a.objectId !== b.objectId
+        ? a.objectId < b.objectId
+          ? -1
+          : 1
+        : a.field !== b.field
+          ? a.field < b.field
+            ? -1
+            : 1
+          : a.policy !== b.policy
+            ? a.policy < b.policy
+              ? -1
+              : 1
+            : a.version - b.version,
+    );
+  const decisionsDigest = sha256Hex(canonicalize(policySubset));
+  const capabilities =
+    viewerKind === "owner" ? [...OWNER_CAPABILITIES] : [...ANONYMOUS_CAPABILITIES];
+  const viewerPolicyDigest = sha256Hex(
+    canonicalize({
+      viewerKind,
+      boundaryVersion: PUBLIC_PROJECTION_VERSION,
+      decisionsDigest,
+      capabilities,
+    }),
+  );
+
+  let projected: ObjectGraph;
+  if (viewerKind === "anonymous") {
+    const source = structuredClone(graph);
+    const afterFields = applyFieldVisibility(source, decisions);
+    const afterTraversal = applyHideTraversal(afterFields, decisions);
+    const visibleIds = new Set(
+      afterTraversal.objects.filter((o) => o.visibility === "public").map((o) => o.id),
+    );
+    projected = {
+      objects: afterTraversal.objects.filter((o) => visibleIds.has(o.id)),
+      relationships: afterTraversal.relationships.filter(
+        (r) => r.status === "active" && visibleIds.has(r.subject) && visibleIds.has(r.object),
+      ),
+    };
+  } else {
+    // Owner-authorized: full visibility so the owner can manage hidden
+    // fields/objects. Still branded, still receipted, still auditable.
+    projected = structuredClone(graph);
+  }
+
+  return {
+    kind: PUBLIC_PROJECTION_VERSION,
+    graph: projected,
+    decisions,
+    provenance: {
+      boundaryVersion: PUBLIC_PROJECTION_VERSION,
+      viewerKind,
+      graphDigest,
+      decisionsDigest,
+      viewerPolicyDigest,
+      checkpoint: `${graphDigest}:${decisionsDigest}`,
+      capabilities,
+      projectedAt: new Date().toISOString(),
+    },
+  };
+}
+

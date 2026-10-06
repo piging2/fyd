@@ -39,7 +39,7 @@
  * means.
  */
 
-import { createHash } from "node:crypto";
+import { sha256Hex } from "@/lib/ping/digest";
 import { canonicalize } from "@/lib/ping/ask-composer";
 import {
   getPingObjectReader,
@@ -54,6 +54,7 @@ import type {
 } from "@/fyd/customize/types";
 import { HAPPY_PLACE_GRAPH } from "@/fyd/proceduralize/__fixtures__/happy-place-graph";
 import { COPPERSMITH_GRAPH } from "@/fyd/proceduralize/__fixtures__/coppersmith-graph";
+import { PING_FYD_GRAPH } from "@/fyd/proceduralize/__fixtures__/ping-fyd-graph";
 
 /** Typed failure for the tenant graph seam. The ask lane maps every code to projection_unavailable. */
 export class FydTenantGraphError extends Error {
@@ -115,6 +116,42 @@ const FYD_TENANT_PINS = {
     generatedAt: "2026-09-21T12:01:10.844Z",
     eventSequences: null,
   },
+  /**
+   * PING Social (the dogfood tenant): the owner-asserted knowledge base the
+   * PING-side dump recorded 2026-09-21, pinned here as a fixture exactly as
+   * happy-place and coppersmith-plumbing are pinned. The digest below is
+   * sha256 over the repo-canonical JSON of the fixture base; it matches the
+   * dump's recorded graphDigest (bd56fbed...2d982ec1562), so the pin locks
+   * the same base the dump verified.
+   *
+   * OVERLAY STORY (explicit decision): eventSequences is null and no
+   * overlay event ids are baked in - the dump recorded overlayEventIds: []
+   * and no journal window for this tenant. Journal overlays for ping-fyd
+   * still flow through the governed PingObjectReader on every read (same
+   * seam as every tenant); they compose above the pinned base and are
+   * never part of base verification. presentationIntent is null when the
+   * journal adds none.
+   *
+   * Epistemic honesty: this base is owner-asserted only (hand-authored,
+   * stale since 2026-09-21; all four service objects carry empty fields).
+   * Ask FYD answers from it with USER_OVERRIDE-ranked owner assertions and
+   * refuses what is not there (UNSUPPORTED). Improving knowledge quality
+   * belongs at the PING source, never inside this pin.
+   *
+   * DUPLICATION DEBT (recorded, not solved): build and ask resolve
+   * site existence through different authorities (the builder's
+   * getPingObjectGraph reads the dump.py projection on disk; this seam
+   * deliberately never does). Wiring the disk projection into getSiteBundle
+   * was explicitly rejected: it would break this seam's closed-read
+   * convergence boundary (no FYD_PROJECTION_DIR, no fs reads).
+   */
+  "ping-fyd": {
+    graph: PING_FYD_GRAPH,
+    baseDigest:
+      "bd56fbed1e7ed91729e6671d5e1d9b94560fb7dff800dbc6d40322d982ec1562",
+    generatedAt: "2026-09-21T00:00:00.000Z",
+    eventSequences: null,
+  },
 } as const;
 
 export type FydTenantId = keyof typeof FYD_TENANT_PINS;
@@ -124,9 +161,6 @@ export function getFydTenantIds(): string[] {
   return Object.keys(FYD_TENANT_PINS);
 }
 
-function sha256Hex(s: string): string {
-  return createHash("sha256").update(s, "utf8").digest("hex");
-}
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -231,7 +265,7 @@ function buildPresentationIntentBlock(
  * closed): a tenant graph with partially applied corrections is never
  * served.
  */
-function applyTenantOverlays(
+export function applyTenantOverlays(
   graph: ObjectGraph,
   overlays: FydJournalOverlay[],
 ): { eventIds: string[]; directives: PresentationIntentDirective[] } {
@@ -351,9 +385,12 @@ function applyTenantOverlays(
               eventId: eid,
             },
           };
+          // Journal-event order invariant (mirrors dump.py): a re-approved
+          // intent moves to the end, so the newest journal event wins in the
+          // apply layer (which consumes the list in order, last wins).
           const idx = directives.findIndex((d) => d.intentId === intentId);
-          if (idx >= 0) directives[idx] = directive;
-          else directives.push(directive);
+          if (idx >= 0) directives.splice(idx, 1);
+          directives.push(directive);
           break;
         }
         case "clear_presentation_intent": {

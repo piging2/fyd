@@ -2,10 +2,12 @@
  * The site planner: semantic determinism, the confidence law, owner-intent
  * honoring, eligibility filtering, and manifest walks.
  */
-import { planSite, SITE_PLANNER_VERSION } from "../planner";
+import { planSite, resolveQueryObjects, SITE_PLANNER_VERSION } from "../planner";
 import { COPPERSMITH_VECTOR, PING_DOGFOOD_VECTOR } from "../dimensions";
-import { knowledgeGraph, tradeGraph } from "./fixtures";
+import { knowledgeGraph, makeObject, makeRelationship, tradeGraph } from "./fixtures";
 import { validateSiteSpec } from "../../sitespec/validator";
+import { diffSiteSpecs } from "../structural-diff";
+import type { ObjectGraph } from "../../sitespec/types";
 
 const CTX = { tenantId: "trade-tenant" };
 const STAMP_A = "2026-09-21T12:00:00.000Z";
@@ -64,14 +66,21 @@ describe("planSite", () => {
     expect(rail.query.kind).toBe("related");
     if (rail.query.kind === "related") {
       expect(rail.query.from).toBe("biz-trade");
-      // Deterministic predicate set in canonical role order
-      // (service, product, person, post, article vocabularies).
+      // Direction-agnostic predicate vocabulary in canonical role order
+      // (service, product, person, post, article): forward predicates
+      // first, then their inverses. The section query carries the whole
+      // vocabulary so the planner binds members on either edge direction.
       expect(rail.query.predicates).toEqual([
         "provides",
         "offers",
+        "provided_by",
         "employs",
         "has_member",
+        "has_employee",
+        "works_for",
+        "member_of",
         "publishes",
+        "published_by",
       ]);
       expect(rail.query.schemas).toEqual(
         expect.arrayContaining(["ping.social.service@1"]),
@@ -183,5 +192,116 @@ describe("planSite", () => {
     } catch (err) {
       expect((err as { code?: string }).code).toBe("TENANT_CONTEXT_MISSING");
     }
+  });
+});
+
+describe("relationship-driven composition", () => {
+  /**
+   * Minimal owner + person. The person joins the team ONLY through a
+   * works_for edge (person -> business), the direction website-ingested
+   * graphs actually record. The owner has no description, so the about
+   * page can exist only when the team exists.
+   */
+  function teamGraph(withTeam: boolean): ObjectGraph {
+    const owner = makeObject("biz-team", "ping.social.business@1", {
+      title: "Solo Electric",
+      description: "",
+    });
+    const tech = makeObject("person-sam", "ping.social.person@1", {
+      title: "Sam Torres",
+      fields: { name: "Sam Torres" },
+    });
+    const relationships = withTeam
+      ? [makeRelationship("rel-team", "person-sam", "works_for", "biz-team")]
+      : [];
+    return { objects: [owner, tech], relationships };
+  }
+
+  function plan(graph: ObjectGraph) {
+    return planSite({ ctx: CTX, graph, vector: COPPERSMITH_VECTOR, generatedAt: STAMP_A });
+  }
+
+  test("works_for (person -> business) selects a People section and binds the person", () => {
+    const graph = teamGraph(true);
+    const planned = plan(graph);
+    const home = planned.spec.pages.find((page) => page.slug === "home")!;
+    const people = home.sections.find((section) => section.component === "People");
+    expect(people).toBeDefined();
+    // The section's query resolves the person THROUGH the works_for edge:
+    // the relationship drives composition, not the object's mere presence.
+    const bound = resolveQueryObjects(graph, people!.query, "biz-team").map((o) => o.id);
+    expect(bound).toEqual(["person-sam"]);
+    expect(planned.eligibility.eligible["People"]).toBe(true);
+    // The about page exists only because the team exists: a relationship
+    // selects a page, hence a navigation entry.
+    const about = planned.spec.pages.find((page) => page.slug === "about");
+    expect(about).toBeDefined();
+    expect(about!.sections.map((section) => section.component)).toEqual(["People"]);
+    expect(planned.spec.navigation.map((n) => n.pageSlug)).toContain("about");
+    // The ObjectRail doorway features the person too.
+    expect(home.sections.map((section) => section.component)).toContain("ObjectRail");
+  });
+
+  test("the same person object with no relationship selects no People section", () => {
+    const graph = teamGraph(false);
+    const planned = plan(graph);
+    const components = planned.spec.pages.flatMap((page) =>
+      page.sections.map((section) => section.component),
+    );
+    expect(components).not.toContain("People");
+    // No team: the about page has nothing to say, so it (and its nav
+    // entry) does not exist.
+    expect(planned.spec.pages.map((page) => page.slug)).not.toContain("about");
+    expect(planned.spec.navigation.map((n) => n.pageSlug)).not.toContain("about");
+    expect(planned.eligibility.eligible["People"]).toBe(false);
+  });
+
+  test("inverse predicates bind symmetrically: employs forward == works_for backward", () => {
+    const forward = teamGraph(false);
+    forward.relationships = [makeRelationship("rel-team", "biz-team", "employs", "person-sam")];
+    const withWorksFor = plan(teamGraph(true));
+    const withEmploys = plan(forward);
+    // Same team, same sections, same order: edge direction is invisible
+    // to composition.
+    const comps = (spec: typeof withWorksFor.spec) =>
+      spec.pages.map((page) => page.slug + ":" + page.sections.map((s) => s.component).join(","));
+    expect(comps(withEmploys.spec)).toEqual(comps(withWorksFor.spec));
+    expect(withEmploys.semanticDigest).toBe(withWorksFor.semanticDigest);
+  });
+
+  test("graphs with and without works_for are structurally different, deterministically", () => {
+    const runs = [0, 1, 2].map(() => ({
+      withTeam: plan(teamGraph(true)),
+      withoutTeam: plan(teamGraph(false)),
+    }));
+    // Determinism across repeated runs: byte-identical canonical specs.
+    for (const run of runs.slice(1)) {
+      expect(run.withTeam.canonicalSpecJson).toBe(runs[0].withTeam.canonicalSpecJson);
+      expect(run.withoutTeam.canonicalSpecJson).toBe(runs[0].withoutTeam.canonicalSpecJson);
+      expect(run.withTeam.semanticDigest).toBe(runs[0].withTeam.semanticDigest);
+      expect(run.withoutTeam.semanticDigest).toBe(runs[0].withoutTeam.semanticDigest);
+    }
+    // Structural difference: different section sets AND different page sets.
+    const withHome = runs[0].withTeam.spec.pages.find((page) => page.slug === "home")!;
+    const withoutHome = runs[0].withoutTeam.spec.pages.find((page) => page.slug === "home")!;
+    const withComps = withHome.sections.map((s) => s.component);
+    const withoutComps = withoutHome.sections.map((s) => s.component);
+    expect(withComps).toContain("People");
+    expect(withComps).toContain("ObjectRail");
+    expect(withoutComps).not.toContain("People");
+    expect(withoutComps).not.toContain("ObjectRail");
+    expect(withComps).not.toEqual(withoutComps);
+    expect(runs[0].withTeam.semanticDigest).not.toBe(runs[0].withoutTeam.semanticDigest);
+    // The shipped structural diff agrees: materially different.
+    const diff = diffSiteSpecs(runs[0].withTeam.spec, runs[0].withoutTeam.spec, {
+      tenantA: "team",
+      tenantB: "no-team",
+      digestA: runs[0].withTeam.semanticDigest,
+      digestB: runs[0].withoutTeam.semanticDigest,
+      plannerVersion: SITE_PLANNER_VERSION,
+    });
+    expect(diff.materiallyDifferent).toBe(true);
+    expect(diff.pagesOnlyInA).toContain("about");
+    expect(diff.materialReasons).toContain("different page sets");
   });
 });

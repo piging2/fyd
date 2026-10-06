@@ -12,7 +12,11 @@
  * - Only active relationships whose subject and object are both public.
  * - Owner field-visibility decisions apply first (conservative defaults when
  *   the owner has not decided): an address-bearing field is coarsened, never
- *   leaked verbatim.
+ *   leaked verbatim. A HIDE on a semantic address fact yields zero
+ *   disclosure, including via graph traversal (FYD-Q2).
+ * - Declared unresolved field conflicts suppress the contested value; the
+ *   answer describes the field as being verified, never selecting a
+ *   disputed value (FYD-Q1).
  * - The viewer is anonymous ({ id: null }) with no grants: no proposal,
  *   draft, or mutation capability exists in this pipeline.
  * - mode "owner" is accepted for a future authenticated lane, but until that
@@ -25,19 +29,38 @@
  * verified is the same honest unknown (projection_unavailable), never an
  * exception-shaped hole.
  *
- * 3-class contract (Ask FYD answer classes): every citation carries a
- * claimClass ("supported" | "derived") and the route layer reduces the
- * answer to "supported" | "derived" | "unknown" (unknown = refusal, no cited
- * evidence). DERIVED_FACT, INFERENCE, and GENERATED_COPY claims are always
- * labeled "derived": generated presentation must never introduce an
- * unsupported factual predicate as a plain fact.
+ * 5-class contract (Ask FYD support classes): every citation carries a
+ * claimClass ("SUPPORTED DIRECTLY" | "DERIVED" | "CONFLICTED") and the route
+ * layer reduces the answer to exactly one of
+ * "SUPPORTED DIRECTLY" | "SUPPORTED BY MULTIPLE EVIDENCE" | "DERIVED" |
+ * "CONFLICTED" | "UNSUPPORTED". "SUPPORTED BY MULTIPLE EVIDENCE" requires at
+ * least two distinct SUPPORTED DIRECTLY citations standing behind the SAME
+ * claim (multiple evidence references for one claim), not merely several
+ * unrelated facts in the answer. A conflict observation cite is always
+ * "CONFLICTED": the answer surfaces the disagreement instead of selecting a
+ * disputed value. "UNSUPPORTED" = refusal, no cited evidence.
+ * DERIVED_FACT, INFERENCE, and GENERATED_COPY claims are always labeled
+ * "DERIVED": generated presentation must never introduce an unsupported
+ * factual predicate as a plain fact.
+ *
+ * Coarse states (both layers): the five support classes feed exactly three
+ * coarse answer states: KNOWN (SUPPORTED DIRECTLY, SUPPORTED BY MULTIPLE
+ * EVIDENCE, DERIVED), CONFLICTED (CONFLICTED), UNKNOWN (UNSUPPORTED).
+ * answerStateFor is the only mapping; both layers are always present on the
+ * response.
  */
 import { createHash } from "node:crypto";
 import type { SiteBundle } from "../media/site-bundle";
 import { buildAskFydContext } from "./context-builder";
 import { composeAskFyd } from "./answer";
-import { canonicalize } from "../../lib/ping/ask-composer";
-import { applyFieldVisibility } from "../sitespec/field-visibility";
+import { canonicalize, stripInternalIds } from "../../lib/ping/ask-composer";
+import { type FieldVisibilityDecision } from "../sitespec/field-visibility";
+import { projectAskContextForViewer } from "./context-projection";
+import {
+  type AskFieldConflict,
+  isUnresolvedConflict,
+  parseConflictObservationRefId,
+} from "./field-conflicts";
 import { resolveQuery } from "../components/renderer";
 import { selectRelatedCircles } from "../object/related";
 import type { SiteSpecSummary } from "./site-spec";
@@ -49,28 +72,73 @@ import type {
   PingObject,
   PingRelationship,
 } from "../../lib/ping/types";
+/** Re-exported for the route layer's 5-class reduction (ask-pipeline). */
+export type { AskClaimClassification };
 import type { FYDSiteSpec, FYDPage, ObjectGraph } from "../sitespec/types";
 
 export type AskFydMode = "visitor" | "owner";
 
 /**
- * Per-citation epistemic class for the Ask FYD 3-class contract.
- * - "supported": the claim is backed by cited evidence from the site data:
- *   a recorded fact, a recorded relationship, an owner-set value,
+ * Per-citation epistemic class for the Ask FYD 5-class contract.
+ * - "SUPPORTED DIRECTLY": the claim is backed by cited evidence from the
+ *   site data: a recorded fact, a recorded relationship, an owner-set value,
  *   owner-authored content, or the site's own statement, each attributed
  *   to its source in the citation.
- * - "derived": the claim was derived, inferred, or generated from site
+ * - "DERIVED": the claim was derived, inferred, or generated from site
  *   data (DERIVED_FACT, INFERENCE, GENERATED_COPY). Always labeled as
  *   such; never presented as a verified fact.
+ * - "CONFLICTED": the citation evidences a source disagreement (a conflict
+ *   observation). The answer surfaces the disagreement; the disputed value
+ *   is never selected.
  */
-export type AskClaimClass = "supported" | "derived";
+export type AskClaimClass = "SUPPORTED DIRECTLY" | "DERIVED" | "CONFLICTED";
 
 /**
- * Map an AskClaimClassification classification string onto the 3-class
- * contract. Unrecognized or missing classifications land on "supported"
- * because the citation still names real evidence (the basis text stays
- * neutral, "Site record"); only derivation/inference/generation land on
- * "derived".
+ * Answer-level support class: exactly one of the five locked values.
+ * - "SUPPORTED DIRECTLY": one direct citation stands behind the answer.
+ * - "SUPPORTED BY MULTIPLE EVIDENCE": at least two distinct SUPPORTED
+ *   DIRECTLY citations stand behind the SAME claim. Not merely several
+ *   unrelated facts in one answer.
+ * - "DERIVED": any cited claim is derived/inferred/generated.
+ * - "CONFLICTED": any cited claim evidences a source disagreement.
+ * - "UNSUPPORTED": no cited evidence (refusal). The answer is honest
+ *   unknown; it never fills the gap from model priors.
+ */
+export type AskAnswerClass =
+  | "SUPPORTED DIRECTLY"
+  | "SUPPORTED BY MULTIPLE EVIDENCE"
+  | "DERIVED"
+  | "CONFLICTED"
+  | "UNSUPPORTED";
+
+/**
+ * Coarse answer state, fed by the five support classes (both layers).
+ * KNOWN = SUPPORTED DIRECTLY | SUPPORTED BY MULTIPLE EVIDENCE | DERIVED;
+ * CONFLICTED = CONFLICTED; UNKNOWN = UNSUPPORTED. Both layers are always
+ * present on the response; neither may be inferred from the other by a
+ * consumer guessing.
+ */
+export type AskAnswerState = "KNOWN" | "CONFLICTED" | "UNKNOWN";
+
+/** The only mapping from fine support class to coarse state. */
+export function answerStateFor(answerClass: AskAnswerClass): AskAnswerState {
+  switch (answerClass) {
+    case "CONFLICTED":
+      return "CONFLICTED";
+    case "UNSUPPORTED":
+      return "UNKNOWN";
+    default:
+      return "KNOWN";
+  }
+}
+
+/**
+ * Map an AskClaimClassification classification string onto the 5-class
+ * contract. Unrecognized or missing classifications land on
+ * "SUPPORTED DIRECTLY" because the citation still names real evidence (the
+ * basis text stays neutral, "Site record"); only derivation/inference/
+ * generation land on "DERIVED", and only an explicit conflict
+ * classification lands on "CONFLICTED".
  */
 export function claimClassFor(classification: string | undefined): AskClaimClass {
   switch (classification) {
@@ -78,15 +146,98 @@ export function claimClassFor(classification: string | undefined): AskClaimClass
     case "derived":
     case "INFERENCE":
     case "GENERATED_COPY":
-      return "derived";
+      return "DERIVED";
+    case "CONFLICT":
+    case "conflict":
+      return "CONFLICTED";
     case "DEMO_SYNTHETIC":
       // Demo-operator content is evidence-backed (the journal event
       // that added it) and its source is labeled in the citation:
-      // "supported" with honest attribution, never a recorded fact.
-      return "supported";
+      // "SUPPORTED DIRECTLY" with honest attribution, never a recorded fact.
+      return "SUPPORTED DIRECTLY";
     default:
-      return "supported";
+      return "SUPPORTED DIRECTLY";
   }
+}
+
+/**
+ * PROD-9: answer-class polarity for Ask FYD responses. Distinct from the
+ * 5-class support contract (answerClass/answerState), which describes the
+ * EVIDENCE standing behind the answer: polarity describes what the answer
+ * IS, so the UI can render it unambiguously.
+ * - "ANSWER": a normal answer (cited, derived, or conflicted).
+ * - "DENIAL": the pipeline refused: out of scope, no evidence, or no
+ *   authority. Refusal language is direct, never evasive.
+ * - "PREMISE_REJECTED": the question assumed something false and the
+ *   answer states the corrected premise (e.g. "this business does not
+ *   offer emergency service", "there is no owner or staff information on
+ *   record"). Never a bare "I don't know".
+ */
+export type AskResponseClass = "ANSWER" | "DENIAL" | "PREMISE_REJECTED";
+
+/**
+ * PROD-9: refusal texts whose premise the composer corrects outright.
+ * Each fragment is a verbatim substring of a composer/site-patch refusal
+ * that states the corrected premise instead of merely not knowing. A
+ * refusal carrying one is PREMISE_REJECTED, not a bare denial.
+ */
+const PREMISE_CORRECTING_REFUSAL_FRAGMENTS = [
+  "there is no owner or staff information on record", // people branch
+  "could not find a service matching", // site-patch reorder: named service not offered
+  "is already first, so there is nothing to change", // site-patch reorder no-op
+  "site spec has no sections", // site-patch: nothing to reorder
+];
+
+/**
+ * PROD-9: question-named facets whose absence the composer states as an
+ * explicit corrected premise (INFERENCE absence claims), not as
+ * "I don't know". The claim fragment is matched against the served claim
+ * label; the question must name the facet for the question's premise to
+ * be about it.
+ */
+const PREMISE_FACETS: { words: string[]; claimFragment: string }[] = [
+  { words: ["emergency"], claimFragment: "does not offer emergency service" },
+];
+
+function hasWordLower(haystack: string, word: string): boolean {
+  return new RegExp("\\b" + word + "\\b").test(haystack);
+}
+
+/**
+ * PROD-9: reduce one served answer to its polarity. Deterministic and
+ * surface-only: it classifies what the pipeline already produced, never
+ * changing the answer. Refusals default to DENIAL; a refusal whose text
+ * states the corrected premise is PREMISE_REJECTED. A non-refusal answer
+ * whose claims correct the question's premise (a DERIVED absence claim
+ * about a question-named facet) is PREMISE_REJECTED; everything else is
+ * ANSWER.
+ */
+export function responseClassFor(args: {
+  refusal: boolean;
+  question: string;
+  answer: string;
+  claimClassifications: AskClaimClassification[];
+}): AskResponseClass {
+  const { refusal, question, answer, claimClassifications } = args;
+  const answerLower = answer.toLowerCase();
+  if (refusal) {
+    const correctsPremise = PREMISE_CORRECTING_REFUSAL_FRAGMENTS.some((f) =>
+      answerLower.includes(f),
+    );
+    return correctsPremise ? "PREMISE_REJECTED" : "DENIAL";
+  }
+  const questionLower = question.toLowerCase();
+  for (const facet of PREMISE_FACETS) {
+    const namesFacet = facet.words.some((w) => hasWordLower(questionLower, w));
+    if (!namesFacet) continue;
+    const corrects = claimClassifications.some(
+      (cc) =>
+        claimClassFor(cc.classification) === "DERIVED" &&
+        cc.claim.toLowerCase().includes(facet.claimFragment),
+    );
+    if (corrects) return "PREMISE_REJECTED";
+  }
+  return "ANSWER";
 }
 
 export interface AnswerAskFydInput {
@@ -104,6 +255,18 @@ export interface AnswerAskFydInput {
   objectId?: string;
   question: string;
   mode: AskFydMode;
+  /**
+   * Declared unresolved field conflicts (FYD-Q1). The public projection
+   * suppresses the contested value; the answer describes the field as
+   * being verified. Defaults to none.
+   */
+  fieldConflicts?: AskFieldConflict[];
+  /**
+   * Owner field-visibility decisions (FYD-Q2). A HIDE on a semantic fact
+   * yields zero disclosure in public answers, including via graph
+   * traversal. Defaults to conservative defaults only.
+   */
+  fieldVisibilityDecisions?: FieldVisibilityDecision[];
 }
 
 /** Injectable seam so tests can supply a synthetic bundle. Defaults to the real loader. */
@@ -121,24 +284,96 @@ export interface AskFydCitation {
   /** Evidence ref id, carried for debugging only; the widget shows label. */
   id: string;
   label: string;
+  /** The kind of evidence behind the citation (field / object / relationship). */
+  kind: "field" | "object" | "relationship";
   source: string;
   basis: string;
   lastChecked: string | null;
-  /** 3-class label: "supported" (cited evidence) or "derived" (derived / inferred / generated, explicitly labeled). */
+  /** 5-class label: "SUPPORTED DIRECTLY" (cited evidence), "DERIVED" (derived / inferred / generated, explicitly labeled), "CONFLICTED" (cites a source disagreement). */
   claimClass: AskClaimClass;
+}
+
+/** Structured object reference behind an Ask FYD answer (top-level). */
+export interface AskFydObjectRef {
+  objectId: string;
+  label: string;
+  claimClass: AskClaimClass;
+}
+
+/** Structured evidence reference behind an Ask FYD answer (top-level). */
+export interface AskFydEvidenceRef {
+  n: number;
+  id: string;
+  label: string;
+  kind: "field" | "object" | "relationship";
+  claimClass: AskClaimClass;
+}
+
+/** Structured source reference behind an Ask FYD answer (top-level). */
+export interface AskFydSourceRef {
+  source: string;
+  lastChecked: string | null;
+}
+
+/**
+ * Build the structured top-level refs from the visitor citations. Object
+ * refs are the distinct cited objects only (relationship/field cites name
+ * their own evidence, never an invented object attribution); source refs
+ * are the distinct sources. All derivation is deterministic and
+ * citation-backed.
+ */
+function buildAnswerRefs(citations: AskFydCitation[]): {
+  objectRefs: AskFydObjectRef[];
+  evidenceRefs: AskFydEvidenceRef[];
+  sourceRefs: AskFydSourceRef[];
+} {
+  const evidenceRefs = citations.map((c) => ({
+    n: c.n,
+    id: c.id,
+    label: c.label,
+    kind: c.kind,
+    claimClass: c.claimClass,
+  }));
+  const seenObjects = new Map<string, AskFydObjectRef>();
+  for (const c of citations) {
+    if (c.kind === "object" && !seenObjects.has(c.id)) {
+      seenObjects.set(c.id, { objectId: c.id, label: c.label, claimClass: c.claimClass });
+    }
+  }
+  const seenSources = new Map<string, AskFydSourceRef>();
+  for (const c of citations) {
+    if (!seenSources.has(c.source)) {
+      seenSources.set(c.source, { source: c.source, lastChecked: c.lastChecked });
+    }
+  }
+  return {
+    objectRefs: [...seenObjects.values()],
+    evidenceRefs,
+    sourceRefs: [...seenSources.values()],
+  };
 }
 
 export interface AskFydSuccess {
   ok: true;
   answer: string;
   refusal: boolean;
+  /** PROD-9: answer-class polarity for the UI: ANSWER | DENIAL | PREMISE_REJECTED. */
+  responseClass: AskResponseClass;
   citations: AskFydCitation[];
+  /** Distinct objects cited by the answer (never invented attributions). */
+  objectRefs: AskFydObjectRef[];
+  /** Evidence refs behind the answer, in citation order. */
+  evidenceRefs: AskFydEvidenceRef[];
+  /** Distinct sources cited by the answer. */
+  sourceRefs: AskFydSourceRef[];
   /** What the question asked about that has no supporting evidence. */
   unknowns: string[];
   /** Internal name for the available actions the viewer may take. */
   suggestedActions: PlannedAction[];
   /** Draft only; null when the answer proposes nothing. */
   proposal: AskProposal | null;
+  /** Claim groupings: which evidence refs support the same claim. */
+  claimClassifications: AskClaimClassification[];
 }
 
 export type AskFydErrorKind =
@@ -176,18 +411,41 @@ const DEFAULT_DEPS: AnswerAskFydDeps = {
 const MAX_QUESTION_CHARS = 2000;
 
 /**
- * Project a bundle graph to what a visitor may see: owner field-visibility
- * decisions first (conservative defaults), then only public objects and only
- * active relationships whose subject and object are both public.
+ * Project a bundle graph to what the Ask FYD model may receive for this
+ * request's viewer. FYD-010: exactly one projection implementation
+ * lives in ./context-projection.ts; this is a thin wrapper. The Ask
+ * pipeline serves an anonymous, unverified viewer, so the viewer class
+ * is always "visitor" here. The same projection also guards
+ * buildAskFydContext's other caller (the lineage tracer). The input
+ * graph is never mutated.
  */
-function publicGraphOf(graph: ObjectGraph): ObjectGraph {
-  const projected = applyFieldVisibility(graph, []);
-  const publicObjects = projected.objects.filter((o) => o.visibility === "public");
-  const publicIds = new Set(publicObjects.map((o) => o.id));
-  const publicRelationships = projected.relationships.filter(
-    (r) => r.status === "active" && publicIds.has(r.subject) && publicIds.has(r.object),
-  );
-  return { objects: publicObjects, relationships: publicRelationships };
+function publicGraphOf(
+  graph: ObjectGraph,
+  decisions: FieldVisibilityDecision[],
+  conflicts: AskFieldConflict[],
+): ObjectGraph {
+  return projectAskContextForViewer(
+    graph,
+    { id: null, displayName: null, verified: false },
+    decisions,
+    conflicts,
+  ).graph;
+}
+
+/** Attribute one conflict observation to its provenance for the citation. */
+function conflictObservationSource(ref: { detail?: string }): {
+  source: string;
+  lastChecked: string | null;
+} {
+  const detail = ref.detail ?? "";
+  const lastChecked = /recorded (\d{4}-\d{2}-\d{2})/.exec(detail)?.[1] ?? null;
+  const url = /website-ingestion:(\S+)/.exec(detail)?.[1]?.replace(/[,.]+$/, "");
+  if (url) return { source: `The business website (${url})`, lastChecked };
+  if (detail.includes("provenance canonical-journal"))
+    return { source: "Site record (canonical journal)", lastChecked };
+  if (detail.includes("provenance owner-correction") || detail.includes("provenance owner-authored"))
+    return { source: "Owner correction", lastChecked };
+  return { source: "Site record", lastChecked };
 }
 
 /** Build the SiteSpecSummary the ask pipeline reasons under, from the public view. */
@@ -233,6 +491,20 @@ function visitorizeAnswer(text: string): string {
   );
 }
 
+/**
+ * PROD-4: id stripping is the canonical stripInternalIds in
+ * lib/ping/ask-composer, shared by the visitor pipeline and the
+ * PingObjectReader.ask path (PROD-3+4-REPAIR). It runs on EVERY
+ * user-facing text surface this pipeline returns (answer, citation labels,
+ * proposal notes, unknowns, error messages) before it leaves
+ * answerAskFyd. Structured debugging refs (citation ids,
+ * objectRefs[].objectId) are not text surfaces and stay intact for the
+ * Why-this panel.
+ */
+
+/** Label map for error paths: no bundle was loaded, so no id has a title. */
+const NO_ID_LABELS: ReadonlyMap<string, string> = new Map();
+
 function basisForClassification(classification: string): string {
   switch (classification) {
     case "DIRECT_FACT":
@@ -272,11 +544,19 @@ function citationFor(
   // Note: AskEvidenceRef.id IS the cited object/relationship id (there is no
   // separate objectId field on the ref).
   if (ref.kind === "field") {
-    // Field-level evidence: the ref itself is the provenance. Today the
-    // only producer of field refs is an owner field correction (the
-    // composer labels it as such), so the citation names the owner as the
-    // source instead of misattributing the value to the website.
-    source = "Owner correction";
+    if (parseConflictObservationRefId(ref.id) !== null) {
+      // FYD-Q1: a conflict observation. Both evidence chains survive in
+      // the Why-this surface; the disputed value is never embedded.
+      const parsed = conflictObservationSource(ref);
+      source = parsed.source;
+      lastChecked = parsed.lastChecked;
+    } else {
+      // Field-level evidence: the ref itself is the provenance. The other
+      // producer of field refs is an owner field correction (the composer
+      // labels it as such), so the citation names the owner as the source
+      // instead of misattributing the value to the website.
+      source = "Owner correction";
+    }
   } else if (ref.kind === "object") {
     const obj = objects.get(ref.id);
     const prov = obj?.provenance;
@@ -304,10 +584,16 @@ function citationFor(
     n,
     id: ref.id,
     label: ref.label,
+    kind: ref.kind,
     source,
     basis: classification ? basisForClassification(classification) : "Site record",
     lastChecked,
-    claimClass: claimClassFor(classification),
+    // A conflict-observation cite is always CONFLICTED: it evidences the
+    // disagreement, never a resolved value. Otherwise the 5-class mapping.
+    claimClass:
+      parseConflictObservationRefId(ref.id) !== null
+        ? "CONFLICTED"
+        : claimClassFor(classification),
   };
 }
 
@@ -381,7 +667,7 @@ export function answerAskFyd(
   if (input.mode !== "visitor" && input.mode !== "owner") {
     return {
       ok: false,
-      error: { kind: "bad_mode", message: "mode must be 'visitor' or 'owner'." },
+      error: { kind: "bad_mode", message: stripInternalIds("mode must be 'visitor' or 'owner'.", NO_ID_LABELS) },
     };
   }
   let bundle: SiteBundle | null;
@@ -399,29 +685,41 @@ export function answerAskFyd(
       ok: false,
       error: {
         kind: "projection_unavailable",
-        message:
+        message: stripInternalIds(
           "I could not load this site's data, so I cannot answer your question. The answer is unknown.",
+          NO_ID_LABELS,
+        ),
       },
     };
   }
   if (!bundle) {
-    return { ok: false, error: { kind: "unknown_site", message: "Unknown site." } };
+    return {
+      ok: false,
+      error: { kind: "unknown_site", message: stripInternalIds("Unknown site.", NO_ID_LABELS) },
+    };
   }
   const question = input.question.trim();
   if (question.length === 0) {
-    return { ok: false, error: { kind: "bad_question", message: "Ask a question first." } };
+    return { ok: false, error: { kind: "bad_question", message: stripInternalIds("Ask a question first.", NO_ID_LABELS) } };
   }
   if (question.length > MAX_QUESTION_CHARS) {
     return {
       ok: false,
       error: {
         kind: "bad_question",
-        message: "That question is too long. Please keep it under 2000 characters.",
+        message: stripInternalIds(
+          "That question is too long. Please keep it under 2000 characters.",
+          NO_ID_LABELS,
+        ),
       },
     };
   }
 
-  const publicGraph = publicGraphOf(bundle.graph);
+  const publicGraph = publicGraphOf(
+    bundle.graph,
+    input.fieldVisibilityDecisions ?? [],
+    (input.fieldConflicts ?? []).filter(isUnresolvedConflict),
+  );
   const requestedObjectId =
     typeof input.objectId === "string" ? input.objectId.trim() : "";
   // Object-scoped ask: the target is one object in THIS tenant's public
@@ -441,10 +739,16 @@ export function answerAskFyd(
       ok: false,
       error:
         requestedObjectId.length > 0
-          ? { kind: "unknown_object", message: "Unknown object for this site." }
+          ? {
+              kind: "unknown_object",
+              message: stripInternalIds("Unknown object for this site.", NO_ID_LABELS),
+            }
           // The bundle has no public business object to answer from: a
           // server problem, never something to paper over with a guess.
-          : { kind: "bundle_invalid", message: "This site is not available right now." },
+          : {
+              kind: "bundle_invalid",
+              message: stripInternalIds("This site is not available right now.", NO_ID_LABELS),
+            },
     };
   }
   const relatedObjects =
@@ -453,7 +757,10 @@ export function answerAskFyd(
       : publicGraph.objects.filter((o) => o.id !== target.id);
 
   const ctx = buildAskFydContext({
-    viewer: { id: null, displayName: null },
+    // The Ask route serves anonymous visitors: no verified identity
+    // exists on this path, so the viewer classifies as "visitor"
+    // (fail closed). Owner visibility decisions still apply.
+    viewer: { id: null, displayName: null, verified: false },
     target,
     relatedObjects,
     relationships: publicGraph.relationships,
@@ -461,9 +768,24 @@ export function answerAskFyd(
     grants: [],
     siteSpec: summarizeSpec(bundle, publicGraph),
     question,
+    fieldVisibilityDecisions: input.fieldVisibilityDecisions ?? [],
+    fieldConflicts: (input.fieldConflicts ?? []).filter(isUnresolvedConflict),
   });
   const ans = composeAskFyd(ctx, question);
-  const answer = visitorizeAnswer(ans.answer);
+  // PROD-4: id -> title map for the strip: known ids resolve to their
+  // object titles in user-facing text; anything unrecognized becomes
+  // "the site record". Titles are never ids here (displayTarget / the
+  // refusal path guarantee it), so the map cannot reintroduce one.
+  const idLabels = new Map<string, string>();
+  const titleOf = (o: { id: string; title: string }): void => {
+    const t = o.title.trim();
+    if (t.length > 0 && !idLabels.has(o.id)) idLabels.set(o.id, t);
+  };
+  titleOf(target);
+  for (const o of relatedObjects) titleOf(o);
+  // PROD-4: the strip runs on every user-facing text surface, on every
+  // answer path (direct answers, refusals, proposals, unknowns).
+  const answer = stripInternalIds(visitorizeAnswer(ans.answer), idLabels);
   const citations = buildCitations(
     answer,
     ans.evidenceRefs,
@@ -471,10 +793,31 @@ export function answerAskFyd(
     target,
     relatedObjects,
     publicGraph.relationships,
-  );
+  ).map((c) => ({ ...c, label: stripInternalIds(c.label, idLabels) }));
   // A refusal is an answer with no cited evidence: the pipeline had nothing
   // to stand on, so it says so instead of guessing.
   const refusal = ans.partial && citations.length === 0;
+  const refs = buildAnswerRefs(citations);
+  // Claim groupings for the 5-class reduction: which evidence refs
+  // support the same claim (SUPPORTED BY MULTIPLE EVIDENCE requires
+  // >=2 distinct direct refs behind ONE claim, not across claims).
+  // PROD-3+4-REPAIR-R2: claim labels are user-facing text, so raw ids
+  // in them are stripped like every other surface (a blank-title
+  // target used to leak "<id> business profile" here). Structured
+  // evidenceRefIds are not text and stay intact.
+  const claimClassifications = ans.claimClassifications.map((c) => ({
+    ...c,
+    claim: stripInternalIds(c.claim, idLabels),
+  }));
+  // PROD-9: answer-class polarity, computed on exactly what the visitor
+  // sees (stripped text and claim labels). Surface-only: classification
+  // never changes the answer.
+  const responseClass = responseClassFor({
+    refusal,
+    question,
+    answer,
+    claimClassifications,
+  });
   // The composer already computed unknowns, suggestedActions, and proposal
   // on the internal AskAnswer: surface them honestly, empty/null when
   // absent, never invented.
@@ -482,9 +825,16 @@ export function answerAskFyd(
     ok: true,
     answer,
     refusal,
+    responseClass,
     citations,
-    unknowns: ans.unknowns,
+    objectRefs: refs.objectRefs,
+    evidenceRefs: refs.evidenceRefs,
+    sourceRefs: refs.sourceRefs,
+    unknowns: ans.unknowns.map((u) => stripInternalIds(u, idLabels)),
     suggestedActions: ans.suggestedActions,
-    proposal: ans.proposal,
+    proposal: ans.proposal
+      ? { ...ans.proposal, note: stripInternalIds(ans.proposal.note, idLabels) }
+      : null,
+    claimClassifications,
   };
 }

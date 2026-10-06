@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+import { getVerifiedPublicProjection } from "@/fyd/data/ping-object-source";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -7,14 +7,13 @@ export const runtime = "nodejs";
 /**
  * GET /api/fyd/projection?siteId=<slug>
  *
- * Serves the RAW PING-backed projection for a demo site: the canonical
- * object graph plus the dump meta (base digest, overlay PING event ids,
- * graph digest), with NO owner overlay applied. This is the SOURCE SAYS X
- * endpoint: it shows what the source projection says, independent of any
- * owner correction. Compare with the ObjectView
- * (/api/fyd/objects/[objectId]) and the rendered pages, which show the
- * EFFECTIVE value (owner correction wins). This is the read seam between
- * PING state and the website.
+ * Serves the VERIFIED PUBLIC projection for a demo site (Q-C-01): the
+ * tenant object graph after the single public projection boundary
+ * (source verification, owner field corrections, owner visibility
+ * decisions, field visibility, traversal cuts, public-object filter),
+ * plus the versioned projection receipt as `contract`. This is the only
+ * projection any public consumer may read; the raw source graph is never
+ * served to anonymous callers.
  *
  * The projection is produced by the PING-side dump
  * (/home/nolan/ping/tools/fyd-site-projection/dump.py), never hand-authored.
@@ -29,10 +28,25 @@ export async function GET(request: Request): Promise<NextResponse> {
     );
   }
   try {
-    const { graph, meta } = await getPingObjectGraph(siteId, { ownerOverlay: false });
-    return NextResponse.json({ ok: true, siteId, meta, graph });
+    const verified = await getVerifiedPublicProjection(siteId, "anonymous");
+    const { provenance } = verified;
+    return NextResponse.json({
+      ok: true,
+      siteId,
+      contract: {
+        boundaryVersion: provenance.boundaryVersion,
+        viewerKind: provenance.viewerKind,
+        checkpoint: provenance.checkpoint,
+        graphDigest: provenance.graphDigest,
+        decisionsDigest: provenance.decisionsDigest,
+        viewerPolicyDigest: provenance.viewerPolicyDigest,
+        capabilities: provenance.capabilities,
+      },
+      graph: verified.graph,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Projection unavailable.";
     return NextResponse.json({ ok: false, error: message }, { status: 503 });
   }
 }
+

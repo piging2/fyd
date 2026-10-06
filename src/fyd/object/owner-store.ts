@@ -33,6 +33,7 @@ import {
   SERVICE_ORDER_TARGET,
   appendOwnerEvent,
   projectOwnerState,
+  serviceFieldTarget,
   serviceTarget,
   type OwnerEventActor,
   type OwnerEventDraft,
@@ -139,6 +140,12 @@ export function confirmationSourceDrifted(
 export interface ApplyCommandOpts {
   sourceValue?: string | null;
   actorLabel?: string;
+  /**
+   * Compare-and-swap pin for the approve path: the owner-log length the
+   * caller verified before its await points. The append refuses with
+   * OwnerLogConflictError if the log moved since. Unset = no check.
+   */
+  expectedLength?: number;
 }
 
 function demoActor(label?: string): OwnerEventActor {
@@ -321,82 +328,86 @@ export function applyOwnerCommand(
       break;
     }
     case "set-address-visibility": {
-      if (cmd.visibility !== "public" && cmd.visibility !== "hidden") {
-        throw new OwnerCommandError("Visibility must be public or hidden.");
+      // SHOW / HIDE / DEFAULT (FYD product authority directive, Nolan
+      // 2026-09-25). The preference is append-only: every transition is a
+      // new event; no history is rewritten and the source observation is
+      // never touched.
+      if (
+        cmd.visibility !== "show" &&
+        cmd.visibility !== "hide" &&
+        cmd.visibility !== "default"
+      ) {
+        throw new OwnerCommandError("Visibility must be show, hide, or default.");
       }
-      const hidden = current.addressVisibility === "hidden";
-      if (cmd.visibility === "hidden") {
-        if (hidden) {
-          draft = {
-            at,
-            objectId,
-            type: "owner.confirmed-fact",
-            actor,
-            target: ADDRESS_TARGET,
-            previousBasis: { visibility: "hidden" },
-            newValue: { visibility: "hidden" },
-            evidence: {
-              kind: "owner-attestation",
-              ref: "command:set-address-visibility",
-              detail: "address was already hidden; confirmed",
-            },
-            note: "The address is already hidden; confirmed.",
-            generator: "fyd-owner@1",
-          };
-        } else {
-          draft = {
-            at,
-            objectId,
-            type: "owner.hid-fact",
-            actor,
-            target: ADDRESS_TARGET,
-            previousBasis: { visibility: "public" },
-            newValue: { hidden: true },
-            evidence: {
-              kind: "owner-attestation",
-              ref: "command:set-address-visibility",
-              detail: "owner hid the street address",
-            },
-            note: "Hid the street address.",
-            generator: "fyd-owner@1",
-          };
-        }
+      const currentPref = current.addressVisibility;
+      if (cmd.visibility === currentPref) {
+        draft = {
+          at,
+          objectId,
+          type: "owner.confirmed-fact",
+          actor,
+          target: ADDRESS_TARGET,
+          previousBasis: { visibility: currentPref },
+          newValue: { visibility: currentPref },
+          evidence: {
+            kind: "owner-attestation",
+            ref: "command:set-address-visibility",
+            detail: "address visibility was already " + currentPref + "; confirmed",
+          },
+          note: "The address visibility is already " + currentPref + "; confirmed.",
+          generator: "fyd-owner@1",
+        };
+      } else if (cmd.visibility === "hide") {
+        draft = {
+          at,
+          objectId,
+          type: "owner.hid-fact",
+          actor,
+          target: ADDRESS_TARGET,
+          previousBasis: { visibility: currentPref },
+          newValue: { visibility: "hide" },
+          evidence: {
+            kind: "owner-attestation",
+            ref: "command:set-address-visibility",
+            detail: "owner hid the street address",
+          },
+          note: "Hid the street address.",
+          generator: "fyd-owner@1",
+        };
+      } else if (cmd.visibility === "show") {
+        draft = {
+          at,
+          objectId,
+          type: "owner.restored-fact",
+          actor,
+          target: ADDRESS_TARGET,
+          previousBasis: { visibility: currentPref },
+          newValue: { visibility: "show" },
+          evidence: {
+            kind: "owner-attestation",
+            ref: "command:set-address-visibility",
+            detail: "owner chose to show the full address verbatim",
+          },
+          note: "Show the full address.",
+          generator: "fyd-owner@1",
+        };
       } else {
-        if (!hidden) {
-          draft = {
-            at,
-            objectId,
-            type: "owner.confirmed-fact",
-            actor,
-            target: ADDRESS_TARGET,
-            previousBasis: { visibility: "public" },
-            newValue: { visibility: "public" },
-            evidence: {
-              kind: "owner-attestation",
-              ref: "command:set-address-visibility",
-              detail: "address was already public; confirmed",
-            },
-            note: "The address is already public; confirmed.",
-            generator: "fyd-owner@1",
-          };
-        } else {
-          draft = {
-            at,
-            objectId,
-            type: "owner.restored-fact",
-            actor,
-            target: ADDRESS_TARGET,
-            previousBasis: { hidden: true },
-            newValue: { hidden: false },
-            evidence: {
-              kind: "owner-attestation",
-              ref: "command:set-address-visibility",
-              detail: "owner made the address public again",
-            },
-            note: "Made the address public.",
-            generator: "fyd-owner@1",
-          };
-        }
+        draft = {
+          at,
+          objectId,
+          type: "owner.defaulted-fact",
+          actor,
+          target: ADDRESS_TARGET,
+          previousBasis: { visibility: currentPref },
+          newValue: { visibility: "default" },
+          evidence: {
+            kind: "owner-attestation",
+            ref: "command:set-address-visibility",
+            detail: "owner returned the address to the conservative default",
+          },
+          note: "Returned the address visibility to default.",
+          generator: "fyd-owner@1",
+        };
       }
       break;
     }
@@ -458,6 +469,89 @@ export function applyOwnerCommand(
           "; the owner says " +
           value +
           ".",
+        generator: "fyd-owner@1",
+      };
+      break;
+    }
+    case "set-service-description": {
+      // The owner attests a corrected description for one service object.
+      // The source record is NOT rewritten: the correction is stored as
+      // its own owner.corrected-fact event keyed "service-field:<id>" with
+      // the source's value at this moment preserved as previous basis. The
+      // read model composes ownerValue over the service description at
+      // serve time (see src/fyd/object/owner-overlay.ts).
+      if (!known.has(cmd.serviceId))
+        throw new OwnerCommandError("Unknown service.");
+      const value = cmd.value.trim();
+      if (!value) throw new OwnerCommandError("A value is required.");
+      if (value.length > 2000)
+        throw new OwnerCommandError(
+          "The description is too long (2000 characters maximum).",
+        );
+      const target = serviceFieldTarget(cmd.serviceId);
+      const sourceValue = opts?.sourceValue ?? null;
+      const prior = current.fieldCorrections[target]?.ownerValue ?? null;
+      const name = knownServiceNames.get(cmd.serviceId) ?? cmd.serviceId;
+      const correction: OwnerFieldCorrection = {
+        field: "description",
+        targetObjectId: cmd.serviceId,
+        label: "Description",
+        sourceValue,
+        ownerValue: value,
+        correctedAt: at,
+        actorLabel: actor.label,
+        basis:
+          "Owner correction: the owner says this is the description of '" +
+          name +
+          "'. The source record is unchanged.",
+      };
+      draft = {
+        at,
+        objectId,
+        type: "owner.corrected-fact",
+        actor,
+        target,
+        previousBasis: { priorOwnerValue: prior, sourceValue },
+        newValue: correction,
+        evidence: sourceSnapshotEvidence(sourceValue),
+        note:
+          "Corrected the description of '" +
+          name +
+          "': the site lists " +
+          (sourceValue ?? "no description") +
+          "; the owner says '" +
+          value +
+          "'.",
+        generator: "fyd-owner@1",
+      };
+      break;
+    }
+    case "revert-service-description": {
+      if (!known.has(cmd.serviceId))
+        throw new OwnerCommandError("Unknown service.");
+      const target = serviceFieldTarget(cmd.serviceId);
+      const existing = current.fieldCorrections[target];
+      if (!existing)
+        throw new OwnerCommandError(
+          "There is no description correction to revert for this service.",
+        );
+      const name = knownServiceNames.get(cmd.serviceId) ?? cmd.serviceId;
+      // Revert appends a restored event; the correction event stays in the
+      // log. The projection stops composing the correction.
+      draft = {
+        at,
+        objectId,
+        type: "owner.restored-fact",
+        actor,
+        target,
+        previousBasis: { ...existing },
+        newValue: null,
+        evidence: {
+          kind: "owner-attestation",
+          ref: "command:revert-service-description",
+          detail: "owner reverted the description correction for '" + name + "'",
+        },
+        note: "Reverted the description correction for '" + name + "'.",
         generator: "fyd-owner@1",
       };
       break;
@@ -572,7 +666,7 @@ export function applyOwnerCommand(
       throw new OwnerCommandError("Unknown command.");
   }
 
-  appendOwnerEvent(objectId, draft);
+  appendOwnerEvent(objectId, draft, { expectedLength: opts?.expectedLength });
   return readOverrides(objectId);
 }
 
@@ -607,13 +701,22 @@ export function parseOwnerCommand(body: unknown): OwnerCommand {
       if (typeof r.name !== "string")
         throw new OwnerCommandError("add-service needs { name }.");
       return { type: "add-service", name: r.name };
-    case "set-address-visibility":
-      if (r.visibility !== "public" && r.visibility !== "hidden") {
-        throw new OwnerCommandError(
-          "set-address-visibility needs { visibility: public|hidden }.",
-        );
+    case "set-address-visibility": {
+      // Canonical: SHOW / HIDE / DEFAULT. Deprecated aliases from the
+      // manage UI (wired before the tri-state landed): "public" behaved as
+      // the conservative default and "hidden" as an explicit hide, so they
+      // map to "default" and "hide" with behavior identical to before. The
+      // manage lane should move to show/hide/default.
+      const v = r.visibility;
+      if (v === "show" || v === "hide" || v === "default") {
+        return { type: "set-address-visibility", visibility: v };
       }
-      return { type: "set-address-visibility", visibility: r.visibility };
+      if (v === "public") return { type: "set-address-visibility", visibility: "default" };
+      if (v === "hidden") return { type: "set-address-visibility", visibility: "hide" };
+      throw new OwnerCommandError(
+        "set-address-visibility needs { visibility: show|hide|default }.",
+      );
+    }
     case "set-contact-field":
       if (!isCorrectableField(r.field) || typeof r.value !== "string") {
         throw new OwnerCommandError(
@@ -635,6 +738,20 @@ export function parseOwnerCommand(body: unknown): OwnerCommand {
         );
       }
       return { type: "confirm-contact-field", field: r.field };
+    case "set-service-description":
+      if (typeof r.serviceId !== "string" || typeof r.value !== "string") {
+        throw new OwnerCommandError(
+          "set-service-description needs { serviceId: string, value: string }.",
+        );
+      }
+      return { type: "set-service-description", serviceId: r.serviceId, value: r.value };
+    case "revert-service-description":
+      if (typeof r.serviceId !== "string") {
+        throw new OwnerCommandError(
+          "revert-service-description needs { serviceId: string }.",
+        );
+      }
+      return { type: "revert-service-description", serviceId: r.serviceId };
     default:
       throw new OwnerCommandError("Unknown command type.");
   }

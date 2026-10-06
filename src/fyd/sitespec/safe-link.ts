@@ -48,8 +48,13 @@ const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
 /** Characters the "call" capability accepts in an author-formatted number. */
 const TEL_ALLOWED = /^[+().\-\s\d]+$/;
 
-/** Minimal shape for the "email" capability. Not a validator, a gate. */
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/**
+ * Minimal shape for the "email" capability. Not a validator, a gate.
+ * Quote and angle-bracket characters are rejected: they can break out of a
+ * quoted HTML attribute in a non-React consumer of the emitted mailto: URI,
+ * and they never occur in real business contact addresses. Fail closed.
+ */
+const EMAIL_SHAPE = /^[^\s@"<>]+@[^\s@"<>]+\.[^\s@"<>]+$/;
 
 export interface SafeLinkOptions {
   /**

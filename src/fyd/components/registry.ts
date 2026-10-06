@@ -11,12 +11,12 @@
  * the renderer switches on it. One mapping, three consumers.
  *
  * acceptsSchemas lists are built from the central SCHEMA_ROLES table in
- * ../sitespec/schemas: no schema id is hardcoded here, so the
+ * ../sitespec/schema-roles (re-exported by ../sitespec/schemas): no schema id is hardcoded here, so the
  * ping.social.* proof vocabulary and the ping.knowledge.* ingestion
  * vocabulary are accepted through the same roles.
  */
 
-import { SCHEMA_ROLES, schemaRole } from "../sitespec/schemas";
+import { SCHEMA_ROLES } from "../sitespec/schema-roles";
 
 export interface FYDComponentDef {
   /** Registry name, used in FYDSection.component. */
@@ -78,7 +78,14 @@ const DEFINITIONS: FYDComponentDef[] = [
   { name: "People", label: "People", description: "The people behind the business.", acceptsSchemas: SCHEMA_ROLES.person, ownerBound: false, requiresData: true },
   { name: "Posts", label: "Posts", description: "Recent posts and articles.", acceptsSchemas: [...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article], ownerBound: false, requiresData: true },
   { name: "ObjectGrid", label: "Object grid", description: "Generic responsive grid for any object list.", acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.service, ...SCHEMA_ROLES.product, ...SCHEMA_ROLES.location, ...SCHEMA_ROLES.person, ...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, KNOWLEDGE_WEBSITE], ownerBound: false, requiresData: true },
-  { name: "ObjectFeed", label: "Object feed", description: "Chronological feed of objects, newest first.", acceptsSchemas: [...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, ...SCHEMA_ROLES.service, KNOWLEDGE_WEBSITE], ownerBound: false, requiresData: true },
+  // G1 (2026-09-24): business/product/location/person are feed content again.
+  // The 2026-09-23 convergence dropped them from ObjectFeed as "stale drift"
+  // at the mechanism level, which silently removed the Explore page for real
+  // businesses (bemis-electric, gear-junction: business+person/location graphs).
+  // Product semantics win over mechanism convergence: a refactor may change
+  // implementation, it must not silently change generated pages. Pinned by
+  // the page-inventory test (proceduralize/__tests__/page-inventory.test.ts).
+  { name: "ObjectFeed", label: "Object feed", description: "Chronological feed of objects, newest first.", acceptsSchemas: [...SCHEMA_ROLES.business, ...SCHEMA_ROLES.product, ...SCHEMA_ROLES.location, ...SCHEMA_ROLES.person, ...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, ...SCHEMA_ROLES.service, KNOWLEDGE_WEBSITE], ownerBound: false, requiresData: true },
   { name: "RecentObjects", label: "Recent objects", description: "Latest objects across schemas, newest first.", acceptsSchemas: [...SCHEMA_ROLES.post, ...SCHEMA_ROLES.article, ...SCHEMA_ROLES.service, ...SCHEMA_ROLES.business], ownerBound: false, requiresData: true },
   { name: "Contact", label: "Contact", description: "Public contact channels: phone, email, website.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
   { name: "Links", label: "Links", description: "Social and website links published by the business.", acceptsSchemas: SCHEMA_ROLES.business, ownerBound: true, requiresData: true },
@@ -116,6 +123,36 @@ const DEFINITIONS: FYDComponentDef[] = [
 
 const BY_NAME = new Map(DEFINITIONS.map((d) => [d.name, d]));
 
+/**
+ * DERIVED, single source of truth: invert the component -> schemas
+ * mapping above into schema -> components (registry order). The
+ * DEFINITIONS table is the only hand-written schema<->component
+ * mapping; eligibleComponents() (sitespec/schemas.ts) is this same
+ * inversion. The two directions cannot drift because only one of
+ * them is written by hand. Computed once at module load.
+ */
+const COMPONENTS_BY_SCHEMA: Map<string, string[]> = (() => {
+  const m = new Map<string, string[]>();
+  for (const d of DEFINITIONS) {
+    for (const s of d.acceptsSchemas) {
+      const list = m.get(s);
+      if (list) list.push(d.name);
+      else m.set(s, [d.name]);
+    }
+  }
+  return m;
+})();
+
+/**
+ * All components that can render an object of this schema, in registry
+ * order. Unknown schemas resolve to ["GenericObjectCard"]: unknown
+ * schemas render through the fallback, never fail. Never throws,
+ * never returns empty.
+ */
+export function componentsForSchema(schemaId: string): string[] {
+  return COMPONENTS_BY_SCHEMA.get(schemaId) ?? ["GenericObjectCard"];
+}
+
 export function getComponentDef(name: string): FYDComponentDef | undefined {
   return BY_NAME.get(name);
 }
@@ -125,24 +162,17 @@ export function listComponentDefs(): FYDComponentDef[] {
 }
 
 /**
- * Resolve the component for a schema. Dedicated component when one
- * exists, GenericObjectCard otherwise. Acceptance lists are built from
- * SCHEMA_ROLES, so a knowledge service matches Services directly; the
- * role fallback below stays for schemas listed nowhere. Never throws,
- * never returns empty.
+ * Resolve the component for a schema: the first eligible dedicated
+ * component in registry order, GenericObjectCard otherwise. This is the
+ * head of componentsForSchema() with the generic fallback filtered out,
+ * so it agrees with eligibleComponents() by construction. (The old
+ * schemaRole() fallback was redundant: acceptance lists already carry the
+ * knowledge-vocabulary ids through SCHEMA_ROLES.) Never throws, never
+ * returns empty.
  */
 export function componentForSchema(schemaId: string): string {
-  const dedicated = DEFINITIONS.find(
-    (d) => d.name !== "GenericObjectCard" && d.acceptsSchemas.includes(schemaId),
+  const dedicated = componentsForSchema(schemaId).find(
+    (n) => n !== "GenericObjectCard",
   );
-  if (dedicated) return dedicated.name;
-  const role = schemaRole(schemaId);
-  if (role) {
-    const proofId = SCHEMA_ROLES[role][0];
-    const viaRole = DEFINITIONS.find(
-      (d) => d.name !== "GenericObjectCard" && d.acceptsSchemas.includes(proofId),
-    );
-    if (viaRole) return viaRole.name;
-  }
-  return "GenericObjectCard";
+  return dedicated ?? "GenericObjectCard";
 }

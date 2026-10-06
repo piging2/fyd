@@ -54,6 +54,7 @@ export type OwnerEventType =
   | "owner.corrected-fact"
   | "owner.hid-fact"
   | "owner.restored-fact"
+  | "owner.defaulted-fact"
   | "owner.added-fact";
 
 /**
@@ -72,6 +73,28 @@ export const ADDRESS_TARGET = "contact:address";
 export const SERVICE_ORDER_TARGET = "services:order";
 export const serviceTarget = (serviceId: string): string =>
   "service:" + serviceId;
+
+/**
+ * Fact address for a service description correction, e.g.
+ * "service-field:ping-fyd-svc-calls". Deliberately NOT under the
+ * "service:<id>" namespace: the restored-fact reducer matches
+ * startsWith("service:") for visibility toggles, so a description
+ * correction must not share that prefix.
+ */
+export const serviceFieldTarget = (serviceId: string): string =>
+  "service-field:" + serviceId;
+
+/** True for a "service-field:<id>" description-correction target. */
+export function isServiceFieldTarget(t: string): boolean {
+  return (
+    t.startsWith("service-field:") && t.length > "service-field:".length
+  );
+}
+
+/** The service id inside a "service-field:<id>" target. */
+export function serviceFieldOf(t: string): string {
+  return t.slice("service-field:".length);
+}
 
 /**
  * The actor an event is recorded under. Demo events carry kind "demo"
@@ -226,6 +249,11 @@ export function reduceOwnerEvents(
         } else if (isContactFieldTarget(e.target)) {
           const field = contactFieldOf(e.target);
           o.fieldCorrections[field] = e.newValue as OwnerFieldCorrection;
+        } else if (isServiceFieldTarget(e.target)) {
+          // Service description correction: keyed by its event target so
+          // two services can each hold a description correction. The
+          // record carries targetObjectId for the read-model composer.
+          o.fieldCorrections[e.target] = e.newValue as OwnerFieldCorrection;
         } else {
           throw new OwnerEventError(
             "owner.corrected-fact does not apply to target '" + e.target + "'.",
@@ -250,7 +278,7 @@ export function reduceOwnerEvents(
       }
       case "owner.hid-fact": {
         if (e.target === ADDRESS_TARGET) {
-          o.addressVisibility = "hidden";
+          o.addressVisibility = "hide";
           // Persistent HIDE assertion carrying the full OwnerAssertion
           // contract: the pipeline never owns the presentation decision.
           const priorHide = o.addressVisibilityAssertion;
@@ -258,8 +286,8 @@ export function reduceOwnerEvents(
             subject: e.objectId,
             path: ADDRESS_TARGET,
             operation: "hide",
-            value: "hidden",
-            visibility: "hidden",
+            value: "hide",
+            visibility: "hide",
             actor: { kind: e.actor.kind, label: e.actor.label },
             at: e.at,
             supersedes: priorHide?.eventId ?? null,
@@ -280,9 +308,39 @@ export function reduceOwnerEvents(
         }
         break;
       }
+      case "owner.defaulted-fact": {
+        // DEFAULT is a recorded preference, not an absence: the owner
+        // explicitly returned the address to the conservative default
+        // (append-only; no history is deleted).
+        if (e.target === ADDRESS_TARGET) {
+          o.addressVisibility = "default";
+          const priorDefault = o.addressVisibilityAssertion;
+          o.addressVisibilityAssertion = {
+            subject: e.objectId,
+            path: ADDRESS_TARGET,
+            operation: "default",
+            value: "default",
+            visibility: "default",
+            actor: { kind: e.actor.kind, label: e.actor.label },
+            at: e.at,
+            supersedes: priorDefault?.eventId ?? null,
+            evidence: {
+              kind: e.evidence.kind,
+              ref: e.evidence.ref,
+              detail: e.evidence.detail,
+            },
+            eventId: e.id,
+          };
+        } else {
+          throw new OwnerEventError(
+            "owner.defaulted-fact does not apply to target '" + e.target + "'.",
+          );
+        }
+        break;
+      }
       case "owner.restored-fact": {
         if (e.target === ADDRESS_TARGET) {
-          o.addressVisibility = "public";
+          o.addressVisibility = "show";
           // Persistent SHOW assertion carrying the full OwnerAssertion
           // contract: the pipeline never owns the presentation decision.
           const priorShow = o.addressVisibilityAssertion;
@@ -290,8 +348,8 @@ export function reduceOwnerEvents(
             subject: e.objectId,
             path: ADDRESS_TARGET,
             operation: "show",
-            value: "public",
-            visibility: "public",
+            value: "show",
+            visibility: "show",
             actor: { kind: e.actor.kind, label: e.actor.label },
             at: e.at,
             supersedes: priorShow?.eventId ?? null,
@@ -302,6 +360,12 @@ export function reduceOwnerEvents(
             },
             eventId: e.id,
           };
+        } else if (isServiceFieldTarget(e.target)) {
+          // Revert a service description correction: a new event, never a
+          // delete; the correction event stays in the log and the
+          // projection stops composing it. Checked before the
+          // startsWith("service:") arm, which owns a different namespace.
+          delete o.fieldCorrections[e.target];
         } else if (e.target.startsWith("service:")) {
           const id = e.target.slice("service:".length);
           o.hiddenServices = o.hiddenServices.filter((x) => x !== id);
@@ -518,7 +582,20 @@ export function migrateV1ToEvents(v1: OwnerOverrides): OwnerEventDraft[] {
       generator: FYD_OWNER_GENERATOR,
     });
   }
-  if (v1.addressVisibility === "hidden") {
+  // v1 files may carry the legacy binary ("public" | "hidden") or the
+  // tri-state values ("default" | "show" | "hide"): normalize through the
+  // same compatibility mapping as command validation ("hidden" -> "hide",
+  // "public" -> "default"). "default" needs no event (the conservative
+  // default applies).
+  const v1Visibility: unknown = (v1 as { addressVisibility?: unknown })
+    .addressVisibility;
+  const normalizedVisibility =
+    v1Visibility === "hidden"
+      ? "hide"
+      : v1Visibility === "public"
+        ? "default"
+        : v1Visibility;
+  if (normalizedVisibility === "hide") {
     drafts.push({
       at,
       objectId: v1.objectId,
@@ -529,6 +606,19 @@ export function migrateV1ToEvents(v1: OwnerOverrides): OwnerEventDraft[] {
       newValue: { hidden: true },
       evidence: stateEvidence("hidden address carried from the v1 store"),
       note: "Migrated hidden street address.",
+      generator: FYD_OWNER_GENERATOR,
+    });
+  } else if (normalizedVisibility === "show") {
+    drafts.push({
+      at,
+      objectId: v1.objectId,
+      type: "owner.restored-fact",
+      actor: MIGRATION_ACTOR,
+      target: ADDRESS_TARGET,
+      previousBasis: null,
+      newValue: { visibility: "show" },
+      evidence: stateEvidence("shown address carried from the v1 store"),
+      note: "Migrated shown street address.",
       generator: FYD_OWNER_GENERATOR,
     });
   }
@@ -564,23 +654,64 @@ export function migrateV1ToEvents(v1: OwnerOverrides): OwnerEventDraft[] {
 }
 
 /**
+ * Typed failure for an owner log that exists but cannot be trusted.
+ * The bytes are retained on disk; callers must refuse mutation and
+ * surface this instead of projecting empty state. Code OWNER_LOG_CORRUPT.
+ */
+export class CorruptOwnerLogError extends Error {
+  readonly code = "OWNER_LOG_CORRUPT" as const;
+  readonly objectId: string;
+  readonly logPath: string;
+  readonly reason: string;
+  constructor(objectId: string, logPath: string, reason: string) {
+    super(
+      "Owner log for " + objectId + " is corrupt (" + reason + "); bytes retained at " + logPath + ".",
+    );
+    this.name = "CorruptOwnerLogError";
+    this.objectId = objectId;
+    this.logPath = logPath;
+    this.reason = reason;
+  }
+}
+
+/**
  * Read this object's event log. A v1 (mutable) file is migrated
- * transparently in memory; a missing or invalid file yields [].
- * Reads never write.
+ * transparently in memory. A MISSING file yields []. A file that exists
+ * but is unreadable, unparseable, or structurally invalid throws
+ * CorruptOwnerLogError: missing and corrupt are never conflated, and
+ * reads never write.
  */
 export function readOwnerEvents(objectId: string): OwnerEvent[] {
-  let parsed: unknown = null;
+  const path = ownerPath(objectId);
+  let raw: string;
   try {
-    const raw = readFileSync(ownerPath(objectId), "utf8");
+    raw = readFileSync(path, "utf8");
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException)?.code === "ENOENT") return [];
+    throw new CorruptOwnerLogError(objectId, path, "unreadable file");
+  }
+  let parsed: unknown;
+  try {
     parsed = JSON.parse(raw);
   } catch {
-    return [];
+    throw new CorruptOwnerLogError(objectId, path, "invalid JSON");
   }
-  if (
+  // A file only counts as "our log, but untrusted" when it claims the
+  // owner-log shape. A valid JSON file with no log markers (e.g. a
+  // projection file sharing the directory in tests) is not an owner log:
+  // projecting [] for it is correct, and the mismatch rule must not fire.
+  const claimsLogShape =
     typeof parsed === "object" &&
     parsed !== null &&
-    (parsed as { objectId?: unknown }).objectId !== objectId
-  ) {
+    ("version" in (parsed as Record<string, unknown>) ||
+      "events" in (parsed as Record<string, unknown>));
+  if (isValidLogFile(parsed) || isV1File(parsed)) {
+    if ((parsed as { objectId?: unknown }).objectId !== objectId) {
+      throw new CorruptOwnerLogError(objectId, path, "objectId mismatch");
+    }
+  } else if (claimsLogShape) {
+    throw new CorruptOwnerLogError(objectId, path, "invalid log structure");
+  } else {
     return [];
   }
   if (isValidLogFile(parsed)) {
@@ -589,12 +720,9 @@ export function readOwnerEvents(objectId: string): OwnerEvent[] {
       .sort((a, b) => a.seq - b.seq);
     return events;
   }
-  if (isV1File(parsed)) {
-    // Transparent migration: synthesize events, assign seqs + IDs now so
-    // the returned log is identical to what the first append will persist.
-    return finalizeDrafts(objectId, migrateV1ToEvents(parsed));
-  }
-  return [];
+  // isV1File: transparent migration. Synthesize events, assign seqs + IDs
+  // now so the returned log is identical to what the first append persists.
+  return finalizeDrafts(objectId, migrateV1ToEvents(parsed as OwnerOverrides));
 }
 
 function finalizeDrafts(objectId: string, drafts: OwnerEventDraft[]): OwnerEvent[] {
@@ -615,15 +743,53 @@ function writeLogFile(objectId: string, events: OwnerEvent[]): void {
 }
 
 /**
+ * Typed failure for a compare-and-swap refusal: the log moved between the
+ * caller's check and the append. Nothing was written. Code
+ * OWNER_LOG_CONFLICT.
+ */
+export class OwnerLogConflictError extends Error {
+  readonly code = "OWNER_LOG_CONFLICT" as const;
+  readonly objectId: string;
+  readonly expectedLength: number;
+  readonly actualLength: number;
+  constructor(objectId: string, expectedLength: number, actualLength: number) {
+    super(
+      "Owner log for " +
+        objectId +
+        " changed since approval (expected length " +
+        expectedLength +
+        ", found " +
+        actualLength +
+        "); nothing was written.",
+    );
+    this.name = "OwnerLogConflictError";
+    this.objectId = objectId;
+    this.expectedLength = expectedLength;
+    this.actualLength = actualLength;
+  }
+}
+
+/**
  * Append one event draft to the object's log. Assigns seq, computes the
  * content-hash ID, and persists the whole log atomically. Failures throw
- * before anything is written.
+ * before anything is written. A corrupt existing log throws
+ * CorruptOwnerLogError and the original bytes are retained: the append
+ * never overwrites an untrusted log with a fresh one.
+ *
+ * When opts.expectedLength is set, the append is a compare-and-swap: the
+ * log is re-read and the write is refused with OwnerLogConflictError if
+ * its length moved since the caller pinned it. This closes the
+ * check-then-await-then-append race in the approve path.
  */
 export function appendOwnerEvent(
   objectId: string,
   draft: OwnerEventDraft,
+  opts?: { expectedLength?: number },
 ): OwnerEvent {
   const current = readOwnerEvents(objectId);
+  if (opts?.expectedLength !== undefined && current.length !== opts.expectedLength) {
+    throw new OwnerLogConflictError(objectId, opts.expectedLength, current.length);
+  }
   const body = { ...draft, objectId, seq: current.length };
   const event: OwnerEvent = { ...body, id: fydOwnerEventId(body) };
   writeLogFile(objectId, [...current, event]);

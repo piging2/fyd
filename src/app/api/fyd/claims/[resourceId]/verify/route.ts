@@ -6,15 +6,6 @@
  *
  * Only implemented verification methods are accepted; the rest return 501
  * with the full method list so the UI can say what is coming, honestly.
- *
- * DEMO OWNER MODE GATE: this route WRITES claim state (operator
- * attestation), so it requires DEV/DEMO OWNER MODE:
- * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 on a localhost or private-network
- * host. Anything else gets a typed 403
- * { ok:false, code:"demo_owner_mode_required" } and nothing is written.
- * DEMO OWNER MODE IS NOT PRODUCTION AUTHENTICATION: no identity is
- * verified here; operator attestation is a labeled statement, not a
- * cryptographic proof of domain control.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { isValidResourceId, verifyControl } from "@/fyd/claim/machine";
@@ -25,42 +16,10 @@ import {
   listVerificationMethods,
 } from "@/fyd/claim/verification-seam";
 import { readClaim, writeClaim } from "@/fyd/claim/store";
-import { isDemoOwnerModeEnabled, isPrivateHost } from "@/fyd/owner-mode/gate";
+import { projectClaimForViewer } from "@/fyd/claim/claim-projection";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const NOT_REAL_AUTH =
-  "DEMO OWNER MODE - not real authentication. No identity was verified; " +
-  "this mode is for localhost/private-network demonstration only.";
-
-/**
- * Demo-owner-mode gate (same contract as the customize approval API and
- * the object overrides route): refuse with a typed 403 unless
- * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 AND the request arrived on a
- * localhost/private-network host. Default off; absent/false => fail closed.
- */
-function demoDenied(req: NextRequest) {
-  const enabled = isDemoOwnerModeEnabled();
-  const host = req.headers.get("host") ?? "";
-  const privateNet = isPrivateHost(host);
-  if (!enabled || !privateNet) {
-    return NextResponse.json(
-      {
-        ok: false,
-        code: "demo_owner_mode_required",
-        error:
-          "Claim verification requires DEV/DEMO OWNER MODE " +
-          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
-          NOT_REAL_AUTH,
-        demoOwnerMode: enabled,
-        hostPrivate: privateNet,
-      },
-      { status: 403 },
-    );
-  }
-  return null;
-}
 
 const METHODS: VerificationMethod[] = [
   "dns-txt",
@@ -75,10 +34,6 @@ export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ resourceId: string }> },
 ): Promise<NextResponse> {
-  // Gate before any parsing or I/O: verification writes claim state.
-  const gate = demoDenied(req);
-  if (gate) return gate;
-
   const { resourceId } = await ctx.params;
   if (!isValidResourceId(resourceId)) {
     return NextResponse.json(
@@ -140,7 +95,9 @@ export async function POST(
     });
     const next = verifyControl(current, proof);
     writeClaim(next);
-    return NextResponse.json({ ok: true, claim: next });
+    // Single claim projection rule: owner-authorized callers receive the
+    // owner projection of the stored record.
+    return NextResponse.json({ ok: true, claim: projectClaimForViewer(next, "owner") });
   } catch (e) {
     if (e instanceof ClaimError) {
       const status = e.code === "bad-transition" ? 409 : 400;

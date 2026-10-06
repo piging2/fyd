@@ -18,8 +18,12 @@ import { AskFydWidget } from "./ask-fyd-widget";
 import { ObjectRail, pingObjectToView, richestObject } from "./object-rail";
 import { ObjectCard } from "../object/card";
 import { ObjectCircle } from "../ui/object-circle";
-import { WhyThis, type EvidenceStep } from "../ui/why-this";
-import { resolveBoundField } from "../sitespec/graph";
+import { WhyThis, mediaWhyThisSteps, type EvidenceStep } from "../ui/why-this";
+import { whyThisClaimChainFor } from "../object/why-this-steps";
+import {
+  ownerAssertionsFromGraph,
+  resolveBoundFieldVerified,
+} from "../sitespec/binding-verifier";
 import type { BindingClassification } from "../sitespec/graph";
 import {
   applyFieldVisibility,
@@ -33,7 +37,8 @@ import {
   type ContactMethodKind,
 } from "../object/object-projection";
 import { FydContactLink } from "./contact-link";
-import { schemaRole } from "../sitespec/schemas";
+import { HeroSection } from "./hero-section";
+import { schemaRole, ownerRelationshipTarget } from "../sitespec/schemas";
 import {
   entranceDurationMs,
   motionTokensForTheme,
@@ -89,12 +94,19 @@ export function resolveQuery(
         .filter((o): o is PingObject => !!o && pub(o));
     }
     case "related": {
+      // Direction-agnostic: the bound object is whichever endpoint of the
+      // relationship is not the query anchor (usually the owner). Inverse
+      // predicates (works_for, provided_by, published_by) bind exactly
+      // like their forward twins. Deduped by id: a pair linked by both
+      // employs and member_of still renders one card.
+      const seen = new Set<string>();
       const out: PingObject[] = [];
       const predicates = query.predicates ?? [query.predicate];
       for (const r of graph.relationships) {
-        if (r.subject !== query.from || r.status !== "active") continue;
         if (!predicates.includes(r.predicate)) continue;
-        const target = objects.get(r.object);
+        const memberId = ownerRelationshipTarget(r, query.from);
+        if (memberId === null || seen.has(memberId)) continue;
+        const target = objects.get(memberId);
         const schemaOk =
           !query.schema && !query.schemas
             ? true
@@ -102,6 +114,7 @@ export function resolveQuery(
               ? target?.schema === query.schema
               : query.schemas?.includes(target?.schema ?? "");
         if (target && pub(target) && schemaOk) {
+          seen.add(memberId);
           out.push(target);
         }
       }
@@ -128,6 +141,81 @@ export function resolveQuery(
       return query.limit ? out.slice(0, query.limit) : out;
     }
   }
+}
+
+/**
+ * Owner-approved object ordering (PRESENTATION INTENT layer). Pure and
+ * deterministic: ids listed in objectOrder come first, in that order;
+ * resolved objects not listed keep their relative query order after
+ * them. Unknown ids are ignored, never rendered. Zero customer-specific
+ * conditionals: every section component shares this seam.
+ */
+export function applyObjectOrder(
+  objects: PingObject[],
+  objectOrder: readonly string[] | undefined,
+): PingObject[] {
+  if (!objectOrder || objectOrder.length === 0) return objects;
+  const byId = new Map(objects.map((o) => [o.id, o]));
+  const seen = new Set<string>();
+  const out: PingObject[] = [];
+  for (const id of objectOrder) {
+    const o = byId.get(id);
+    if (o && !seen.has(id)) {
+      seen.add(id);
+      out.push(o);
+    }
+  }
+  for (const o of objects) {
+    if (!seen.has(o.id)) out.push(o);
+  }
+  return out;
+}
+
+/**
+ * Owner-approved object deactivation (PRESENTATION INTENT layer). Pure and
+ * deterministic: objects whose id is listed in hiddenObjectIds are removed;
+ * every other object keeps its relative order. Unknown ids are ignored,
+ * never rendered. Zero customer-specific conditionals: every section
+ * component shares this seam.
+ */
+export function applyHiddenObjects(
+  objects: PingObject[],
+  hiddenObjectIds: readonly string[] | undefined,
+): PingObject[] {
+  if (!hiddenObjectIds || hiddenObjectIds.length === 0) return objects;
+  const hidden = new Set(hiddenObjectIds);
+  return objects.filter((o) => !hidden.has(o.id));
+}
+
+
+/**
+ * Site-wide owner deactivation set (PRESENTATION INTENT layer). Pure and
+ * deterministic: the union of every section's hiddenObjectIds, in spec
+ * order, deduplicated. An object the owner hid in one section must not be
+ * promoted anywhere else on the public surface: the Featured Object rail,
+ * mobile in-flow composition, and every other section resolve through
+ * renderSection, so they all share this exclusion set. Source observations
+ * and the canonical graph are untouched; owner/internal tooling still sees
+ * the hidden objects. Zero customer-specific conditionals.
+ */
+export function siteDeactivatedObjectIds(
+  spec: FYDSiteSpec,
+): readonly string[] | undefined {
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const page of spec.pages) {
+    for (const section of page.sections) {
+      const hidden = section.presentation.hiddenObjectIds;
+      if (!hidden) continue;
+      for (const id of hidden) {
+        if (!seen.has(id)) {
+          seen.add(id);
+          ids.push(id);
+        }
+      }
+    }
+  }
+  return ids.length > 0 ? ids : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -238,9 +326,33 @@ export function claimBadgeLabel(objects: PingObject[]): string {
   return "Mixed sources";
 }
 
-function ClaimBadge({ objects }: { objects: PingObject[] }) {
+/**
+ * VQ-002: the badge defaults to the light-surface treatment
+ * (border-border-soft / text-accent). On the dark hero slab (theme.ink) those
+ * light-theme tokens are illegible, so the Hero passes tone="onDark": text in
+ * text-background (the same token as the hero h1, proven legible on ink)
+ * with a theme.accent border (the same treatment as the Ask FYD button border
+ * on the same slab). Theme tokens only; no invented colors, no literal
+ * RGB-complement math.
+ */
+function ClaimBadge({
+  objects,
+  theme,
+  tone,
+}: {
+  objects: PingObject[];
+  theme?: FYDThemeTokens;
+  tone?: "onDark";
+}) {
+  const dark = tone === "onDark" && theme != null;
   return (
-    <span className="inline-block rounded-full border border-border-soft px-2 py-0.5 text-[11px] uppercase tracking-wide text-accent">
+    <span
+      className={
+        "inline-block rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide" +
+        (dark ? " text-background" : " border-border-soft text-accent")
+      }
+      style={dark && theme ? { borderColor: theme.accent } : undefined}
+    >
       {claimBadgeLabel(objects)}
     </span>
   );
@@ -366,7 +478,7 @@ function characterOf(theme: FYDThemeTokens): FYDLayoutCharacter {
  * warning, and the browser honors it.
  */
 function vtNameStyle(name: string | undefined): CSSProperties {
-  return name ? ({ "view-transition-name": name } as unknown as CSSProperties) : {};
+  return name ? ({ viewTransitionName: name } as unknown as CSSProperties) : {};
 }
 
 /**
@@ -447,15 +559,25 @@ function FydMotionStyles({ theme }: { theme: FYDThemeTokens }) {
         "@media (prefers-reduced-motion: no-preference) {",
         "@view-transition { navigation: auto; }",
         ".fyd-hero-settle { animation: fyd-hero-settle 560ms cubic-bezier(.2,.7,.2,1) both; }",
-        "@keyframes fyd-hero-settle { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }",
+        "@keyframes fyd-hero-settle { from { transform: translateY(14px); } to { transform: none; } }",
         "@supports (animation-timeline: view()) {",
         "[data-motion='enter'] { animation: fyd-enter " +
           dur +
           "ms cubic-bezier(.2,.7,.2,1) both; animation-timeline: view(); animation-range: entry 0% cover 30%; }",
-        "@keyframes fyd-enter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }",
+        // VQ-001: motion never gates content. The native view() timeline can
+        // hold below-fold elements at progress 0 in full-page captures, print,
+        // crawlers, and no-scroll contexts, so entrances keep their slide but
+        // never touch opacity: content is always painted.
+        "@keyframes fyd-enter { from { transform: translateY(16px); } to { transform: none; } }",
         "}",
-        ".fyd-io [data-motion='enter'] { opacity: 0; transform: translateY(16px); transition: opacity 480ms ease, transform 480ms ease; }",
-        ".fyd-io [data-motion='enter'].fyd-inview { opacity: 1; transform: none; }",
+        // Base state is VISIBLE. JS adds .fyd-io-pending only to below-fold elements.
+        // VQ-001: the pending entrance is transform-only; opacity never gates content.
+        ".fyd-io [data-motion='enter'] { transition: transform 480ms ease; }",
+        ".fyd-io [data-motion='enter'].fyd-io-pending { transform: translateY(16px); }",
+        ".fyd-io [data-motion='enter'].fyd-inview, .fyd-io [data-motion='enter']:not(.fyd-io-pending) { opacity: 1; transform: none; }",
+        ".fyd-io [data-motion='enter'].fyd-force-visible { opacity: 1 !important; transform: none !important; animation: none !important; }",
+        // VQ-001: print and other non-interactive renderings show everything.
+        "@media print { [data-motion='enter'], .fyd-hero-settle { animation: none !important; opacity: 1 !important; transform: none !important; } }",
         "@media (hover: hover) {",
         ".fyd-card { transition: transform 240ms ease, box-shadow 240ms ease; }",
         ".fyd-card:hover { transform: translateY(-4px); }",
@@ -643,7 +765,12 @@ function FydObjectCard({
         >
           <a
             href={detailHref}
+            data-fyd-object-id={o.id}
             style={{ color: "inherit", textDecoration: "none" }}
+            role="button"
+            tabIndex={0}
+            aria-expanded="false"
+            aria-label={title}
           >
             {title}
           </a>
@@ -665,11 +792,21 @@ function FydObjectCard({
       <div className="mt-3">
         <ClaimBadge objects={[o]} />
       </div>
+      {title ? (
+        <WhyThis
+          claim={title}
+          steps={whyThisClaimChainFor(o)}
+          className="mt-2"
+          dataAttributes={{ "data-provenance-ref": o.provenance.ref }}
+        />
+      ) : null}
       {affordanceEligible(o) ? (
         <ObjectAffordance
           objectId={o.id}
           title={title ?? null}
           kindLabel={friendlySchemaLabel(o.schema)}
+          schemaId={o.schema}
+          controllerId={o.controllerId}
           evidenceLine={affordanceEvidenceLine(o)}
           theme={theme}
         />
@@ -678,17 +815,103 @@ function FydObjectCard({
   );
 }
 
+/**
+ * ObjectDoorway: the generic compact object tap-target.
+ *
+ * One honest line that opens the object in the rich ObjectOverlay (the
+ * site client intercepts the /o/<id> href; modifier-clicks still open the
+ * node route). Used wherever a section renders an object WITHOUT a full
+ * card (Hero, feed items): identity + kind label, nothing invented. The
+ * doorway is the anti-flattening primitive: every public object resolved
+ * by a section query carries at least one of these in the rendered HTML,
+ * on every viewport. Same objects, same graph; responsive projection
+ * decides placement, never whether the identity exists.
+ *
+ * - title is the binding-verified title: no binding, no doorway.
+ * - data-fyd-object-id is the stable hook the interaction layer keys on.
+ * - tone onDark suits dark surfaces (Hero); default suits light ones.
+ */
+export function ObjectDoorway({
+  o,
+  theme,
+  ctx,
+  tone = "default",
+  className,
+}: {
+  o: PingObject;
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+  tone?: "default" | "onDark";
+  className?: string;
+}) {
+  const title = boundTitle(ctx, o);
+  if (!title) return null;
+  const detailHref = `/o/${encodeURIComponent(o.id)}`;
+  const kindLabel = friendlySchemaLabel(o.schema);
+  const dark = tone === "onDark";
+  return (
+    <a
+      href={detailHref}
+      data-fyd-object-id={o.id}
+      role="button"
+      tabIndex={0}
+      aria-expanded="false"
+      className={"fyd-object-doorway " + (className ?? "")}
+      style={{
+        display: "inline-flex",
+        maxWidth: "100%",
+        boxSizing: "border-box",
+        alignItems: "center",
+        gap: "0.5rem",
+        minHeight: "44px",
+        padding: "0.5rem 0.9rem",
+        borderRadius: 9999,
+        border: "1px solid",
+        borderColor: dark ? "rgba(255,255,255,0.35)" : theme.accent,
+        color: dark ? "#fff" : theme.ink,
+        background: dark ? "rgba(255,255,255,0.08)" : "transparent",
+        fontSize: "0.875rem",
+        fontWeight: 600,
+        textDecoration: "none",
+      }}
+      aria-label={`Open ${kindLabel} object: ${title}`}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          display: "inline-block",
+          width: "0.7rem",
+          height: "0.7rem",
+          borderRadius: "50%",
+          background: theme.accent,
+          boxShadow: "inset 0 0 0 2px " + (dark ? "rgba(0,0,0,0.35)" : theme.surface),
+          flexShrink: 0,
+        }}
+      />
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "16rem" }}>
+        {kindLabel}: {title}
+      </span>
+      <span aria-hidden="true" style={{ opacity: 0.7 }}>
+        {"->"}
+      </span>
+    </a>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Projection seam: binding verification + safe links.
 //
 // Every FACTUAL value rendered below is read through boundField /
-// boundTitle / boundDescription, which resolve the value via the
-// presentation-binding verifier (resolveBoundField). A value whose binding
-// does not verify returns undefined, and the caller OMITS it: no binding,
-// no factual output. This is the verifier wired into the actual
+// boundTitle / boundDescription, which resolve the value via the STRONG
+// BindingVerifier (verifyBinding in sitespec/binding-verifier.ts, through
+// resolveBoundFieldVerified). A value whose binding does not verify
+// returns undefined, and the caller OMITS it: no binding, no factual
+// output. In particular, owner_authored bindings require a recorded owner
+// assertion, exactly as the planner's emission seam enforces (LANE-CLAIM
+// H4/R-H4 reconciliation). This is the verifier wired into the actual
 // projection path, not a sidecar.
 //
-// Labels, action text ("Visit website", "Ask FYD"), section headings that
+// Labels, action text ("Visit <domain>", "Ask FYD"), section headings that
 // come from presentation (generated copy), and structural text are not
 // factual claims and do not go through the verifier.
 //
@@ -701,15 +924,31 @@ function FydObjectCard({
 
 /**
  * Verified factual field read. Returns the value only when the binding
- * verifies; undefined means the caller must OMIT the value, never guess.
+ * verifies against the STRONG BindingVerifier (LANE-CLAIM H4/R-H4);
+ * undefined means the caller must OMIT the value, never guess.
  */
 function boundField(
   ctx: RenderContext,
   o: PingObject,
   field: string,
-  classification: BindingClassification = "direct",
+  classification?: BindingClassification,
 ): string | undefined {
-  return resolveBoundField(ctx.graph, { objectId: o.id, field, classification });
+  // Classification follows the object's provenance when the caller does
+  // not name one: website-derived facts verify as direct evidence;
+  // owner-provided facts (e.g. the legacy "owner-asserted" projection
+  // kind) verify through a recorded owner assertion, never as direct
+  // evidence. Mirrors the planner's emission seam (LANE-CLAIM H4/R-H4
+  // reconciliation). Owner assertions ride on the render graph; the
+  // strong verifier requires a recorded assertion for owner_authored
+  // bindings. Pure and deterministic; trivial cost at demo graph sizes.
+  const cls: BindingClassification =
+    classification ??
+    (o.provenance?.kind === "website-derived" ? "direct" : "owner_authored");
+  return resolveBoundFieldVerified(
+    ctx.graph,
+    { objectId: o.id, field, classification: cls },
+    ownerAssertionsFromGraph(ctx.graph),
+  );
 }
 
 /** Verified title read (object-level factual identity). */
@@ -769,9 +1008,65 @@ function contactMethod(
   kind: ContactMethodKind,
   correction: OwnerFieldCorrection | null,
 ): ContactMethod | null {
-  const value = boundField(ctx, o, kind, correction ? "owner_authored" : "direct");
+  const value = boundField(
+    ctx,
+    o,
+    kind,
+    correction ? "owner_authored" : undefined,
+  );
   if (value === undefined) return null;
+  // Fail-closed dial gating (OBJECT-SHARD-2): an explicit field-conflict
+  // marker blocks the dial/mailto action. An explicit owner correction is a
+  // human resolution of the field and outranks preserved conflict markers.
+  if (!correction && contactFieldConflicted(ctx, o, kind)) return null;
   return contactMethodFor(kind, value, contactEvidence(o, kind, correction));
+}
+
+/**
+ * Explicit conflict marker for one contact kind ("phone" | "email") on a
+ * single object. Two marker shapes are honored, both explicit:
+ *   - a "<kind>_conflicts_with" field naming the disputed value, or
+ *   - a "conflicts" entry that names both the field kind and a conflict
+ *     (e.g. "PHONE CONFLICT: website lists X; directory lists Y").
+ * Free-text notes that do not name the kind are not markers.
+ */
+function fieldConflictMarker(o: PingObject, kind: ContactMethodKind): boolean {
+  const fields = o.fields as Record<string, unknown>;
+  const explicit = fields[`${kind}_conflicts_with`];
+  if (typeof explicit === "string" && explicit.trim().length > 0) return true;
+  const conflicts = fields["conflicts"];
+  if (Array.isArray(conflicts)) {
+    const needle = kind.toLowerCase();
+    for (const c of conflicts) {
+      if (typeof c !== "string") continue;
+      const lc = c.toLowerCase();
+      if (lc.includes("conflict") && lc.includes(needle)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Whether a dial/mailto action must be blocked for this contact field.
+ * Checks the object's own fields plus one-hop active public relationships
+ * (conflict evidence often lives on a linked external-identity object).
+ * The conflicting values stay in the graph (both claims preserved); only
+ * the action is blocked.
+ */
+function contactFieldConflicted(
+  ctx: RenderContext,
+  o: PingObject,
+  kind: ContactMethodKind,
+): boolean {
+  if (fieldConflictMarker(o, kind)) return true;
+  for (const r of ctx.graph.relationships) {
+    if (r.status !== "active") continue;
+    const otherId = r.subject === o.id ? r.object : r.object === o.id ? r.subject : null;
+    if (!otherId) continue;
+    const t = ctx.graph.objects.find((x) => x.id === otherId);
+    if (t && t.visibility === "public" && fieldConflictMarker(t, kind)) return true;
+  }
+  return false;
 }
 
 /** Evidence basis for a rendered contact method. */
@@ -849,6 +1144,10 @@ function SectionShell({
     <section
       className="fyd-section mx-auto w-full max-w-5xl px-4 sm:px-6"
       data-fyd-section={sectionId}
+      // In-flow object anchor (2026-09-24 Phase 2): the section's
+      // document spot doubles as its objects' data-object-anchor.
+      // The mobile in-flow composition renders at this exact spot.
+      data-object-anchor={sectionId}
       // No data-motion="enter" on the section itself: sections are layout
       // containers that may host lane-owned position:fixed UI (e.g. the
       // object rail's trigger). A transform/opacity entrance animation on
@@ -865,7 +1164,7 @@ function SectionShell({
           animationDelay: delay ? `${delay}ms` : undefined,
           // Deterministic section identity: lets view transitions keep a
           // section's identity across generated pages when MORPH is active.
-          ["view-transition-name" as string]:
+          viewTransitionName:
             sectionId && morph ? sectionViewTransitionName(sectionId) : undefined,
         } as CSSProperties
       }
@@ -888,51 +1187,6 @@ function SectionShell({
   );
 }
 
-/**
- * Contextual provenance for the hero photo: the generic WhyThis
- * drill-down fed ONLY with the media's own provenance fields. No
- * invented copy; the affordance shows what the pipeline recorded and
- * nothing else. Steps with empty values are omitted, and WhyThis renders
- * nothing at all when the lineage is empty.
- */
-function HeroMediaWhyThis({ media }: { media: DisplayMedia }) {
-  const steps: EvidenceStep[] = [];
-  if (media.sourceUrl) {
-    steps.push({
-      step: "Photo source",
-      detail: media.sourceUrl,
-      state: "observed",
-    });
-  }
-  if (media.rightsBasis) {
-    steps.push({
-      step: "Rights basis",
-      detail: media.rightsBasis,
-      state: "observed",
-    });
-  }
-  if (media.observedAt) {
-    steps.push({
-      step: "Observed",
-      detail: media.observedAt,
-      state: "observed",
-    });
-  }
-  if (media.digest) {
-    steps.push({
-      step: "Content digest",
-      detail: media.digest.slice(0, 16) + "...",
-      state: "inferred",
-    });
-  }
-  return (
-    <WhyThis
-      claim={media.alt || "Hero photo"}
-      steps={steps}
-      className="[&_summary]:text-white"
-    />
-  );
-}
 
 function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
@@ -956,44 +1210,19 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   // when MORPH is active) belongs on the h1 in the CONTACT lane's merge
   // so both lanes do not edit the same block. This lane's compose-motion.ts
   // already provides the deterministic helper.
+
+  // The photographic block is a client boundary (HeroSection, "use client"):
+  // image load failures are browser-only events, and this module is imported
+  // by server-only routes, so the error latch cannot live here. The server
+  // resolves all hero data; HeroSection owns only the failure state, and the
+  // text/actions block below stays server-rendered children.
   return (
-    <section
-      className="w-full"
-      data-motion="hero-settle"
-      data-layout-character={character}
-      style={{ background: theme.ink }}
-    >
-      {hero ? (
-        <div
-          className="relative h-64 w-full overflow-hidden sm:h-80"
-          data-hero-media={hero.id}
-        >
-          {hero.blurUrl ? (
-            <img
-              src={hero.blurUrl}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 h-full w-full scale-110 object-cover blur-md"
-            />
-          ) : null}
-          <img
-            src={hero.src}
-            alt={hero.alt}
-            width={hero.width}
-            height={hero.height}
-            loading="eager"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute bottom-2 right-2 rounded bg-black/55 px-2 py-1">
-            <HeroMediaWhyThis media={hero} />
-          </div>
-        </div>
-      ) : null}
+    <HeroSection hero={hero} theme={theme} character={character}>
       <div className="px-4 py-16 sm:px-6 sm:py-24">
       <div className="mx-auto max-w-5xl">
-        <ClaimBadge objects={objects} />
+        <ClaimBadge objects={objects} theme={theme} tone="onDark" />
         <h1
-          className="mt-4 text-4xl font-bold text-background sm:text-6xl"
+          className="mt-4 break-words text-4xl font-bold text-background sm:text-6xl"
           style={{ fontFamily: theme.fontDisplay }}
         >
           {heading}
@@ -1002,6 +1231,23 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
           <p className="mt-4 max-w-2xl text-lg text-background/80">{copy}</p>
         ) : null}
         <div className="mt-8 flex flex-wrap gap-3">
+          {/* CONTACT-DISCOVERABILITY: the business phone is a hero CTA on
+              every viewport. phoneMethod is a binding-verified ContactMethod
+              (the same verifier as the Contact section), safety-gated through
+              contactMethodFor: an unverifiable or unsafe number is null and
+              the caller renders nothing. The old ISSUE-3 logic coupled the
+              dial affordance to website.kind === "safe" and hid it behind
+              md:hidden, which is exactly why no phone was visible in the
+              desktop hero. Decoupled here: any tenant with a binding-verified
+              phone method gets the button, website or not. It opens the FYD
+              contact flow (value + provenance + the real Call action inside),
+              never a raw tel: link. */}
+          {phoneMethod ? (
+            <FydContactLink method={phoneMethod} theme={theme} variant="button" />
+          ) : null}
+          {/* WEBSITE-CTA-DEDUP (PROD-11): the hero is the single website
+              CTA on the site page. Label names the domain instead of a
+              generic call to action; CTASection renders no website button. */}
           {website.kind === "safe" ? (
             <a
               href={website.href}
@@ -1012,10 +1258,8 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
                 borderRadius: theme.radius === "full" ? 9999 : 8,
               }}
             >
-              Visit website
+              Visit {hostOf(website.href)}
             </a>
-          ) : phoneMethod ? (
-            <FydContactLink method={phoneMethod} theme={theme} variant="button" />
           ) : null}
           <a
             href="#ask"
@@ -1025,12 +1269,20 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
             Ask FYD
           </a>
         </div>
+        {/* OBJECT IDENTITY (mobile-objects lane): the business is a real
+            object, not just copy. The doorway opens the compact object
+            experience (identity, fields, relationships, evidence, Ask FYD)
+            through the site client's /o/ interception. It renders on
+            EVERY viewport: desktop previously had no business doorway at
+            all, and the mobile projection must never be a static
+            projection while desktop owns the object model. */}
+        <div className="mt-6">
+          <ObjectDoorway o={o} theme={theme} ctx={ctx} tone="onDark" />
+        </div>
       </div>
-      </div>
-    </section>
+      </div>    </HeroSection>
   );
 }
-
 function BusinessSummary({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
@@ -1038,10 +1290,20 @@ function BusinessSummary({ section, objects, presentation, theme, ctx, motionInd
   return (
     <SectionShell
       theme={theme}
+      sectionId={section.id}
       heading={presentation.heading ?? (title ? "About " + title : undefined)}
       copy={presentation.copy ?? boundDescription(ctx, o)}
     >
       <ClaimBadge objects={objects} />
+      {/* Mobile in-flow composition: the business object itself as a
+          tappable card in the page flow (<768px). Desktop keeps the
+          prose summary unchanged. */}
+      <MobileInFlowObjects
+        objects={objects}
+        theme={theme}
+        ctx={ctx}
+        testId="inflow-business"
+      />
     </SectionShell>
   );
 }
@@ -1070,14 +1332,101 @@ function CardGrid({
   );
 }
 
+/**
+ * Mobile in-flow object composition (2026-09-24, Phase 2 of the
+ * BUILDER-BRUTAL-CEO-HARVEST directive).
+ *
+ * On viewports below the md breakpoint (<768px) the margin object layer
+ * is intentionally absent (2026-09-23 product direction, binding: no
+ * object bucket, no floating tab, no drawer on mobile). This component is
+ * its replacement: the section's own objects rendered as tappable
+ * FydObjectCards directly in the page flow, at the section's
+ * data-object-anchor spot.
+ *
+ * - Visually integrated: the same FydObjectCard the Services section
+ *   uses on every viewport; theme-driven, no floating chrome.
+ * - Tappable: each card title links to /o/<id>, which the site client
+ *   intercepts into the rich ObjectOverlay (scroll-preserving).
+ * - Document-anchored: plain in-flow DOM, so the cards scroll WITH the
+ *   page. Never position:fixed, never viewport-sticky.
+ * - Desktop untouched: md:hidden keeps >=768px pixel-identical.
+ * - The ?objectDebug=1 gate on MarginObjectLayer is NOT touched; this
+ *   is the replacement composition, not a gate removal.
+ *
+ * Generic: descriptors only. Zero customer-specific code.
+ */
+function MobileInFlowObjects({
+  objects,
+  theme,
+  ctx,
+  kickerFor,
+  testId,
+}: {
+  objects: PingObject[];
+  theme: FYDThemeTokens;
+  ctx: RenderContext;
+  /** Optional per-object kicker line under the title (e.g. a post date). */
+  kickerFor?: (o: PingObject) => string | undefined;
+  /** Test hook for the mobile composition block. */
+  testId: string;
+}) {
+  if (objects.length === 0) return null;
+  return (
+    <div
+      className="mt-6 md:hidden"
+      data-testid={testId}
+      data-inflow-composition="mobile"
+    >
+      <div className="grid grid-cols-1 gap-4">
+        {objects.map((o, i) => (
+          <FydObjectCard
+            key={o.id}
+            o={o}
+            theme={theme}
+            ctx={ctx}
+            index={i}
+            kicker={kickerFor ? kickerFor(o) : undefined}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ServicesSection(props: SectionProps) {
   const { section, objects, presentation, theme, ctx, motionIndex } = props;
   const featured = presentation.featuredIds?.length
     ? objects.filter((o) => presentation.featuredIds!.includes(o.id))
     : objects;
   if (featured.length === 0) return null;
+  // PROD-2 (2026-09-27): a services section whose copy invites contact
+  // ("get in touch") must carry a real contact action in the section.
+  // The phone is the owner object's ContactMethod projection:
+  // binding-verified and safety-gated through contactMethodFor, never
+  // invented; no verifiable phone means no button. Rendered as a direct
+  // tel: link: for urgent repairs a disclosure tap before dialing is the
+  // wrong friction. Generic: zero customer-specific code.
+  const owner = ctx.graph.objects.find((o) => o.id === ctx.spec.ownerObjectId);
+  const phoneMethod = owner
+    ? contactMethod(ctx, owner, "phone", correctionFor(owner, "phone"))
+    : null;
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Services"} copy={presentation.copy}>
+      {phoneMethod ? (
+        <div className="mt-4" data-fyd-section-call={section.id}>
+          <a
+            href={phoneMethod.actionUri}
+            className="inline-flex min-h-[44px] items-center rounded px-6 py-3 font-semibold"
+            style={{
+              background: theme.accent,
+              color: theme.accentForeground,
+              borderRadius: theme.radius === "full" ? 9999 : 8,
+            }}
+          >
+            Call {phoneMethod.value}
+          </a>
+        </div>
+      ) : null}
       <CardGrid objects={featured} theme={theme} ctx={ctx} />
     </SectionShell>
   );
@@ -1098,19 +1447,28 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
   return (
     <SectionShell
       theme={theme}
+      sectionId={section.id}
       heading={presentation.heading ?? "Where we work"}
       copy={presentation.copy}
     >
-      <ul className="flex flex-wrap gap-2">
+      <ul className="hidden flex-wrap gap-2 md:flex">
         {objects.map((o) => {
           const title = boundTitle(ctx, o);
+          const detailHref = `/o/${encodeURIComponent(o.id)}`;
           return title ? (
-            <li
-              key={o.id}
-              className="rounded-full border border-border-soft px-4 py-2 text-sm"
-              style={{ color: theme.ink }}
-            >
-              {title}
+            <li key={o.id}>
+              <a
+                href={detailHref}
+                data-fyd-object-id={o.id}
+                className="inline-block rounded-full border border-border-soft px-4 py-2 text-sm transition-colors hover:bg-stone-100"
+                style={{ color: theme.ink }}
+                role="button"
+                tabIndex={0}
+                aria-expanded="false"
+                aria-label={title}
+              >
+                {title}
+              </a>
             </li>
           ) : null;
         })}
@@ -1118,6 +1476,14 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
       <div className="mt-3">
         <ClaimBadge objects={objects} />
       </div>
+      {/* Mobile in-flow composition: Location object cards in the page
+          flow (<768px), replacing the pill list. Desktop unchanged. */}
+      <MobileInFlowObjects
+        objects={objects}
+        theme={theme}
+        ctx={ctx}
+        testId="inflow-locations"
+      />
     </SectionShell>
   );
 }
@@ -1218,6 +1584,8 @@ function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex
                     objectId={o.id}
                     title={title ?? null}
                     kindLabel={friendlySchemaLabel(o.schema)}
+                    schemaId={o.schema}
+                    controllerId={o.controllerId}
                     evidenceLine={affordanceEvidenceLine(o)}
                     theme={theme}
                   />
@@ -1252,7 +1620,7 @@ function PostsSection({ section, objects, presentation, theme, ctx, motionIndex 
   );
   return (
     <SectionShell theme={theme} sectionId={section.id} motionIndex={motionIndex} heading={presentation.heading ?? "Latest"} copy={presentation.copy}>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="hidden grid-cols-1 gap-4 md:grid md:grid-cols-2">
         {sorted.map((o) => {
           const date = boundField(ctx, o, "date");
           const title = boundTitle(ctx, o);
@@ -1279,6 +1647,16 @@ function PostsSection({ section, objects, presentation, theme, ctx, motionIndex 
           );
         })}
       </div>
+      {/* Mobile in-flow composition: post/project object cards in the
+          page flow (<768px), tappable into the object overlay. The post
+          date rides as the card kicker. Desktop keeps the prose grid. */}
+      <MobileInFlowObjects
+        objects={sorted}
+        theme={theme}
+        ctx={ctx}
+        kickerFor={(o) => boundField(ctx, o, "date")}
+        testId="inflow-posts"
+      />
     </SectionShell>
   );
 }
@@ -1309,13 +1687,19 @@ function FeedList({
         const description = boundDescription(ctx, o);
         // Visual feed item only where the graph has media for the object.
         const media = photographicMedia(ctx.objectMedia?.[o.id]);
+        // ANTI-FLATTENING (mobile-objects lane): every feed item carries
+        // its object doorway. The title links to /o/<id> (intercepted into
+        // the ObjectOverlay by the site client) and canonical types get
+        // the FYD-mark affordance. FeedList previously rendered objects
+        // as static prose on every viewport: identity without interaction.
+        const detailHref = `/o/${encodeURIComponent(o.id)}`;
         return (
           <li
             key={o.id}
             className="border border-border-soft p-5"
             data-motion="enter"
             data-motion-index={i}
-            style={{ background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
+            style={{ position: "relative", background: theme.surface, borderRadius: theme.radius === "none" ? 0 : 8 }}
           >
             <div className="flex gap-4">
               {media ? (
@@ -1339,7 +1723,17 @@ function FeedList({
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   {title ? (
                     <h3 className="text-lg font-semibold" style={{ color: theme.ink }}>
-                      {title}
+                      <a
+                        href={detailHref}
+                        data-fyd-object-id={o.id}
+                        style={{ color: "inherit", textDecoration: "none" }}
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded="false"
+                        aria-label={title}
+                      >
+                        {title}
+                      </a>
                     </h3>
                   ) : null}
                   <span className="text-xs uppercase tracking-wide text-accent">{friendlySchemaLabel(o.schema)}</span>
@@ -1350,6 +1744,17 @@ function FeedList({
                 </div>
               </div>
             </div>
+            {affordanceEligible(o) ? (
+              <ObjectAffordance
+                objectId={o.id}
+                title={title ?? null}
+                kindLabel={friendlySchemaLabel(o.schema)}
+                schemaId={o.schema}
+                controllerId={o.controllerId}
+                evidenceLine={affordanceEvidenceLine(o)}
+                theme={theme}
+              />
+            ) : null}
           </li>
         );
       })}
@@ -1505,8 +1910,6 @@ function SocialProofSection({ section, objects, presentation, theme, ctx, motion
 }
 
 function CTASection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
-  const o = objects[0];
-  const website = o ? safeWebsite(ctx) : { kind: "non_navigable" as const };
   return (
     <section className="w-full px-4 py-12 sm:px-6" style={{ background: theme.surface }}>
       <div className="mx-auto max-w-5xl text-center">
@@ -1515,15 +1918,7 @@ function CTASection({ section, objects, presentation, theme, ctx, motionIndex }:
         </h2>
         {presentation.copy && <p className="mt-2 text-accent">{presentation.copy}</p>}
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          {website.kind === "safe" ? (
-            <a
-              href={website.href}
-              className="rounded px-6 py-3 font-semibold"
-              style={{ background: theme.accent, color: theme.accentForeground, borderRadius: theme.radius === "full" ? 9999 : 8 }}
-            >
-              Visit website
-            </a>
-          ) : null}
+          {/* PROD-11: no website CTA here; the hero owns it. Ask FYD only. */}
           <a
             href="#ask"
             className="rounded border px-6 py-3 font-semibold"
@@ -1600,11 +1995,20 @@ function boundOwnerTitle(ctx: RenderContext): string {
  * Features the richest public non-owner object through the existing
  * ObjectCircle doorway over the honest pingObjectToView adapter; presence
  * mode auto lets geometry decide rail vs drawer from the theme token.
+ *
+ * Binding gate: the featured identity is a factual claim, so candidates are
+ * restricted to objects whose title binding verifies (boundTitle resolves
+ * through the presentation-binding verifier). The view and the summary use
+ * the verified values, never the raw object fields. An unbound object never
+ * features: no binding, no factual output.
  */
 function ObjectRailSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
-  const featured = richestObject(objects, ctx.spec.ownerObjectId);
+  const bound = objects.filter((o) => boundTitle(ctx, o) !== undefined);
+  const featured = richestObject(bound, ctx.spec.ownerObjectId);
   if (!featured) return null;
-  const featuredView = pingObjectToView(featured);
+  const name = boundTitle(ctx, featured) as string;
+  const summary = boundDescription(ctx, featured);
+  const featuredView = pingObjectToView({ ...featured, title: name, description: summary ?? "" });
   const presence: ObjectPresence = {
     mode: "auto",
     objects: [featured.id],
@@ -1613,9 +2017,9 @@ function ObjectRailSection({ section, objects, presentation, theme, ctx, motionI
   const cards = (
     <div className="space-y-3">
       <ObjectCircle view={featuredView} />
-      {featured.description?.trim() ? (
+      {summary?.trim() ? (
         <p className="text-sm leading-relaxed" style={{ color: theme.ink }}>
-          {featured.description.trim()}
+          {summary.trim()}
         </p>
       ) : null}
       <p className="text-xs" style={{ color: theme.ink, opacity: 0.6 }}>
@@ -1655,28 +2059,20 @@ export function galleryEligible(ctx: RenderContext): boolean {
 
 /**
  * Contextual provenance for a gallery photo: the generic WhyThis
- * drill-down fed ONLY with the media's own provenance fields, mirroring
- * the hero photo treatment. No invented copy.
+ * drill-down fed ONLY with the media's own provenance fields, in plain
+ * language (PROD-5/PROD-6), mirroring the hero photo treatment. No
+ * invented copy. The raw technical values (digest, observedAt) live in
+ * non-visible data-media-* attributes on the figure; the visible caption
+ * is the photo's human description (media.alt), rendered by
+ * GallerySection.
  */
 function GalleryMediaWhyThis({ media }: { media: DisplayMedia }) {
-  const steps: EvidenceStep[] = [];
-  if (media.sourceUrl) {
-    steps.push({ step: "Photo source", detail: media.sourceUrl, state: "observed" });
-  }
-  if (media.rightsBasis) {
-    steps.push({ step: "Rights basis", detail: media.rightsBasis, state: "observed" });
-  }
-  if (media.observedAt) {
-    steps.push({ step: "Observed", detail: media.observedAt, state: "observed" });
-  }
-  if (media.digest) {
-    steps.push({
-      step: "Content digest",
-      detail: media.digest.slice(0, 16) + "...",
-      state: "inferred",
-    });
-  }
-  return <WhyThis claim={media.alt || "Gallery photo"} steps={steps} />;
+  return (
+    <WhyThis
+      claim={media.alt || "Gallery photo"}
+      steps={mediaWhyThisSteps(media)}
+    />
+  );
 }
 
 /**
@@ -1701,6 +2097,10 @@ function GallerySection({ section, presentation, theme, ctx, motionIndex }: Sect
             key={m.id}
             data-motion="enter"
             data-motion-index={i}
+            data-media-source-url={m.sourceUrl || undefined}
+            data-media-rights-basis={m.rightsBasis || undefined}
+            data-media-digest={m.digest || undefined}
+            data-media-observed-at={m.observedAt || undefined}
             style={{ animationDelay: staggerDelayMs(i, motion) ? `${staggerDelayMs(i, motion)}ms` : undefined }}
           >
             <img
@@ -1720,6 +2120,11 @@ function GallerySection({ section, presentation, theme, ctx, motionIndex }: Sect
               }}
             />
             <figcaption className="mt-1">
+              {m.alt?.trim() ? (
+                <p className="text-sm" style={{ color: theme.ink }}>
+                  {m.alt.trim()}
+                </p>
+              ) : null}
               <GalleryMediaWhyThis media={m} />
             </figcaption>
           </figure>
@@ -1733,7 +2138,16 @@ export function renderSection(section: FYDSection, ctx: RenderContext, motionInd
   const def = getComponentDef(section.component);
   if (!def) return null;
   if (section.presentation.hidden) return null;
-  const objects = resolveQuery(section.query, ctx.graph, ctx.spec.ownerObjectId);
+  const ordered = applyObjectOrder(
+    resolveQuery(section.query, ctx.graph, ctx.spec.ownerObjectId),
+    section.presentation.objectOrder,
+  );
+  // Owner-approved presentation intent: object deactivation after ordering.
+  // Pure and deterministic; unknown ids are ignored, never rendered.
+  // The exclusion set is site-wide: an object the owner hid in ANY section
+  // is excluded from every public projection surface (including the Featured
+  // Object rail and mobile in-flow composition), never only its home section.
+  const objects = applyHiddenObjects(ordered, siteDeactivatedObjectIds(ctx.spec));
   if (def.requiresData && objects.length === 0) return null;
   const props: SectionProps = {
     section,

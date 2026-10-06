@@ -1,0 +1,237 @@
+{
+  "meta": {
+    "siteId": "ping-fyd",
+    "dumpedAt": "2026-09-29T18:49:40.566553+00:00",
+    "dumperVersion": "fyd-projection-dump@1.2.2",
+    "baseDigest": "bd56fbed1e7ed91729e6671d5e1d9b94560fb7dff800dbc6d40322d982ec1562",
+    "fixtureFileDigest": "08f18b11d8fd08ba6cc2ef6e1d585177464a9acd909e9c5be40df7c28f942321",
+    "fixtureHeader": "PING Social graph fixture: the owner-asserted PING knowledge base as the",
+    "overlayEventIds": [
+      "fyd-ovl-mumzkn87-a211ccecf0aa"
+    ],
+    "graphDigest": "bd56fbed1e7ed91729e6671d5e1d9b94560fb7dff800dbc6d40322d982ec1562",
+    "generatedAt": "2026-09-21T00:00:00.000Z",
+    "eventSequences": null,
+    "presentationIntentDigest": "ee4fe544a4f6ba88fa89d6e1050dbb8e65d78ed0a349b77a25255c0fd6b72688"
+  },
+  "graph": {
+    "objects": [
+      {
+        "id": "ping-fyd-business",
+        "schema": "ping.social.business@1",
+        "controllerId": "ping-fyd",
+        "visibility": "public",
+        "title": "PING Social",
+        "description": "AI concierge and business automation for home service businesses.",
+        "fields": {
+          "phone": "(970) 589-3309",
+          "locality": "Grand Junction, Colorado",
+          "serviceArea": "Mesa County corridor: Grand Junction, Fruita, Palisade, Clifton, Collbran, Loma, Mack, De Beque, plus Delta, Montrose, Rifle, Carbondale"
+        },
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "updatedAt": "2026-09-21T00:00:00.000Z",
+        "provenance": {
+          "kind": "owner-asserted",
+          "ref": "owner:tenant-config",
+          "derivedAt": "2026-09-21T00:00:00.000Z"
+        }
+      },
+      {
+        "id": "ping-fyd-svc-calls",
+        "schema": "ping.social.service@1",
+        "controllerId": "ping-fyd",
+        "visibility": "public",
+        "title": "AI call answering",
+        "description": "An AI concierge answers when the crew is on a job, so no opportunity goes to voicemail.",
+        "fields": {},
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "updatedAt": "2026-09-21T00:00:00.000Z",
+        "provenance": {
+          "kind": "owner-asserted",
+          "ref": "owner:tenant-config",
+          "derivedAt": "2026-09-21T00:00:00.000Z"
+        }
+      },
+      {
+        "id": "ping-fyd-svc-followup",
+        "schema": "ping.social.service@1",
+        "controllerId": "ping-fyd",
+        "visibility": "public",
+        "title": "Lead follow-up",
+        "description": "Fast, consistent follow-up on every estimate request and inquiry.",
+        "fields": {},
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "updatedAt": "2026-09-21T00:00:00.000Z",
+        "provenance": {
+          "kind": "owner-asserted",
+          "ref": "owner:tenant-config",
+          "derivedAt": "2026-09-21T00:00:00.000Z"
+        }
+      },
+      {
+        "id": "ping-fyd-svc-scheduling",
+        "schema": "ping.social.service@1",
+        "controllerId": "ping-fyd",
+        "visibility": "public",
+        "title": "Scheduling support",
+        "description": "Fewer phone-tag loops getting jobs on the calendar.",
+        "fields": {},
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "updatedAt": "2026-09-21T00:00:00.000Z",
+        "provenance": {
+          "kind": "owner-asserted",
+          "ref": "owner:tenant-config",
+          "derivedAt": "2026-09-21T00:00:00.000Z"
+        }
+      },
+      {
+        "id": "ping-fyd-svc-admin",
+        "schema": "ping.social.service@1",
+        "controllerId": "ping-fyd",
+        "visibility": "public",
+        "title": "Admin automation",
+        "description": "Repetitive paperwork and organization handled quietly in the background.",
+        "fields": {},
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "updatedAt": "2026-09-21T00:00:00.000Z",
+        "provenance": {
+          "kind": "owner-asserted",
+          "ref": "owner:tenant-config",
+          "derivedAt": "2026-09-21T00:00:00.000Z"
+        }
+      },
+      {
+        "id": "ping-fyd-location",
+        "schema": "ping.social.location@1",
+        "controllerId": "ping-fyd",
+        "visibility": "public",
+        "title": "Grand Junction, Colorado",
+        "description": "",
+        "fields": {
+          "locality": "Grand Junction, Colorado"
+        },
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "updatedAt": "2026-09-21T00:00:00.000Z",
+        "provenance": {
+          "kind": "owner-asserted",
+          "ref": "owner:tenant-config",
+          "derivedAt": "2026-09-21T00:00:00.000Z"
+        }
+      },
+      {
+        "id": "ping-fyd-facebook",
+        "schema": "ping.social.external_identity@1",
+        "controllerId": "ping-fyd",
+        "visibility": "public",
+        "title": "PING Social on Facebook",
+        "description": "",
+        "fields": {
+          "platform": "facebook",
+          "url": "https://www.facebook.com/profile.php?id=61594275542163"
+        },
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "updatedAt": "2026-09-21T00:00:00.000Z",
+        "provenance": {
+          "kind": "owner-asserted",
+          "ref": "owner:tenant-config",
+          "derivedAt": "2026-09-21T00:00:00.000Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "ping-fyd-rel-1",
+        "subject": "ping-fyd-business",
+        "predicate": "provides",
+        "object": "ping-fyd-svc-calls",
+        "status": "active",
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "evidenceRef": "owner:tenant-config"
+      },
+      {
+        "id": "ping-fyd-rel-2",
+        "subject": "ping-fyd-business",
+        "predicate": "provides",
+        "object": "ping-fyd-svc-followup",
+        "status": "active",
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "evidenceRef": "owner:tenant-config"
+      },
+      {
+        "id": "ping-fyd-rel-3",
+        "subject": "ping-fyd-business",
+        "predicate": "provides",
+        "object": "ping-fyd-svc-scheduling",
+        "status": "active",
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "evidenceRef": "owner:tenant-config"
+      },
+      {
+        "id": "ping-fyd-rel-4",
+        "subject": "ping-fyd-business",
+        "predicate": "provides",
+        "object": "ping-fyd-svc-admin",
+        "status": "active",
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "evidenceRef": "owner:tenant-config"
+      },
+      {
+        "id": "ping-fyd-rel-5",
+        "subject": "ping-fyd-business",
+        "predicate": "located_at",
+        "object": "ping-fyd-location",
+        "status": "active",
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "evidenceRef": "owner:tenant-config"
+      },
+      {
+        "id": "ping-fyd-rel-6",
+        "subject": "ping-fyd-business",
+        "predicate": "links_to",
+        "object": "ping-fyd-facebook",
+        "status": "active",
+        "createdAt": "2026-09-21T00:00:00.000Z",
+        "evidenceRef": "owner:tenant-config"
+      }
+    ]
+  },
+  "presentationIntent": {
+    "directives": [
+      {
+        "intentId": "pi-e9431c39d99ec49a",
+        "siteIntent": {
+          "kind": "reorder_section",
+          "pageSlug": "home",
+          "sectionId": "home:Services:2",
+          "toIndex": 0
+        },
+        "proposal": {
+          "kind": "site_patch",
+          "targetPage": "home",
+          "targetSection": "home:Services:2",
+          "component": "Services",
+          "propsDiff": {
+            "moveFrom": 2,
+            "moveTo": 0
+          },
+          "reason": "Reorder section within page.",
+          "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428"
+        },
+        "approval": {
+          "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428",
+          "approvedBy": "demo-owner (seeded, unverified)",
+          "approvedAt": "2026-09-29T18:04:45.834Z",
+          "note": "DEMO OWNER MODE - not real authentication. No identity was verified.",
+          "eventId": "fyd-ovl-mumzkn87-a211ccecf0aa"
+        }
+      }
+    ],
+    "provenance": {
+      "kind": "owner-presentation-intent",
+      "note": "Owner-approved presentation intents (PRESENTATION INTENT layer). Not source facts; re-applied over the base graph on every dump. Journaled via FYD_SITE_OVERLAY events.",
+      "eventIds": [
+        "fyd-ovl-mumzkn87-a211ccecf0aa"
+      ]
+    }
+  }
+}

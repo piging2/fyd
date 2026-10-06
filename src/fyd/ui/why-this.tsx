@@ -27,16 +27,27 @@ export function WhyThis({
   claim,
   steps,
   className,
+  dataAttributes,
 }: {
   /** The visible claim this explains, e.g. the phone number shown. */
   claim: string;
   /** Lineage from the claim back to the source. Nearest first. */
   steps: EvidenceStep[];
   className?: string;
+  /**
+   * Non-visible verification metadata carried on the disclosure element
+   * (PROD-5/PROD-6, 2026-09-27): raw provenance values (digests,
+   * timestamps, record refs) stay in the DOM for verification without
+   * entering visible text. Keys must be data-* attributes.
+   */
+  dataAttributes?: Record<string, string>;
 }) {
   if (steps.length === 0) return null;
   return (
-    <details className={"text-xs text-zinc-600 " + (className ?? "")}>
+    <details
+      className={"text-xs text-zinc-600 " + (className ?? "")}
+      {...dataAttributes}
+    >
       <summary className="cursor-pointer underline decoration-dotted underline-offset-2">
         Why this?
       </summary>
@@ -54,4 +65,40 @@ export function WhyThis({
       </div>
     </details>
   );
+}
+
+/**
+ * Plain-language evidence steps for a site photo (hero or gallery).
+ *
+ * PROD-5/PROD-6 (2026-09-27): the visible caption is the photo's human
+ * description (media.alt, rendered by the caller); this builds ONLY the
+ * "Why this?" disclosure steps, in language a non-technical business
+ * owner understands. No rights-basis/digest/timestamp jargon in visible
+ * text: the raw technical values (digest, observedAt, full source URL)
+ * travel in non-visible data-media-* attributes on the photo's figure,
+ * never in the steps. The rights basis stays in the disclosure because
+ * it is the human-readable permission sentence, relabeled plainly.
+ */
+export function mediaWhyThisSteps(media: {
+  sourceUrl?: string | null;
+  rightsBasis?: string | null;
+}): EvidenceStep[] {
+  const steps: EvidenceStep[] = [];
+  if (media.sourceUrl) {
+    steps.push({
+      step: "Photo source",
+      detail: media.sourceUrl,
+      state: "observed",
+    });
+  }
+  if (media.rightsBasis) {
+    // Policy inference, not an observation: classifyRights is a URL
+    // heuristic with no authorization evidence (QA-TRUTH F-002).
+    steps.push({
+      step: "Why we can show this photo",
+      detail: media.rightsBasis,
+      state: "inferred",
+    });
+  }
+  return steps;
 }

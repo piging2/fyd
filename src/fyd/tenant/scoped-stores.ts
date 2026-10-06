@@ -40,6 +40,11 @@ import {
   assertTenantKey,
   type TenantContext,
 } from "./tenant-context";
+import {
+  getFydTenantGraph,
+  type FydTenantGraph,
+  type GetFydTenantGraphOpts,
+} from "@/fyd/data/fyd-tenant-graph";
 
 /** Scoped owner-override read: tenant A can never read tenant B's overrides. */
 export function scopedReadOverrides(
@@ -100,6 +105,22 @@ export function scopedGetProjection(
 }
 
 /**
+ * Scoped tenant-graph read: the acting tenant's key must equal the site id.
+ * getFydTenantGraph already fails closed on unknown tenants; this adds the
+ * explicit trusted-context requirement so request/worker paths cannot read
+ * a tenant graph without a context. Cross-tenant reads are refused before
+ * any I/O, never answered empty.
+ */
+export async function scopedGetFydTenantGraph(
+  ctx: TenantContext,
+  siteId: string,
+  opts?: GetFydTenantGraphOpts,
+): Promise<FydTenantGraph> {
+  assertTenantKey(ctx, siteId);
+  return getFydTenantGraph(siteId, opts);
+}
+
+/**
  * Scoped Ask FYD: the question's siteId must equal the acting tenant.
  * The bundle loader inside answerAskFyd then loads only that tenant's data.
  */
@@ -129,5 +150,6 @@ export async function scopedEmitOverlayEvent(
   ops: PresentationIntentOverlayOp[],
 ): Promise<string> {
   assertTenantKey(ctx, siteId);
-  return emitOverlayEvent(siteId, ops);
+  const { eventId } = await emitOverlayEvent(siteId, ops);
+  return eventId;
 }

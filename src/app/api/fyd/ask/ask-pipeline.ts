@@ -11,20 +11,38 @@
  * request is served for the route tenant or refused, never for the
  * body-claimed tenant.
  *
- * The legacy flat POST /api/fyd/ask keeps its body contract ({ siteId,
- * objectId?, question, mode }) but now constructs the TenantContext
- * server-side from
- * the validated body siteId (previously: no tenant context at all). The
- * nested route is the trusted-path surface; prefer it for new callers.
+ * The legacy flat POST /api/fyd/ask keeps its body shape ({ siteId,
+ * objectId?, question, mode }) but never adopts the body siteId as the
+ * subject tenant (Q-P0-06 Mission M: "body is identity" is closed on this
+ * route). It 308-redirects to the trusted-path POST /api/fyd/ask/[siteId],
+ * which re-applies the trusted validation there. New callers must use the
+ * trusted-path route directly.
  *
- * 3-class response contract: every 200 response carries
- * answerClass ("supported" | "derived" | "unknown"), every citation
- * carries claimClass ("supported" | "derived"), and the 200 body also
- * carries unknowns (string[]), suggestedActions (available actions,
- * [] when none), and proposal (draft AskProposal or null).
- * A refusal (no cited evidence) is answerClass "unknown". DERIVED_FACT / INFERENCE /
- * GENERATED_COPY claims make the answer "derived" and are explicitly
- * labeled in the citation basis.
+ * 5-class response contract: every 200 response carries
+ * answerClass (exactly one of "SUPPORTED DIRECTLY" | "SUPPORTED BY
+ * MULTIPLE EVIDENCE" | "DERIVED" | "CONFLICTED" | "UNSUPPORTED") and the
+ * coarse answerState ("KNOWN" | "CONFLICTED" | "UNKNOWN") fed by it (both
+ * layers, always present). Every citation carries claimClass
+ * ("SUPPORTED DIRECTLY" | "DERIVED" | "CONFLICTED"), and the 200 body also
+ * carries objectRefs, evidenceRefs, sourceRefs (structured, citation-backed),
+ * unknowns (string[]), suggestedActions (available actions, [] when none),
+ * and proposal (draft AskProposal or null).
+ * A refusal (no cited evidence) is answerClass "UNSUPPORTED" / answerState
+ * "UNKNOWN". Any conflict-observation cite makes the answer "CONFLICTED" /
+ * "CONFLICTED". Any derived/inferred/generated claim makes the answer
+ * "DERIVED" (still answerState "KNOWN": derived but answered, explicitly
+ * labeled). Two or more distinct SUPPORTED DIRECTLY cites behind the SAME
+ * claim make the answer "SUPPORTED BY MULTIPLE EVIDENCE". DERIVED_FACT /
+ * INFERENCE / GENERATED_COPY claims are explicitly labeled in the citation
+ * basis. The pipeline never fills business gaps from model priors.
+ *
+ * PROD-9 answer-class polarity: every 200 also carries responseClass
+ * ("ANSWER" | "DENIAL" | "PREMISE_REJECTED"): what the answer IS, for the
+ * UI to render unambiguously. DENIAL = the pipeline refused (out of
+ * scope, no evidence, no authority). PREMISE_REJECTED = the question
+ * assumed something false and the answer states the corrected premise.
+ * ANSWER = a normal answer. Surface-only; the 5-class contract is
+ * unchanged.
  *
  * Object-scoped ask: the optional body objectId selects the target
  * object INSIDE the route tenant's public graph; the tenant is still
@@ -42,11 +60,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   answerAskFyd,
+  answerStateFor,
+  responseClassFor,
   type AnswerAskFydDeps,
+  type AskAnswerClass,
+  type AskAnswerState,
+  type AskClaimClassification,
   type AskFydCitation,
   type AskFydMode,
   type AskFydOutcome,
+  type AskResponseClass,
 } from "@/fyd/ask/visitor-answer";
+import {
+  ASK_RESPONSE_CONTRACT_VERSION,
+  AskContractError,
+  assertAskAnswerContract,
+  contractClaimsFor,
+} from "@/fyd/ask/contract";
 import {
   requireTenantContext,
   TenantContextError,
@@ -54,12 +84,18 @@ import {
 import { getSiteBundle, type SiteBundle } from "@/fyd/media/site-bundle";
 import type { FydOverlayReader } from "@/fyd/data/fyd-tenant-graph";
 import { applyOwnerFieldCorrections } from "@/fyd/object/owner-overlay";
+import {
+  decisionsForGraph,
+  verifyPublicProjection,
+} from "@/fyd/sitespec/public-projection";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** Answer-level class for the 3-class contract. */
-export type AskAnswerClass = "supported" | "derived" | "unknown";
+/** Answer-level class for the 5-class contract (re-exported for tests). */
+export type { AskAnswerClass, AskAnswerState };
+/** PROD-9: answer-class polarity (re-exported for tests). */
+export type { AskResponseClass };
 
 const VALID_MODES: AskFydMode[] = ["visitor", "owner"];
 
@@ -70,8 +106,10 @@ const VALID_MODES: AskFydMode[] = ["visitor", "owner"];
  * owner overlay (field corrections) over it, ABOVE the read seam. The read
  * model is the authorized graph read, so a correction the owner approved is
  * reflected in Ask FYD answers, cited as an owner override while the
- * source's value stays recorded as what the source says. Fail closed: on
- * overlay failure the raw bundle is served, never an invented value.
+ * source's value stays recorded as what the source says. The graph Ask
+ * answers from is the verified public projection (Q-C-01): the bundle
+ * never carries an unprojected graph. Fail closed: on overlay or boundary
+ * failure nothing is served, never an unprojected graph or invented value.
  *
  * The reader override exists for tests only; production always uses the
  * governed reader.
@@ -84,9 +122,22 @@ export async function loadBundleWithOwnerOverlay(
   if (!bundle) return null;
   try {
     const overlaid = applyOwnerFieldCorrections(bundle.graph, siteId);
-    return { ...bundle, graph: overlaid.graph };
+    // THE boundary (Q-C-01): Ask FYD consumes an already-authorized public
+    // projection, it never retrieves broadly and redacts afterward. Owner
+    // corrections are owner-authorized values composed BEFORE the boundary;
+    // visibility policy applies over them, so a hidden field stays hidden
+    // even when the owner corrected its value. The siteId is threaded so
+    // site-keyed owner visibility decisions resolve (Lane A). Fail closed:
+    // on boundary failure nothing is served, never the unprojected graph.
+    const decisions = decisionsForGraph(overlaid.graph, siteId);
+    const verified = verifyPublicProjection(overlaid.graph, decisions, "anonymous");
+    return {
+      ...bundle,
+      graph: verified.graph,
+      fieldVisibilityDecisions: decisions,
+    };
   } catch {
-    return bundle;
+    return null;
   }
 }
 
@@ -94,16 +145,51 @@ export async function loadBundleWithOwnerOverlay(
 const TENANT_CLAIM_KEYS = ["siteId", "tenantId", "tenant"] as const;
 
 /**
- * Reduce one answered outcome to its 3-class label. A refusal (or an answer
- * with no citations) is "unknown": the pipeline had nothing to stand on.
- * Any derived/inferred/generated claim makes the whole answer "derived".
+ * Reduce one answered outcome to its 5-class label. A refusal (or an answer
+ * with no citations) is "UNSUPPORTED": the pipeline had nothing to stand
+ * on, so the answer is honest unknown. Any CONFLICTED cite makes the whole
+ * answer "CONFLICTED" (the disagreement is surfaced, never resolved by
+ * picking a side). Any derived/inferred/generated cite makes the answer
+ * "DERIVED". "SUPPORTED BY MULTIPLE EVIDENCE" requires at least two
+ * distinct SUPPORTED DIRECTLY evidence refs behind the SAME claim
+ * (grouped via claimClassifications: evidenceRefIds per claim); a single
+ * direct cite, or direct cites behind different claims, is "SUPPORTED
+ * DIRECTLY". When no claim groupings are provided, each evidence ref is
+ * treated as its own claim (conservative: never upgrade without proof).
+ *
+ * The coarse state follows from answerStateFor (both layers, always).
  */
 export function answerClassFor(
   refusal: boolean,
   citations: AskFydCitation[],
+  claimClassifications?: AskClaimClassification[],
 ): AskAnswerClass {
-  if (refusal || citations.length === 0) return "unknown";
-  return citations.some((c) => c.claimClass === "derived") ? "derived" : "supported";
+  if (refusal || citations.length === 0) return "UNSUPPORTED";
+  if (citations.some((c) => c.claimClass === "CONFLICTED")) return "CONFLICTED";
+  if (citations.some((c) => c.claimClass === "DERIVED")) return "DERIVED";
+  // Group direct evidence refs by the claim they support.
+  const claimForRef = new Map<string, string>();
+  for (const cc of claimClassifications ?? []) {
+    for (const refId of cc.evidenceRefIds) {
+      if (!claimForRef.has(refId)) claimForRef.set(refId, cc.claim);
+    }
+  }
+  const directByClaim = new Map<string, Set<string>>();
+  for (const c of citations) {
+    if (c.claimClass !== "SUPPORTED DIRECTLY") continue;
+    // No grouping info: each ref stands alone (never upgrade without proof).
+    const claim = claimForRef.get(c.id) ?? c.id;
+    let ids = directByClaim.get(claim);
+    if (!ids) {
+      ids = new Set();
+      directByClaim.set(claim, ids);
+    }
+    ids.add(c.id);
+  }
+  for (const ids of directByClaim.values()) {
+    if (ids.size >= 2) return "SUPPORTED BY MULTIPLE EVIDENCE";
+  }
+  return "SUPPORTED DIRECTLY";
 }
 
 function tenantMismatchResponse(
@@ -149,8 +235,8 @@ function invalidTenantResponse(raw: string): NextResponse {
  * Handle one Ask FYD POST.
  *
  * @param routeTenantId the tenant from the trusted route path
- *   (/api/fyd/ask/[siteId]), or null for the legacy flat route where the
- *   subject tenant comes from the validated body siteId.
+ *   (/api/fyd/ask/[siteId]), or null for the legacy flat route, which
+ *   never adopts a subject tenant and redirects to the trusted path.
  */
 export async function handleAskRequest(
   routeTenantId: string | null,
@@ -183,18 +269,41 @@ export async function handleAskRequest(
       }
     }
   } else {
-    // Legacy flat route: subject tenant from the validated body siteId,
-    // constructed server-side (previously no tenant context existed here).
+    // Legacy flat route (Q-P0-06 Mission M): the body-supplied siteId is
+    // NOT adopted as the subject tenant. "Body is identity" is closed on
+    // this route: the request is routed through the trusted [siteId]
+    // route instead, via 308 to the path-addressed URL. The trusted route
+    // re-applies its validation there (a body tenant claim that disagrees
+    // with the path tenant is refused with 400 tenant_mismatch).
+    // Fetch-based callers follow 307/308 with method and body preserved,
+    // so legitimate callers keep working. Nothing is served on this route:
+    // the redirect carries no answer, no objects, no citations. The URL
+    // query string is never a tenant source here.
     const raw = typeof record.siteId === "string" ? record.siteId.trim() : "";
     if (!raw) {
-      return NextResponse.json({ ok: false, error: "Unknown site." }, { status: 404 });
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "flat_route_deprecated",
+          error:
+            "The legacy flat ask route no longer accepts a tenant from the request body. " +
+            "Use POST /api/fyd/ask/{siteId} with the tenant in the route path.",
+          trustedRoute: "/api/fyd/ask/{siteId}",
+        },
+        { status: 400 },
+      );
     }
+    let redirectTenant: string;
     try {
-      siteId = requireTenantContext({ tenantId: raw });
+      redirectTenant = requireTenantContext({ tenantId: raw });
     } catch (err) {
       if (err instanceof TenantContextError) return invalidTenantResponse(raw);
       throw err;
     }
+    return new NextResponse(null, {
+      status: 308,
+      headers: { Location: "/api/fyd/ask/" + encodeURIComponent(redirectTenant) },
+    });
   }
 
   const question = typeof record.question === "string" ? record.question : "";
@@ -245,6 +354,10 @@ export async function handleAskRequest(
         objectId: rawObjectId.length > 0 ? rawObjectId : undefined,
         question,
         mode: mode as AskFydMode,
+        // FYD-Q1/Q2: the bundle carries declared conflicts and owner
+        // visibility decisions; the ask lane honors them fail-closed.
+        fieldConflicts: bundle?.fieldConflicts,
+        fieldVisibilityDecisions: bundle?.fieldVisibilityDecisions,
       },
       deps,
     );
@@ -289,12 +402,64 @@ export async function handleAskRequest(
         );
     }
   }
+  const answerClass = answerClassFor(
+    outcome.refusal,
+    outcome.citations,
+    outcome.claimClassifications,
+  );
+  // Coarse state, fed by the five support classes (both layers).
+  const answerState = answerStateFor(answerClass);
+  // PROD-9: answer-class polarity for the UI: DENIAL (refusal),
+  // PREMISE_REJECTED (the question's premise is wrong and the answer
+  // states the corrected premise), ANSWER (normal). Surface-only.
+  const responseClass = responseClassFor({
+    refusal: outcome.refusal,
+    question,
+    answer: outcome.answer,
+    claimClassifications: outcome.claimClassifications,
+  });
+  // CLAIMS: every factual claim with its support class and evidence refs.
+  const claims = contractClaimsFor(outcome.claimClassifications);
+  // THE binding-contract enforcement seam (Nolan 2026-09-25): the answer
+  // the pipeline produced is checked against the contract it claims.
+  // A violation is a pipeline bug, so the route fails closed as
+  // honest-unknown instead of serving a structurally dishonest answer.
+  // No new authority: truth stays upstream; this checks the output shape.
+  try {
+    assertAskAnswerContract({ outcome, answerClass, answerState, claims });
+  } catch (err) {
+    if (err instanceof AskContractError) {
+      console.error(`answerAskFyd: contract violation for site "${siteId}":`, err.message);
+      return NextResponse.json(
+        {
+          ok: false,
+          kind: "internal_error",
+          error: "Ask FYD hit an unexpected problem. The answer is unknown.",
+          answerUnknown: true,
+        },
+        { status: 500 },
+      );
+    }
+    throw err;
+  }
   return NextResponse.json({
     ok: true,
+    contractVersion: ASK_RESPONSE_CONTRACT_VERSION,
     answer: outcome.answer,
-    answerClass: answerClassFor(outcome.refusal, outcome.citations),
+    answerClass,
+    answerState,
+    // PROD-9: answer-class polarity: "ANSWER" | "DENIAL" | "PREMISE_REJECTED".
+    responseClass,
     refusal: outcome.refusal,
     citations: outcome.citations,
+    // OUTPUT "CLAIMS": claim text + support class + the evidence ref ids
+    // behind it. Every factual answer is recoverable to evidence here.
+    claims,
+    // Structured, citation-backed refs: the objects, evidence, and sources
+    // the answer stands on. Derived from citations only; never invented.
+    objectRefs: outcome.objectRefs,
+    evidenceRefs: outcome.evidenceRefs,
+    sourceRefs: outcome.sourceRefs,
     // Carried from the internal AskAnswer: unknowns and suggestedActions
     // are [] when the composer found none; proposal is null unless the
     // answer drafted one. Nothing here is ever invented.

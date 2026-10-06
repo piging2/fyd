@@ -1,0 +1,6 @@
+{
+  "extends": "/home/nolan/projects/ping/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  }
+}

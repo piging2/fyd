@@ -120,7 +120,7 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
     expect(out.answer).not.toContain("Pergola");
     expect(out.citations.length).toBeGreaterThan(0);
     expect(out.citations.every((c) => HAPPY_SERVICES.includes(c.id))).toBe(true);
-    expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
   });
 
   test("happy-place business: location answered from the location object", () => {
@@ -128,7 +128,7 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
     expect(out.refusal).toBe(false);
     expect(out.answer).toContain("Adair Village");
     expect(out.citations.every((c) => c.id === HAPPY_LOC)).toBe(true);
-    expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED DIRECTLY");
   });
 
   test("happy-place business: association answered from relationships", () => {
@@ -138,7 +138,7 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
     for (const c of out.citations) {
       expect([HAPPY_BIZ, HAPPY_LOC, ...HAPPY_SERVICES]).toContain(c.id);
     }
-    expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
   });
 
   test("happy-place business: provenance question answered from the record", () => {
@@ -146,7 +146,7 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
     expect(out.refusal).toBe(false);
     expect(out.answer).toMatch(/site record/i);
     expect(out.citations.every((c) => c.id === HAPPY_BIZ)).toBe(true);
-    expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED DIRECTLY");
   });
 
   test("coppersmith business: location, association, provenance answered", () => {
@@ -154,17 +154,17 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
     expect(where.refusal).toBe(false);
     expect(where.answer).toMatch(/Grand Junction/i);
     expect(where.citations.every((c) => c.id === COPPER_LOC)).toBe(true);
-    expect(answerClassFor(where.refusal, where.citations)).toBe("supported");
+    expect(answerClassFor(where.refusal, where.citations, where.claimClassifications)).toBe("SUPPORTED DIRECTLY");
 
     const assoc = askOk(COPPER, COPPER_BIZ, "who is associated?");
     expect(assoc.refusal).toBe(false);
     expect(assoc.answer).toContain("coppersmithplm");
-    expect(answerClassFor(assoc.refusal, assoc.citations)).toBe("supported");
+    expect(answerClassFor(assoc.refusal, assoc.citations, assoc.claimClassifications)).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
 
     const prov = askOk(COPPER, COPPER_BIZ, "how do you know?");
     expect(prov.refusal).toBe(false);
     expect(prov.citations.every((c) => c.id === COPPER_BIZ)).toBe(true);
-    expect(answerClassFor(prov.refusal, prov.citations)).toBe("supported");
+    expect(answerClassFor(prov.refusal, prov.citations, prov.claimClassifications)).toBe("SUPPORTED DIRECTLY");
   });
 
   test("coppersmith business: services answered from real service objects", () => {
@@ -177,7 +177,7 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
     }
     expect(out.citations.length).toBeGreaterThan(0);
     expect(out.citations.every((c) => COPPER_SERVICES.includes(c.id))).toBe(true);
-    expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
   });
 });
 
@@ -187,7 +187,7 @@ describe("object-scoped ask: related objects", () => {
     expect(out.refusal).toBe(false);
     expect(out.answer).toContain("Repairs");
     expect(out.citations.every((c) => c.id === HAPPY_SVC)).toBe(true);
-    expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED DIRECTLY");
   });
 
   test("deactivated synthetic service fails closed as unknown_object", () => {
@@ -221,14 +221,14 @@ describe("object-scoped ask: related objects", () => {
     for (const c of out.citations) {
       expect([COPPER_PERSON, COPPER_BIZ, COPPER_EXT]).toContain(c.id);
     }
-    expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
   });
 
   test("external identity object answers from its own record", () => {
     const out = askOk(COPPER, COPPER_EXT, "What is this?");
     expect(out.refusal).toBe(false);
     expect(out.citations.every((c) => c.id === COPPER_EXT)).toBe(true);
-    expect(answerClassFor(out.refusal, out.citations)).toBe("supported");
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED DIRECTLY");
   });
 });
 
@@ -256,8 +256,8 @@ describe("object-scoped ask: evidence absence is UNKNOWN", () => {
     const out = askOk(HAPPY, HAPPY_SVC, "Do you offer financing?");
     expect(out.refusal).toBe(true);
     expect(out.citations).toEqual([]);
-    expect(out.answer).toMatch(/do not have evidence/i);
-    expect(answerClassFor(out.refusal, out.citations)).toBe("unknown");
+    expect(out.answer).toMatch(/I cannot answer that/i);
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("UNSUPPORTED");
   });
 });
 
@@ -343,36 +343,53 @@ describe("object-scoped ask: tenant and visibility gates", () => {
 });
 
 describe("object-scoped ask: route wiring", () => {
-  test("flat POST with objectId answers 200 with the 3-class contract", async () => {
-    const res = await postFlat(
+  test("flat POST redirects to the trusted path; trusted route with objectId answers 200 with the 5-class contract", async () => {
+    // Q-P0-06 Mission M: the flat route adopts no tenant; it redirects.
+    const flat = await postFlat(
       flatReq({
         siteId: HAPPY,
         objectId: HAPPY_BIZ,
         question: "where are they located?",
       }),
     );
+    expect(flat.status).toBe(308);
+    expect(flat.headers.get("location")).toBe("/api/fyd/ask/" + HAPPY);
+
+    const { req, ctx } = nestedCtx(HAPPY, {
+      siteId: HAPPY,
+      objectId: HAPPY_BIZ,
+      question: "where are they located?",
+    });
+    const res = await postNested(req, ctx);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
-    expect(body.answerClass).toBe("supported");
+    expect(body.answerClass).toBe("SUPPORTED DIRECTLY");
     expect(body.answer).toContain("Adair Village");
+    expect(body.answerState).toBe("KNOWN");
     expect(body.tenantId).toBe(HAPPY);
   });
 
-  test("flat POST with another tenant's object id is 404 and leaks nothing", async () => {
-    const res = await postFlat(
-      flatReq({ siteId: HAPPY, objectId: COPPER_BIZ, question: "What is this?" }),
-    );
+  test("trusted route with another tenant's object id is 404 and leaks nothing", async () => {
+    const { req, ctx } = nestedCtx(HAPPY, {
+      siteId: HAPPY,
+      objectId: COPPER_BIZ,
+      question: "What is this?",
+    });
+    const res = await postNested(req, ctx);
     expect(res.status).toBe(404);
     const body = await res.json();
     expect(body.ok).toBe(false);
     expect(JSON.stringify(body)).not.toContain("Coppersmith");
   });
 
-  test("flat POST with unknown object id is 404", async () => {
-    const res = await postFlat(
-      flatReq({ siteId: HAPPY, objectId: "no-such-object", question: "What is this?" }),
-    );
+  test("trusted route with unknown object id is 404", async () => {
+    const { req, ctx } = nestedCtx(HAPPY, {
+      siteId: HAPPY,
+      objectId: "no-such-object",
+      question: "What is this?",
+    });
+    const res = await postNested(req, ctx);
     expect(res.status).toBe(404);
   });
 
@@ -399,7 +416,7 @@ describe("object-scoped ask: route wiring", () => {
     expect(res.status).toBe(400);
   });
 
-  test("shared pipeline helper accepts objectId on both route shapes", async () => {
+  test("legacy flat route redirects to the trusted path; objectId serving lives on the trusted route", async () => {
     const flat = await handleAskRequest(
       null,
       flatReq({
@@ -408,8 +425,16 @@ describe("object-scoped ask: route wiring", () => {
         question: "where are they located?",
       }),
     );
-    expect(flat.status).toBe(200);
-    expect((await flat.json()).answer).toContain("Adair Village");
+    // Q-P0-06 Mission M: the flat route adopts no tenant; it redirects.
+    expect(flat.status).toBe(308);
+    expect(flat.headers.get("location")).toBe("/api/fyd/ask/" + HAPPY);
+
+    const trusted = await handleAskRequest(
+      HAPPY,
+      flatReq({ objectId: HAPPY_BIZ, question: "where are they located?" }),
+    );
+    expect(trusted.status).toBe(200);
+    expect((await trusted.json()).answer).toContain("Adair Village");
 
     const nested = await handleAskRequest(
       HAPPY,

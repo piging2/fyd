@@ -32,6 +32,7 @@ import { resolveCollapseBreakpoint } from "../sitespec/types";
 import { schemaRole } from "../sitespec/schemas";
 import type { ClaimEvidence, ObjectProjection } from "../object/object-projection";
 import type { ObjectView } from "../object/types";
+import { verifyPresentationBinding } from "../sitespec/graph";
 
 /** Resolved placement for one render. */
 export type RailPlacement = "rail" | "drawer" | "hidden";
@@ -48,7 +49,7 @@ export function resolvePresenceMode(
 ): RailPlacement {
   if (!presence || presence.mode === "hidden") return "hidden";
   if (!presence.objects || presence.objects.length === 0) return "hidden";
-  if (presence.mode === "rail") return "rail";
+  if (presence.mode === "rail" || presence.mode === "edge") return "rail";
   if (presence.mode === "drawer") return "drawer";
   const bp = resolveCollapseBreakpoint(theme, presence.rules.collapseBelow);
   return viewportWidthPx >= bp ? "rail" : "drawer";
@@ -76,6 +77,24 @@ function friendlySchemaLabel(schema: string): string {
  *   does not verify, so they are never granted here.
  * - media: empty. The rail never invents imagery.
  */
+/**
+ * Binding-gated description read for the rail adapters.
+ *
+ * The main sections read factual fields only through the binding authority
+ * (boundField -> resolveBoundField); the rail adapters previously read
+ * o.description raw, so a description with no provenance (an unbound claim)
+ * still rendered in the rail, labeled with an invented
+ * "Observed on website-ingestion" receipt. Routing the adapters through the
+ * same authority means unbound descriptions are omitted, never rendered.
+ */
+function boundRailDescription(o: PingObject): string {
+  const verdict = verifyPresentationBinding(
+    { objectId: o.id, field: "description", classification: "direct" },
+    { objects: [o], relationships: [] },
+  );
+  return verdict.ok ? verdict.value.trim() : "";
+}
+
 export function pingObjectToProjection(o: PingObject): ObjectProjection {
   const ref = o.provenance?.ref ?? "website-ingestion";
   const derivedAt = o.provenance?.derivedAt ?? "";
@@ -88,7 +107,7 @@ export function pingObjectToProjection(o: PingObject): ObjectProjection {
   const kindLabel = role
     ? role.charAt(0).toUpperCase() + role.slice(1)
     : friendlySchemaLabel(o.schema);
-  const description = (o.description ?? "").trim();
+  const description = boundRailDescription(o);
   return {
     id: o.id,
     schema: o.schema,
@@ -133,8 +152,9 @@ export function ObjectRail({ cards, presence, theme, heading }: ObjectRailProps)
 
   // auto is a placement input, not a resolved placement: geometry (CSS)
   // resolves it at render, so the component type admits it here.
+  // "edge" is the presence-law alias for "rail": normalize at the boundary.
   const placement: RailPlacement | "auto" =
-    !hasObjects || mode === "hidden" ? "hidden" : mode;
+    !hasObjects || mode === "hidden" ? "hidden" : mode === "edge" ? "rail" : mode;
 
   // Resize lifecycle (portal law): an open drawer releases when the viewport
   // crosses back to rail geometry, where the drawer placement is invalid.
@@ -170,7 +190,12 @@ export function ObjectRail({ cards, presence, theme, heading }: ObjectRailProps)
   // hardcoded in placement logic.
   const autoCss =
     "@media (max-width: " + (bp - 1) + "px){.fyd-rail-auto-rail{display:none!important}}" +
-    "@media (min-width: " + bp + "px){.fyd-rail-auto-trigger{display:none!important}}";
+    "@media (min-width: " + bp + "px){.fyd-rail-auto-trigger{display:none!important}}" +
+    // ISSUE-2: below the breakpoint the trigger is in-flow, never fixed. The
+    // fixed 153px pill occluded section headings at 320px (48% of viewport).
+    "@media (max-width: " +
+    (bp - 1) +
+    "px){.fyd-rail-auto-trigger .fyd-rail-auto-trigger-btn{position:static!important;margin:0.75rem auto 0}}";
 
   const railClass =
     "w-72 shrink-0 lg:w-80" + (placement === "auto" ? " fyd-rail-auto-rail" : "");
@@ -205,7 +230,7 @@ export function ObjectRail({ cards, presence, theme, heading }: ObjectRailProps)
             onClick={() => setOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={open}
-            className="fixed bottom-6 right-6 z-40 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-5 py-3 text-sm font-semibold shadow-lg"
+            className="fyd-rail-auto-trigger-btn fixed bottom-6 right-6 z-40 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-5 py-3 text-sm font-semibold shadow-lg"
             style={{ background: theme.accent, color: theme.accentForeground }}
           >
             {label}
@@ -278,7 +303,7 @@ export function pingObjectToView(o: PingObject): ObjectView {
     name: o.title,
     category: role ? (RAIL_ROLE_LABELS[role] ?? "Object") : "Object",
     locationLabel: null,
-    summary: (o.description ?? "").trim(),
+    summary: boundRailDescription(o),
     media: [],
     services: [],
     serviceArea: [],

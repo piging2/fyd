@@ -150,6 +150,12 @@ export function verifyPresentationBinding(
  *
  * Returns the verified value, or undefined when the binding does not
  * verify. undefined means the caller must OMIT the value, never guess.
+ *
+ * Resolution primitive only, not a publish verdict: owner_authored and
+ * derived bindings are NOT evidence-checked here (LANE-CLAIM H4). Publish
+ * paths must use resolveBoundFieldVerified in sitespec/binding-verifier.ts,
+ * which enforces the strong verifier's rules. Retained for non-publish
+ * consumers such as lineage tracing.
  */
 export function resolveBoundField(
   graph: ObjectGraph,

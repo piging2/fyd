@@ -1,0 +1,121 @@
+[
+  {
+    "site_id": "bemis-electric",
+    "pages_ok": 5,
+    "persons_observed": 5,
+    "person_objects": 5,
+    "unlinked_person_objects": 5,
+    "employment_rels": [],
+    "employment_drops": [],
+    "employment_drop_outcomes": {},
+    "people_section": false,
+    "employment": "NEVER_OBSERVED",
+    "relationship_drops_all": {
+      "POLICY_SUPPRESSED": 4,
+      "UNRESOLVED_SOURCE": 54,
+      "UNRESOLVED_TARGET": 9
+    },
+    "relationships_generated": 0
+  },
+  {
+    "site_id": "gear-junction",
+    "pages_ok": 5,
+    "persons_observed": 0,
+    "person_objects": 0,
+    "unlinked_person_objects": 0,
+    "employment_rels": [],
+    "employment_drops": [],
+    "employment_drop_outcomes": {},
+    "people_section": false,
+    "employment": "NEVER_OBSERVED",
+    "relationship_drops_all": {
+      "UNRESOLVED_SOURCE": 11
+    },
+    "relationships_generated": 3
+  },
+  {
+    "site_id": "dalby-cpa",
+    "pages_ok": 1,
+    "persons_observed": 0,
+    "person_objects": 0,
+    "unlinked_person_objects": 0,
+    "employment_rels": [],
+    "employment_drops": [],
+    "employment_drop_outcomes": {},
+    "people_section": false,
+    "employment": "NEVER_OBSERVED",
+    "relationship_drops_all": {
+      "POLICY_SUPPRESSED": 1,
+      "UNRESOLVED_SOURCE": 4
+    },
+    "relationships_generated": 0
+  },
+  {
+    "site_id": "klik-boutique",
+    "pages_ok": 0,
+    "failure_stage": "fetch",
+    "employment": "NO_DATA"
+  },
+  {
+    "site_id": "suehiro",
+    "pages_ok": 1,
+    "persons_observed": 0,
+    "person_objects": 0,
+    "unlinked_person_objects": 0,
+    "employment_rels": [],
+    "employment_drops": [],
+    "employment_drop_outcomes": {},
+    "people_section": false,
+    "employment": "NEVER_OBSERVED",
+    "relationship_drops_all": {
+      "POLICY_SUPPRESSED": 1,
+      "UNRESOLVED_SOURCE": 8,
+      "UNRESOLVED_TARGET": 2
+    },
+    "relationships_generated": 0
+  },
+  {
+    "site_id": "bistro-317",
+    "pages_ok": 1,
+    "persons_observed": 0,
+    "person_objects": 0,
+    "unlinked_person_objects": 0,
+    "employment_rels": [],
+    "employment_drops": [],
+    "employment_drop_outcomes": {},
+    "people_section": false,
+    "employment": "NEVER_OBSERVED",
+    "relationship_drops_all": {
+      "DUPLICATE": 1
+    },
+    "relationships_generated": 1
+  },
+  {
+    "site_id": "tt-hvac",
+    "pages_ok": 1,
+    "persons_observed": 0,
+    "person_objects": 0,
+    "unlinked_person_objects": 0,
+    "employment_rels": [],
+    "employment_drops": [],
+    "employment_drop_outcomes": {},
+    "people_section": false,
+    "employment": "NEVER_OBSERVED",
+    "relationship_drops_all": {},
+    "relationships_generated": 0
+  },
+  {
+    "site_id": "legacy-coffee",
+    "pages_ok": 8,
+    "persons_observed": 0,
+    "person_objects": 0,
+    "unlinked_person_objects": 0,
+    "employment_rels": [],
+    "employment_drops": [],
+    "employment_drop_outcomes": {},
+    "people_section": false,
+    "employment": "NEVER_OBSERVED",
+    "relationship_drops_all": {},
+    "relationships_generated": 0
+  }
+]

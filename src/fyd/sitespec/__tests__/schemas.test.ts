@@ -12,6 +12,7 @@ import {
   SERVICE_SCHEMA,
   agentToolDescription,
   capabilityOptions,
+  capabilityOptionsForSchema,
   eligibleComponents,
   getSchemaDef,
   isAllowedPredicate,
@@ -83,7 +84,11 @@ describe("schema derivations", () => {
     expect(eligibleComponents("ping.knowledge.service@1")).toContain("Services");
     expect(eligibleComponents("ping.knowledge.location@1")).toContain("Locations");
     expect(eligibleComponents("ping.knowledge.person@1")).toContain("People");
-    expect(eligibleComponents("ping.knowledge.website@1")).toEqual(["ObjectGrid", "ObjectFeed"]);
+    expect(eligibleComponents("ping.knowledge.website@1")).toEqual([
+      "ObjectGrid",
+      "ObjectFeed",
+      "ObjectRail",
+    ]);
     expect(componentForSchema("ping.knowledge.service@1")).toBe("Services");
     expect(componentForSchema("ping.knowledge.business@1")).toBe("Hero");
     expect(componentForSchema("ping.knowledge.website@1")).toBe("ObjectGrid");
@@ -107,6 +112,41 @@ describe("schema derivations", () => {
     expect(capabilityOptions(POST_SCHEMA, signedIn)).toContain("reply");
     expect(capabilityOptions(POST_SCHEMA, anon)).not.toContain("reply");
     expect(capabilityOptions(BUSINESS_SCHEMA, signedIn)).toContain("propose_update");
+  });
+
+  test("capabilityOptionsForSchema resolves any schema id through the authority", () => {
+    // G4: the single OBJECT + VIEWER + CONTEXT entry point. Registered
+    // schemas resolve to their definitions.
+    const anon = { viewerId: null, controllerId: "hp", hasWebsite: true };
+    expect(
+      capabilityOptionsForSchema("ping.social.business@1", anon),
+    ).toEqual(capabilityOptions(BUSINESS_SCHEMA, anon));
+    // Context flags gate the contact actions.
+    const full = { viewerId: null, controllerId: "hp", hasWebsite: true, hasPhone: true, hasEmail: true, hasLocality: true };
+    const actions = capabilityOptionsForSchema("ping.social.business@1", full);
+    expect(actions).toEqual(
+      expect.arrayContaining(["call", "email", "directions", "open_website"]),
+    );
+    const none = { viewerId: null, controllerId: "hp", hasWebsite: false };
+    const noContact = capabilityOptionsForSchema("ping.social.business@1", none);
+    expect(noContact).not.toContain("call");
+    expect(noContact).not.toContain("email");
+    expect(noContact).not.toContain("directions");
+    expect(noContact).not.toContain("open_website");
+    // Role fallbacks: person is identity-backed, product/article likeable,
+    // location gets the base set plus contact actions.
+    expect(
+      capabilityOptionsForSchema("ping.social.person@1", none),
+    ).toContain("follow");
+    expect(
+      capabilityOptionsForSchema("ping.social.product@1", none),
+    ).toContain("like");
+    expect(
+      capabilityOptionsForSchema("ping.social.location@1", full),
+    ).toContain("directions");
+    // Unknown schemas: minimal set, contact actions withheld (INV-08).
+    const unknown = capabilityOptionsForSchema("ping.social.mystery@9", full);
+    expect(unknown).toEqual(["open", "ask", "reference"]);
   });
 
   test("agent tool description is derived, deterministic text", () => {
@@ -136,5 +176,62 @@ describe("schema derivations", () => {
     expect(componentForSchema("ping.knowledge.person@1")).toBe("People");
     expect(eligibleComponents("ping.knowledge.post@1")).toContain("RecentObjects");
     expect(eligibleComponents("ping.knowledge.article@1")).toContain("Posts");
+  });
+
+  test("schema<->component mapping has a single source (no drift)", () => {
+    // The registry DEFINITIONS table is the only hand-written mapping:
+    // eligibleComponents is its inversion, componentForSchema its head.
+    // If anyone re-adds a second hand table, these pins fail.
+    const probe = [
+      "ping.social.business@1",
+      "ping.social.service@1",
+      "ping.social.product@1",
+      "ping.social.location@1",
+      "ping.social.person@1",
+      "ping.social.post@1",
+      "ping.social.article@1",
+      "ping.knowledge.business@1",
+      "ping.knowledge.service@1",
+      "ping.knowledge.location@1",
+      "ping.knowledge.person@1",
+      "ping.knowledge.post@1",
+      "ping.knowledge.article@1",
+      "ping.knowledge.website@1",
+      "ping.social.mystery@9",
+    ];
+    for (const s of probe) {
+      const all = eligibleComponents(s);
+      expect(all.length).toBeGreaterThan(0);
+      const dedicated = all.filter((n) => n !== "GenericObjectCard");
+      expect(componentForSchema(s)).toBe(
+        dedicated.length > 0 ? dedicated[0] : "GenericObjectCard",
+      );
+    }
+    // Restored truth (2026-09-24, G1): ObjectFeed is feed content for
+    // business/product/location/person again. The 2026-09-23 convergence
+    // dropped it as "stale drift" at the mechanism level, but that silently
+    // removed the Explore page for real businesses (bemis-electric,
+    // gear-junction). Product semantics outrank mechanism convergence: the
+    // page-level effect is pinned by the page-inventory test, and this pin
+    // records the restored mechanism truth.
+    expect(eligibleComponents("ping.social.business@1")).toEqual([
+      "Hero",
+      "IdentityCard",
+      "BusinessSummary",
+      "ObjectGrid",
+      "ObjectFeed",
+      "RecentObjects",
+      "Contact",
+      "Links",
+      "SocialProof",
+      "CTA",
+      "AskFYD",
+      "ObjectRail",
+    ]);
+    expect(eligibleComponents("ping.social.person@1")).toContain("ObjectFeed");
+    expect(eligibleComponents("ping.social.location@1")).toContain("ObjectFeed");
+    expect(eligibleComponents("ping.social.product@1")).toContain("ObjectFeed");
+    expect(eligibleComponents("ping.social.service@1")).toContain("RecentObjects");
+    expect(eligibleComponents("ping.social.location@1")).toContain("ObjectRail");
   });
 });

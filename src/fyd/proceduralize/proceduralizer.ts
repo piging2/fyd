@@ -36,11 +36,18 @@ import {
   SERVICE_CARD_ENTITY_PREFIX,
   SERVICE_CARD_FACT_NAMES,
 } from "./service-cards";
+import { mineBodyContactFacts } from "./body-contact";
+import {
+  extractLocationBlocks,
+  LOCATION_BLOCK_ENTITY_PREFIX,
+  LOCATION_BLOCK_FACT_NAMES,
+} from "./location-blocks";
+import { ROLE_PREDICATES } from "../sitespec/schema-roles";
 
 /** A source the proceduralizer may acquire. */
 export interface SourceRecord {
   url: string;
-  sourceType: "json-ld" | "opengraph" | "html-meta" | "rss" | "atom" | "sitemap" | "html";
+  sourceType: "json-ld" | "microdata" | "opengraph" | "html-meta" | "rss" | "atom" | "sitemap" | "html";
   discoveredAt: string;
 }
 
@@ -140,6 +147,7 @@ export function visibilityForField(name: string): Visibility {
 /** Source priority for RESOLVE: machine-readable truth first. */
 const SOURCE_PRIORITY: SourceRecord["sourceType"][] = [
   "json-ld",
+  "microdata",
   "opengraph",
   "html-meta",
   "rss",
@@ -251,15 +259,36 @@ export async function parseRich(acquired: AcquiredSource): Promise<ParsedResult>
   } else if (acquired.sourceType === "html") {
     structured = await extractStructuredData(acquired.raw, ctx);
     facts.push(...structured.facts);
+    // The page title is read before meta handling: the name-vs-
+    // description sanity check (below) voids a description that names a
+    // different business than the page, and it needs the title text.
+    const pageTitle = extractTitle(acquired.raw);
     for (const [property, content] of extractMetaTags(acquired.raw)) {
       if (property.startsWith("og:")) {
-        push(ogToField(property), content, "opengraph");
+        const field = ogToField(property);
+        // Name-vs-description sanity (2026-09-30): a description that
+        // names a different business than the page is VOIDED, never
+        // emitted. A missing description is honest; a wrong one is a
+        // false claim. Structured (JSON-LD) descriptions are untouched:
+        // this gate covers only the og/meta description path.
+        if (
+          field === "description" &&
+          descriptionNamesForeignBusiness(content, pageTitle)
+        ) {
+          continue;
+        }
+        push(field, content, "opengraph");
       } else if (property === "description" || property === "keywords") {
+        if (
+          property === "description" &&
+          descriptionNamesForeignBusiness(content, pageTitle)
+        ) {
+          continue;
+        }
         push(property, content, "html-meta");
       }
     }
-    const title = extractTitle(acquired.raw);
-    if (title) push("title", title, "html-meta");
+    if (pageTitle) push("title", pageTitle, "html-meta");
     // Service lane v2 (2026-09-22): deterministic HTML service-card
     // extraction. Cards become direct html observations with stable
     // synthetic entity ids (service-card:<pattern>:<key>); project()
@@ -291,6 +320,41 @@ export async function parseRich(acquired: AcquiredSource): Promise<ParsedResult>
         cardFact(SERVICE_CARD_FACT_NAMES.href, card.href),
       );
     }
+    // Body-contact mining (2026-09-30): deterministic phone/address
+    // mining from body HTML, parallel to the service-card lane. Fills
+    // the dominant falsification gap: real sites carry phone/address in
+    // body text (footers, contact sections) with no structured markup.
+    // Facts arrive with sourceType "html", so structured truth still
+    // wins in resolve(); provenance() tags factClass + visibility.
+    for (const fact of mineBodyContactFacts(acquired.raw, acquired.url)) {
+      facts.push(fact);
+    }
+    // Location-block lane (2026-09-30): repeated per-location blocks
+    // (name+address+phone) become direct html observations with stable
+    // synthetic entity ids (location-block:<key>); project() compiles
+    // them into Location objects with located_at edges. Only repeated
+    // blocks (2+) are extracted: single-location pages are covered by
+    // body-contact mining + PostalAddress.
+    for (const block of extractLocationBlocks(acquired.raw, acquired.url)) {
+      const entityId = LOCATION_BLOCK_ENTITY_PREFIX + block.key;
+      const blockFact = (name: string, value: string): ParsedFact => ({
+        name,
+        value,
+        sourceType: "html",
+        inferred: false,
+        factClass: "DIRECT_FACT",
+        visibility: "public",
+        evidenceDetail: block.evidenceDetail,
+        extractor: "location-blocks@2026-09-30",
+        entityId,
+        property: "location_block",
+      });
+      facts.push(
+        blockFact(LOCATION_BLOCK_FACT_NAMES.name, block.name),
+        blockFact(LOCATION_BLOCK_FACT_NAMES.address, block.address),
+        blockFact(LOCATION_BLOCK_FACT_NAMES.phone, block.phone),
+      );
+    }
   }
   // sitemap: parse() extracts nothing (RUN-NOTES #9: the fetch is pure
   // cost until a sitemap handler exists; recorded, not silently dropped).
@@ -318,6 +382,56 @@ function ogToField(property: string): string {
     "og:url": "website",
   };
   return map[property] ?? property.replace(/^og:/, "");
+}
+
+/**
+ * Name-vs-description sanity (2026-09-30). The falsification found an
+ * og:description naming a DIFFERENT business than the page
+ * (kimsautopart.com: description "…A&D Auto Parts is far and away the
+ * best place…", page title "Kims - Kims Auto Parts"). A wrong
+ * description is a false claim; a missing description is honest. So
+ * the description fact is VOIDED (never emitted) when the description
+ * contains a capitalized multi-word phrase whose distinctive tokens do
+ * not occur in the page title at all.
+ *
+ * "Distinctive tokens" of a candidate name phrase = the phrase's
+ * tokens (length >= 2) that do NOT occur in the page title: these are
+ * what would make it a DIFFERENT name. The phrase voids the
+ * description only when its distinctive head is non-empty AND every
+ * distinctive token carries a proper-name mark (contains &, an
+ * apostrophe, or a digit, or is an all-caps initialism). A plain-word
+ * distinctive head ("Gentle", "Grand", "Exceptional") is a descriptor
+ * or a place, not evidence of a different business, so the rule stays
+ * narrow and conservative: it voids only confident mismatches, never
+ * merely flowery copy. Voiding only: nothing is invented or rewritten.
+ *
+ * Pure and deterministic: same strings in, same boolean out.
+ */
+export function descriptionNamesForeignBusiness(
+  description: string,
+  pageTitle: string,
+): boolean {
+  const title = pageTitle.trim();
+  if (title === "") return false; // no title: nothing to check against
+  const titleTokens = new Set(
+    title
+      .toLowerCase()
+      .split(/[^a-z0-9&']+/)
+      .filter((t) => t !== ""),
+  );
+  const desc = decodeEntities(description);
+  const PHRASE_RE = /\b([A-Z][A-Za-z&']*(?:\s+[A-Z0-9][A-Za-z&']*)+)\b/g;
+  const NAME_MARK_RE = /[&'\d]|^[A-Z]{2,}$/;
+  let m: RegExpExecArray | null;
+  while ((m = PHRASE_RE.exec(desc)) !== null) {
+    const tokens = m[1].split(/\s+/).filter((t) => t.length >= 2);
+    const distinctive = tokens.filter(
+      (t) => !titleTokens.has(t.toLowerCase()),
+    );
+    if (distinctive.length === 0) continue;
+    if (distinctive.every((t) => NAME_MARK_RE.test(t))) return true;
+  }
+  return false;
 }
 
 function extractTitle(html: string): string {
@@ -564,6 +678,49 @@ export function relate(fields: ExtractedField[]): RelatedPair[] {
 // the JSON-LD describes them (RUN-NOTES #8: previously unreachable).
 // ---------------------------------------------------------------------------
 
+/**
+ * Terminal outcome of a relationship CANDIDATE. G3 (2026-09-24): every
+ * candidate the pipeline considers terminates in exactly one of these;
+ * there is no silent drop. Working vocabulary: the names are not yet
+ * constitutionalized.
+ *
+ * Firing paths in the current pipeline:
+ * - ACCEPTED: emitted into the graph.
+ * - REJECTED_SCHEMA: structurally invalid (self-loop); predicate/schema
+ *   vocabulary violations would also terminate here.
+ * - UNRESOLVED_SOURCE / UNRESOLVED_TARGET: an endpoint entity key has no
+ *   projected object.
+ * - AMBIGUOUS_TARGET: defined for future multi-match resolution; no live
+ *   firing path (entity keys resolve 1:1 today).
+ * - DUPLICATE: identical (subject, predicate, object) triple already
+ *   emitted; the first occurrence wins.
+ * - POLICY_SUPPRESSED: candidate observed but deliberately skipped by
+ *   policy (site-chrome @id-ref targets).
+ * - UNSUPPORTED: defined for relationship-shaped evidence with no
+ *   pipeline representation; no live firing path (distinct from
+ *   UNRESOLVED_TARGET, where the target was never observed).
+ */
+export type RelationshipOutcome =
+  | "ACCEPTED"
+  | "REJECTED_SCHEMA"
+  | "UNRESOLVED_SOURCE"
+  | "UNRESOLVED_TARGET"
+  | "AMBIGUOUS_TARGET"
+  | "DUPLICATE"
+  | "POLICY_SUPPRESSED"
+  | "UNSUPPORTED";
+
+export interface RelationshipDrop {
+  /** Resolved object id when available, else the entity key or hint. */
+  subject: string;
+  predicate: string;
+  /** Resolved object id when available, else the entity key, hint, or @id. */
+  object: string;
+  outcome: Exclude<RelationshipOutcome, "ACCEPTED">;
+  reason: string;
+  evidenceRef: string;
+}
+
 export interface ProjectedGraph {
   objects: PingObject[];
   relationships: PingRelationship[];
@@ -571,12 +728,16 @@ export interface ProjectedGraph {
   fieldClasses?: Record<string, Record<string, FactClass>>;
   /** Relationships dropped because an endpoint had no projected object. */
   droppedRelationships?: number;
+  /** G3: every non-accepted candidate with its terminal outcome. */
+  relationshipDrops?: RelationshipDrop[];
 }
 
 export interface ProjectOptions {
   entities?: EntityCandidate[];
   entityFields?: Map<string, ExtractedField[]>;
   relationships?: StructuredRelation[];
+  /** @id-ref candidates dropped inside structured extraction (G3). */
+  refDrops?: import("./structured-data").StructuredRefDrop[];
   primaryKey?: string | null;
   /** Pairs from relate(): page-scope social links. */
   pairs?: RelatedPair[];
@@ -585,34 +746,59 @@ export interface ProjectOptions {
 }
 
 /**
- * Derive a stable business id from the projection inputs. Pure: no
- * module state, no clock. The same website, fields, and controller
- * always yield the same id, so re-projection deduplicates instead of
- * forking. The observation time stays caller-injected
- * (createdAt/updatedAt/derivedAt) so tests can pin it.
+ * Canonical entity URL: the source-identity input for entity resolution.
+ * Normalization is semantics-preserving for business-website identity:
+ * lowercase scheme+host, strip default ports, trailing slash, query,
+ * fragment, and a leading www. (www vs apex redirect to the same business;
+ * redirects are entity-resolution evidence, not identity forks). Pure and
+ * deterministic across processes, runners, and machines. Unparseable input
+ * falls back to the raw string so identity derivation never throws.
+ */
+export function canonicalEntityUrl(raw: string): string {
+  try {
+    const u = new URL(raw.trim());
+    if (u.protocol !== "http:" && u.protocol !== "https:") return raw.trim();
+    let host = u.hostname.toLowerCase();
+    if (host.startsWith("www.")) host = host.slice("www.".length);
+    const port =
+      (u.protocol === "http:" && u.port === "80") ||
+      (u.protocol === "https:" && u.port === "443") ||
+      u.port === ""
+        ? ""
+        : ":" + u.port;
+    let path = u.pathname;
+    if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+    return u.protocol + "//" + host + port + path;
+  } catch {
+    return raw.trim();
+  }
+}
+
+/**
+ * Derive the STABLE ENTITY id for a website-ingested business. Pure: no
+ * module state, no clock, no runner, no content.
+ *
+ * G2 corrected identity model (2026-09-24): STABLE ENTITY IDENTITY +
+ * evolving OBSERVATIONS. The id is derived ONLY from the canonical entity
+ * URL. The runner label (controller), run id, observation ids, extracted
+ * content fields, and pipeline version are PROVENANCE, never identity: a
+ * phone-number or description change must not remint the business, and the
+ * same source run by a different runner, in a different process, in a
+ * different order, on a different machine must yield the SAME id (hostile
+ * test in __tests__/entity-identity.test.ts). Content hashes identify
+ * observations/evidence, not the entity.
  *
  * Grill 28 verdict: KEEP (see STRUCTURED-DATA.md). This is a derived
  * projection key, not a canonical PING identity: IdentityAuthority's
  * generate_id() is non-deterministic by design (UUIDv7) and would break
  * re-projection dedup; its generate_deterministic_id() is semantically
  * identical to this hash but would couple a browser-safe lane to the
- * Python runtime. When a website-derived business is promoted to a
- * first-class PING object via the proposal path, the canonical id is
- * minted by the runtime.
+ * Python runtime. No new identity authority is created here. When a
+ * website-derived business is promoted to a first-class PING object via
+ * the proposal path, the canonical id is minted by the runtime.
  */
-function deriveBusinessId(
-  sourceUrl: string,
-  controllerId: string,
-  scalar: Record<string, string | string[]>,
-): string {
-  const canonical = JSON.stringify({
-    url: sourceUrl,
-    controller: controllerId,
-    fields: Object.keys(scalar)
-      .sort()
-      .map((k) => [k, scalar[k]]),
-  });
-  return "website-business-" + sha256Hex(canonical).slice(0, 16);
+function deriveBusinessId(entityUrl: string): string {
+  return "website-business-" + sha256Hex(canonicalEntityUrl(entityUrl)).slice(0, 16);
 }
 
 /** Deterministic relationship id: no counters, no allocation order. */
@@ -715,7 +901,21 @@ export function project(
     }
   }
 
-  const businessId = deriveBusinessId(sourceUrl, controllerId, scalar);
+  // Entity resolution: the site's self-declared canonical URL (og:url ->
+  // website field) is the strongest source-identity signal; the seed URL is
+  // the fallback. Execution context (runner/controllerId, run time) stays in
+  // provenance and on the object, never in the id.
+  const websiteClaim = asString(scalar["website"] ?? "");
+  let entityUrl = sourceUrl;
+  try {
+    const probe = new URL(websiteClaim);
+    if ((probe.protocol === "http:" || probe.protocol === "https:") && probe.hostname !== "") {
+      entityUrl = websiteClaim;
+    }
+  } catch {
+    entityUrl = sourceUrl;
+  }
+  const businessId = deriveBusinessId(entityUrl);
   const provenance = {
     kind: "website-derived" as const,
     ref: "website-ingestion:" + sourceUrl,
@@ -740,6 +940,18 @@ export function project(
     [businessId]: businessClasses,
   };
   let droppedRelationships = 0;
+  const relationshipDrops: RelationshipDrop[] = [];
+  const dropRel = (
+    subject: string,
+    predicate: string,
+    object: string,
+    outcome: Exclude<RelationshipOutcome, "ACCEPTED">,
+    reason: string,
+    evidenceRef: string,
+  ): void => {
+    relationshipDrops.push({ subject, predicate, object, outcome, reason, evidenceRef });
+    droppedRelationships++;
+  };
 
   const objectIdByEntityKey = new Map<string, string>();
   if (opts.primaryKey) objectIdByEntityKey.set(opts.primaryKey, businessId);
@@ -834,15 +1046,39 @@ export function project(
   }
 
   // -- People: Person entities with names.
+  //
+  // Person role gate (2026-09-30). The falsification found this loop
+  // minting ping.social.person@1 cards for ANY Person-typed entity with
+  // a collapsed "title" field: blog authors ("Admin") and headline-only
+  // nodes ("Welcome to our blog") became person cards with team-member
+  // framing, and no business<->person edge was ever minted. A Person
+  // entity now projects only when it carries a job_title field OR
+  // participates in a person-role relationship (the builder's exact
+  // ROLE_PREDICATES.person set: employs/has_member/has_employee/
+  // works_for/member_of) from the structured extraction. This kills
+  // both junk vectors while keeping employees, founders, and jobTitle
+  // persons. Skipped persons are a deliberate policy exclusion, not
+  // silent loss: the entity facts remain in entityFields for inspection.
+  const personRolePredicates = new Set<string>(ROLE_PREDICATES.person);
+  const personRoleEntities = new Set<string>();
+  for (const r of opts.relationships ?? []) {
+    if (personRolePredicates.has(r.predicate)) {
+      personRoleEntities.add(r.subjectKey);
+      personRoleEntities.add(r.objectKey);
+    }
+  }
   for (const e of entities) {
     if (!e.types.includes("Person")) continue;
     const name = fieldOf(entityFields, e.key, "title")?.value;
     if (!name || asString(name) === "") continue;
+    const jobTitle = fieldOf(entityFields, e.key, "job_title")?.value;
+    // Role gate: skip Person entities with neither a job_title field
+    // nor a person-role relationship participation.
+    if (!jobTitle && !personRoleEntities.has(e.key)) continue;
     const personId = `${businessId}-person-${sha256Hex(e.key).slice(0, 12)}`;
     objectIdByEntityKey.set(e.key, personId);
     const pFields: Record<string, string | string[]> = { name: asString(name) };
     const pClasses: Record<string, FactClass> = { name: "DIRECT_FACT" };
-    const jobTitle = fieldOf(entityFields, e.key, "job_title")?.value;
     if (jobTitle) {
       pFields["job_title"] = asString(jobTitle);
       pClasses["job_title"] = "DIRECT_FACT";
@@ -1039,24 +1275,94 @@ export function project(
     );
   }
 
+  // -- Location blocks: deterministic HTML location-block lane
+  //    (2026-09-30). parseRich emits location_block_* facts with stable
+  //    synthetic entity ids (location-block:<key>); this lane compiles
+  //    each block into a ping.social.location@1 object with a located_at
+  //    edge from the business. Only repeated blocks (2+) reach this
+  //    lane: single-location pages are covered by body-contact mining +
+  //    PostalAddress. Every claim is a website_statement DIRECT_FACT;
+  //    the edge evidenceRef names the detector and block key.
+  const blockGroups = new Map<string, Map<string, ExtractedField>>();
+  for (const [entityKey, eFields] of entityFields ?? []) {
+    if (!entityKey.startsWith(LOCATION_BLOCK_ENTITY_PREFIX)) continue;
+    let group = blockGroups.get(entityKey);
+    if (!group) {
+      group = new Map();
+      blockGroups.set(entityKey, group);
+    }
+    for (const f of eFields) group.set(f.name, f);
+  }
+  for (const [entityKey, block] of [...blockGroups.entries()].sort((a, b) =>
+    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0,
+  )) {
+    const addressField = block.get(LOCATION_BLOCK_FACT_NAMES.address);
+    const address = addressField ? asString(addressField.value).trim() : "";
+    if (!address) continue;
+    const blockKey = entityKey.slice(LOCATION_BLOCK_ENTITY_PREFIX.length);
+    const objId = `${businessId}-location-${sha256Hex(entityKey).slice(0, 12)}`;
+    objectIdByEntityKey.set(entityKey, objId);
+    const lFields: Record<string, string | string[]> = { address };
+    const lClasses: Record<string, FactClass> = { address: "DIRECT_FACT" };
+    const nameField = block.get(LOCATION_BLOCK_FACT_NAMES.name);
+    const blockName = nameField ? asString(nameField.value).trim() : "";
+    if (blockName) {
+      lFields["name"] = blockName;
+      lClasses["name"] = "DIRECT_FACT";
+    }
+    const phoneField = block.get(LOCATION_BLOCK_FACT_NAMES.phone);
+    const blockPhone = phoneField ? asString(phoneField.value).trim() : "";
+    if (blockPhone) {
+      lFields["phone"] = blockPhone;
+      lClasses["phone"] = "DIRECT_FACT";
+    }
+    mkObject(
+      objId,
+      "ping.social.location@1",
+      blockName || address,
+      address + (blockPhone ? " " + blockPhone : ""),
+      { ...lFields, claimKind: "website_statement" },
+      { ...lClasses, claimKind: "DIRECT_FACT" },
+    );
+    mkRel(
+      businessId,
+      "located_at",
+      objId,
+      `proceduralizer:project:location-block:${blockKey}`,
+    );
+  }
+
   // -- Structured @id-reference relationships (subject/object mapped
   //    through the entity->object map; unmapped endpoints are dropped and
   //    counted, never half-emitted).
   for (const r of opts.relationships ?? []) {
+    const evidenceRef = `proceduralizer:structured:${r.property}`;
     const subject = objectIdByEntityKey.get(r.subjectKey);
     const object = objectIdByEntityKey.get(r.objectKey);
-    if (!subject || !object || subject === object) {
-      droppedRelationships++;
+    if (!subject) {
+      dropRel(r.subjectKey, r.predicate, r.objectKey, "UNRESOLVED_SOURCE",
+        `subject entity key "${r.subjectKey}" has no projected object`, evidenceRef);
       continue;
     }
-    mkRel(subject, r.predicate, object, `proceduralizer:structured:${r.property}`);
+    if (!object) {
+      dropRel(subject, r.predicate, r.objectKey, "UNRESOLVED_TARGET",
+        `object entity key "${r.objectKey}" has no projected object`, evidenceRef);
+      continue;
+    }
+    if (subject === object) {
+      dropRel(subject, r.predicate, object, "REJECTED_SCHEMA",
+        "self-loop: subject and object resolve to the same object", evidenceRef);
+      continue;
+    }
+    mkRel(subject, r.predicate, object, evidenceRef);
   }
 
   // -- Page-scope pairs from relate() (RUN-NOTES #7: now consumed).
   for (const p of opts.pairs ?? []) {
     const subject = p.subjectHint === "business" ? businessId : objectIdByEntityKey.get(p.subjectHint);
     if (!subject) {
-      droppedRelationships++;
+      dropRel(p.subjectHint, p.predicate, p.objectHint, "UNRESOLVED_SOURCE",
+        `subject hint "${p.subjectHint}" has no projected object`, "proceduralizer:relate");
       continue;
     }
     let object: string | undefined;
@@ -1065,11 +1371,29 @@ export function project(
     } else {
       object = objectIdByEntityKey.get(p.objectHint);
     }
-    if (!object || subject === object) {
-      droppedRelationships++;
+    if (!object) {
+      dropRel(subject, p.predicate, p.objectHint, "UNRESOLVED_TARGET",
+        `object hint "${p.objectHint}" has no projected object`, "proceduralizer:relate");
+      continue;
+    }
+    if (subject === object) {
+      dropRel(subject, p.predicate, object, "REJECTED_SCHEMA",
+        "self-loop: subject and object resolve to the same object", "proceduralizer:relate");
       continue;
     }
     mkRel(subject, p.predicate, object, "proceduralizer:relate");
+  }
+
+  // -- Candidates that died inside structured extraction (G3): folded into
+  //    the same ledger so no drop is silent anywhere in the pipeline.
+  for (const d of opts.refDrops ?? []) {
+    // VOCABULARY_QUARANTINED is a structured-extraction outcome; the
+    // pipeline drop ledger records it as UNSUPPORTED (the reason string
+    // keeps the quarantine detail). No meaning is lost: the ledger never
+    // carried per-outcome semantics beyond the typed reason.
+    const outcome = d.outcome === "VOCABULARY_QUARANTINED" ? "UNSUPPORTED" : d.outcome;
+    dropRel(d.subjectKey, d.predicate, d.refNodeId, outcome, d.reason,
+      `proceduralizer:structured-ref:${d.property}`);
   }
 
   // Deterministic order: ids are content-derived, sort for stability.
@@ -1079,14 +1403,30 @@ export function project(
   const seenRel = new Set<string>();
   const uniqueRelationships = relationships.filter((r) => {
     const k = r.subject + "|" + r.predicate + "|" + r.object;
-    if (seenRel.has(k)) return false;
+    if (seenRel.has(k)) {
+      dropRel(r.subject, r.predicate, r.object, "DUPLICATE",
+        "identical (subject, predicate, object) triple already emitted; first occurrence wins",
+        r.evidenceRef);
+      return false;
+    }
     seenRel.add(k);
     return true;
   });
   objects.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   uniqueRelationships.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  return { objects, relationships: uniqueRelationships, fieldClasses, droppedRelationships };
+  relationshipDrops.sort((a, b) => {
+    const ka = a.outcome + "|" + a.subject + "|" + a.predicate + "|" + a.object + "|" + a.reason;
+    const kb = b.outcome + "|" + b.subject + "|" + b.predicate + "|" + b.object + "|" + b.reason;
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+  return {
+    objects,
+    relationships: uniqueRelationships,
+    fieldClasses,
+    droppedRelationships,
+    relationshipDrops,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -1117,6 +1457,10 @@ export interface PipelineReport {
   /** @GRAPH VERIFIED: every node the expansion visited. */
   graphNodesVisited: number;
   graphNodeIds: string[];
+  /** G3: every non-accepted relationship candidate with its terminal outcome. */
+  relationshipDrops: RelationshipDrop[];
+  /** G3: extracted entity counts by schema.org type (sorted keys). */
+  entitiesByType: Record<string, number>;
 }
 
 export interface PipelineOutput {
@@ -1133,7 +1477,10 @@ function mergeStructuredExtractions(
 ): StructuredExtraction {
   const facts: ParsedFact[] = [];
   const relationships: StructuredRelation[] = [];
+  const refDrops: StructuredExtraction["refDrops"] = [];
   const unsupported: StructuredExtraction["unsupported"] = [];
+  const reconciliation: StructuredExtraction["reconciliation"] = [];
+  const seenQueueKeys = new Set<string>();
   const seenEntities = new Map<string, EntityCandidate>();
   const seenNodeIds = new Set<string>();
   const stats = {
@@ -1147,7 +1494,14 @@ function mergeStructuredExtractions(
   for (const e of extractions) {
     facts.push(...e.facts);
     relationships.push(...e.relationships);
+    refDrops.push(...e.refDrops);
     unsupported.push(...e.unsupported);
+    for (const r of e.reconciliation) {
+      if (!seenQueueKeys.has(r.queueKey)) {
+        seenQueueKeys.add(r.queueKey);
+        reconciliation.push(r);
+      }
+    }
     for (const ent of e.entities) {
       if (!seenEntities.has(ent.key)) seenEntities.set(ent.key, ent);
     }
@@ -1177,7 +1531,15 @@ function mergeStructuredExtractions(
     const kb = b.subjectKey + "|" + b.predicate + "|" + b.objectKey;
     return ka < kb ? -1 : ka > kb ? 1 : 0;
   });
-  return { facts, relationships, entities, unsupported, stats };
+  refDrops.sort((a, b) => {
+    const ka = a.subjectKey + "|" + a.property + "|" + a.refNodeId;
+    const kb = b.subjectKey + "|" + b.property + "|" + b.refNodeId;
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+  reconciliation.sort((a, b) =>
+    a.queueKey < b.queueKey ? -1 : a.queueKey > b.queueKey ? 1 : 0,
+  );
+  return { facts, relationships, refDrops, entities, unsupported, reconciliation, stats };
 }
 
 export async function runExtractionPipeline(
@@ -1218,6 +1580,7 @@ export async function runExtractionPipeline(
     entities: structured.entities,
     entityFields,
     relationships: structured.relationships,
+    refDrops: structured.refDrops,
     primaryKey,
     pairs,
     overrides: opts.overrides,
@@ -1239,6 +1602,13 @@ export async function runExtractionPipeline(
   const factsBySource: Record<string, number> = {};
   for (const k of Object.keys(sourceCounts).sort()) factsBySource[k] = sourceCounts[k];
 
+  const entitiesByType: Record<string, number> = {};
+  for (const e of structured.entities) {
+    for (const t of e.types) entitiesByType[t] = (entitiesByType[t] ?? 0) + 1;
+  }
+  const sortedEntitiesByType: Record<string, number> = {};
+  for (const k of Object.keys(entitiesByType).sort()) sortedEntitiesByType[k] = entitiesByType[k];
+
   return {
     graph,
     fields,
@@ -1253,6 +1623,8 @@ export async function runExtractionPipeline(
       privateWithheld: fields.filter((f) => f.visibility === "private").length,
       graphNodesVisited: structured.stats.nodesVisited,
       graphNodeIds: structured.stats.nodeIds,
+      relationshipDrops: graph.relationshipDrops ?? [],
+      entitiesByType: sortedEntitiesByType,
     },
   };
 }

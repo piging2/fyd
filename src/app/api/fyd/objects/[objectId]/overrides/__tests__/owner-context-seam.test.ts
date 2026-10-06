@@ -7,9 +7,10 @@
  * - createOwnerContext is the single construction point: the route builds
  *   its context through the factory, so a future PING implementation swaps
  *   in without touching the route.
- * - The propose/approve loop reflects the authority gradient: presentation
- *   changes are tier-labeled with fast proposal/undo; factual changes get
- *   explicit confirmation and no undo affordance.
+ * - The propose/approve loop reflects the authority gradient: LOW
+ *   presentation changes are tier-labeled with fast proposal/undo;
+ *   MEDIUM changes (address visibility, contact corrections) get explicit
+ *   confirmation and no automatic undo; HIGH/CRITICAL never reach propose.
  *
  * Binding: FYD-24H-BUILDER-DECISIONS 2026-09-22 (AUTHORITY GRADIENT).
  */
@@ -30,37 +31,33 @@ import { projectOwnerState } from "@/fyd/object/owner-events";
 
 jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: async () => null }));
 
-function req(body: unknown, objectId = "happy-place", host = "localhost:3000") {
+function req(body: unknown, objectId = "happy-place") {
   return {
     req: {
       json: async () => body,
-      headers: {
-        get: (name: string) => (name.toLowerCase() === "host" ? host : null),
-      },
+      headers: new Headers({ host: "localhost:3000" }),
     } as unknown as NextRequest,
     params: Promise.resolve({ objectId }),
   };
 }
 
-async function call(body: unknown, objectId = "happy-place", host = "localhost:3000") {
-  const { req: r, params } = req(body, objectId, host);
+async function call(body: unknown, objectId = "happy-place") {
+  const { req: r, params } = req(body, objectId);
   const resp = await POST(r, { params });
   return { status: resp.status, body: (await resp.json()) as Record<string, unknown> };
 }
 
-const DEMO_ENV_VAR = "NEXT_PUBLIC_FYD_DEMO_OWNER_MODE";
-const OLD_DEMO_ENV = process.env[DEMO_ENV_VAR];
+const ORIGINAL_DEMO_MODE = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE;
 
 beforeEach(() => {
   process.env.FYD_OWNER_DIR = mkdtempSync(join(tmpdir(), "fyd-seam-test-"));
-  // The route is gated behind demo-owner mode: these tests exercise the
-  // mutation path with the demo explicitly opted in on a localhost host.
-  process.env[DEMO_ENV_VAR] = "1";
+  // The approve stage is DEVELOPMENT OWNER MODE only (P0 2026-10-03).
+  process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE = "1";
 });
 
 afterEach(() => {
-  if (OLD_DEMO_ENV === undefined) delete process.env[DEMO_ENV_VAR];
-  else process.env[DEMO_ENV_VAR] = OLD_DEMO_ENV;
+  if (ORIGINAL_DEMO_MODE === undefined) delete process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE;
+  else process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE = ORIGINAL_DEMO_MODE;
 });
 
 /**
@@ -159,20 +156,44 @@ describe("OwnerContext seam: swapping implementations", () => {
     expect(label.demoOwnerContext).toBe(true);
     expect(label.demoNote).toMatch(/DEMO OWNER CONTEXT/);
   });
+
+  test("unknown capabilities fail closed through the DemoOwnerContext seam", async () => {
+    // HIGH-class capabilities do not exist in demo mode; absence must deny,
+    // never fall through to the seeded verdict. The question still carries
+    // the resource; the answer is never a bare boolean.
+    const ctx = await createOwnerContext("happy-place");
+    for (const capability of [
+      "owner.send-message",
+      "owner.spend",
+      "owner.provider-mutate",
+      "owner.mass-action",
+      "owner.external-publish",
+    ]) {
+      const evaluation = await ctx.evaluateCapability("happy-place", capability);
+      expect(evaluation.capability).toBe(capability);
+      expect(evaluation.allowed).toBe(false);
+      expect(evaluation.reason).toMatch(/deny/);
+      expect(evaluation.reason).toMatch(/deny-by-default/);
+    }
+  });
 });
 
 describe("authority gradient on the route", () => {
-  test("propose labels a presentation change with the fast proposal/undo tier", async () => {
+  test("propose labels an address-visibility change as MEDIUM with explicit confirmation", async () => {
     const { status, body } = await call({
       stage: "propose",
       text: "Hide the business address",
     });
     expect(status).toBe(200);
     expect(body.ok).toBe(true);
-    expect(body.tier).toBe("presentation");
-    expect(String(body.consequenceNote)).toMatch(/proposal\/undo/);
+    // FYD product authority directive (Nolan 2026-09-25): address
+    // visibility is MEDIUM, not LOW. No fast proposal/undo tier.
+    expect(body.tier).toBe("MEDIUM");
+    expect(body.productTier).toBe("MEDIUM");
+    expect(body.changeKind).toBe("update-business");
+    expect(String(body.consequenceNote)).toMatch(/Update the business/);
     expect(body.proposal).toMatchObject({
-      command: { type: "set-address-visibility", visibility: "hidden" },
+      command: { type: "set-address-visibility", visibility: "hide" },
     });
     expect(body.demoOwnerContext).toBe(true);
   });
@@ -184,11 +205,14 @@ describe("authority gradient on the route", () => {
     });
     expect(status).toBe(200);
     expect(body.ok).toBe(true);
-    expect(body.tier).toBe("factual");
-    expect(String(body.consequenceNote)).toMatch(/Explicit confirmation/);
+    // FYD product authority directive (Nolan 2026-09-25): a factual
+    // correction is public factual presentation, which is MEDIUM.
+    expect(body.tier).toBe("MEDIUM");
+    expect(String(body.consequenceNote)).toMatch(/Update the business/);
+    expect(String(body.consequenceNote)).toMatch(/owner assertion/);
   });
 
-  test("approve of a presentation change returns a ready undo; the undo applies in one call", async () => {
+  test("approve of an address-visibility change carries no automatic undo; explicit DEFAULT unwinds it", async () => {
     const proposed = await call({ stage: "propose", text: "Hide the business address" });
     const digests = proposed.body.digests as Record<string, string>;
     const approved = await call({
@@ -200,29 +224,29 @@ describe("authority gradient on the route", () => {
     });
     expect(approved.status).toBe(200);
     expect(approved.body.ok).toBe(true);
-    expect(approved.body.tier).toBe("presentation");
-    const undo = approved.body.undo as Record<string, unknown>;
-    expect(undo).toBeDefined();
-    expect(undo.command).toEqual({
-      type: "set-address-visibility",
-      visibility: "public",
-    });
-    expect(String(undo.summary)).toMatch(/show the business address/i);
-    expect(typeof undo.baseStateDigest).toBe("string");
-    expect(typeof undo.baseViewDigest).toBe("string");
-    expect(typeof undo.patchDigest).toBe("string");
+    expect(approved.body.tier).toBe("MEDIUM");
+    // MEDIUM: no automatic LOW undo. The preference unwinds only through
+    // an explicit DEFAULT command in the propose/approve loop.
+    expect("undo" in approved.body).toBe(false);
+    expect(projectOwnerState("happy-place").addressVisibility).toBe("hide");
 
-    // Fast undo: the pre-bound inverse approves in one call, no re-propose.
-    const undone = await call({
-      stage: "approve",
-      command: undo.command,
-      baseStateDigest: undo.baseStateDigest,
-      baseViewDigest: undo.baseViewDigest,
-      patchDigest: undo.patchDigest,
+    const backToDefault = await call({ stage: "propose", text: "Reset the address visibility" });
+    expect(backToDefault.status).toBe(200);
+    expect(backToDefault.body.ok).toBe(true);
+    expect(backToDefault.body.proposal).toMatchObject({
+      command: { type: "set-address-visibility", visibility: "default" },
     });
-    expect(undone.status).toBe(200);
-    expect(undone.body.ok).toBe(true);
-    expect(projectOwnerState("happy-place").addressVisibility).toBe("public");
+    const defaultDigests = backToDefault.body.digests as Record<string, string>;
+    const defaulted = await call({
+      stage: "approve",
+      command: (backToDefault.body.proposal as Record<string, unknown>).command,
+      baseStateDigest: defaultDigests.baseStateDigest,
+      baseViewDigest: defaultDigests.baseViewDigest,
+      patchDigest: defaultDigests.patchDigest,
+    });
+    expect(defaulted.status).toBe(200);
+    expect(defaulted.body.ok).toBe(true);
+    expect(projectOwnerState("happy-place").addressVisibility).toBe("default");
   });
 
   test("approve of a factual change carries no undo affordance", async () => {
@@ -240,7 +264,8 @@ describe("authority gradient on the route", () => {
     });
     expect(approved.status).toBe(200);
     expect(approved.body.ok).toBe(true);
-    expect(approved.body.tier).toBe("factual");
+    // MEDIUM: no automatic LOW undo for factual corrections either.
+    expect(approved.body.tier).toBe("MEDIUM");
     expect("undo" in approved.body).toBe(false);
   });
 });

@@ -49,3 +49,36 @@ describe("demo owner mode path (unchanged)", () => {
     expect(isPrivateHost("example.com")).toBe(false);
   });
 });
+
+describe("isPrivateHost IPv6 + DNS-prefix handling (F03)", () => {
+  test("DNS names starting with fc/fd are NOT private", () => {
+    expect(isPrivateHost("fcdemo.example.com")).toBe(false);
+    expect(isPrivateHost("fdtest.example.com")).toBe(false);
+    expect(isPrivateHost("fcpizza.com")).toBe(false);
+  });
+
+  test("IPv6 unique-local fc00::/7 is private", () => {
+    expect(isPrivateHost("fc00::1")).toBe(true);
+    expect(isPrivateHost("fd12:3456::1")).toBe(true);
+    expect(isPrivateHost("[fd00::1]:3000")).toBe(true);
+    expect(isPrivateHost("[fc00::1]")).toBe(true);
+  });
+
+  test("IPv6 loopback and link-local", () => {
+    expect(isPrivateHost("[::1]:3000")).toBe(true);
+    expect(isPrivateHost("::1")).toBe(true);
+    expect(isPrivateHost("fe80::1")).toBe(true);
+    expect(isPrivateHost("[fe80::a]:3100")).toBe(true);
+  });
+
+  test("public IPv6 is refused", () => {
+    expect(isPrivateHost("2606:4700:4700::1111")).toBe(false);
+    expect(isPrivateHost("[2606:4700:4700::1111]:443")).toBe(false);
+  });
+
+  test("ports strip on hostnames and IPv4", () => {
+    expect(isPrivateHost("localhost:3000")).toBe(true);
+    expect(isPrivateHost("192.168.1.20:3100")).toBe(true);
+    expect(isPrivateHost("example.com:443")).toBe(false);
+  });
+});

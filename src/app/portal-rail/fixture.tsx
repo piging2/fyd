@@ -52,8 +52,8 @@ export function fixtureFor(id: string): FixtureBusiness | null {
       phoneHref: "tel:+15412865190",
       email: "taylor@happyplacecarpentry.com",
       emailHref: "mailto:taylor@happyplacecarpentry.com",
-      website: "happyplacecarpentry.com",
-      websiteHref: "https://happyplacecarpentry.com",
+      website: "happy-place-platform.vercel.app",
+      websiteHref: "https://happy-place-platform.vercel.app/",
     };
   }
   if (id === "coppersmith-plumbing") {

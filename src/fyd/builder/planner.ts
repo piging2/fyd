@@ -35,7 +35,7 @@ import {
   type ObjectGraph,
   type ObjectPresence,
 } from "../sitespec/types";
-import { SCHEMA_ROLES } from "../sitespec/schemas";
+import { SCHEMA_ROLES, ownerRelationshipTarget } from "../sitespec/schemas";
 import { requireTenantContext, type TenantContext } from "../tenant/tenant-context";
 import {
   nearestPresetName,
@@ -63,6 +63,8 @@ import {
 } from "./manifest";
 import {
   assertGeneratedPresentationVerified,
+  copyClassToBindingClassification,
+  type CopyClass,
   type GeneratedCopySlot,
   type GeneratedPresentation,
 } from "./generated-presentation";
@@ -78,7 +80,7 @@ import {
   type VerifiedRenderModel,
 } from "../sitespec/binding-verifier";
 
-export const SITE_PLANNER_VERSION = "fyd-site-planner@1";
+export const SITE_PLANNER_VERSION = "fyd-site-planner@2";
 
 /** Canonical base order of components; the vector policy boosts against it. */
 const BASE_COMPONENT_ORDER = [
@@ -186,12 +188,21 @@ export function resolveQueryObjects(
     case "related": {
       const predicates = query.predicates ?? [query.predicate];
       const schemas = query.schemas ?? (query.schema ? [query.schema] : []);
+      // Direction-agnostic: the bound object is whichever endpoint of
+      // the relationship is not the query anchor (usually the owner).
+      // Inverse predicates (works_for, provided_by, published_by) bind
+      // exactly like their forward twins; edge direction never drops a
+      // member from composition. Deduped by id: a pair linked in both
+      // directions still binds once.
+      const seen = new Set<string>();
       const out: PingObject[] = [];
       for (const r of graph.relationships) {
-        if (r.subject !== query.from || r.status !== "active") continue;
         if (!predicates.includes(r.predicate)) continue;
-        const t = byId.get(r.object);
+        const memberId = ownerRelationshipTarget(r, query.from);
+        if (memberId === null || seen.has(memberId)) continue;
+        const t = byId.get(memberId);
         if (t && t.visibility === "public" && (schemas.length === 0 || schemas.includes(t.schema))) {
+          seen.add(memberId);
           out.push(t);
         }
       }
@@ -264,7 +275,7 @@ function slotBindingsForVerification(
       out.push({
         objectId: b.objectId,
         field: b.field,
-        classification: "direct",
+        classification: copyClassToBindingClassification(slot.copyClass),
         evidenceRef: b.claimRef ?? undefined,
       });
     }
@@ -369,7 +380,14 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     if (locality !== "") {
       bindings.push({ objectId: owner.id, field: "locality", claimRef: owner.provenance?.ref ?? null });
     }
-    slots.push({ slotId: "hero-tagline", sectionId: "", text: tagline, bindings });
+    // Copy class follows the owner's provenance: website-derived facts
+    // verify as DIRECT_FACT (direct evidence); anything else the owner
+    // provided (e.g. the legacy "owner-asserted" projection kind) is
+    // USER_COPY and must resolve through a recorded owner assertion
+    // (owner_authored), never as direct evidence.
+    const copyClass: CopyClass =
+      owner.provenance?.kind === "website-derived" ? "DIRECT_FACT" : "USER_COPY";
+    slots.push({ slotId: "hero-tagline", sectionId: "", text: tagline, bindings, copyClass });
   }
   const generatedPresentation: GeneratedPresentation = { version: 1, slots };
 

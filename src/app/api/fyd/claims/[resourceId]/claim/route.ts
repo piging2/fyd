@@ -10,6 +10,7 @@ import { claim, createObserved, DEMO_CONTEXT_IDS, isValidResourceId } from "@/fy
 import { ClaimError } from "@/fyd/claim/types";
 import { resolveClaimIdentity } from "@/fyd/claim/identity";
 import { readClaim, writeClaim } from "@/fyd/claim/store";
+import { projectClaimForViewer } from "@/fyd/claim/claim-projection";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,7 +64,9 @@ export async function POST(
     const current = readClaim(resourceId) ?? createObserved(resourceId, sourceUrl);
     const next = claim(current, identity);
     writeClaim(next);
-    return NextResponse.json({ ok: true, claim: next });
+    // Single claim projection rule: owner-authorized callers receive the
+    // owner projection of the stored record.
+    return NextResponse.json({ ok: true, claim: projectClaimForViewer(next, "owner") });
   } catch (e) {
     if (e instanceof ClaimError) {
       const status = e.code === "bad-transition" ? 409 : 400;

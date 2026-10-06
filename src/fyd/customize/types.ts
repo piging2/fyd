@@ -31,7 +31,8 @@ export type ParsedIntent =
   | { kind: "promote_first"; target: string }
   | { kind: "feature_object"; target: string }
   | { kind: "hide_section"; target: string }
-  | { kind: "show_section"; target: string };
+  | { kind: "show_section"; target: string }
+  | { kind: "hide_object"; target: string };
 
 /**
  * Honest failure: the text is not a supported customization. The reason
@@ -105,7 +106,22 @@ export interface PresentationIntentBlock {
   };
 }
 
-/** Overlay op kinds the projection dump understands (see dump.py). */
+/**
+ * Overlay op kinds the projection dump understands (see dump.py).
+ *
+ * DIGEST LAW (pinned 2026-09-27): for set_presentation_intent, both
+ * proposal.proposalDigest and approval.proposalDigest are produced by the
+ * TS overlay canonicalizer (src/fyd/proceduralize/patch.ts proposalDigest),
+ * never by the MC approval canonicalizer (mc-approval/approval_request.py
+ * proposal_digest). The digest covers the overlay-format SitePatchBody
+ * minus the proposalDigest field itself: keys sorted recursively, compact
+ * JSON, UTF-8, SHA-256 hex. Volatile keys excluded: proposalDigest,
+ * createdAt, generatedAt, nonce. The MC approval digest is a different
+ * digest over different (MC proposal) bytes; its only link to the op is
+ * the prose citation in approval.note (e.g. "MC approval p0prop-... (digest
+ * 5c1d8737...)"). Never feed an overlay block to the Python canonicalizer
+ * (or MC proposal bytes to the TS one) and expect the recorded digest.
+ */
 export type PresentationIntentOverlayOp =
   | {
       op: "set_presentation_intent";
@@ -120,3 +136,13 @@ export type PresentationIntentOverlayOp =
       };
     }
   | { op: "clear_presentation_intent"; intentId: string };
+
+/**
+ * The set-variant of the overlay op: the exact approved directive the owner
+ * reviewed (proposal digest, approval lineage). buildDirective (./server.ts)
+ * always produces this variant.
+ */
+export type SetPresentationIntentOp = Extract<
+  PresentationIntentOverlayOp,
+  { op: "set_presentation_intent" }
+>;

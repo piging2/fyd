@@ -112,7 +112,12 @@ export function separateCustomerData(input: SiteBundleInput): CustomerDataPackag
  * with no FYD internals.
  */
 export function exportCustomerData(pkg: CustomerDataPackage): string {
-  return JSON.stringify(pkg, null, 2);
+  // Script-breakout hardening: the export is portable JSON, but a naive
+  // downstream consumer may inline it into an HTML <script> block, where a
+  // literal "</script>" inside a string would terminate the block. Escaping
+  // every "<" as \u003c is lossless under JSON.parse (round-trip
+  // byte-identical) and makes breakout impossible.
+  return JSON.stringify(pkg, null, 2).replace(/</g, "\\u003c");
 }
 
 /**

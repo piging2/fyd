@@ -26,6 +26,7 @@ import type {
   RelatedRef,
 } from "@/fyd/object/object-projection";
 import type { ViewportCapabilities } from "./viewport";
+import { resolveObjectPresentationIdentity, type ObjectPresentationIdentity } from "../../presentation/identity";
 
 export type ViewerRole = "visitor" | "owner-demo";
 
@@ -118,6 +119,8 @@ export interface EvidenceSummary {
 export interface PresentationSpec {
   objectId: string;
   name: string;
+  /** Display-only identity; carries no business ownership or sponsorship authority. */
+  identity?: ObjectPresentationIdentity;
   kindLabel: string | null;
   /** One sentence, roughly 80-140 chars, content-budgeted by callers. */
   shortDescription: string;
@@ -236,6 +239,7 @@ export function buildPresentationSpec(input: SpecInput): PresentationSpec {
   return {
     objectId: descriptor.objectId,
     name: descriptor.name,
+    identity: resolveObjectPresentationIdentity(projection ?? { id: descriptor.objectId, name: descriptor.name }),
     kindLabel,
     shortDescription: (firstKnown?.value ?? "").trim(),
     actions,

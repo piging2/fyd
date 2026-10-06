@@ -26,18 +26,12 @@
  * disagrees with the route tenant is REFUSED with 400 tenant_mismatch.
  * A tenant mismatch never serves another tenant's object.
  *
- * DEMO OWNER MODE GATE: both stages (propose and approve) require
- * DEV/DEMO OWNER MODE: NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 on a localhost or
- * private-network host. Anything else gets a typed 403
- * { ok:false, code:"demo_owner_mode_required" } before any object I/O, and
- * nothing is written. Visitors may still read via the GET object routes
- * and Ask FYD. This route is the seam where real owner auth will attach;
- * until that lane exists, every response is stamped through the
- * OwnerContext seam with demoOwnerContext: true plus the actor disclosure,
- * and the Manage surface labels every session DEV/DEMO.
- *
- * DEMO OWNER MODE IS NOT PRODUCTION AUTHENTICATION. No identity is
- * verified here. This route must not be treated as a production owner API.
+ * DEMO/DEV ONLY: there is no production authentication on this route. It is
+ * the seam where real owner auth will attach; until that lane exists, every
+ * response is stamped through the OwnerContext seam with demoOwnerContext:
+ * true plus the actor disclosure, and the Manage surface labels every
+ * session DEV/DEMO. This route must not be treated as a production owner
+ * API.
  *
  * The approve stage enforces the owner-core chain:
  *   SESSION -> PING IDENTITY -> CONTROL RELATIONSHIP -> CAPABILITY
@@ -48,40 +42,75 @@
  * always the seeded demo actor, labeled as DEMO OWNER CONTEXT.
  * Authentication alone NEVER grants mutation.
  *
- * AUTHORITY GRADIENT (FYD-24H-BUILDER-DECISIONS 2026-09-22): the loop
- * reflects consequence, not one heavyweight path for everything.
+ * AUTHORITY GRADIENT (locked product law, Nolan's 155 grill answers):
+ * the loop reflects consequence: FOUR tiers, not three.
  * commandConsequenceTier classifies each OwnerCommand:
- * - "presentation" (local presentation change: reorder, show/hide): fast
- *   proposal/undo. The proposal stays digest-bound to its base state (the
- *   proven safety property), and a successful approve returns a ready
- *   `undo` (exact inverse command pre-bound to the post-apply digests),
- *   so the owner can reverse it in one approve call.
- * - "factual" (public factual change: correct, confirm, add): explicit
- *   confirmation. The full propose -> digest-bound approve loop, and the
- *   approval records an owner assertion (actor + timestamp) while the
- *   source record is never rewritten.
+ * - "LOW" (reversible presentation change: reorder, non-factual
+ *   layout): apply with undo. The proposal stays digest-bound to its base
+ *   state (the proven safety property), and a successful approve returns
+ *   a ready `undo` (exact inverse command pre-bound to the post-apply
+ *   digests), so the owner can reverse it in one approve call. No public
+ *   fact is altered. Owner-facing language: "Change the website".
+ * - "MEDIUM" (factual correction, contact presentation, service
+ *   visibility, business description, ADDRESS VISIBILITY hide/show/
+ *   default): proposal + simple confirmation (FYD product authority
+ *   directive, Nolan 2026-09-25: address hide/show is MEDIUM, not LOW).
+ *   The full propose -> digest-bound approve loop, and the approval
+ *   records an owner assertion (actor + timestamp) while the source
+ *   record is never rewritten. Owner-facing language: "Update the
+ *   business" (knowledge transition: site, Ask, search, all projections).
+ * - "HIGH" (pricing, credentials, ownership, employee identity, external
+ *   publication, messages, booking, provider mutation, financial/legal
+ *   claims): explicit authorization. Free text matching these categories
+ *   is refused at propose with the category named; nothing is drafted,
+ *   nothing is written.
+ * - "CRITICAL" (credentials, ownership transfer, financial moves, legal
+ *   commitments): strong authority + explicit confirmation + receipt.
+ *   Refused at propose in this lane; every CRITICAL decision produces a
+ *   receipt through the external-effects resolution chain:
+ *   ACTOR / INTENT / TARGET / CAPABILITY / POLICY / AUTHORITY /
+ *   EXECUTION / RECEIPT / OUTCOME.
  * Approval never confers capability: the capability gate runs on every
- * approve call regardless of tier.
+ * approve call regardless of tier. Autonomy is per action class + scope +
+ * constraints; there is no global autonomous flag and no
+ * provider-specific action authority.
  *
  * Failures are typed 400s/409s/403s; nothing is written on failure.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { isDemoOwnerModeEnabled, isPrivateHost } from "@/fyd/owner-mode/gate";
 import { loadObjectView, knownServices } from "@/fyd/object/view";
 import {
+  buildEffectReceipt,
+  changeKindForTier,
   commandConsequenceTier,
+  consequenceNoteFor,
   describeCommand,
+  detectHighConsequenceRequest,
   interpretTextCommand,
   invertOwnerCommand,
 } from "@/fyd/object/commands";
+import { foldLegacyTier } from "@/fyd/object/consequence-tiers";
+import {
+  classifyOwnerAction,
+  frictionForTier,
+} from "@/fyd/object/consequence-classification";
 import {
   applyOwnerCommand,
   parseOwnerCommand,
   OwnerCommandError,
 } from "@/fyd/object/owner-store";
-import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
-import { findBusinessObject, rawFieldValue } from "@/fyd/object/owner-overlay";
+import { CorruptOwnerLogError, OwnerLogConflictError, readOwnerEvents } from "@/fyd/object/owner-events";
+import {
+  getPingObjectGraphSync,
+  getVerifiedPublicProjectionSync,
+} from "@/fyd/data/ping-object-source";
+import { readOverrides } from "@/fyd/object/owner-store";
+import {
+  detectOrphanedCorrections,
+  findBusinessObject,
+  rawFieldValue,
+} from "@/fyd/object/owner-overlay";
 import { TenantContextError } from "@/fyd/tenant/tenant-context";
 import type { OwnerCommand } from "@/fyd/object/types";
 import {
@@ -98,42 +127,10 @@ import {
   ownerContextRefusalLabel,
   type OwnerContext,
 } from "./owner-context";
+import { isDevOwnerHost } from "@/fyd/owner-mode/gate";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-const NOT_REAL_AUTH =
-  "DEMO OWNER MODE - not real authentication. No identity was verified; " +
-  "this mode is for localhost/private-network demonstration only.";
-
-/**
- * Demo-owner-mode gate (same contract as the customize approval API):
- * refuse with a typed 403 unless the demo explicitly opts in via
- * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 AND the request arrived on a
- * localhost/private-network host. Default off; absent/false => fail closed
- * with { ok:false, code:"demo_owner_mode_required" }, before any I/O.
- */
-function demoDenied(request: NextRequest) {
-  const enabled = isDemoOwnerModeEnabled();
-  const host = request.headers.get("host") ?? "";
-  const privateNet = isPrivateHost(host);
-  if (!enabled || !privateNet) {
-    return NextResponse.json(
-      {
-        ok: false,
-        code: "demo_owner_mode_required",
-        error:
-          "Owner overrides require DEV/DEMO OWNER MODE " +
-          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
-          NOT_REAL_AUTH,
-        demoOwnerMode: enabled,
-        hostPrivate: privateNet,
-      },
-      { status: 403 },
-    );
-  }
-  return null;
-}
 
 /** Body keys that claim a tenant identity. Only the route path may do that. */
 const TENANT_CLAIM_KEYS = ["siteId", "tenantId", "tenant"] as const;
@@ -158,6 +155,95 @@ function tenantMismatchResponse(ctx: OwnerContext, key: string, claimed: string)
     },
     { status: 400 },
   );
+}
+
+/**
+ * GET /api/fyd/objects/[objectId]/overrides
+ *
+ * Owner-lane read (Q-C-01): the owner-authorized ObjectView built over the
+ * OWNER projection (hidden fields stay visible to the owner for
+ * management) plus the human-language owner history. This is the Manage
+ * surface's read path; the public GET /api/fyd/objects/[objectId] never
+ * serves history.
+ *
+ * DEMO/DEV ONLY, same as POST: no production authentication. The
+ * OwnerContext seam stamps the response; the Manage surface labels every
+ * session DEV/DEMO.
+ */
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ objectId: string }> },
+) {
+  const { objectId } = await params;
+  let ctx: OwnerContext;
+  try {
+    ctx = await createOwnerContext(objectId);
+  } catch (err) {
+    if (err instanceof TenantContextError) {
+      return NextResponse.json(
+        {
+          ...ownerContextRefusalLabel(),
+          ok: false,
+          code: "invalid_tenant",
+          error:
+            "Refusing to act: the route object id is not a valid tenant id. " +
+            "Tenant ids are DNS-safe slugs.",
+        },
+        { status: 400 },
+      );
+    }
+    throw err;
+  }
+  let projection;
+  try {
+    projection = getVerifiedPublicProjectionSync(objectId, "owner");
+  } catch {
+    return NextResponse.json(
+      { ...ctx.responseLabel(), ok: false, error: "Unknown object." },
+      { status: 404 },
+    );
+  }
+  const view = loadObjectView(projection, objectId);
+  if (!view) {
+    return NextResponse.json(
+      { ...ctx.responseLabel(), ok: false, error: "Unknown object." },
+      { status: 404 },
+    );
+  }
+  const history = readOverrides(objectId).history;
+  // PROD-8: corrections active in the journal that apply to nothing in
+  // the current graph. The customize panel renders these as warnings;
+  // they are never silently dropped. Read-only: the journal is untouched.
+  const orphanedCorrections = detectOrphanedCorrections(
+    projection.graph,
+    objectId,
+  );
+  return NextResponse.json({
+    ...ctx.responseLabel(),
+    ok: true,
+    view,
+    history,
+    orphanedCorrections,
+    siteId: objectId,
+  });
+}
+
+/**
+ * Authority-UX lane: the consequence classification that travels with a
+ * proposal/decision record (tier + plain-language consequence + friction),
+ * so WHY THIS and audit can show it. The renderer never invents this:
+ * it reads it off the record.
+ */
+function classificationRecord(command: OwnerCommand) {
+  const c = classifyOwnerAction({ kind: "owner-command", command });
+  return {
+    tier: c.tier,
+    productTier: c.productTier,
+    ownerConsequence: c.ownerConsequence,
+    rationale: c.rationale,
+    friction: c.friction,
+    changeKind: c.changeKind,
+  };
 }
 
 export async function POST(
@@ -194,15 +280,16 @@ export async function POST(
     throw err;
   }
 
-  // Demo-owner-mode gate: BOTH stages (propose and approve) require the
-  // demo env flag on a localhost/private-network host. Visitors fail closed
-  // with 403 demo_owner_mode_required before any object I/O; nothing is
-  // written. (Invalid-tenant refusal above stays first: it is pure, before
-  // any I/O, and never serves another tenant's object.)
-  const gate = demoDenied(request);
-  if (gate) return gate;
-
-  if (!loadObjectView(objectId)) {
+  // Owner-authorized read (Q-C-01): the owner projection passes the
+  // boundary with the owner viewer policy, so hidden fields stay visible
+  // to the owner for management.
+  let ownerProjection;
+  try {
+    ownerProjection = getVerifiedPublicProjectionSync(objectId, "owner");
+  } catch {
+    return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Unknown object." }, { status: 404 });
+  }
+  if (!loadObjectView(ownerProjection, objectId)) {
     return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Unknown object." }, { status: 404 });
   }
 
@@ -233,6 +320,67 @@ export async function POST(
     }
     const proposal = interpretTextCommand(text, objectId);
     if (!proposal) {
+      // HIGH / CRITICAL consequence: free text the interpreter does not
+      // understand as a typed command may still be an action request in a
+      // consequential category (pricing, credentials, ownership, external
+      // publication, messages, booking, provider mutation, financial/legal).
+      // These are refused at propose with the category named and a
+      // decision receipt through the external-effects resolution chain
+      // (ACTOR / INTENT / TARGET / CAPABILITY / POLICY / AUTHORITY /
+      // EXECUTION / RECEIPT / OUTCOME). Nothing is drafted, nothing is
+      // written, and no approval can be presented for them.
+      const detected = detectHighConsequenceRequest(text);
+      if (detected) {
+        const evaluation = await ctx.evaluateCapability(objectId, "owner.correct-fact");
+        const receipt = buildEffectReceipt({
+          actor: {
+            id: ctx.actor.actorId,
+            label: ctx.actor.label,
+            demo: true,
+          },
+          intentText: text.trim(),
+          category: detected.category,
+          tier: detected.tier,
+          target: { tenantId: ctx.tenantId, objectId },
+          capability: {
+            // Preserve the real capability evaluation: the refusal below is
+            // caused by POLICY (tier) and AUTHORITY (demo context), not by a
+            // capability denial. Fabricating allowed:false here would
+            // contradict the evaluation's own reason.
+            name: evaluation.capability,
+            allowed: evaluation.allowed,
+            reason: evaluation.reason,
+          },
+          policy:
+            detected.tier === "CRITICAL"
+              ? "CRITICAL: strong authority + explicit confirmation + receipt. " +
+                "This lane (DEMO OWNER CONTEXT, no verified owner identity) " +
+                "cannot satisfy strong authority."
+              : "HIGH: explicit authorization required. This lane cannot " +
+                "grant it.",
+          authorityNote:
+            "DEMO OWNER CONTEXT: the seeded demo actor, treated as " +
+            "controller by a hard-coded demo mapping. No owner identity " +
+            "was verified; nothing here may back a production " +
+            "authorization decision.",
+        });
+        return NextResponse.json(
+          {
+            ...ctx.responseLabel(),
+            ok: false,
+            code: "consequence_refused",
+            tier: detected.tier,
+            category: detected.category,
+            reason: detected.reason,
+            // Authority-UX lane: the friction this tier demands, so the
+            // refusal states what authorization would be required.
+            friction: frictionForTier(detected.tier),
+            receipt,
+            chain: ctx.auditView(),
+          },
+          { status: 403 },
+        );
+      }
       return NextResponse.json(
         {
           ...ctx.responseLabel(),
@@ -261,6 +409,7 @@ export async function POST(
     const capabilityImpact = ctx.capabilityImpactLine(evaluation);
     const { ids, names } = knownServices(objectId);
     const preview = buildPatchPreview(objectId, command, ids, names, capabilityImpact);
+    const tier = commandConsequenceTier(command);
     return NextResponse.json({
       ...ctx.responseLabel(),
       ok: true,
@@ -268,14 +417,21 @@ export async function POST(
       actorDisclosure: actor.disclosure,
       proposal: { command, summary: proposal.summary },
       preview,
-      tier: commandConsequenceTier(command),
-      consequenceNote:
-        commandConsequenceTier(command) === "presentation"
-          ? "Local presentation change. Fast proposal/undo: the proposal stays digest-bound to its base state, and the approval response carries a ready undo you can approve in one step. No public fact is altered."
-          : "Public factual change. Explicit confirmation: approving records an owner assertion with actor and timestamp. The source record is never rewritten.",
+      tier,
+      // Product-directive stamping (Nolan 2026-09-25): the four-tier scale
+      // folds onto the LOW/MEDIUM/HIGH product tiers (HIGH+CRITICAL -> HIGH).
+      productTier: foldLegacyTier(tier),
+      // Owner-facing language law: LOW speaks as "Change the website"
+      // (presentation intent, projection only); MEDIUM speaks as "Update
+      // the business" (knowledge transition, all projections follow).
+      changeKind: changeKindForTier(tier),
+      consequenceNote: consequenceNoteFor(tier),
+      // Authority-UX lane: consequence classification + friction stamped
+      // on the proposal record (renderer reads it, never invents it).
+      classification: classificationRecord(command),
       digests: {
         baseStateDigest: ownerStateDigest(objectId),
-        baseViewDigest: buildViewDigest(objectId),
+        baseViewDigest: buildViewDigest(ownerProjection, objectId),
         patchDigest: patchDigestOf(command),
       },
       chain: ctx.auditView(),
@@ -285,6 +441,31 @@ export async function POST(
   // Stage 2: approve a previously proposed typed command. This is the only
   // stage that mutates the owner store.
   if (stage === "approve") {
+    // P0 2026-10-03: the approve stage mutates the owner store, so it is
+    // DEVELOPMENT OWNER MODE only: NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 on a
+    // localhost/private-network/explicit dev host. A spoofed public Host
+    // gets 403 here, before any input is processed. DEMO OWNER MODE - not
+    // real authentication; no identity was verified.
+    const demoEnabled = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1";
+    const reqHost = request.headers?.get("host") ?? "";
+    const hostPrivate = isDevOwnerHost(reqHost);
+    if (!demoEnabled || !hostPrivate) {
+      return NextResponse.json(
+        {
+          ...ctx.responseLabel(),
+          ok: false,
+          code: "demo_owner_mode_required",
+          error:
+            "Owner overrides approvals require DEV/DEMO OWNER MODE " +
+            "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+            "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+            "this mode is for explicit development hosts only.",
+          demoOwnerMode: demoEnabled,
+          hostPrivate,
+        },
+        { status: 403 },
+      );
+    }
     const rawCommand = record.command;
     const presentedBase =
       typeof record.baseStateDigest === "string" ? record.baseStateDigest : "";
@@ -338,7 +519,7 @@ export async function POST(
     // unchanged owner journal). Either way the approval's binding is broken:
     // refuse, write nothing, name what moved.
     const currentBase = ownerStateDigest(objectId);
-    const currentView = buildViewDigest(objectId);
+    const currentView = buildViewDigest(ownerProjection, objectId);
     const stateMoved = presentedBase !== currentBase;
     const viewMoved = presentedView !== currentView;
     if (stateMoved || viewMoved) {
@@ -362,6 +543,11 @@ export async function POST(
         { status: 409 },
       );
     }
+    // F02: pin the owner-log length the digest check just approved. The
+    // capability evaluation below awaits, so a concurrent approve could
+    // interleave; the append refuses (compare-and-swap) if the log moved.
+    // This read is synchronous with the check above: no await between them.
+    const approveBaseLength = readOwnerEvents(objectId).length;
     try {
       // SESSION -> PING IDENTITY -> CONTROL RELATIONSHIP -> CAPABILITY.
       // The verdict is the only gate to the apply step: authentication
@@ -388,29 +574,43 @@ export async function POST(
         );
       }
       const { ids, names } = knownServices(objectId);
-      // Contact corrections and confirmations need two things only the
-      // server can attach honestly: (1) the SOURCE's current value, read
-      // from the raw projection (overlay off) at approval time, so the
-      // record keeps SOURCE SAYS X even if the source changes later (a
-      // confirmation records it for drift detection); (2) the authority
+      // Contact corrections, service description corrections, and
+      // confirmations need two things only the server can attach honestly:
+      // (1) the SOURCE's current value, read from the raw projection
+      // (overlay off) at approval time, so the record keeps SOURCE SAYS X
+      // even if the source changes later (a confirmation records it for
+      // drift detection); (2) the authority
       // label the correction is recorded under. In demo mode this is the
       // seeded demo actor from the OwnerContext: an explicit non-identity,
       // never a verified identity. The chain audit above labels it demo
       // scaffolding; this field is the seam where real owner identity
       // will attach.
-      let opts: { sourceValue?: string | null; actorLabel?: string } | undefined;
-      if (command.type === "set-contact-field" || command.type === "confirm-contact-field") {
+      let opts: { sourceValue?: string | null; actorLabel?: string; expectedLength?: number } | undefined;
+      if (
+        command.type === "set-contact-field" ||
+        command.type === "confirm-contact-field" ||
+        command.type === "set-service-description"
+      ) {
         let sourceValue: string | null = null;
         try {
           const rawGraph = getPingObjectGraphSync(objectId, { ownerOverlay: false }).graph;
-          const business = findBusinessObject(rawGraph);
-          if (business) sourceValue = rawFieldValue(business, command.field);
+          if (command.type === "set-service-description") {
+            // The SOURCE's current description for this service: read off
+            // the raw projection at approval time, so the record keeps
+            // SOURCE SAYS X even if the source changes later.
+            const service = rawGraph.objects.find((o) => o.id === command.serviceId);
+            if (service) sourceValue = rawFieldValue(service, "description");
+          } else {
+            const business = findBusinessObject(rawGraph);
+            if (business) sourceValue = rawFieldValue(business, command.field);
+          }
         } catch {
           sourceValue = null;
         }
         opts = {
           sourceValue,
           actorLabel: actor.label,
+          expectedLength: approveBaseLength,
         };
       }
       // PROPOSE/APPLY RULE -> EVENT -> PROJECTION: the apply appends one
@@ -426,15 +626,17 @@ export async function POST(
         eventId: lastEventId(objectId),
         resultDigest: digestOf(overrides),
       });
-      const view = loadObjectView(objectId);
-      // Fast proposal/undo for local presentation changes: the exact
-      // inverse command, pre-bound to the POST-APPLY digests, so the owner
-      // can reverse it in one approve call. If the state moved since, the
-      // approve stage's digest checks refuse it safely. Factual changes
-      // get no undo: assertions are superseded by newer assertions, and
-      // corrections revert through revert-contact-field.
+      const refreshedProjection = getVerifiedPublicProjectionSync(objectId, "owner");
+      const view = loadObjectView(refreshedProjection, objectId);
+      // Fast proposal/undo for LOW (reversible presentation) changes: the
+      // exact inverse command, pre-bound to the POST-APPLY digests, so the
+      // owner can reverse a website change in one approve call. If the
+      // state moved since, the approve stage's digest checks refuse it
+      // safely. MEDIUM changes get no undo: assertions are superseded by
+      // newer assertions, and corrections revert through
+      // revert-contact-field.
       const tier = commandConsequenceTier(command);
-      const inverse = tier === "presentation" ? invertOwnerCommand(command) : null;
+      const inverse = tier === "LOW" ? invertOwnerCommand(command) : null;
       const undo =
         inverse === null
           ? undefined
@@ -442,7 +644,7 @@ export async function POST(
               command: inverse,
               summary: describeCommand(inverse, names),
               baseStateDigest: ownerStateDigest(objectId),
-              baseViewDigest: buildViewDigest(objectId),
+              baseViewDigest: buildViewDigest(ownerProjection, objectId),
               patchDigest: patchDigestOf(inverse),
             };
       return NextResponse.json({
@@ -452,10 +654,32 @@ export async function POST(
         history: overrides.history,
         approval,
         tier,
+        changeKind: changeKindForTier(tier),
+        // Authority-UX lane: the decision record carries the same
+        // classification the proposal carried, for WHY THIS and audit.
+        classification: classificationRecord(command),
         undo,
         chain: audit,
       });
     } catch (err) {
+      if (err instanceof OwnerLogConflictError) {
+        return NextResponse.json(
+          {
+            ...ctx.responseLabel(),
+            ok: false,
+            code: "owner_log_conflict",
+            error:
+              "The owner log changed since this proposal was approved. Nothing was written. Propose again against the current state.",
+          },
+          { status: 409 },
+        );
+      }
+      if (err instanceof CorruptOwnerLogError) {
+        return NextResponse.json(
+          { ...ctx.responseLabel(), ok: false, error: "OWNER_LOG_CORRUPT", detail: err.reason },
+          { status: 500 },
+        );
+      }
       const message = err instanceof OwnerCommandError ? err.message : "Could not apply the change.";
       return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: message }, { status: 400 });
     }

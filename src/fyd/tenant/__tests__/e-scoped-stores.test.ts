@@ -133,11 +133,13 @@ describe("scoped runtime entry points (real wrappers)", () => {
 
   test("same-tenant approval passes the tenant gate (gateway absence is a downstream error)", async () => {
     // No gateway listens in unit tests: point the emit at a dead port so no
-    // real event is recorded. The honest assertion: the tenant gate passes
-    // and the failure is the gateway's own unreachable error, NOT a tenant
-    // refusal.
+    // real event is recorded. (Port 59998 provably refuses connections here;
+    // port 1 is rejected client-side by undici as a bad port, which does not
+    // exercise the unreachable path.) The honest assertion: the tenant gate
+    // passes and the failure is the gateway's own unreachable error, NOT a
+    // tenant refusal.
     const prev = process.env.FYD_CUSTOMIZE_GATEWAY_URL;
-    process.env.FYD_CUSTOMIZE_GATEWAY_URL = "http://127.0.0.1:1/events";
+    process.env.FYD_CUSTOMIZE_GATEWAY_URL = "http://127.0.0.1:59998/events";
     try {
       await expect(scopedEmitOverlayEvent(A, "site-a", [])).rejects.toThrow(
         /demo gateway unreachable/,

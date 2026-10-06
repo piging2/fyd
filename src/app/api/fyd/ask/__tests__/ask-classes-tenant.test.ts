@@ -1,21 +1,24 @@
 /**
- * Ask FYD 3-class + tenant-boundary route tests (Phase 2 / G3).
+ * Ask FYD 5-class + coarse-state + tenant-boundary route tests (Phase 2 / G3).
  *
- * - claimClassFor / answerClassFor mapping unit tests.
+ * - claimClassFor / answerClassFor / answerStateFor mapping unit tests.
  * - G3 adversarial: POST /api/fyd/ask/[siteId] derives the tenant from the
  *   route path. A body that claims tenant B while the route is tenant A is
  *   REFUSED (400 tenant_mismatch): served for A or refused, never for B.
- * - 3-class wiring: SUPPORTED / DERIVED (explicitly labeled) / UNKNOWN
- *   (refusal) on live answers, with per-citation claimClass.
+ * - 5-class wiring: SUPPORTED DIRECTLY / SUPPORTED BY MULTIPLE EVIDENCE /
+ *   DERIVED (explicitly labeled) / CONFLICTED / UNSUPPORTED (refusal) on
+ *   live answers, with per-citation claimClass, and the coarse answerState
+ *   (KNOWN / CONFLICTED / UNKNOWN) fed by the five classes (both layers).
+ * - Structured refs: objectRefs, evidenceRefs, sourceRefs are
+ *   citation-backed and present on every 200.
  * - Visitor vs owner scope: mode "owner" grants nothing (treated
  *   visitor-safe); an owner-private fact asked in visitor mode AND in owner
  *   mode is refused/unknown, never leaked.
  */
-import { claimClassFor, answerAskFyd, type AnswerAskFydDeps } from "../../../../../fyd/ask/visitor-answer";
+import { claimClassFor, answerStateFor, answerAskFyd, type AnswerAskFydDeps } from "../../../../../fyd/ask/visitor-answer";
 import { answerClassFor } from "../ask-pipeline";
 import { getSiteBundle, type SiteBundle } from "../../../../../fyd/media/site-bundle";
 import type { PingObject } from "../../../../../lib/ping/types";
-import { POST as postFlat } from "../route";
 import { POST as postNested } from "../[siteId]/route";
 import type { NextRequest } from "next/server";
 import { mkdtempSync } from "node:fs";
@@ -53,9 +56,6 @@ afterAll(async () => {
   await journal.close();
 });
 
-function flatReq(body: unknown) {
-  return { json: async () => body } as unknown as NextRequest;
-}
 function nestedReq(siteId: string, body: unknown) {
   return {
     req: { json: async () => body } as unknown as NextRequest,
@@ -63,49 +63,100 @@ function nestedReq(siteId: string, body: unknown) {
   };
 }
 
-describe("claimClassFor (3-class mapping)", () => {
+describe("claimClassFor (5-class mapping)", () => {
   test.each([
-    ["DIRECT_FACT", "supported"],
-    ["relationship_fact", "supported"],
-    ["USER_OVERRIDE", "supported"],
-    ["owner_override", "supported"],
-    ["owner_authorship", "supported"],
-    ["website_statement", "supported"],
-    ["unknown", "supported"],
-    [undefined, "supported"],
+    ["DIRECT_FACT", "SUPPORTED DIRECTLY"],
+    ["relationship_fact", "SUPPORTED DIRECTLY"],
+    ["USER_OVERRIDE", "SUPPORTED DIRECTLY"],
+    ["owner_override", "SUPPORTED DIRECTLY"],
+    ["owner_authorship", "SUPPORTED DIRECTLY"],
+    ["website_statement", "SUPPORTED DIRECTLY"],
+    ["DEMO_SYNTHETIC", "SUPPORTED DIRECTLY"],
+    ["unknown", "SUPPORTED DIRECTLY"],
+    [undefined, "SUPPORTED DIRECTLY"],
   ])("classification %p maps to %p", (classification, expected) => {
     expect(claimClassFor(classification as string | undefined)).toBe(expected);
   });
 
   test.each([["DERIVED_FACT"], ["derived"], ["INFERENCE"], ["GENERATED_COPY"]])(
-    "classification %p is explicitly derived",
+    "classification %p is explicitly DERIVED",
     (classification) => {
-      expect(claimClassFor(classification)).toBe("derived");
+      expect(claimClassFor(classification)).toBe("DERIVED");
+    },
+  );
+
+  test.each([["CONFLICT"], ["conflict"]])(
+    "classification %p is explicitly CONFLICTED",
+    (classification) => {
+      expect(claimClassFor(classification)).toBe("CONFLICTED");
     },
   );
 });
 
 describe("answerClassFor (answer-level reduction)", () => {
-  test("refusal is unknown even with no citations", () => {
-    expect(answerClassFor(true, [])).toBe("unknown");
+  const cite = (id: string, claimClass: "SUPPORTED DIRECTLY" | "DERIVED" | "CONFLICTED") => ({
+    n: 1,
+    id,
+    label: id,
+    kind: "object" as const,
+    source: "s",
+    basis: "b",
+    lastChecked: null,
+    claimClass,
   });
-  test("answered with no citations is unknown", () => {
-    expect(answerClassFor(false, [])).toBe("unknown");
+
+  test("refusal is UNSUPPORTED even with no citations", () => {
+    expect(answerClassFor(true, [])).toBe("UNSUPPORTED");
   });
-  test("all-supported citations is supported", () => {
+  test("answered with no citations is UNSUPPORTED", () => {
+    expect(answerClassFor(false, [])).toBe("UNSUPPORTED");
+  });
+  test("one direct citation is SUPPORTED DIRECTLY", () => {
+    expect(answerClassFor(false, [cite("a", "SUPPORTED DIRECTLY")])).toBe("SUPPORTED DIRECTLY");
+  });
+  test("two distinct direct citations behind one claim are SUPPORTED BY MULTIPLE EVIDENCE", () => {
+    const oneClaim = [
+      { claim: "The business offers repairs.", classification: "DIRECT_FACT", evidenceRefIds: ["a", "b"] },
+    ];
     expect(
-      answerClassFor(false, [
-        { n: 1, id: "a", label: "a", source: "s", basis: "b", lastChecked: null, claimClass: "supported" },
-      ]),
-    ).toBe("supported");
+      answerClassFor(false, [cite("a", "SUPPORTED DIRECTLY"), cite("b", "SUPPORTED DIRECTLY")], oneClaim),
+    ).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
   });
-  test("any derived citation makes the answer derived", () => {
+  test("two distinct direct citations behind different claims are SUPPORTED DIRECTLY", () => {
+    const twoClaims = [
+      { claim: "The phone is 555-1234.", classification: "DIRECT_FACT", evidenceRefIds: ["a"] },
+      { claim: "The business offers repairs.", classification: "DIRECT_FACT", evidenceRefIds: ["b"] },
+    ];
     expect(
-      answerClassFor(false, [
-        { n: 1, id: "a", label: "a", source: "s", basis: "b", lastChecked: null, claimClass: "supported" },
-        { n: 2, id: "b", label: "b", source: "s", basis: "Derived from the site data", lastChecked: null, claimClass: "derived" },
-      ]),
-    ).toBe("derived");
+      answerClassFor(false, [cite("a", "SUPPORTED DIRECTLY"), cite("b", "SUPPORTED DIRECTLY")], twoClaims),
+    ).toBe("SUPPORTED DIRECTLY");
+  });
+  test("the same evidence id twice is not multiple evidence", () => {
+    expect(
+      answerClassFor(false, [cite("a", "SUPPORTED DIRECTLY"), cite("a", "SUPPORTED DIRECTLY")]),
+    ).toBe("SUPPORTED DIRECTLY");
+  });
+  test("any derived citation makes the answer DERIVED", () => {
+    expect(
+      answerClassFor(false, [cite("a", "SUPPORTED DIRECTLY"), cite("b", "DERIVED")]),
+    ).toBe("DERIVED");
+  });
+  test("any conflicted citation makes the answer CONFLICTED", () => {
+    expect(
+      answerClassFor(false, [cite("a", "SUPPORTED DIRECTLY"), cite("b", "CONFLICTED")]),
+    ).toBe("CONFLICTED");
+  });
+});
+
+describe("answerStateFor (coarse states fed by the five classes)", () => {
+  test.each([
+    ["SUPPORTED DIRECTLY", "KNOWN"],
+    ["SUPPORTED BY MULTIPLE EVIDENCE", "KNOWN"],
+    ["DERIVED", "KNOWN"],
+    ["CONFLICTED", "CONFLICTED"],
+    ["UNSUPPORTED", "UNKNOWN"],
+  ])("%p feeds coarse state %p", (answerClass, expected) => {
+    expect(answerStateFor(answerClass as "SUPPORTED DIRECTLY")).toBe(expected);
   });
 });
 
@@ -154,7 +205,7 @@ describe("G3: nested route derives tenant from the path", () => {
     expect(body.answer).toContain("+15412865190");
   });
 
-  test("no body tenant claim: route tenant served with 3-class labels", async () => {
+  test("no body tenant claim: route tenant served with 5-class labels and both layers", async () => {
     const { req, params } = nestedReq("happy-place", {
       question: "What is the phone number?",
     });
@@ -163,18 +214,27 @@ describe("G3: nested route derives tenant from the path", () => {
     const body = (await resp.json()) as {
       ok: boolean;
       answerClass: string;
+      answerState: string;
       refusal: boolean;
       tenantId: string;
       citations: { claimClass: string }[];
+      objectRefs: unknown[];
+      evidenceRefs: unknown[];
+      sourceRefs: unknown[];
     };
     expect(body.ok).toBe(true);
     expect(body.tenantId).toBe("happy-place");
-    expect(body.answerClass).toBe("supported");
+    expect(body.answerClass).toBe("SUPPORTED DIRECTLY");
+    expect(body.answerState).toBe("KNOWN");
     expect(body.refusal).toBe(false);
     expect(body.citations.length).toBeGreaterThan(0);
     for (const c of body.citations) {
-      expect(["supported", "derived"]).toContain(c.claimClass);
+      expect(["SUPPORTED DIRECTLY", "DERIVED", "CONFLICTED"]).toContain(c.claimClass);
     }
+    // Structured refs are present and citation-backed.
+    expect(body.objectRefs.length).toBeGreaterThan(0);
+    expect(body.evidenceRefs.length).toBe(body.citations.length);
+    expect(body.sourceRefs.length).toBeGreaterThan(0);
   });
 
   test("invalid route tenant is refused before any I/O", async () => {
@@ -186,44 +246,62 @@ describe("G3: nested route derives tenant from the path", () => {
   });
 });
 
-describe("3-class wiring on live answers", () => {
-  test("SUPPORTED: known phone question answers from cited evidence", async () => {
-    const resp = await postFlat(
-      flatReq({ siteId: "happy-place", question: "What is the phone number?", mode: "visitor" }),
-    );
+describe("5-class wiring on live answers", () => {
+  test("SUPPORTED DIRECTLY: known phone question answers from cited evidence", async () => {
+    const { req, params } = nestedReq("happy-place", {
+      siteId: "happy-place",
+      question: "What is the phone number?",
+      mode: "visitor",
+    });
+    const resp = await postNested(req, { params });
     expect(resp.status).toBe(200);
     const body = (await resp.json()) as {
       ok: boolean;
       answer: string;
       answerClass: string;
+      answerState: string;
       refusal: boolean;
       citations: { claimClass: string; basis: string }[];
     };
-    expect(body.answerClass).toBe("supported");
+    expect(["SUPPORTED DIRECTLY", "SUPPORTED BY MULTIPLE EVIDENCE"]).toContain(body.answerClass);
+    expect(body.answerState).toBe("KNOWN");
     expect(body.refusal).toBe(false);
     expect(body.answer).toContain("+15412865190");
-    expect(body.citations.every((c) => c.claimClass === "supported")).toBe(true);
+    expect(body.citations).toHaveLength(1);
+    expect(body.citations.every((c) => c.claimClass === "SUPPORTED DIRECTLY")).toBe(true);
   });
 
-  test("UNKNOWN: question with no evidence is refused, never invented", async () => {
-    const resp = await postFlat(
-      flatReq({ siteId: "happy-place", question: "Does this business offer financing?", mode: "visitor" }),
-    );
+  test("UNSUPPORTED / UNKNOWN: question with no evidence is refused, never invented", async () => {
+    const { req, params } = nestedReq("happy-place", {
+      siteId: "happy-place",
+      question: "Does this business offer financing?",
+      mode: "visitor",
+    });
+    const resp = await postNested(req, { params });
     expect(resp.status).toBe(200);
     const body = (await resp.json()) as {
       ok: boolean;
       answer: string;
       answerClass: string;
+      answerState: string;
       refusal: boolean;
       citations: unknown[];
+      objectRefs: unknown[];
+      evidenceRefs: unknown[];
+      sourceRefs: unknown[];
+      unknowns: string[];
     };
-    expect(body.answerClass).toBe("unknown");
+    expect(body.answerClass).toBe("UNSUPPORTED");
+    expect(body.answerState).toBe("UNKNOWN");
     expect(body.refusal).toBe(true);
     expect(body.citations).toEqual([]);
-    expect(body.answer).toMatch(/do not have evidence/i);
+    expect(body.objectRefs).toEqual([]);
+    expect(body.evidenceRefs).toEqual([]);
+    expect(body.sourceRefs).toEqual([]);
+    expect(body.answer).toMatch(/I cannot answer that/i);
   });
 
-  test("DERIVED: a DERIVED_FACT claim is explicitly labeled derived", () => {
+  test("DERIVED / KNOWN: a DERIVED_FACT claim is explicitly labeled DERIVED but still known", () => {
     const real = HAPPY_BUNDLE;
     expect(real).not.toBeNull();
     const objects = (real as SiteBundle).graph.objects.map((o) =>
@@ -246,11 +324,14 @@ describe("3-class wiring on live answers", () => {
     if (!out.ok) return;
     expect(out.refusal).toBe(false);
     expect(out.citations.length).toBeGreaterThan(0);
-    // Every citation from the DERIVED_FACT object is explicitly derived.
-    expect(out.citations.every((c) => c.claimClass === "derived")).toBe(true);
+    // Every citation from the DERIVED_FACT object is explicitly DERIVED.
+    expect(out.citations.every((c) => c.claimClass === "DERIVED")).toBe(true);
     expect(
       out.citations.every((c) => /derived/i.test(c.basis)),
     ).toBe(true);
+    // Answer-level reduction and coarse state.
+    expect(answerClassFor(out.refusal, out.citations)).toBe("DERIVED");
+    expect(answerStateFor("DERIVED")).toBe("KNOWN");
   });
 });
 
@@ -307,19 +388,26 @@ describe("visitor vs owner scope", () => {
   );
 
   test('mode "owner" grants nothing: it answers exactly like a visitor', async () => {
-    const visitor = await postFlat(
-      flatReq({ siteId: "happy-place", question: "What is the phone number?", mode: "visitor" }),
-    );
-    const owner = await postFlat(
-      flatReq({ siteId: "happy-place", question: "What is the phone number?", mode: "owner" }),
-    );
-    const vBody = (await visitor.json()) as { answer: string; answerClass: string };
-    const oBody = (await owner.json()) as { answer: string; answerClass: string };
+    const vCtx = nestedReq("happy-place", {
+      siteId: "happy-place",
+      question: "What is the phone number?",
+      mode: "visitor",
+    });
+    const visitor = await postNested(vCtx.req, { params: vCtx.params });
+    const oCtx = nestedReq("happy-place", {
+      siteId: "happy-place",
+      question: "What is the phone number?",
+      mode: "owner",
+    });
+    const owner = await postNested(oCtx.req, { params: oCtx.params });
+    const vBody = (await visitor.json()) as { answer: string; answerClass: string; answerState: string };
+    const oBody = (await owner.json()) as { answer: string; answerClass: string; answerState: string };
     expect(oBody.answer).toBe(vBody.answer);
     expect(oBody.answerClass).toBe(vBody.answerClass);
+    expect(oBody.answerState).toBe(vBody.answerState);
   });
 
-  test("SUPPORTED: an approved owner correction is answered by Ask FYD citing the owner override", async () => {
+  test("SUPPORTED DIRECTLY: an approved owner correction is answered by Ask FYD citing the owner override", async () => {
     // Apply a correction through the REAL owner store (the same apply step
     // the overrides route runs), then ask through the REAL trusted route:
     // the route composes the owner overlay over the bundle before answering.
@@ -369,21 +457,23 @@ describe("visitor vs owner scope", () => {
         ok: boolean;
         answer: string;
         answerClass: string;
+        answerState: string;
         refusal: boolean;
         citations: { claimClass: string; source: string; basis: string; label: string }[];
       };
       expect(body.ok).toBe(true);
       expect(body.refusal).toBe(false);
-      expect(body.answerClass).toBe("supported");
+      expect(["SUPPORTED DIRECTLY", "SUPPORTED BY MULTIPLE EVIDENCE"]).toContain(body.answerClass);
+      expect(body.answerState).toBe("KNOWN");
       // The ANSWERED value is the owner's, and the answer says so.
       expect(body.answer).toContain("+1 541 555 0123");
       expect(body.answer).toMatch(/owner corrected/i);
       // The citation names the owner correction as its source (not the
-      // website), classified supported: an owner-set value is cited
+      // website), classified SUPPORTED DIRECTLY: an owner-set value is cited
       // evidence, never a derived claim.
       const ownerCites = body.citations.filter((c) => /owner correction/i.test(c.source));
       expect(ownerCites.length).toBeGreaterThan(0);
-      expect(ownerCites.every((c) => c.claimClass === "supported")).toBe(true);
+      expect(ownerCites.every((c) => c.claimClass === "SUPPORTED DIRECTLY")).toBe(true);
     } finally {
       if (prevDir === undefined) delete process.env.FYD_OWNER_DIR;
       else process.env.FYD_OWNER_DIR = prevDir;

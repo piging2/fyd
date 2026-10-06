@@ -271,7 +271,10 @@ export function draftSitePatchProposal(ctx: AskFydContext, intent: SitePatchInte
     digestAlgorithm: "sha256-canonical-json-v1",
     note:
       drafted.summary +
-      " Review the Before / After below. Approving applies this exact SiteSpec transition through the governed event path. I cannot apply it myself.",
+      " Change the website: this only affects how the site presents it " +
+      "(LOW consequence, reversible). Review the Before / After below. " +
+      "Approving applies this exact SiteSpec transition through the " +
+      "governed event path. I cannot apply it myself.",
     envelope: null,
   };
   return { proposal };
@@ -337,5 +340,10 @@ export function buildSitePatchCard(ctx: AskFydContext, proposal: AskProposal): S
     affectedObjects: patch.affectedObjects,
     operationCount: patch.operations.length,
     siteSpecDigest: patch.siteSpecDigest,
+    // Owner-facing language law: a site_patch is always presentation
+    // intent ("Change the website", projection only), never a knowledge
+    // transition. Consequence LOW: reversible.
+    consequence: "LOW",
+    changeKind: "change-website",
   };
 }

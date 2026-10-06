@@ -77,6 +77,24 @@ semantics; this module owns schema.org-to-PING projection semantics.
    strings. Site-chrome nodes (WebSite, WebPage, SearchAction,
    BreadcrumbList, ItemList) are visited and counted, then skipped as
    entities so they do not pollute the business graph.
+3b. **Vocabulary gate (fail closed, 2026-09-28)**: before any mapping
+   table is consulted, each candidate's observed `@type` IRIs are
+   classified by `vocabulary.ts`: inside the schema.org namespace
+   (`http(s)://schema.org/`) or unknown. An entity with NO
+   schema.org-namespaced type is QUARANTINED: no facts, no
+   relationships, no entity record, and no primary-business selection;
+   its raw IRIs survive as `unknown-vocabulary` unsupported evidence and
+   as entries in the deterministic `reconciliation` work-queue
+   projection (derived per call from the evidence, not a store).
+   Mixed-vocabulary entities stay canonical on their KNOWN types only;
+   the unknown IRIs are preserved as evidence. A foreign-namespace type
+   whose suffix matches a schema.org name (e.g.
+   `https://evil.example/Plumber`) never compacts to that name, so it
+   can never collide with the real term. Microdata `itemtype` values get
+   the same gate: foreign-namespace scopes are refused with their
+   evidence preserved, never emitted as records. Unknown vocabulary
+   never poisons canonical meaning; useful source evidence is never
+   discarded.
 4. **Blank-node identity**: blank nodes are re-keyed by a canonical
    content hash (`blank:<sha256 of the node's canonical JSON>`), never
    `_:bN` allocation labels. Two runs with the same content in different

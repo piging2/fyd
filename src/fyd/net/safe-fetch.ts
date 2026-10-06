@@ -13,12 +13,30 @@
  *   link-local (169.254/16 incl. the 169.254.169.254 metadata endpoint,
  *   fe80::/10), multicast, reserved, IPv4-mapped IPv6 of the above,
  *   and CGNAT 100.64/10 (treated as private: never fetch tailnet space).
+ * - IPv6 transition/encapsulation encodings are decoded to their EFFECTIVE
+ *   IPv4 destination and classified as IPv4: IPv4-compatible ::/96 (any
+ *   spelling, incl. uncompressed 0:0:0:0:0:0:127.0.0.1), 6to4 2002::/16,
+ *   NAT64 64:ff9b::/96, ISATAP (:0:5EFE:), IPv4-translatable ::ffff:0:0/96.
+ *   The v6 stack tunnels/translates these to the embedded v4 address, so
+ *   the embedded address is what must be public. Teredo 2001::/32 is
+ *   XOR-obfuscated (undecodable) and fails closed, as do the documentation
+ *   (2001:db8::/32) and benchmarking (2001:2::/48) ranges and the
+ *   unspecified address ::. Anything the gate cannot decode fails closed.
  * - Redirects: max 5, every hop re-validated (scheme, credentials, DNS).
  *   A redirect into private space is rejected, not followed.
  * - Content-type verification: allowlisted prefixes only, checked before
  *   buffering. Anything else is rejected.
  * - Size limits: content-length pre-check plus streaming abort.
  * - Timeouts on connect and overall.
+ *
+ * Residual TOCTOU note: the DNS check and the fetch are not atomic. The
+ * gate validates the addresses DNS returns at check time; the production
+ * fetch implementation re-resolves independently, so a hostile DNS that
+ * answers differently per query (rebinding) could still steer the socket.
+ * The gate is the contract that mocked tests verify (see
+ * __tests__/safe-fetch.test.ts); production deployments needing atomicity
+ * must pin the validated address at the socket layer (not implemented
+ * here). This is reported honestly rather than claimed away.
  *
  * An arbitrary agent- or user-supplied URL can NEVER become an unrestricted
  * server-side fetch through this module: every URL passes this gate.
@@ -68,6 +86,42 @@ function fail(reason: string, redirectChain: string[]): SafeFetchFail {
   return { ok: false, reason, redirectChain };
 }
 
+/**
+ * Expand a validated IPv6 literal (lowercase) into its eight 16-bit
+ * groups, or null when the literal cannot be decoded. A trailing dotted
+ * quad ("::ffff:127.0.0.1") is converted to its two hex groups first.
+ * Callers treat null as "undecodable": fail closed.
+ */
+function ipv6ToGroups(addr: string): number[] | null {
+  let a = addr;
+  const dotted = a.match(/^(.*:)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (dotted) {
+    const nums = [dotted[2], dotted[3], dotted[4], dotted[5]].map(Number);
+    if (nums.some((n) => n > 255)) return null;
+    const hi = ((nums[0] << 8) | nums[1]).toString(16);
+    const lo = ((nums[2] << 8) | nums[3]).toString(16);
+    a = dotted[1] + hi + ":" + lo;
+  }
+  const halves = a.split("::");
+  if (halves.length > 2) return null;
+  const parseSide = (side: string): number[] | null => {
+    if (side === "") return [];
+    const out: number[] = [];
+    for (const g of side.split(":")) {
+      if (!/^[0-9a-f]{1,4}$/.test(g)) return null;
+      out.push(parseInt(g, 16));
+    }
+    return out;
+  };
+  const left = parseSide(halves[0]);
+  const right = halves.length === 2 ? parseSide(halves[1]) : [];
+  if (!left || !right) return null;
+  if (halves.length === 1 && left.length !== 8) return null;
+  const missing = 8 - left.length - right.length;
+  if (missing < 0 || (halves.length === 2 && missing < 1)) return null;
+  return [...left, ...new Array(missing).fill(0), ...right];
+}
+
 /** True when the numeric IP is public routable space. */
 export function isPublicIp(ip: string): boolean {
   const v = isIP(ip);
@@ -87,13 +141,54 @@ export function isPublicIp(ip: string): boolean {
   }
   if (v === 6) {
     const low = ip.toLowerCase();
-    if (low === "::1") return false;
-    if (low.startsWith("fe80:")) return false; // link-local
-    if (low.startsWith("fc00:") || low.startsWith("fd00:")) return false; // unique local
-    if (low.startsWith("ff00:")) return false; // multicast
-    // IPv4-mapped: ::ffff:a.b.c.d -> check the embedded v4
-    const m = low.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if (m) return isPublicIp(m[1]);
+    if (low === "::1") return false; // loopback
+    if (low === "::") return false; // unspecified: never a fetch target
+    if (/^fe[89ab][0-9a-f]/.test(low)) return false; // link-local fe80::/10
+    if (/^fe[c-f]/.test(low)) return false; // deprecated site-local fec0::/10: not public
+    if (/^f[cd]/.test(low)) return false; // unique local fc00::/7
+    if (/^ff/.test(low)) return false; // multicast ff00::/8
+    // Transition/encapsulation encodings: the v6 stack tunnels or
+    // translates these to the embedded IPv4 address, so the EFFECTIVE
+    // destination is the embedded v4 and it must be public. Decode via
+    // the 16-bit groups; anything undecodable fails closed.
+    const groups = ipv6ToGroups(low);
+    if (!groups) return false;
+    const v4at = (i: number): string =>
+      [groups[i] >>> 8, groups[i] & 255, groups[i + 1] >>> 8, groups[i + 1] & 255].join(".");
+    const firstFiveZero = groups.slice(0, 5).every((g) => g === 0);
+    // IPv4-mapped ::ffff:0:0/96 and IPv4-compatible ::/96 (deprecated but
+    // runtime-accepted, in any spelling: ::7f00:1, ::127.0.0.1,
+    // 0:0:0:0:0:0:127.0.0.1).
+    if (firstFiveZero && (groups[5] === 0 || groups[5] === 0xffff)) {
+      return isPublicIp(v4at(6));
+    }
+    const firstFourZero = groups.slice(0, 4).every((g) => g === 0);
+    // IPv4-translatable ::ffff:0:0/96 (SIIT): 0:0:0:0:ffff:0:hi:lo.
+    if (firstFourZero && groups[4] === 0xffff && groups[5] === 0) {
+      return isPublicIp(v4at(6));
+    }
+    // Mapped-adjacent unassigned space (::ffff:1:2:3): not the mapped /96,
+    // not decodable as any transition mechanism. Fail closed rather than
+    // treat as public.
+    if (firstFourZero && groups[4] === 0xffff) return false;
+    // 6to4 2002::/16: 2002:V4ADDR::/48 tunnels to the embedded IPv4.
+    if (groups[0] === 0x2002) return isPublicIp(v4at(1));
+    // NAT64 64:ff9b::/96: the last 32 bits are the IPv4 address.
+    // (Longer-prefix forms /48, /56 place the address elsewhere and are
+    // not decoded here: fail closed.)
+    if (
+      groups[0] === 0x64 &&
+      groups[1] === 0xff9b &&
+      groups.slice(2, 6).every((g) => g === 0)
+    ) {
+      return isPublicIp(v4at(6));
+    }
+    // ISATAP: xxxx:xxxx:xxxx:xxxx:0:5EFE:V4ADDR tunnels to the IPv4.
+    if (groups[4] === 0 && groups[5] === 0x5efe) return isPublicIp(v4at(6));
+    // Non-decodable special ranges: fail closed.
+    if (groups[0] === 0x2001 && groups[1] === 0) return false; // Teredo 2001::/32 (XOR-obfuscated)
+    if (groups[0] === 0x2001 && groups[1] === 0xdb8) return false; // documentation 2001:db8::/32
+    if (groups[0] === 0x2001 && groups[1] === 2 && groups[2] === 0) return false; // benchmarking 2001:2::/48
     return true;
   }
   return false;

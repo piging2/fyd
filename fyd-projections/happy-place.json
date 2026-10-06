@@ -1,0 +1,409 @@
+{
+  "meta": {
+    "siteId": "happy-place",
+    "dumpedAt": "2026-09-29T17:51:40.492348+00:00",
+    "dumperVersion": "fyd-projection-dump@1.2.2",
+    "baseDigest": "eacaa6113180f2cf601e7d592f10dfa1a783da25c8e0f86004d5922e65510679",
+    "fixtureFileDigest": "4229bd3a8d2d0efa165a5001df6d2245b492d02aad28140ba7c0acf006811d19",
+    "fixtureHeader": "Happy Place graph fixture: MACHINE-GENERATED, not hand-written.",
+    "overlayEventIds": [
+      "fyd-seed-ovl-001",
+      "fyd-seed-ovl-002",
+      "fyd-seed-ovl-003",
+      "fyd-seed-ovl-004",
+      "fyd-seed-ovl-005",
+      "fyd-seed-ovl-006",
+      "fyd-seed-ovl-007",
+      "fyd-ovl-mufgsyxx-3836bf09f4a4",
+      "fyd-ovl-mufgw6px-737a81b0326c",
+      "fyd-ovl-mufpbnyr-95298bf28158",
+      "fyd-ovl-mufpbnz9-7b7eba231035",
+      "fyd-ovl-mufpbnzn-36b65da03aa8",
+      "fyd-ovl-mufpkmv1-2241b965f9d3",
+      "fyd-ovl-mufpkmvb-85291618759a",
+      "fyd-ovl-mufppzj1-e08c5815cc6a",
+      "fyd-ovl-mufpq48d-c33c214696c7",
+      "fyd-ovl-mufpq8c6-183b4eb3ec6c",
+      "fyd-ovl-mufpqszc-b985f4415847",
+      "fyd-ovl-mufpqszr-6f305bb7aa75",
+      "fyd-ovl-muga9ldb-424796a96442",
+      "fyd-ovl-muga9lec-4048953756f6",
+      "fyd-ovl-mugabxpq-736e8b1d1a30",
+      "fyd-ovl-mugacttv-f2ccbcbffdb8",
+      "fyd-ovl-mugapozh-3cd0b3487446",
+      "fyd-ovl-mugaq8gr-b7910f5ef743",
+      "fyd-ovl-mugymda0-780d835cefae",
+      "fyd-ovl-mugynxgi-9fc299958109",
+      "fyd-ovl-muklxc7l-333f04fa678b",
+      "fyd-ovl-mulxaxri-c3dbf3e08b33",
+      "fyd-ovl-mulxdrme-8013374d3d29"
+    ],
+    "graphDigest": "94a6f624eeacd7ab90b8df856fdefdaa5f59aa5d0d8bea9a1963fb0cd0e030b7",
+    "generatedAt": "2026-09-21T12:00:00.000Z",
+    "eventSequences": [
+      65,
+      83
+    ],
+    "presentationIntentDigest": "9698ed1b04d6108e94525936cec858f0e78421562d148d8786ff060d7f5f0344"
+  },
+  "graph": {
+    "objects": [
+      {
+        "id": "website-business-6fa5ebd99d72c4cb",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Happy Place Carpentry LLC",
+        "description": "Licensed Oregon carpentry contractor (CCB# 254240) building decks, fences, pergolas, bathrooms, and custom work across Benton, Linn, Marion & Polk Counties.",
+        "fields": {
+          "area_served": "Benton, Linn, Marion, and Polk Counties, Oregon",
+          "description": "Licensed Oregon carpentry contractor (CCB# 254240) building decks, fences, pergolas, bathrooms, and custom work across Benton, Linn, Marion & Polk Counties.",
+          "email": "taylor@happyplacecarpentry.com",
+          "images": "https://happyplacecarpentry.com/images/hero-background-enhanced.jpg",
+          "keywords": "carpenter,deck builder,fence installer,bathroom remodel,Oregon contractor,Willamette Valley",
+          "phone": "+15412865190",
+          "price_range": "$$",
+          "title": "Happy Place Carpentry LLC",
+          "website": "https://happy-place-platform.vercel.app/",
+          "locality": "Adair Village, OR, US",
+          "tagline": "Built right. Built to last."
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://happy-place-platform.vercel.app/",
+          "derivedAt": "2026-09-21T13:50:00Z",
+          "updatedRefs": [
+            "ping-event:fyd-seed-ovl-007",
+            "ping-event:fyd-ovl-mufgsyxx-3836bf09f4a4",
+            "ping-event:fyd-ovl-mufgw6px-737a81b0326c"
+          ]
+        }
+      },
+      {
+        "id": "website-business-6fa5ebd99d72c4cb-location",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Adair Village, OR, US",
+        "description": "Coarse public location claim from the website's structured data.",
+        "fields": {
+          "address_locality": "Adair Village",
+          "address_region": "OR",
+          "address_country": "US",
+          "locality": "Adair Village, OR, US",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://happy-place-platform.vercel.app/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Repairs",
+        "description": "Small problems usually tell you about a bigger one. Fix them early and they're repairs. Wait too long and they become replacements.",
+        "fields": {
+          "name": "Repairs",
+          "description": "Small problems usually tell you about a bigger one. Fix them early and they're repairs. Wait too long and they become replacements.",
+          "service_href": "/estimate?service=repairs",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://happy-place-platform.vercel.app/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Fencing",
+        "description": "A fence should stay straight, the gate should close without dragging, and it should still look good after a few Oregon winters.",
+        "fields": {
+          "name": "Fencing",
+          "description": "A fence should stay straight, the gate should close without dragging, and it should still look good after a few Oregon winters.",
+          "service_href": "/estimate?service=fences",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://happy-place-platform.vercel.app/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Painting",
+        "description": "Most paint failures start before the first coat goes on. We clean, sand, repair damaged areas, and prime everything first, because good prep is what keeps paint on the house.",
+        "fields": {
+          "name": "Painting",
+          "description": "Most paint failures start before the first coat goes on. We clean, sand, repair damaged areas, and prime everything first, because good prep is what keeps paint on the house.",
+          "service_href": "/estimate?service=painting",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://happy-place-platform.vercel.app/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Drywall",
+        "description": "From small hole repairs to full installations, we handle drywall work that's smooth, seamless, and ready for paint.",
+        "fields": {
+          "name": "Drywall",
+          "description": "From small hole repairs to full installations, we handle drywall work that's smooth, seamless, and ready for paint.",
+          "service_href": "/estimate?service=drywall",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://happy-place-platform.vercel.app/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Restoration",
+        "description": "Bring worn surfaces back to life. We refinish fences, decks, and other woodwork to protect your investment and make your home look like new again.",
+        "fields": {
+          "name": "Restoration",
+          "description": "Bring worn surfaces back to life. We refinish fences, decks, and other woodwork to protect your investment and make your home look like new again.",
+          "service_href": "/estimate?service=restoration",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://happy-place-platform.vercel.app/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-service-51de038c1defe8bd",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_demo_operator",
+        "visibility": "private",
+        "title": "Pergola Design Consultations",
+        "description": "Complimentary consultations for custom pergola design",
+        "fields": {
+          "name": "Pergola Design Consultations",
+          "serviceType": "Consultation",
+          "availability": "Limited slots"
+        },
+        "createdAt": "2026-09-19T18:30:59.221Z",
+        "updatedAt": "2026-09-19T18:30:59.221Z",
+        "provenance": {
+          "kind": "canonical-journal",
+          "ref": "ping-event:fyd-seed-ovl-001",
+          "derivedAt": "2026-09-19T18:30:59.221Z",
+          "updatedRefs": [
+            "ping-event:fyd-seed-ovl-007"
+          ]
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-835420c1cbef02bd",
+        "subject": "website-business-6fa5ebd99d72c4cb",
+        "predicate": "offers",
+        "object": "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:service-card:estimate-service-card:restoration"
+      },
+      {
+        "id": "rel-8b9388534baf1a33",
+        "subject": "website-business-6fa5ebd99d72c4cb",
+        "predicate": "offers",
+        "object": "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:service-card:estimate-service-card:painting"
+      },
+      {
+        "id": "rel-9932b58edd3551be",
+        "subject": "website-business-6fa5ebd99d72c4cb",
+        "predicate": "offers",
+        "object": "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:service-card:estimate-service-card:drywall"
+      },
+      {
+        "id": "rel-9b5d8035b2d8f54e",
+        "subject": "website-business-6fa5ebd99d72c4cb",
+        "predicate": "located_at",
+        "object": "website-business-6fa5ebd99d72c4cb-location",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:postal-address"
+      },
+      {
+        "id": "rel-ab9de2051a8531d5",
+        "subject": "website-business-6fa5ebd99d72c4cb",
+        "predicate": "offers",
+        "object": "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:service-card:estimate-service-card:repairs"
+      },
+      {
+        "id": "rel-c0fe44edf1dcfbfd",
+        "subject": "website-business-6fa5ebd99d72c4cb",
+        "predicate": "offers",
+        "object": "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:service-card:estimate-service-card:fences"
+      },
+      {
+        "id": "rel-demo-pergola-01",
+        "subject": "website-business-6fa5ebd99d72c4cb",
+        "predicate": "offers",
+        "object": "website-service-51de038c1defe8bd",
+        "status": "active",
+        "createdAt": "2026-09-19T18:32:14.908Z",
+        "evidenceRef": "ping-event:fyd-seed-ovl-002"
+      }
+    ]
+  },
+  "presentationIntent": {
+    "directives": [
+      {
+        "intentId": "pi-stub-001",
+        "siteIntent": {
+          "kind": "reorder_sections",
+          "target": "services"
+        },
+        "proposal": {
+          "proposalDigest": "stub-proposal-digest-001"
+        },
+        "approval": {
+          "proposalDigest": "stub-proposal-digest-001",
+          "approvedBy": "demo-owner (seeded, unverified)",
+          "approvedAt": "2026-09-19T18:36:12.105Z",
+          "note": "DEMO OWNER MODE - not real authentication",
+          "eventId": "fyd-seed-ovl-003"
+        }
+      },
+      {
+        "intentId": "pi-stub-003",
+        "siteIntent": {
+          "kind": "reorder_sections",
+          "target": "services"
+        },
+        "proposal": {
+          "proposalDigest": "stub-proposal-digest-003"
+        },
+        "approval": {
+          "proposalDigest": "stub-proposal-digest-003",
+          "approvedBy": "demo-owner (seeded, unverified)",
+          "approvedAt": "2026-09-19T18:36:12.105Z",
+          "note": "DEMO OWNER MODE - not real authentication",
+          "eventId": "fyd-seed-ovl-005"
+        }
+      },
+      {
+        "intentId": "pi-82b6c64f99149682",
+        "siteIntent": {
+          "kind": "edit_copy",
+          "pageSlug": "home",
+          "sectionId": "home:Services:2",
+          "heading": "Emergency Services",
+          "copy": "Get in touch with us for urgent repairs at Happy Place Carpentry LLC. We're always ready to help, but we can't promise response speed or ranking."
+        },
+        "proposal": {
+          "kind": "site_patch",
+          "targetPage": "home",
+          "targetSection": "home:Services:2",
+          "component": "Services",
+          "propsDiff": {
+            "presentation.heading": "Emergency Services",
+            "presentation.copy": "Get in touch with us for urgent repairs at Happy Place Carpentry LLC. We're always ready to help, but we can't promise response speed or ranking."
+          },
+          "reason": "Approved MC proposal p0prop-ac04480a6d1809fd (heading+copy portion). Format-translated for the overlay applier; content identical to the approved bytes.",
+          "proposalDigest": "ad71ac5125d39b3e8ebe2217a246728ae4b61697bdbe860c050eb3aec524d7e9"
+        },
+        "approval": {
+          "proposalDigest": "ad71ac5125d39b3e8ebe2217a246728ae4b61697bdbe860c050eb3aec524d7e9",
+          "approvedBy": "nolan:owner",
+          "approvedAt": "2026-09-28T02:04:52Z",
+          "note": "DEMO OWNER MODE journal transport. MC approval p0prop-ac04480a6d1809fd (digest 5c1d873706c14c7c3c7b5ded02bb73924419e4cdf3e17f6dc6bc98795731e7aa) by nolan:owner 2026-09-28T02:04:52Z per GRILL-LOCKED-2026-09-27 (exact-transition binding). Directive content is the exact approved bytes, format-translated for the overlay applier; no content change.",
+          "eventId": "fyd-ovl-muklxc7l-333f04fa678b"
+        }
+      },
+      {
+        "intentId": "pi-b9d3ea837d2e222e",
+        "siteIntent": {
+          "kind": "set_featured",
+          "pageSlug": "home",
+          "sectionId": "home:Services:2",
+          "objectIds": [
+            "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+          ]
+        },
+        "proposal": {
+          "kind": "site_patch",
+          "targetPage": "home",
+          "targetSection": "home:Services:2",
+          "component": "Services",
+          "propsDiff": {
+            "presentation.featuredIds": [
+              "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+            ]
+          },
+          "reason": "Approved MC proposal p0prop-ac04480a6d1809fd (featured-object portion). Format-translated for the overlay applier; content identical to the approved bytes.",
+          "proposalDigest": "1186273ef24cad8ff09dd2c918591e0eb939230a1ed6ee31283da478f3e6e802"
+        },
+        "approval": {
+          "proposalDigest": "1186273ef24cad8ff09dd2c918591e0eb939230a1ed6ee31283da478f3e6e802",
+          "approvedBy": "nolan:owner",
+          "approvedAt": "2026-09-28T02:04:52Z",
+          "note": "DEMO OWNER MODE journal transport. MC approval p0prop-ac04480a6d1809fd (digest 5c1d873706c14c7c3c7b5ded02bb73924419e4cdf3e17f6dc6bc98795731e7aa) by nolan:owner 2026-09-28T02:04:52Z per GRILL-LOCKED-2026-09-27 (exact-transition binding). Directive content is the exact approved bytes, format-translated for the overlay applier; no content change.",
+          "eventId": "fyd-ovl-muklxc7l-333f04fa678b"
+        }
+      }
+    ],
+    "provenance": {
+      "kind": "owner-presentation-intent",
+      "note": "Owner-approved presentation intents (PRESENTATION INTENT layer). Not source facts; re-applied over the base graph on every dump. Journaled via FYD_SITE_OVERLAY events.",
+      "eventIds": [
+        "fyd-seed-ovl-003",
+        "fyd-seed-ovl-005",
+        "fyd-ovl-muklxc7l-333f04fa678b",
+        "fyd-ovl-muklxc7l-333f04fa678b"
+      ]
+    }
+  }
+}

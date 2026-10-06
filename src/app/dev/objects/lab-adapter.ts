@@ -20,6 +20,13 @@ import type { ObjectGraph } from "@/fyd/sitespec/types";
 import { schemaRole } from "@/fyd/sitespec/schemas";
 import type { PingObject } from "@/lib/ping/types";
 import { loadObjectView } from "@/fyd/object/view";
+import {
+  detectOrphanedCorrections,
+  type OrphanedCorrection,
+} from "@/fyd/object/owner-overlay";
+
+export type { OrphanedCorrection };
+import type { VerifiedPublicProjection } from "@/fyd/sitespec/public-projection";
 import type {
   ObjectCapability,
   ObjectContactView,
@@ -165,9 +172,19 @@ export function genericObjectView(obj: PingObject): ObjectView {
 export interface LabData {
   typeGroups: LabTypeGroup[];
   views: Record<string, ObjectView>;
+  /**
+   * PROD-8: owner corrections that are active in the journal but apply to
+   * nothing in the current graph. The lab must render these as warnings;
+   * they are never silently dropped.
+   */
+  orphanedCorrections: OrphanedCorrection[];
 }
 
-export function buildLabData(siteId: string, graph: ObjectGraph): LabData {
+export function buildLabData(
+  verified: VerifiedPublicProjection,
+  graph: ObjectGraph,
+  siteId: string,
+): LabData {
   const groups = new Map<LabTypeName, LabObjectSummary[]>();
   const views: Record<string, ObjectView> = {};
   for (const obj of graph.objects) {
@@ -176,9 +193,9 @@ export function buildLabData(siteId: string, graph: ObjectGraph): LabData {
     list.push(summarizeObject(obj));
     groups.set(type, list);
     if (type === "Business") {
-      // Canonical read-model loader (PING-backed, digest-verified). Same
-      // source the /o routes and the demo sites render from.
-      const v = loadObjectView(siteId);
+      // Canonical read-model loader over the verified public projection
+      // (Q-C-01). Same source the /o routes and the demo sites render from.
+      const v = loadObjectView(verified, obj.id);
       if (v) views[obj.id] = v;
     } else {
       views[obj.id] = genericObjectView(obj);
@@ -194,5 +211,9 @@ export function buildLabData(siteId: string, graph: ObjectGraph): LabData {
         g.objects.length > 0 ||
         (LAB_TYPE_ORDER as readonly string[]).includes(g.type),
     );
-  return { typeGroups, views };
+  // The owner store is keyed by site slug (e.g. "happy-place"), not by
+  // graph object id: detection runs against the same key the owner
+  // journal uses.
+  const orphanedCorrections = detectOrphanedCorrections(graph, siteId);
+  return { typeGroups, views, orphanedCorrections };
 }

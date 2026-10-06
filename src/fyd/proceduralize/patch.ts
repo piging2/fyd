@@ -2,7 +2,8 @@
  * Site customization: structured intents -> site_patch proposals.
  *
  * Lightweight customization only: reorder sections, hide/show sections,
- * featured-object selection, proposed presentation-copy edits, basic
+ * featured-object selection, within-section object reorder and object
+ * deactivation, proposed presentation-copy edits, basic
  * design tokens. Structured editor, never drag and drop.
  *
  * Every intent follows the proposal path (harvest B2): intent ->
@@ -22,6 +23,20 @@ export type SiteIntent =
   | { kind: "reorder_section"; pageSlug: string; sectionId: string; toIndex: number }
   | { kind: "toggle_section"; pageSlug: string; sectionId: string; hidden: boolean }
   | { kind: "set_featured"; pageSlug: string; sectionId: string; objectIds: string[] }
+  | {
+      kind: "reorder_object";
+      pageSlug: string;
+      sectionId: string;
+      /** Full desired display order of the section's objects (object ids). */
+      objectIds: string[];
+    }
+  | {
+      kind: "deactivate_object";
+      pageSlug: string;
+      sectionId: string;
+      /** The single object to hide within the section. */
+      objectId: string;
+    }
   | { kind: "edit_copy"; pageSlug: string; sectionId: string; heading?: string; copy?: string }
   | { kind: "set_theme_token"; token: keyof FYDThemeTokens; value: string };
 
@@ -46,6 +61,28 @@ export interface PatchResult {
 // ---------------------------------------------------------------------------
 // Proposal digest. Mirrors src/lib/ping/ask-composer.ts: canonicalize the
 // body (sorted keys, volatile fields stripped) then sha256.
+//
+// DIGEST LAW (overlay / site_patch domain, pinned 2026-09-27). proposalDigest
+// covers the OVERLAY-FORMAT block only: the proposal body minus the
+// proposalDigest field itself, keys sorted recursively (UTF-16 code-unit
+// order), compact JSON (JSON.stringify: no whitespace, non-ASCII kept raw),
+// UTF-8 encoded, SHA-256 hex (via ./sha256, algorithm sha256-canonical-json-v1).
+// Volatile keys excluded: proposalDigest, createdAt, generatedAt, nonce.
+// It does NOT cover the Mission Control proposal bytes: the MC approval
+// digest is a different digest over different bytes, linked to an overlay
+// op only as a prose citation in approval.note (see
+// fyd/customize/types.ts PresentationIntentOverlayOp).
+//
+// SIBLING CANONICALIZER (do not mix up): mc-approval/approval_request.py
+// proposal_digest serves the MC APPROVAL domain (the ApprovalRequest
+// primitive), not the overlay domain. The two agree on pure-ASCII input
+// but differ by design: (1) volatile exclusion sets differ in naming and
+// membership (here: proposalDigest/createdAt/generatedAt/nonce; there:
+// proposal_digest/requested_at/nonce); (2) there ensure_ascii=True escapes
+// non-ASCII to \uXXXX while here JSON.stringify keeps non-ASCII raw;
+// (3) key sort is UTF-16 code units here vs Unicode code points there,
+// which diverges only for astral characters. Cross-check:
+// __tests__/canonicalizer-agreement.test.ts.
 // ---------------------------------------------------------------------------
 
 const VOLATILE_KEYS = new Set(["proposalDigest", "createdAt", "generatedAt", "nonce"]);
@@ -141,6 +178,43 @@ export function proposeSitePatch(spec: FYDSiteSpec, intent: SiteIntent): PatchRe
         reason: "Select featured objects for section.",
       });
     }
+    case "reorder_object": {
+      const sec = page!.sections.find((s) => s.id === intent.sectionId);
+      if (!sec) return { ok: false, error: "Section '" + intent.sectionId + "' not found." };
+      // Order is significant: dedupe preserving the requested sequence.
+      const ids = [...new Set(intent.objectIds)];
+      if (ids.length === 0) {
+        return { ok: false, error: "Object reorder needs at least one object id." };
+      }
+      return build({
+        targetPage: page!.slug,
+        targetSection: intent.sectionId,
+        component: sec.component,
+        propsDiff: { "presentation.objectOrder": ids },
+        reason: "Reorder objects within section.",
+      });
+    }
+    case "deactivate_object": {
+      const sec = page!.sections.find((s) => s.id === intent.sectionId);
+      if (!sec) return { ok: false, error: "Section '" + intent.sectionId + "' not found." };
+      if (!intent.objectId) {
+        return { ok: false, error: "Object deactivation needs an object id." };
+      }
+      // The intent names one object; the proposal binds the exact resulting
+      // hidden set (existing hidden ids kept, the target moved first) so the
+      // digest covers the full display state.
+      const cur = Array.isArray(sec.presentation.hiddenObjectIds)
+        ? (sec.presentation.hiddenObjectIds as string[])
+        : [];
+      const ids = [intent.objectId, ...cur.filter((id) => id !== intent.objectId)];
+      return build({
+        targetPage: page!.slug,
+        targetSection: intent.sectionId,
+        component: sec.component,
+        propsDiff: { "presentation.hiddenObjectIds": ids },
+        reason: "Deactivate (hide) an object within section.",
+      });
+    }
     case "edit_copy": {
       const sec = page!.sections.find((s) => s.id === intent.sectionId);
       if (!sec) return { ok: false, error: "Section '" + intent.sectionId + "' not found." };
@@ -207,6 +281,12 @@ export function applySitePatch(spec: FYDSiteSpec, proposal: SitePatchBody): FYDS
   }
   if (Array.isArray(diff["presentation.featuredIds"])) {
     sec.presentation.featuredIds = diff["presentation.featuredIds"] as string[];
+  }
+  if (Array.isArray(diff["presentation.objectOrder"])) {
+    sec.presentation.objectOrder = diff["presentation.objectOrder"] as string[];
+  }
+  if (Array.isArray(diff["presentation.hiddenObjectIds"])) {
+    sec.presentation.hiddenObjectIds = diff["presentation.hiddenObjectIds"] as string[];
   }
   if (typeof diff["presentation.heading"] === "string") {
     sec.presentation.heading = diff["presentation.heading"] as string;

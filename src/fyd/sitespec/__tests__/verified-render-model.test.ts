@@ -93,7 +93,11 @@ describe("verified render model", () => {
         ]),
       );
       expect(byField.get("title:direct")).toBe("DIRECT_EVIDENCE");
-      expect(byField.get("phone:direct")).toBe("DIRECT_EVIDENCE");
+      // LANE-CLAIM H3: phone carries an owner correction on this graph, so
+      // the direct binding verifies through the owner-assertion path. The
+      // owner's value is owner-attested, never laundered as source
+      // evidence.
+      expect(byField.get("phone:direct")).toBe("OWNER_ASSERTED");
       expect(byField.get("description:derived")).toBe(
         "DETERMINISTIC_DERIVATION",
       );
@@ -139,7 +143,8 @@ describe("verified render model", () => {
       expect(model.version).toBe(VERIFIED_RENDER_MODEL_VERSION);
       expect(model.rendererVersion).toBe(RENDERER_VERSION);
       expect(model.viewerId).toBe("viewer-1");
-      expect(/^[0-9a-f]{8}$/.test(model.digest)).toBe(true);
+      // LANE-CLAIM H8: SHA-256 hex (64 chars), collision-resistant.
+      expect(/^[0-9a-f]{64}$/.test(model.digest)).toBe(true);
       // Canonical order: atoms sorted by stable id.
       const ids = model.atoms.map((a: RenderAtom) => a.id);
       expect(ids).toEqual([...ids].sort());

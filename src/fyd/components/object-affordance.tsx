@@ -7,9 +7,12 @@
  * valid actions (Ask FYD, View details). Subtle, not noisy.
  *
  * Never on every noun: content objects (posts, articles) and the
- * business itself get no affordance. Follow is intentionally absent:
- * follow/share are unwired on this surface (no UI renders them), so the
- * preview offers only actions that actually work.
+ * business itself get no affordance.
+ *
+ * G4: the preview renders the capability authority's answer, it does not
+ * decide. "ask" resolves to the Ask FYD deep-link; "open" resolves to the
+ * View details link. If the authority ever revokes one, the affordance
+ * follows.
  *
  * Seam: native <details>/<summary> disclosure like the contact flow and
  * WhyThis. Works in static HTML, no hydration, no JS state, no motion,
@@ -18,7 +21,7 @@
 
 import type { PingObject } from "@/lib/ping/types";
 import type { FYDThemeTokens } from "../sitespec/types";
-import { schemaRole } from "../sitespec/schemas";
+import { capabilityOptionsForSchema, schemaRole } from "../sitespec/schemas";
 
 /**
  * Canonical object roles that carry the FYD mark affordance. Kept as a
@@ -82,6 +85,8 @@ export function ObjectAffordance({
   title,
   kindLabel,
   evidenceLine,
+  schemaId,
+  controllerId,
   theme,
 }: {
   /** Stable object id: the detail link and the preview key off it. */
@@ -92,9 +97,23 @@ export function ObjectAffordance({
   kindLabel: string;
   /** Evidence line from the object's own provenance. */
   evidenceLine: string;
+  /** Schema id, resolved through the capability authority. */
+  schemaId: string;
+  /** Controller id, for viewer-dependent capability options. */
+  controllerId: string;
   theme: FYDThemeTokens;
 }) {
   if (!title) return null;
+  // G4: actions come from the capability authority, not from this
+  // component. The affordance is a preview surface, so no contact context
+  // flags apply; the authority answers from schema + viewer alone.
+  const allowed = capabilityOptionsForSchema(schemaId, {
+    viewerId: null,
+    controllerId,
+    hasWebsite: false,
+  });
+  const canAsk = allowed.includes("ask");
+  const canOpen = allowed.includes("open");
   const detailHref = `/o/${encodeURIComponent(objectId)}`;
   return (
     <details
@@ -146,28 +165,37 @@ export function ObjectAffordance({
           {evidenceLine}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <a
-            href="#ask"
-            className="inline-flex min-h-[44px] items-center rounded px-4 py-2 text-sm font-semibold"
-            style={{
-              background: theme.accent,
-              color: theme.accentForeground,
-              borderRadius: theme.radius === "full" ? 9999 : 8,
-            }}
-          >
-            Ask FYD
-          </a>
-          <a
-            href={detailHref}
-            className="inline-flex min-h-[44px] items-center rounded border px-4 py-2 text-sm font-semibold"
-            style={{
-              borderColor: theme.accent,
-              color: theme.ink,
-              borderRadius: theme.radius === "full" ? 9999 : 8,
-            }}
-          >
-            View details
-          </a>
+          {canAsk ? (
+            <a
+              href={detailHref + "#ask"}
+              className="inline-flex min-h-[44px] items-center rounded px-4 py-2 text-sm font-semibold"
+              style={{
+                background: theme.accent,
+                color: theme.accentForeground,
+                borderRadius: theme.radius === "full" ? 9999 : 8,
+              }}
+            >
+              Ask FYD
+            </a>
+          ) : null}
+          {canOpen ? (
+            <a
+              href={detailHref}
+              data-fyd-object-id={objectId}
+              role="button"
+              tabIndex={0}
+              aria-expanded="false"
+              aria-label="View details"
+              className="inline-flex min-h-[44px] items-center rounded border px-4 py-2 text-sm font-semibold"
+              style={{
+                borderColor: theme.accent,
+                color: theme.ink,
+                borderRadius: theme.radius === "full" ? 9999 : 8,
+              }}
+            >
+              View details
+            </a>
+          ) : null}
         </div>
       </div>
     </details>

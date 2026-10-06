@@ -72,7 +72,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     pathname.startsWith("/build/");
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`} style={{ colorScheme: 'dark light' }}>
+    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`} style={{ colorScheme: 'dark light' }}>
       <head>
         <script
           dangerouslySetInnerHTML={{

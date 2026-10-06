@@ -16,7 +16,10 @@
  */
 
 import { notFound } from "next/navigation";
-import { getPingObjectGraph } from "@/fyd/data/ping-object-source";
+import {
+  getPingObjectGraph,
+  getVerifiedPublicProjection,
+} from "@/fyd/data/ping-object-source";
 import { verifyObjectGraph } from "@/fyd/builder/object-builder";
 import { planSite } from "@/fyd/builder/planner";
 import { vectorForSite } from "@/fyd/builder/site-vectors";
@@ -43,9 +46,13 @@ export async function generateMetadata({
   params: Promise<{ siteId: string }>;
 }) {
   const { siteId } = await params;
-  const projection = await getPingObjectGraph(siteId).catch(() => null);
-  if (!projection) return { title: "Site not found" };
-  const name = ownerName(projection.graph, siteId);
+  // Verified public projection (Q-C-01): metadata derives from the public
+  // graph, never the raw source graph.
+  const verified = await getVerifiedPublicProjection(siteId, "anonymous").catch(
+    () => null,
+  );
+  if (!verified) return { title: "Site not found" };
+  const name = ownerName(verified.graph, siteId);
   return {
     title: name,
     description: "A site composed by FYD from the business object graph.",
@@ -58,11 +65,20 @@ export default async function BuildSitePage({
   params: Promise<{ siteId: string }>;
 }) {
   const { siteId } = await params;
-  // Fail closed on unknown sites: getPingObjectGraph throws when the
-  // projection is missing, which becomes a 404, never a 500 with fiction.
+  // Fail closed on unknown sites: getVerifiedPublicProjection throws when
+  // the projection is missing, which becomes a 404, never a 500 with
+  // fiction. THE boundary (Q-C-01): every fact below comes from the
+  // verified public projection. meta + presentationIntent are server-side
+  // compile inputs from the read seam; they are never serialized.
+  const publicProjection = await getVerifiedPublicProjection(
+    siteId,
+    "anonymous",
+  ).catch(() => null);
+  if (!publicProjection) notFound();
+  const graph = publicProjection.graph;
   const projection = await getPingObjectGraph(siteId).catch(() => null);
   if (!projection) notFound();
-  const { graph, meta, presentationIntent } = projection;
+  const { meta, presentationIntent } = projection;
   // OBJECT BUILDER boundary: the graph is verified and attested before
   // the website builder plans anything from it. The tenant context is the
   // site id, so a cross-tenant graph cannot reach the planner.

@@ -9,6 +9,7 @@ import { isValidResourceId, release } from "@/fyd/claim/machine";
 import { ClaimError } from "@/fyd/claim/types";
 import { resolveClaimIdentity } from "@/fyd/claim/identity";
 import { readClaim, writeClaim } from "@/fyd/claim/store";
+import { projectClaimForViewer } from "@/fyd/claim/claim-projection";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,7 +48,9 @@ export async function POST(
   try {
     const next = release(current, identity.actorLabel);
     writeClaim(next);
-    return NextResponse.json({ ok: true, claim: next });
+    // Single claim projection rule: owner-authorized callers receive the
+    // owner projection of the stored record.
+    return NextResponse.json({ ok: true, claim: projectClaimForViewer(next, "owner") });
   } catch (e) {
     if (e instanceof ClaimError) {
       return NextResponse.json({ ok: false, code: e.code, message: e.message }, { status: 409 });

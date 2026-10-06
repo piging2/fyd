@@ -166,6 +166,9 @@ export function RailClient({ portal, business, side, mode }: RailClientProps) {
         onUnaware={(id) => setAwareId((cur) => (cur === id ? null : cur))}
         onEngageRequest={(id) => setEngagedId(id)}
         onRelease={(id) => setEngagedId((cur) => (cur === id ? null : cur))}
+        // Required by PortalCircleProps; this surface has no Ask FYD orbit
+        // control, so the handler is inert.
+        onAskRequest={() => {}}
       />
     </div>
   );

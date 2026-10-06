@@ -21,6 +21,19 @@ beforeEach(() => {
 });
 
 describe("interpretTextCommand", () => {
+  test("description correction preserves the owner value's case (Y is the owner's exact words)", () => {
+    const p = interpretTextCommand(
+      "Update the description of Pergola Design Consultations to We Design CUSTOM Pergolas.",
+      "happy-place",
+    );
+    expect(p).not.toBeNull();
+    expect(p!.command).toEqual({
+      type: "set-service-description",
+      serviceId: SERVICE_ID,
+      value: "We Design CUSTOM Pergolas.",
+    });
+  });
+
   test("Put pergola design consultations first becomes a typed move-service proposal", () => {
     const p = interpretTextCommand("Put pergola design consultations first", "happy-place");
     expect(p).not.toBeNull();

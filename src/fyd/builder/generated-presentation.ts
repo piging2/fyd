@@ -35,6 +35,45 @@ export interface CopyBinding {
   claimRef: string | null;
 }
 
+/**
+ * Copy classification (Nolan 2026-09-25, binding).
+ *
+ * - "DIRECT_FACT": a recorded fact, e.g. "Open 24 hours". Text is bound
+ *   to object fields; every binding must resolve.
+ * - "DERIVED_FACT": a fact derived from evidence, e.g. "Serves Grand
+ *   Junction and surrounding areas". Text is bound; derivation is labeled
+ *   downstream, never presented as a verified fact.
+ * - "GENERATED_COPY": AI-generated marketing copy, e.g. "Comfort you can
+ *   count on". Pure presentation: it may exist, but it MUST NOT carry
+ *   evidence bindings, because a binding would let marketing copy ride an
+ *   evidence seam and silently become a factual object claim.
+ * - "USER_COPY": owner-written text. Bound like a fact; the citation basis
+ *   downstream names the owner as the source.
+ *
+ * Maps to the render layer's BindingClassification vocabulary
+ * ("direct" | "derived" | "generated" | "owner_authored", owned by
+ * src/fyd/sitespec/graph.ts) via copyClassToBindingClassification. This
+ * module owns copy-level enforcement; the binding verifier owns
+ * render-level enforcement. No duplication.
+ */
+export type CopyClass = "DIRECT_FACT" | "DERIVED_FACT" | "GENERATED_COPY" | "USER_COPY";
+
+/** CopyClass -> the render layer's binding classification vocabulary. */
+export function copyClassToBindingClassification(
+  copyClass: CopyClass,
+): "direct" | "derived" | "generated" | "owner_authored" {
+  switch (copyClass) {
+    case "DIRECT_FACT":
+      return "direct";
+    case "DERIVED_FACT":
+      return "derived";
+    case "GENERATED_COPY":
+      return "generated";
+    case "USER_COPY":
+      return "owner_authored";
+  }
+}
+
 /** Generated copy for one render slot. */
 export interface GeneratedCopySlot {
   slotId: string;
@@ -42,6 +81,13 @@ export interface GeneratedCopySlot {
   sectionId: string;
   text: string;
   bindings: CopyBinding[];
+  /**
+   * The copy classification. Required: unclassified copy cannot be
+   * verified, and unverifiable copy must never reach the renderer.
+   * GENERATED_COPY slots must carry zero bindings (pure presentation);
+   * factual classes must carry at least one resolved binding.
+   */
+  copyClass: CopyClass;
 }
 
 export interface GeneratedPresentation {
@@ -57,7 +103,8 @@ export interface GeneratedPresentationFinding {
     | "unknown-field"
     | "claim-mismatch"
     | "private-object-in-public-copy"
-    | "prohibited-positioning";
+    | "prohibited-positioning"
+    | "generated-copy-with-bindings";
   message: string;
 }
 
@@ -101,16 +148,32 @@ export function verifyGeneratedPresentation(
 
     if (slot.text.trim() === "") continue; // empty copy makes no claims.
 
-    if (slot.bindings.length === 0) {
-      at("ungrounded-copy", "slot has text but no factual bindings: refused.");
-      continue;
-    }
     const hit = containsProhibited(slot.text, prohibitedPositioning);
     if (hit !== null) {
       at(
         "prohibited-positioning",
         "slot text contains prohibited positioning \"" + hit + "\": refused.",
       );
+    }
+    if (slot.copyClass === "GENERATED_COPY") {
+      // Generated marketing copy is pure presentation: it may exist, but
+      // it must NEVER ride an evidence binding, because a binding would
+      // let it silently become a factual object claim in the render.
+      // Refused outright, never silently stripped: stripping would
+      // reclassify the author's intent without saying so.
+      if (slot.bindings.length > 0) {
+        at(
+          "generated-copy-with-bindings",
+          "GENERATED_COPY slot carries " + slot.bindings.length +
+            " evidence binding(s): generated copy may never bind object facts. Refused.",
+        );
+      }
+      continue;
+    }
+
+    if (slot.bindings.length === 0) {
+      at("ungrounded-copy", "slot has text but no factual bindings: refused.");
+      continue;
     }
     const lowerText = slot.text.toLowerCase();
     for (const b of slot.bindings) {

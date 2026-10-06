@@ -26,6 +26,8 @@ import {
   digestOwnerState,
   fydOwnerEventId,
   migrateV1ToEvents,
+  CorruptOwnerLogError,
+  OwnerLogConflictError,
   readOwnerEvents,
   reduceOwnerEvents,
   type OwnerEvent,
@@ -133,7 +135,7 @@ describe("replay determinism", () => {
     );
     applyOwnerCommand(
       "happy-place",
-      { type: "set-address-visibility", visibility: "hidden" },
+      { type: "set-address-visibility", visibility: "hide" },
       KNOWN_IDS,
       KNOWN_NAMES,
     );
@@ -253,7 +255,7 @@ describe("v1 migration", () => {
       serviceOrder: ["svc-fences", "svc-decks"],
       hiddenServices: ["svc-pergolas"],
       addedServices: [{ id: "svc-patios", name: "Patios" }],
-      addressVisibility: "hidden",
+      addressVisibility: "hide",
       fieldCorrections: {
         phone: {
           field: "phone",
@@ -274,7 +276,7 @@ describe("v1 migration", () => {
     expect(o.serviceOrder).toEqual(["svc-fences", "svc-decks"]);
     expect(o.hiddenServices).toEqual(["svc-pergolas"]);
     expect(o.addedServices).toEqual([{ id: "svc-patios", name: "Patios" }]);
-    expect(o.addressVisibility).toBe("hidden");
+    expect(o.addressVisibility).toBe("hide");
     expect(o.fieldCorrections.phone.ownerValue).toBe("+15551234567");
     expect(o.fieldCorrections.phone.sourceValue).toBe("+15550000000");
     // The human log survived migration.
@@ -335,5 +337,94 @@ describe("fail closed", () => {
       ),
     ).toThrow(OwnerCommandError);
     expect(readOwnerEvents("happy-place")).toEqual([]);
+  });
+});
+
+describe("corrupt owner log (F01)", () => {
+  const oid = "happy-place";
+  const logPath = () => join(process.env.FYD_OWNER_DIR!, oid + ".json");
+
+  test("missing file still yields []", () => {
+    expect(readOwnerEvents(oid)).toEqual([]);
+  });
+
+  test("invalid JSON throws CorruptOwnerLogError, not []", () => {
+    writeFileSync(logPath(), "{not json", "utf8");
+    expect(() => readOwnerEvents(oid)).toThrow(CorruptOwnerLogError);
+    try {
+      readOwnerEvents(oid);
+    } catch (err) {
+      expect(err).toBeInstanceOf(CorruptOwnerLogError);
+      expect((err as CorruptOwnerLogError).code).toBe("OWNER_LOG_CORRUPT");
+      expect((err as CorruptOwnerLogError).reason).toBe("invalid JSON");
+    }
+  });
+
+  test("objectId mismatch throws CorruptOwnerLogError", () => {
+    writeFileSync(logPath(), JSON.stringify({ version: 2, objectId: "other-shop", events: [] }), "utf8");
+    expect(() => readOwnerEvents(oid)).toThrow(CorruptOwnerLogError);
+  });
+
+  test("append on a corrupt log refuses mutation and retains the bytes", () => {
+    const corrupt = "{corrupt";
+    writeFileSync(logPath(), corrupt, "utf8");
+    expect(() => appendOwnerEvent(oid, draft())).toThrow(CorruptOwnerLogError);
+    expect(readFileSync(logPath(), "utf8")).toBe(corrupt);
+  });
+
+  test("append on a missing log still works (fresh log)", () => {
+    const event = appendOwnerEvent(oid, draft());
+    expect(event.seq).toBe(0);
+    expect(readOwnerEvents(oid)).toHaveLength(1);
+  });
+});
+
+describe("owner log compare-and-swap (F02)", () => {
+  const oid = "happy-place";
+
+  test("append with matching expectedLength succeeds", () => {
+    appendOwnerEvent(oid, draft());
+    const event = appendOwnerEvent(oid, draft(), { expectedLength: 1 });
+    expect(event.seq).toBe(1);
+  });
+
+  test("append with stale expectedLength refuses and writes nothing", () => {
+    appendOwnerEvent(oid, draft());
+    appendOwnerEvent(oid, draft()); // concurrent write lands first
+    expect(() => appendOwnerEvent(oid, draft(), { expectedLength: 1 })).toThrow(OwnerLogConflictError);
+    try {
+      appendOwnerEvent(oid, draft(), { expectedLength: 1 });
+    } catch (err) {
+      expect(err).toBeInstanceOf(OwnerLogConflictError);
+      expect((err as OwnerLogConflictError).code).toBe("OWNER_LOG_CONFLICT");
+    }
+    expect(readOwnerEvents(oid)).toHaveLength(2); // refused append wrote nothing
+  });
+
+  test("append without expectedLength keeps legacy behavior", () => {
+    appendOwnerEvent(oid, draft());
+    const event = appendOwnerEvent(oid, draft());
+    expect(event.seq).toBe(1);
+  });
+});
+
+describe("non-log files sharing the directory (F01 refinement)", () => {
+  const oid = "happy-place";
+  const logPath = () => join(process.env.FYD_OWNER_DIR!, oid + ".json");
+
+  test("a valid JSON file with no owner-log shape yields [], not a throw", () => {
+    writeFileSync(logPath(), JSON.stringify({ meta: { siteId: oid }, data: {} }), "utf8");
+    expect(readOwnerEvents(oid)).toEqual([]);
+  });
+
+  test("a file with log markers but invalid structure throws", () => {
+    writeFileSync(logPath(), JSON.stringify({ version: 2, objectId: oid, events: "not-an-array" }), "utf8");
+    expect(() => readOwnerEvents(oid)).toThrow(CorruptOwnerLogError);
+  });
+
+  test("append over a non-log file does not throw on read", () => {
+    writeFileSync(logPath(), JSON.stringify({ meta: { siteId: oid } }), "utf8");
+    const event = appendOwnerEvent(oid, draft());
+    expect(event.seq).toBe(0);
   });
 });

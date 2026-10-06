@@ -30,9 +30,11 @@
  * instead of re-derived.
  */
 
-import jsonld, { type JsonLdDocument } from "jsonld";
+import jsonld, { type JsonLdDocument, type NodeObject } from "jsonld";
 import type { FactClass, ParsedFact, Visibility } from "./proceduralizer";
 import { sha256Hex } from "./sha256";
+import { extractMicrodataWithRejections } from "./microdata";
+import { classifyEntityTypes, SCHEMA_ORG } from "./vocabulary";
 
 // ---------------------------------------------------------------------------
 // Vendored from src/fyd/resolve/spike/normalize.ts (spike-1, verbatim).
@@ -69,6 +71,18 @@ export interface StructuredDataBlock {
   raw: string;
   parsed?: unknown;
   error?: string;
+  /**
+   * Extraction syntax that produced this block. Absent means "json-ld":
+   * every block the stage produced before the microdata harvest was
+   * JSON-LD, so existing callers and records are unaffected.
+   */
+  syntax?: "json-ld" | "microdata";
+  /**
+   * Microdata-only: the itemscope was refused by the vocabulary gate
+   * (itemtype outside the known vocabulary). The block carries no parsed
+   * record; the rejection becomes unmapped-node-type unsupported evidence.
+   */
+  vocabRejection?: { itemtype: string; reason: string };
 }
 
 export function discoverStructuredData(html: string): StructuredDataBlock[] {
@@ -91,6 +105,36 @@ export function discoverStructuredData(html: string): StructuredDataBlock[] {
     }
     index++;
   }
+  // Harvest 2026-09-28: additive microdata extraction, appended AFTER the
+  // JSON-LD blocks with continuing indices. ld+json-only pages produce
+  // byte-identical output to before this patch.
+  // Vocabulary gate 2026-09-28: itemscopes whose itemtype is outside the
+  // known vocabulary are not emitted as records; their rejections ride
+  // along as !ok blocks so the evidence survives into unsupported evidence
+  // and the reconciliation queue (never silently dropped).
+  const { items: microdataItems, rejections: microdataRejections } =
+    extractMicrodataWithRejections(html);
+  for (const item of microdataItems) {
+    blocks.push({
+      index,
+      ok: true,
+      raw: item.raw,
+      parsed: item.parsed,
+      syntax: "microdata",
+    });
+    index++;
+  }
+  for (const r of microdataRejections) {
+    blocks.push({
+      index,
+      ok: false,
+      raw: r.raw,
+      error: "vocabulary gate: " + r.reason,
+      syntax: "microdata",
+      vocabRejection: { itemtype: r.itemtype, reason: r.reason },
+    });
+    index++;
+  }
   return blocks;
 }
 
@@ -98,7 +142,6 @@ export function discoverStructuredData(html: string): StructuredDataBlock[] {
 // Stage: GRAPH/NODE EXPANSION via the jsonld library (offline).
 // ---------------------------------------------------------------------------
 
-const SCHEMA_ORG = "https://schema.org/";
 const SCHEMA_PREFIX_RE = /^https?:\/\/schema\.org\//;
 const SCHEMA_CONTEXT_RE = /^https?:\/\/(www\.)?schema\.org\/?$/;
 
@@ -131,15 +174,15 @@ function offlineContext(doc: unknown): unknown {
 }
 
 interface LoadedDocument {
-  contextUrl: null;
+  contextUrl: undefined;
   documentUrl: string;
-  document: unknown;
+  document: NodeObject;
 }
 
 async function offlineDocumentLoader(url: string): Promise<LoadedDocument> {
   if (SCHEMA_CONTEXT_RE.test(url)) {
     return {
-      contextUrl: null,
+      contextUrl: undefined,
       documentUrl: url,
       document: { "@context": { "@vocab": SCHEMA_ORG } },
     };
@@ -176,6 +219,18 @@ export async function expandJsonLdBlocks(
   const unsupported: UnsupportedEvidence[] = [];
   for (const block of blocks) {
     if (!block.ok) {
+      // Vocabulary-gate rejections are UNKNOWN vocabulary, not malformed
+      // JSON: they become unmapped-node-type unsupported evidence (the
+      // kind already existed in the union but was never emitted).
+      if (block.vocabRejection) {
+        unsupported.push({
+          kind: "unmapped-node-type",
+          blockIndex: block.index,
+          reason: "microdata itemtype refused by the vocabulary gate; quarantined, not canonicalized",
+          detail: block.vocabRejection.itemtype.slice(0, 200),
+        });
+        continue;
+      }
       unsupported.push({
         kind: "malformed-block",
         blockIndex: block.index,
@@ -221,8 +276,18 @@ export interface EntityCandidate {
   key: string;
   /** The @id as emitted by the library ("_:bN" for blank nodes). */
   nodeId: string;
-  /** Compact schema.org type names, sorted, deduped. */
+  /**
+   * Compact schema.org type names, sorted, deduped. Vocabulary gate
+   * 2026-09-28: ONLY schema.org-namespaced types appear here. A type
+   * observed outside the known vocabulary never becomes a compact name,
+   * so it can never collide with a schema.org term in downstream logic.
+   */
   types: string[];
+  /**
+   * Raw observed @type IRIs, sorted, deduped. Kept for vocabulary
+   * classification and evidence; never used as canonical meaning.
+   */
+  typeIris: string[];
   blockIndex: number;
   node: ExpandedNode;
 }
@@ -245,13 +310,19 @@ function compactTerm(iri: string): string {
   return iri.replace(SCHEMA_PREFIX_RE, "");
 }
 
-function typeNames(node: ExpandedNode): string[] {
+/**
+ * Raw observed @type IRIs for a node, trimmed, sorted, deduped.
+ * Namespace classification happens in entityCandidates via the vocabulary
+ * gate; this function preserves the observation without interpreting it.
+ */
+function typeIris(node: ExpandedNode): string[] {
   const t = node["@type"];
   const arr = Array.isArray(t) ? t : t === undefined ? [] : [t];
-  const names = arr
-    .map((x) => (typeof x === "string" ? compactTerm(x) : ""))
+  const iris = arr
+    .filter((x): x is string => typeof x === "string")
+    .map((s) => s.trim())
     .filter((s) => s !== "");
-  return [...new Set(names)].sort();
+  return [...new Set(iris)].sort();
 }
 
 export function entityCandidates(nodes: FlattenedNode[]): EntityCandidate[] {
@@ -269,7 +340,20 @@ export function entityCandidates(nodes: FlattenedNode[]): EntityCandidate[] {
     // Identical blank nodes merge into one entity (same address stated
     // twice is one address). Keep the earliest block index for provenance.
     if (!prev || blockIndex < prev.blockIndex) {
-      byKey.set(key, { key, nodeId, types: typeNames(node), blockIndex, node });
+      // Vocabulary gate: the candidate keeps the raw IRIs for evidence and
+      // exposes only schema.org-namespaced types as canonical type names.
+      // classifyEntityTypes is pure; the KNOWN/UNKNOWN verdict is applied
+      // by extractStructuredData (quarantine), not here.
+      const iris = typeIris(node);
+      const verdict = classifyEntityTypes(iris);
+      byKey.set(key, {
+        key,
+        nodeId,
+        types: verdict.knownTypes,
+        typeIris: iris,
+        blockIndex,
+        node,
+      });
     }
   }
   return [...byKey.values()].sort((a, b) =>
@@ -293,13 +377,32 @@ export interface StructuredRelation {
   blockIndex: number;
 }
 
+/**
+ * An @id-reference candidate that died inside extraction, before the
+ * proceduralizer ever saw it. G3 (2026-09-24): no silent semantic loss.
+ * outcome is one of the relationship terminal outcomes (see
+ * proceduralizer.ts RelationshipOutcome): UNRESOLVED_TARGET when the
+ * referenced node id was never visited; POLICY_SUPPRESSED when the target
+ * was visited but deliberately skipped as site chrome.
+ */
+export interface StructuredRefDrop {
+  subjectKey: string;
+  property: string;
+  predicate: string;
+  refNodeId: string;
+  blockIndex: number;
+  outcome: "UNRESOLVED_TARGET" | "POLICY_SUPPRESSED" | "VOCABULARY_QUARANTINED";
+  reason: string;
+}
+
 export interface UnsupportedEvidence {
   kind:
     | "malformed-block"
     | "expansion-failed"
     | "unmapped-property"
     | "unmapped-node-type"
-    | "site-chrome-node";
+    | "site-chrome-node"
+    | "unknown-vocabulary";
   blockIndex: number;
   entityKey?: string;
   property?: string;
@@ -307,11 +410,46 @@ export interface UnsupportedEvidence {
   detail?: string;
 }
 
+/**
+ * A quarantined-unknown-vocabulary entry: the deterministic work-queue
+ * projection of unsupported evidence (Nolan 2026-09-28: UNKNOWN -> work
+ * queue). This is a pure projection derived from unsupported[] per call,
+ * not a store: no persistence, no writer, nothing to reconcile against
+ * except the evidence itself. Operators map namespaces to the known
+ * vocabulary (or extend the gate); on re-ingestion the item disappears
+ * because the evidence that derived it is gone.
+ */
+export interface ReconciliationItem {
+  /** Stable key: "block:<index>" or "entity:<key>", sorted ascending. */
+  queueKey: string;
+  /** Where the unknown vocabulary was observed. */
+  source: "microdata" | "json-ld";
+  blockIndex: number;
+  entityKey?: string;
+  /** Observed type IRIs outside the known vocabulary (evidence, never meaning). */
+  unknownTypeIris: string[];
+  /** Known schema.org types also present on the same entity, if any (mixed case). */
+  knownTypes: string[];
+  reason: string;
+}
+
 export interface StructuredExtraction {
   facts: ParsedFact[];
   relationships: StructuredRelation[];
+  /** @id-ref candidates dropped inside extraction (G3: typed, never silent). */
+  refDrops: StructuredRefDrop[];
+  /**
+   * Canonical entity candidates ONLY: vocabulary-quarantined and
+   * site-chrome entities are excluded here. Their evidence survives in
+   * unsupported[] and reconciliation[].
+   */
   entities: EntityCandidate[];
   unsupported: UnsupportedEvidence[];
+  /**
+   * Deterministic work-queue projection derived from unsupported[]: one
+   * entry per quarantined vocabulary observation. Not a store.
+   */
+  reconciliation: ReconciliationItem[];
   stats: {
     blocksTotal: number;
     blocksOk: number;
@@ -448,17 +586,15 @@ export async function extractStructuredData(
   ctx: StructuredContext,
 ): Promise<StructuredExtraction> {
   const blocks = discoverStructuredData(html);
+  const syntaxByBlock = new Map<number, "json-ld" | "microdata">(
+    blocks.map((b) => [b.index, b.syntax ?? "json-ld"]),
+  );
   const { nodes, unsupported } = await expandJsonLdBlocks(blocks);
   const entities = entityCandidates(nodes);
 
-  // Resolve @id references to entity keys. Library _:bN labels are
-  // translated through the candidate key map so relationships never
-  // depend on allocation order.
-  const keyByNodeId = new Map<string, string>();
-  for (const e of entities) keyByNodeId.set(e.nodeId, e.key);
-
   const facts: ParsedFact[] = [];
   const relationships: StructuredRelation[] = [];
+  const refDrops: StructuredRefDrop[] = [];
   let privateFactsWithheld = 0;
 
   const skippedKeys = new Set<string>();
@@ -473,12 +609,78 @@ export async function extractStructuredData(
       });
     }
   }
+
+  // Vocabulary gate (Nolan 2026-09-28, fail closed): an entity with NO
+  // schema.org-namespaced @type is quarantined. It produces no facts, no
+  // relationships, no entity record; its evidence (raw IRIs + block/raw
+  // bytes) survives in unsupported[] and the reconciliation projection.
+  // Mixed entities (known + unknown types) stay canonical on their KNOWN
+  // types only; the unknown IRIs are recorded as evidence.
+  const quarantinedKeys = new Set<string>();
+  // Reconciliation queue: one entry per unknown-vocabulary observation.
+  // Deterministic projection of the evidence, built here and from
+  // vocabulary-gate block rejections below; not a store.
+  const reconciliation: ReconciliationItem[] = [];
+  for (const e of entities) {
+    if (skippedKeys.has(e.key)) continue;
+    const verdict = classifyEntityTypes(e.typeIris);
+    if (verdict.verdict === "UNKNOWN") {
+      quarantinedKeys.add(e.key);
+      unsupported.push({
+        kind: "unknown-vocabulary",
+        blockIndex: e.blockIndex,
+        entityKey: e.key,
+        reason:
+          "entity quarantined: no @type in the known vocabulary; never canonicalized",
+        detail: verdict.unknownTypeIris.join(" | ").slice(0, 300),
+      });
+      reconciliation.push({
+        queueKey: "entity:" + e.key,
+        source: syntaxByBlock.get(e.blockIndex) ?? "json-ld",
+        blockIndex: e.blockIndex,
+        entityKey: e.key,
+        unknownTypeIris: verdict.unknownTypeIris,
+        knownTypes: verdict.knownTypes,
+        reason:
+          "entity quarantined: no @type in the known vocabulary; map the namespace or extend the gate, then re-ingest",
+      });
+    } else if (verdict.unknownTypeIris.length > 0) {
+      unsupported.push({
+        kind: "unknown-vocabulary",
+        blockIndex: e.blockIndex,
+        entityKey: e.key,
+        reason:
+          "mixed vocabulary: entity kept on known schema.org type(s) only; unknown @type IRIs preserved as evidence",
+        detail: verdict.unknownTypeIris.join(" | ").slice(0, 300),
+      });
+      reconciliation.push({
+        queueKey: "entity:" + e.key,
+        source: syntaxByBlock.get(e.blockIndex) ?? "json-ld",
+        blockIndex: e.blockIndex,
+        entityKey: e.key,
+        unknownTypeIris: verdict.unknownTypeIris,
+        knownTypes: verdict.knownTypes,
+        reason:
+          "entity kept on known schema.org type(s) only; unknown @type IRIs need a vocabulary mapping decision",
+      });
+    }
+  }
+
+  // @id resolution sees every visited node id (allocation-order-free via
+  // the candidate key map). Whether a resolved target is canonical,
+  // site-chrome, or quarantined is decided per-ref below, producing the
+  // typed drop (VOCABULARY_QUARANTINED / POLICY_SUPPRESSED) or a
+  // relationship. UNRESOLVED_TARGET is reserved for ids the expansion
+  // never visited.
+  const keyByNodeId = new Map<string, string>();
+  for (const e of entities) keyByNodeId.set(e.nodeId, e.key);
+
   // @GRAPH VERIFIED counts every node the expansion visited, including
-  // site-chrome nodes (visited, then deliberately skipped).
+  // site-chrome and quarantined nodes (visited, then deliberately skipped).
   const visitedNodeIds = entities.map((e) => e.nodeId).sort();
 
   for (const e of entities) {
-    if (skippedKeys.has(e.key)) continue;
+    if (skippedKeys.has(e.key) || quarantinedKeys.has(e.key)) continue;
     const propNames = Object.keys(e.node)
       .filter((k) => !k.startsWith("@"))
       .map(compactTerm)
@@ -498,7 +700,7 @@ export async function extractStructuredData(
           facts.push({
             name: mapped,
             value: literals.length === 1 ? literals[0] : literals,
-            sourceType: "json-ld",
+            sourceType: syntaxByBlock.get(e.blockIndex) ?? "json-ld",
             inferred: false,
             factClass: "DIRECT_FACT" satisfies FactClass,
             visibility,
@@ -519,10 +721,53 @@ export async function extractStructuredData(
 
       for (const ref of refs) {
         const objectKey = keyByNodeId.get(ref);
-        if (!objectKey || skippedKeys.has(objectKey)) continue;
+        const predicate = PREDICATE_MAP[property] ?? "references";
+        if (!objectKey) {
+          // The bytes referenced a node id the expansion never visited:
+          // observed, but unresolvable.
+          refDrops.push({
+            subjectKey: e.key,
+            property,
+            predicate,
+            refNodeId: ref,
+            blockIndex: e.blockIndex,
+            outcome: "UNRESOLVED_TARGET",
+            reason: `referenced node id "${ref}" was never visited by @graph expansion`,
+          });
+          continue;
+        }
+        if (quarantinedKeys.has(objectKey)) {
+          // Visited, then quarantined by the vocabulary gate: the target
+          // is unknown vocabulary, so the reference carries no canonical
+          // meaning. Typed drop, never a relationship to a quarantined node.
+          refDrops.push({
+            subjectKey: e.key,
+            property,
+            predicate,
+            refNodeId: ref,
+            blockIndex: e.blockIndex,
+            outcome: "VOCABULARY_QUARANTINED",
+            reason: `target node is vocabulary-quarantined (${objectKey}); reference carries no canonical meaning`,
+          });
+          continue;
+        }
+        if (skippedKeys.has(objectKey)) {
+          // Visited, then deliberately skipped: site chrome is a policy
+          // decision, so the drop is POLICY_SUPPRESSED, not unresolved.
+          refDrops.push({
+            subjectKey: e.key,
+            property,
+            predicate,
+            refNodeId: ref,
+            blockIndex: e.blockIndex,
+            outcome: "POLICY_SUPPRESSED",
+            reason: `target node is site chrome (${objectKey}), skipped by policy`,
+          });
+          continue;
+        }
         relationships.push({
           subjectKey: e.key,
-          predicate: PREDICATE_MAP[property] ?? "references",
+          predicate,
           objectKey,
           property,
           blockIndex: e.blockIndex,
@@ -551,11 +796,42 @@ export async function extractStructuredData(
 
   const nodeIds = visitedNodeIds;
   const malformed = blocks.filter((b) => !b.ok).length;
+  refDrops.sort((a, b) => {
+    const ka = a.subjectKey + "|" + a.property + "|" + a.refNodeId;
+    const kb = b.subjectKey + "|" + b.property + "|" + b.refNodeId;
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+
+  // Block-level vocabulary rejections (microdata itemtypes refused by the
+  // gate) join the reconciliation queue. Their unsupported evidence was
+  // recorded during expansion; this is the work-queue projection of it.
+  for (const b of blocks) {
+    if (b.vocabRejection) {
+      reconciliation.push({
+        queueKey: "block:" + b.index,
+        source: b.syntax ?? "microdata",
+        blockIndex: b.index,
+        unknownTypeIris: [b.vocabRejection.itemtype],
+        knownTypes: [],
+        reason:
+          "microdata itemtype refused by the vocabulary gate; map the namespace or extend the gate, then re-ingest",
+      });
+    }
+  }
+  reconciliation.sort((a, b) =>
+    a.queueKey < b.queueKey ? -1 : a.queueKey > b.queueKey ? 1 : 0,
+  );
+
+  const canonicalEntities = entities.filter(
+    (e) => !skippedKeys.has(e.key) && !quarantinedKeys.has(e.key),
+  );
   return {
     facts,
     relationships,
-    entities: entities.filter((e) => !skippedKeys.has(e.key)),
+    refDrops,
+    entities: canonicalEntities,
     unsupported,
+    reconciliation,
     stats: {
       blocksTotal: blocks.length,
       blocksOk: blocks.length - malformed,
@@ -586,7 +862,10 @@ export interface ScorableFact {
 
 /** Deterministic primary-business selection. Scores: same host as the
  *  source URL first, then type rank, then name+telephone evidence.
- *  Ties break on entity key. Returns the entity key or null. */
+ *  Ties break on entity key. Returns the entity key or null.
+ *  Precondition: entities arrive vocabulary-gated -- extractStructuredData
+ *  only returns canonical (schema.org-typed) entities, so quarantined
+ *  unknown-vocabulary entities can never be selected here. */
 export function selectPrimaryBusiness(
   entities: EntityCandidate[],
   factsByEntity: Map<string, ScorableFact[]>,

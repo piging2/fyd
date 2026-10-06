@@ -17,3 +17,9 @@ npm-debug.log*
 # FYD local runtime state
 tsconfig.tsbuildinfo
 data/
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+# Local runtime state
+var/

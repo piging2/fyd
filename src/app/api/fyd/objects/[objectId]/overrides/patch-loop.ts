@@ -27,9 +27,10 @@ import { canonicalize } from "@/lib/ping/ask-composer";
 import { getPingObjectGraphSync } from "@/fyd/data/ping-object-source";
 import { findBusinessObject, rawFieldValue } from "@/fyd/object/owner-overlay";
 import { readOverrides } from "@/fyd/object/owner-store";
-import { readOwnerEvents } from "@/fyd/object/owner-events";
+import { readOwnerEvents, serviceFieldTarget } from "@/fyd/object/owner-events";
 import type { OwnerCommand } from "@/fyd/object/types";
 import { loadObjectView } from "@/fyd/object/view";
+import type { VerifiedPublicProjection } from "@/fyd/sitespec/public-projection";
 
 /** sha256 hex over the canonicalized value. Deterministic across reads. */
 export function digestOf(value: unknown): string {
@@ -131,6 +132,18 @@ function sourceFieldValue(objectId: string, field: "phone" | "email" | "website"
     const business = findBusinessObject(graph);
     if (!business) return null;
     return rawFieldValue(business, field);
+  } catch {
+    return null;
+  }
+}
+
+/** The SOURCE's current description for one service: raw projection, overlay off. */
+function sourceServiceDescription(objectId: string, serviceId: string): string | null {
+  try {
+    const graph = getPingObjectGraphSync(objectId, { ownerOverlay: false }).graph;
+    const service = graph.objects.find((o) => o.id === serviceId);
+    if (!service) return null;
+    return rawFieldValue(service, "description");
   } catch {
     return null;
   }
@@ -247,6 +260,39 @@ export function buildPatchPreview(
         capabilityImpact,
       };
     }
+    case "set-service-description": {
+      const target = serviceFieldTarget(command.serviceId);
+      const existing = overrides.fieldCorrections[target];
+      const name = serviceName(serviceNames, command.serviceId);
+      const before = existing
+        ? existing.ownerValue
+        : (sourceServiceDescription(objectId, command.serviceId) ?? "(not on record)");
+      return {
+        before: "Description of " + name + ": " + before,
+        after: "Description of " + name + ": " + command.value,
+        evidenceImpact:
+          "Appends one owner.corrected-fact event (owner attestation) for this service's description. " +
+          "The site's current description (" + before + ") stays recorded as what the source says. " +
+          "Ask FYD will cite the new value as an 'Owner-set value' from 'Owner correction'; " +
+          "the ObjectView and /build show the owner value with a correction note.",
+        capabilityImpact,
+      };
+    }
+    case "revert-service-description": {
+      const target = serviceFieldTarget(command.serviceId);
+      const existing = overrides.fieldCorrections[target];
+      if (!existing) return null;
+      const name = serviceName(serviceNames, command.serviceId);
+      const source = sourceServiceDescription(objectId, command.serviceId) ?? "(not on record)";
+      return {
+        before: "Description of " + name + ": " + existing.ownerValue + " (owner correction)",
+        after: "Description of " + name + ": " + source + " (site's description shown again)",
+        evidenceImpact:
+          "Appends one owner.restored-fact event. The correction event stays in the log; " +
+          "the site's description is shown again in the ObjectView and Ask FYD answers.",
+        capabilityImpact,
+      };
+    }
     default:
       return null;
   }
@@ -293,8 +339,11 @@ export interface BoundApproval {
  * build state the owner approval is bound to. Unknown objects hash a
  * stable missing marker so the digest is always well defined.
  */
-export function buildViewDigest(objectId: string): string {
-  const view = loadObjectView(objectId);
+export function buildViewDigest(
+  projection: VerifiedPublicProjection,
+  objectId: string,
+): string {
+  const view = loadObjectView(projection, objectId);
   return digestOf(view ?? { objectId, missing: true });
 }
 

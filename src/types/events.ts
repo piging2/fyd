@@ -18,6 +18,7 @@ export const SCHEMA_VERSION = 1;
 export type HPPEventType =
   | "NewsletterSignup"
   | "NewsletterConfirmed"
+  | "NewsletterUnsubscribed"
   | "EmailOpened"
   | "EmailClicked"
   | "EstimateRequested"
@@ -69,6 +70,11 @@ export interface NewsletterSignupData {
 }
 
 export interface NewsletterConfirmedData {
+  email: string;
+  subscriberId: number;
+}
+
+export interface NewsletterUnsubscribedData {
   email: string;
   subscriberId: number;
 }
@@ -214,6 +220,7 @@ export interface InvoicePaidData {
 export type HPPEventData =
   | { type: "NewsletterSignup"; data: NewsletterSignupData }
   | { type: "NewsletterConfirmed"; data: NewsletterConfirmedData }
+  | { type: "NewsletterUnsubscribed"; data: NewsletterUnsubscribedData }
   | { type: "EmailOpened"; data: EmailOpenedData }
   | { type: "EmailClicked"; data: EmailClickedData }
   | { type: "EstimateRequested"; data: EstimateRequestedData }
