@@ -32,7 +32,6 @@
 
 import { parse, HTMLElement } from "node-html-parser";
 import { sha256Hex } from "./sha256";
-import { classifyTerm } from "./vocabulary";
 
 /** A microdata itemscope record in JSON-LD record shape. */
 export interface MicrodataNode {
@@ -46,20 +45,6 @@ export interface MicrodataItem {
   raw: string;
   /** The typed record: JSON-LD shaped, nested records attached by property. */
   parsed: MicrodataNode;
-}
-
-/**
- * An itemscope the vocabulary gate refused. Evidence is preserved (raw
- * itemtype IRI, truncated scope HTML); the scope is never emitted as a
- * canonical record. The discovery stage converts these into
- * unmapped-node-type unsupported evidence + reconciliation queue entries.
- */
-export interface MicrodataRejection {
-  /** Truncated outer HTML of the rejected scope (evidence). */
-  raw: string;
-  /** The raw itemtype attribute value as observed. */
-  itemtype: string;
-  reason: string;
 }
 
 /**
@@ -218,38 +203,13 @@ const EMIT_TYPES: ReadonlySet<string> = new Set([
   "Person",
 ]);
 
-/**
- * Vocabulary gate for the itemtype attribute, applied to the FIRST itemtype
- * token. The token must be inside the schema.org namespace; the compact
- * schema.org type name is returned. A foreign-namespace itemtype whose
- * fragment happens to match an emit-set name (e.g.
- * "https://evil.example/Plumber") is UNKNOWN vocabulary: the scope is
- * rejected (evidence preserved) and never emitted as a schema.org type.
- *
- * An itemscope with NO itemtype claims no vocabulary at all: it is
- * filterable noise, rejected silently like any non-emit type (it is not a
- * vocabulary violation to be untyped).
- */
-function gatedTypeName(
-  itemtype: string | undefined | null,
-  rejections: MicrodataRejection[],
-  scopeHtml: () => string,
-): string | null {
-  const first = (itemtype ?? "").trim().split(/\s+/)[0] ?? "";
-  if (first === "") return null;
-  const c = classifyTerm(first);
-  if (c.namespace !== "schema.org" || c.name === "") {
-    rejections.push({
-      raw: scopeHtml().slice(0, 500),
-      itemtype: (itemtype ?? "").trim().slice(0, 200),
-      reason:
-        "microdata itemtype outside the known vocabulary (" +
-        c.namespace +
-        "); quarantined, not canonicalized",
-    });
-    return null;
-  }
-  return c.name;
+/** Schema.org type name: first itemtype token, fragment after the last "/". */
+function typeNameFromItemtype(itemtype: string | undefined): string {
+  if (!itemtype) return "";
+  const first = itemtype.trim().split(/\s+/)[0] ?? "";
+  if (first === "") return "";
+  const slash = first.lastIndexOf("/");
+  return slash >= 0 ? first.slice(slash + 1) : first;
 }
 
 function collapseWhitespace(s: string): string {
@@ -295,16 +255,12 @@ function isNestedScope(scope: HTMLElement): boolean {
 
 /**
  * Build the typed record for one itemscope element. Returns null when the
- * scope's type is not in the emit set (filtered noise, never emitted) or
- * when the vocabulary gate rejects its itemtype (rejection recorded in
- * `rejections`, evidence preserved). Nested itemscopes recurse and attach
- * under the property name.
+ * scope's type is not in the emit set (filtered noise, never emitted).
+ * Nested itemscopes recurse and attach under the property name.
  */
-function buildNode(scope: HTMLElement, rejections: MicrodataRejection[]): MicrodataNode | null {
-  const typeName = gatedTypeName(scope.getAttribute("itemtype"), rejections, () =>
-    scope.toString(),
-  );
-  if (typeName === null || !EMIT_TYPES.has(typeName)) return null;
+function buildNode(scope: HTMLElement): MicrodataNode | null {
+  const typeName = typeNameFromItemtype(scope.getAttribute("itemtype"));
+  if (!EMIT_TYPES.has(typeName)) return null;
 
   const props = new Map<string, unknown[]>();
   for (const el of scope.querySelectorAll("[itemprop]")) {
@@ -316,7 +272,7 @@ function buildNode(scope: HTMLElement, rejections: MicrodataRejection[]): Microd
     if (tokens.length === 0) continue;
     let value: unknown;
     if (el.hasAttribute("itemscope")) {
-      const nested = buildNode(el, rejections);
+      const nested = buildNode(el);
       if (!nested) continue;
       value = nested;
     } else {
@@ -342,42 +298,24 @@ function buildNode(scope: HTMLElement, rejections: MicrodataRejection[]): Microd
   return { "@type": typeName, "@id": id, ...body };
 }
 
-export interface MicrodataExtraction {
-  items: MicrodataItem[];
-  /** Itemscopes refused by the vocabulary gate (evidence preserved). */
-  rejections: MicrodataRejection[];
-}
-
 /**
  * Extract top-level typed microdata records from raw HTML, in document
  * order. Nested itemscopes attach inside their parent record and are not
  * emitted separately. Never throws: unparseable HTML yields no records.
- * Itemscopes whose itemtype is outside the known vocabulary are not
- * emitted; they are returned as rejections (evidence preserved).
  */
-export function extractMicrodataWithRejections(html: string): MicrodataExtraction {
+export function extractMicrodata(html: string): MicrodataItem[] {
   let root: HTMLElement;
   try {
     root = parse(html);
   } catch {
-    return { items: [], rejections: [] };
+    return [];
   }
   const items: MicrodataItem[] = [];
-  const rejections: MicrodataRejection[] = [];
   for (const scope of root.querySelectorAll("[itemscope]")) {
     if (isNestedScope(scope)) continue;
-    const parsed = buildNode(scope, rejections);
+    const parsed = buildNode(scope);
     if (!parsed) continue;
     items.push({ raw: scope.toString(), parsed });
   }
-  return { items, rejections };
-}
-
-/**
- * Extract top-level typed microdata records from raw HTML, in document
- * order. Same as extractMicrodataWithRejections but returns only the
- * emitted items (rejections dropped); kept for existing callers.
- */
-export function extractMicrodata(html: string): MicrodataItem[] {
-  return extractMicrodataWithRejections(html).items;
+  return items;
 }
