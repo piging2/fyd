@@ -31,7 +31,6 @@ import { readFile } from "node:fs/promises";
 import { statSync } from "node:fs";
 import { join } from "node:path";
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
 import { canonicalize } from "@/lib/ping/ask-composer";
 import type { ObjectGraph } from "@/fyd/sitespec/types";
 import type { PingObject, PingRelationship } from "@/lib/ping/types";
