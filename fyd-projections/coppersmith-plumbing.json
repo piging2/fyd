@@ -1,0 +1,405 @@
+{
+  "meta": {
+    "siteId": "coppersmith-plumbing",
+    "dumpedAt": "2026-10-05T19:01:21.298244+00:00",
+    "dumperVersion": "fyd-projection-dump@1.2.2",
+    "baseDigest": "8eaf11fc761a49ff51e52844ac610c993f43b7443c173e3b2d7d6f73f3cc5d8b",
+    "fixtureFileDigest": "30b185b289bac0c1a97e3c82b9b34ed887d994747d6947919a289b189839e557",
+    "fixtureHeader": "Coppersmith Plumbing & HVAC graph fixture: MACHINE-GENERATED, not hand-written.",
+    "overlayEventIds": [
+      "fyd-ovl-mufh0cte-41aef0c10164",
+      "fyd-ovl-mufh2e3o-6d6d2181b617",
+      "fyd-ovl-mufhf8y2-c390da9d75f3",
+      "fyd-ovl-mufhfclg-4aad14f81921",
+      "fyd-ovl-mufhgy03-c4a7e1c89024",
+      "fyd-ovl-mufhj55z-bb2595840bc7",
+      "fyd-ovl-muflorw7-a0fc09d0c31f",
+      "fyd-ovl-muflusab-7d88fbfa599f",
+      "fyd-ovl-mufmf64g-4a2e46c4fec3",
+      "fyd-ovl-mufmg3au-d53c521f8696",
+      "fyd-ovl-mufn95kl-0881f5ffa321",
+      "fyd-ovl-mufnbs7w-765cfba57b57",
+      "fyd-ovl-mufnbsd6-fed23af928df",
+      "fyd-ovl-mufncgny-793abe94be9e",
+      "fyd-ovl-mufomp17-b60f5fc4b3a9",
+      "fyd-ovl-mufowjjb-1b2771c09059",
+      "fyd-ovl-mufp2jxd-7e6d3dffb7b9",
+      "fyd-ovl-mufp4mjn-1ecba64f6b67",
+      "fyd-ovl-mufp4z9e-a309380b90fe",
+      "fyd-ovl-mugyb574-9d1e075926e7",
+      "fyd-ovl-mugycvod-ef3e70a9a2b0",
+      "fyd-ovl-mugyend7-2ba3c3d622c6",
+      "fyd-ovl-mugyeup8-927b91cb6108",
+      "fyd-ovl-mugymf21-9155315690c3",
+      "fyd-ovl-mugyn4o2-f61a56827992",
+      "fyd-ovl-mugyq6x1-df4c9c7eda6d",
+      "fyd-ovl-mugyrmiu-087b48869787",
+      "fyd-ovl-muh4ohlx-ffa7e06a21bd",
+      "fyd-ovl-muj36ky7-3906671f7c90",
+      "fyd-ovl-muj3ane7-9f948ab0a104",
+      "fyd-ovl-mulutp2p-c082dc1d86c7",
+      "fyd-ovl-muvm8j4d-a5133ab9c17a"
+    ],
+    "graphDigest": "8eaf11fc761a49ff51e52844ac610c993f43b7443c173e3b2d7d6f73f3cc5d8b",
+    "generatedAt": "2026-09-21T12:01:10.844Z",
+    "eventSequences": null,
+    "presentationIntentDigest": "832a58e55eee161e359f6985c55b670498de57d946f2717f789d95978cd0c1e3"
+  },
+  "graph": {
+    "objects": [
+      {
+        "id": "website-business-2f1327c09d622175",
+        "schema": "ping.social.business@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Coppersmith Plumbing - HVAC - Mechanical",
+        "description": "Coppersmith Plumbing & HVAC has serviced Western Colorado for over 25 years. With a proven track record of quality work and diverse skill sets, our team",
+        "fields": {
+          "description": "Coppersmith Plumbing & HVAC has serviced Western Colorado for over 25 years. With a proven track record of quality work and diverse skill sets, our team",
+          "hours": "Mo,Tu,We,Th,Fr 07:30-16:00",
+          "locale": "en_US",
+          "phone": "970-245-3869",
+          "site_name": "Coppersmith Plumbing - HVAC - Mechanical",
+          "title": "Coppersmith Plumbing - HVAC - Mechanical",
+          "type": "website",
+          "updated_time": "2025-10-01T10:31:10-06:00",
+          "website": "https://coppersmithplumbing.com",
+          "locality": "Grand Junction, Colorado, 81501, United States"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-2f1327c09d622175-ext-89604af059c2",
+        "schema": "ping.social.external_identity@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "coppersmithplumbing.com",
+        "description": "External profile linked from the website's structured data.",
+        "fields": {
+          "url": "https://coppersmithplumbing.com",
+          "platform": "coppersmithplumbing.com",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-2f1327c09d622175-location",
+        "schema": "ping.social.location@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Grand Junction, Colorado, 81501, United States",
+        "description": "Coarse public location claim from the website's structured data.",
+        "fields": {
+          "address_locality": "Grand Junction",
+          "address_region": "Colorado",
+          "postal_code": "81501",
+          "address_country": "United States",
+          "locality": "Grand Junction, Colorado, 81501, United States",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-2f1327c09d622175-person-377048d67856",
+        "schema": "ping.social.person@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "coppersmithplm",
+        "description": "Person described in the website's structured data.",
+        "fields": {
+          "name": "coppersmithplm",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-2f1327c09d622175-service-139408827c27",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Plumbing",
+        "description": "Are you working on new construction for residential homes or commercial buildings?",
+        "fields": {
+          "name": "Plumbing",
+          "description": "Are you working on new construction for residential homes or commercial buildings?",
+          "service_href": "https://coppersmithplumbing.com/services/plumbing/",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Heating & Cooling",
+        "description": "We maintain or repair furnaces, air conditioning units, heat pumps, mini split systems and more.",
+        "fields": {
+          "name": "Heating & Cooling",
+          "description": "We maintain or repair furnaces, air conditioning units, heat pumps, mini split systems and more.",
+          "service_href": "https://coppersmithplumbing.com/services/hvac/cooling/",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-2f1327c09d622175-service-78962f315c55",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "HVAC",
+        "description": "We set up complete heating, cooling, and ventilation systems. Get your HVAC needs done.",
+        "fields": {
+          "name": "HVAC",
+          "description": "We set up complete heating, cooling, and ventilation systems. Get your HVAC needs done.",
+          "service_href": "https://coppersmithplumbing.com/services/hvac/",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      },
+      {
+        "id": "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "schema": "ping.social.service@1",
+        "controllerId": "identity_fyd_compiler_test",
+        "visibility": "public",
+        "title": "Ventilation",
+        "description": "Building a new office complex or need the current system assessed? Our specialists can help.",
+        "fields": {
+          "name": "Ventilation",
+          "description": "Building a new office complex or need the current system assessed? Our specialists can help.",
+          "service_href": "https://coppersmithplumbing.com/services/hvac/ventilation/",
+          "claimKind": "website_statement"
+        },
+        "createdAt": "2026-09-21T13:50:00Z",
+        "updatedAt": "2026-09-21T13:50:00Z",
+        "provenance": {
+          "kind": "website-derived",
+          "ref": "website-ingestion:https://www.coppersmithplumbing.com/",
+          "derivedAt": "2026-09-21T13:50:00Z"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "rel-095378b4d4a047a4",
+        "subject": "website-business-2f1327c09d622175",
+        "predicate": "offers",
+        "object": "website-business-2f1327c09d622175-service-2dbc12c16f83",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:service-card:elementor-cta-services:cooling"
+      },
+      {
+        "id": "rel-8627fe1497c235f5",
+        "subject": "website-business-2f1327c09d622175-person-377048d67856",
+        "predicate": "works_for",
+        "object": "website-business-2f1327c09d622175",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:structured:worksFor"
+      },
+      {
+        "id": "rel-9a6aa2e50f4789ed",
+        "subject": "website-business-2f1327c09d622175-person-377048d67856",
+        "predicate": "links_to",
+        "object": "website-business-2f1327c09d622175-ext-89604af059c2",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:sameAs:https://www.coppersmithplumbing.com/author/coppersmithplm/"
+      },
+      {
+        "id": "rel-bbe63e103139111b",
+        "subject": "website-business-2f1327c09d622175",
+        "predicate": "offers",
+        "object": "website-business-2f1327c09d622175-service-a2008c93fb04",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:service-card:elementor-cta-services:ventilation"
+      },
+      {
+        "id": "rel-d0a40ed4fc7eb0ab",
+        "subject": "website-business-2f1327c09d622175",
+        "predicate": "located_at",
+        "object": "website-business-2f1327c09d622175-location",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:postal-address"
+      },
+      {
+        "id": "rel-de5dba2de5173fc0",
+        "subject": "website-business-2f1327c09d622175",
+        "predicate": "offers",
+        "object": "website-business-2f1327c09d622175-service-78962f315c55",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:service-card:elementor-cta-services:hvac"
+      },
+      {
+        "id": "rel-f450fdb901a6baa3",
+        "subject": "website-business-2f1327c09d622175",
+        "predicate": "offers",
+        "object": "website-business-2f1327c09d622175-service-139408827c27",
+        "status": "active",
+        "createdAt": "2026-09-21T13:50:00Z",
+        "evidenceRef": "proceduralizer:project:service-card:elementor-cta-services:plumbing"
+      }
+    ]
+  },
+  "presentationIntent": {
+    "directives": [
+      {
+        "intentId": "pi-9f644e1053c3ec9b",
+        "siteIntent": {
+          "kind": "reorder_object",
+          "pageSlug": "home",
+          "sectionId": "home:Services:2",
+          "objectIds": [
+            "website-business-2f1327c09d622175-service-139408827c27",
+            "website-business-2f1327c09d622175-service-a2008c93fb04",
+            "website-business-2f1327c09d622175-service-2dbc12c16f83",
+            "website-business-2f1327c09d622175-service-78962f315c55"
+          ]
+        },
+        "proposal": {
+          "kind": "site_patch",
+          "targetPage": "home",
+          "targetSection": "home:Services:2",
+          "component": "Services",
+          "propsDiff": {
+            "presentation.objectOrder": [
+              "website-business-2f1327c09d622175-service-139408827c27",
+              "website-business-2f1327c09d622175-service-a2008c93fb04",
+              "website-business-2f1327c09d622175-service-2dbc12c16f83",
+              "website-business-2f1327c09d622175-service-78962f315c55"
+            ]
+          },
+          "reason": "Reorder objects within section.",
+          "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765"
+        },
+        "approval": {
+          "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765",
+          "approvedBy": "demo-owner (seeded, unverified)",
+          "approvedAt": "2026-09-25T15:41:06.209Z",
+          "note": "DEMO OWNER MODE - not real authentication. No identity was verified.",
+          "eventId": "fyd-ovl-muh4ohlx-ffa7e06a21bd"
+        }
+      },
+      {
+        "intentId": "pi-06d2931650907ebd",
+        "siteIntent": {
+          "kind": "reorder_section",
+          "pageSlug": "home",
+          "sectionId": "home:Contact:5",
+          "toIndex": 0
+        },
+        "proposal": {
+          "kind": "site_patch",
+          "targetPage": "home",
+          "targetSection": "home:Contact:5",
+          "component": "Contact",
+          "propsDiff": {
+            "moveFrom": 5,
+            "moveTo": 0
+          },
+          "reason": "Reorder section within page.",
+          "proposalDigest": "1aeb9061f176d6129aee2299fc20c45823abc49e76f02f9f65c289808dae7774"
+        },
+        "approval": {
+          "proposalDigest": "1aeb9061f176d6129aee2299fc20c45823abc49e76f02f9f65c289808dae7774",
+          "approvedBy": "demo-owner (seeded, unverified)",
+          "approvedAt": "2026-09-28T23:04:03.881Z",
+          "note": "DEMO OWNER MODE - not real authentication. No identity was verified.",
+          "eventId": "fyd-ovl-mulutp2p-c082dc1d86c7"
+        }
+      },
+      {
+        "intentId": "pi-b82ddce482c61133",
+        "siteIntent": {
+          "kind": "reorder_object",
+          "pageSlug": "home",
+          "sectionId": "home:Services:3",
+          "objectIds": [
+            "website-business-2f1327c09d622175-service-78962f315c55",
+            "website-business-2f1327c09d622175-service-139408827c27",
+            "website-business-2f1327c09d622175-service-a2008c93fb04",
+            "website-business-2f1327c09d622175-service-2dbc12c16f83"
+          ]
+        },
+        "proposal": {
+          "kind": "site_patch",
+          "targetPage": "home",
+          "targetSection": "home:Services:3",
+          "component": "Services",
+          "propsDiff": {
+            "presentation.objectOrder": [
+              "website-business-2f1327c09d622175-service-78962f315c55",
+              "website-business-2f1327c09d622175-service-139408827c27",
+              "website-business-2f1327c09d622175-service-a2008c93fb04",
+              "website-business-2f1327c09d622175-service-2dbc12c16f83"
+            ]
+          },
+          "reason": "Reorder objects within section.",
+          "proposalDigest": "f8daa4917284fa7519f3a7ca268952ecb3442b8fdfb76d37eced33cb557dda22"
+        },
+        "approval": {
+          "proposalDigest": "f8daa4917284fa7519f3a7ca268952ecb3442b8fdfb76d37eced33cb557dda22",
+          "approvedBy": "demo-owner (seeded, unverified)",
+          "approvedAt": "2026-10-05T19:01:21.205Z",
+          "note": "DEMO OWNER MODE - not real authentication. No identity was verified.",
+          "eventId": "fyd-ovl-muvm8j4d-a5133ab9c17a"
+        }
+      }
+    ],
+    "provenance": {
+      "kind": "owner-presentation-intent",
+      "note": "Owner-approved presentation intents (PRESENTATION INTENT layer). Not source facts; re-applied over the base graph on every dump. Journaled via FYD_SITE_OVERLAY events.",
+      "eventIds": [
+        "fyd-ovl-muh4ohlx-ffa7e06a21bd",
+        "fyd-ovl-mulutp2p-c082dc1d86c7",
+        "fyd-ovl-muvm8j4d-a5133ab9c17a"
+      ]
+    }
+  }
+}
