@@ -41,6 +41,7 @@ import { readOverrides } from "./owner-store";
 import type { VerifiedPublicProjection } from "../sitespec/public-projection";
 import { resolveCircleBackground } from "../media/circle-background";
 import { listObjectMedia } from "../media/select";
+import { findConfiguredMark } from "../presentation/identity";
 import type {
   CircleProjection,
   FieldCorrectionView,
@@ -58,6 +59,34 @@ import type {
  * exactly the services the rendered pages show.
  */
 const SERVICE_PREDICATES = ["provides", "offers"];
+
+/**
+ * Parent business of an object, via the graph's own relationships.
+ * A service/location offered by a business resolves to that business;
+ * a person works_for a business. Data-driven, never name-inferred.
+ * Returns the business object id, or null.
+ */
+function findParentBusinessId(graph: ObjectGraph, objectId: string): string | null {
+  const byId = new Map(graph.objects.map((o) => [o.id, o]));
+  for (const r of graph.relationships) {
+    if (r.status !== "active") continue;
+    // business --offers/provides/located_at--> object
+    if (r.object === objectId && ["offers", "provides", "located_at"].includes(r.predicate)) {
+      const parent = byId.get(r.subject);
+      if (parent && SCHEMA_ROLES.business.includes(parent.schema) && parent.visibility === "public") {
+        return parent.id;
+      }
+    }
+    // person --works_for--> business
+    if (r.subject === objectId && r.predicate === "works_for") {
+      const parent = byId.get(r.object);
+      if (parent && SCHEMA_ROLES.business.includes(parent.schema) && parent.visibility === "public") {
+        return parent.id;
+      }
+    }
+  }
+  return null;
+}
 
 /** Site ids this loader can serve: the PING-backed projections on disk. */
 export function listObjectIds(): string[] {
@@ -381,6 +410,13 @@ export function composeObjectView(
     locationLabel: locality,
     summary: description,
     media,
+    // Every object wears a logo: the object's own configured mark when it
+    // has one, else the parent business's mark via graph relationships.
+    // A service stays its own object; it just shows the business brand.
+    fallbackMark: findConfiguredMark(obj.id) ?? (() => {
+      const parentId = findParentBusinessId(graph, obj.id);
+      return parentId ? findConfiguredMark(parentId) : null;
+    })(),
     services,
     serviceArea: parseServiceArea(field(obj, "area_served")),
     contact,
