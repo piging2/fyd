@@ -8,7 +8,7 @@ function section(component: string) {
   return {
     id: "home:" + component + ":0",
     component,
-    query: { kind: "all", schemas: [], limit: 1 },
+    query: { kind: "all" as const, schemas: [], limit: 1 },
     presentation: {},
   };
 }
