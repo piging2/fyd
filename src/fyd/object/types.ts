@@ -101,6 +101,13 @@ export interface ObjectView {
   summary: string;
   /** Only rights-authorized media; external references are excluded from display. */
   media: ObjectMediaView[];
+  /**
+   * Parent business presentation mark, for objects without their own logo.
+   * Resolved from graph parent relationships at compose time; the service
+   * remains its own object, it just wears the business brand. Null when the
+   * object has its own configured mark or no parent business is found.
+   */
+  fallbackMark?: import("../presentation/identity").PresentationMark | null;
   services: ObjectServiceView[];
   serviceArea: string[];
   contact: ObjectContactView;
