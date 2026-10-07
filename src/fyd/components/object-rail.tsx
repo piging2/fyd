@@ -33,6 +33,7 @@ import { schemaRole } from "../sitespec/schemas";
 import type { ClaimEvidence, ObjectProjection } from "../object/object-projection";
 import type { ObjectView } from "../object/types";
 import { verifyPresentationBinding } from "../sitespec/graph";
+import { evidenceScore } from "../builder/service-strength";
 
 /** Resolved placement for one render. */
 export type RailPlacement = "rail" | "drawer" | "hidden";
@@ -335,7 +336,7 @@ export function pingObjectToView(o: PingObject): ObjectView {
  * scoring function so the two consumers cannot drift. Re-exported here
  * so existing importers are unchanged.
  */
-export { evidenceScore } from "../builder/service-strength";
+export { evidenceScore };
 
 /**
  * The single richest public non-owner object. Id-sorted before scoring so
