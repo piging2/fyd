@@ -354,6 +354,7 @@ function buildAnswerRefs(citations: AskFydCitation[]): {
 }
 
 export interface AskFydSuccess {
+  bindingVerification?: import("../sitespec/binding-verifier").VerifiedRenderModel;
   ok: true;
   answer: string;
   refusal: boolean;
@@ -823,6 +824,7 @@ export function answerAskFyd(
   // absent, never invented.
   return {
     ok: true,
+    ...(ans.bindingVerification ? { bindingVerification: ans.bindingVerification } : {}),
     answer,
     refusal,
     responseClass,

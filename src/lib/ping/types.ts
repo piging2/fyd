@@ -291,6 +291,10 @@ export interface AskClaimClassification {
   classification: string;
   /** Ids into the answer's evidenceRefs supporting this claim. */
   evidenceRefIds: string[];
+  /** Existing factual bindings checked by the shared projection verifier. */
+  bindings?: import("@/fyd/sitespec/graph").PresentationBinding[];
+  /** Exact active relationship records supporting this claim. */
+  relationshipIds?: string[];
 }
 
 export interface AskProposalBody {
@@ -401,6 +405,8 @@ export interface SitePatchAskProposal extends AskProposalBase, SitePatchProposal
 export type AskProposal = ObjectAskProposal | SitePatchAskProposal;
 
 export interface AskAnswer {
+  /** Shared verifier receipt when this answer path verifies factual bindings. */
+  bindingVerification?: import("@/fyd/sitespec/binding-verifier").VerifiedRenderModel;
   /** Sentences; every factual sentence cites evidence as [n]. */
   answer: string;
   evidenceRefs: AskEvidenceRef[];
