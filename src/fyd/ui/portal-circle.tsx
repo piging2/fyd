@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { spring } from "@/motion/motionTokens";
 import { ImmersiveWebsiteView, PortalWebsitePreview } from "./portal-website-preview";
-import { useObjectDialog } from "./use-object-dialog";
+import { useFydDialog } from "./use-fyd-dialog";
 import { useObjectRelationship } from "./use-object-relationship";
 import { ObjectRelationshipFeedback } from "./object-relationship-feedback";
 import { resolveObjectPresentationIdentity } from "@/fyd/presentation/identity";
@@ -622,7 +622,10 @@ export function MobileImmersivePopup(p: MobilePopupProps) {
   const contextValid = isObjectDisplayContextValid(c.id, p.displayContext);
   const sub = [c.category, c.locationLabel].filter(Boolean).join(" · ");
   const dialogRef = React.useRef<HTMLDivElement>(null);
-  useObjectDialog(dialogRef, isPresent && contextValid, stage, p.onClose);
+  // Item 2: the one FYD dialog primitive. The motion.div shell stays (the
+  // approved morph cannot live in the native top layer); the hook gives it
+  // balanced Lenis scroll ownership and the provable focus contract.
+  useFydDialog(dialogRef, { open: isPresent && contextValid, onClose: p.onClose, stage });
   if (!contextValid) return null;
 
   const actions = (
