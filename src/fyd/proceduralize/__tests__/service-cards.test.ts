@@ -272,7 +272,12 @@ describe("ask fyd over card services", () => {
     const answer = composeAnswer(ctx, QUESTION);
     expect(answer.answer).toContain("Plumbing");
     expect(answer.answer).toContain("HVAC");
-    expect(answer.unknowns).toEqual([]);
+    // Obligation model (item 7): the question's 'how do you know?' half is a
+    // separate obligation whose confirmation is not in the published
+    // information, so it is surfaced as a named unknown instead of silence.
+    expect(answer.unknowns).toEqual([
+      "I can't confirm how know from the published information I have.",
+    ]);
     expect(answer.sourceUrls).toEqual([SOURCE_URL]);
     for (const c of answer.claimClassifications) {
       expect(c.evidenceRefIds.length).toBeGreaterThanOrEqual(1);
