@@ -42,6 +42,14 @@ export interface DisplayMedia {
   sourceUrl: string;
   digest: string;
   observedAt: string;
+  /**
+   * Item 9 (fyd-execution): the honest renditions from the site's media
+   * manifest (non-blur, safe URLs only). The render seam builds srcset
+   * ONLY from these (INV-RM-1); a width here never exceeds the source
+   * asset's recorded width (the derivatives pipeline mints with
+   * withoutEnlargement).
+   */
+  variants: Array<{ name: string; width: number; height: number; url: string }>;
 }
 
 /**
@@ -93,6 +101,12 @@ function toDisplayMedia(m: FydMediaObject, heroBias: boolean): DisplayMedia | nu
   if (!src) return null;
   const blur = m.variants.find((v) => v.name.startsWith("blur")) ?? null;
   const blurUrl = blur ? safeDisplayUrl(blur.url) : null;
+  // Honest renditions for the render seam: manifest variants only,
+  // blur excluded, unsafe URLs dropped (never an empty src).
+  const variants = (m.variants ?? [])
+    .filter((cand) => !cand.name.startsWith("blur"))
+    .map((cand) => ({ name: cand.name, width: cand.width, height: cand.height, url: safeDisplayUrl(cand.url) ?? "" }))
+    .filter((cand) => cand.url !== "" && cand.width > 0);
   return {
     id: m.id,
     role: m.roles?.[0] ?? "gallery",
@@ -106,6 +120,7 @@ function toDisplayMedia(m: FydMediaObject, heroBias: boolean): DisplayMedia | nu
     sourceUrl: m.provenance?.sourceUrl ?? "",
     digest: m.digest ?? "",
     observedAt: m.provenance?.observedAt ?? "",
+    variants,
   };
 }
 
