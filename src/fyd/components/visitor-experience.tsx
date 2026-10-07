@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback } from 'react';
+import type { CSSProperties } from 'react';
+import { resolveThemeRoles } from '../sitespec/theme-roles';
 import { ArrowUpRight, MapPin, Phone, MessageCircle, ArrowRight } from 'lucide-react';
 import { applyHiddenObjects, applyObjectOrder, resolveQuery, siteDeactivatedObjectIds } from './query';
 import type { RenderContext } from './renderer';
@@ -105,8 +107,26 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
   const catalog = primary === 'products' ? products : services;
   const rank = (component: string) => plan.page.sections.findIndex(s => s.component === component);
   const catalogId = primary === 'products' ? 'products' : 'services';
-  const conciergeTheme = { ...ctx.spec.themeTokens, ink: '#142d31', accent: '#d0edb8', accentForeground: '#142d31' };
-  return <div className={`ve ${hasMedia ? 've-photographic' : 've-editorial'}`} data-visitor-primary={primary}>
+  // Item 5 (fyd-execution): THEME AUTHORITY. SiteSpec-approved presentation
+  // state is authoritative: this component binds ONLY to ctx.spec.themeTokens.
+  // The silent palette replacement (ink/accent/accentForeground overrides)
+  // is removed. The --fyd-* role vars below are emitted from the spec's
+  // tokens at this render root; visitor-experience.css consumes only these
+  // vars and carries no literal palette or font stack of its own.
+  const roles = resolveThemeRoles(ctx.spec.themeTokens);
+  const themeVars = {
+    '--fyd-surface': roles.surface,
+    '--fyd-surface-elevated': roles.surfaceForeground,
+    '--fyd-foreground': roles.foreground,
+    '--fyd-muted-foreground': roles.mutedForeground,
+    '--fyd-accent': ctx.spec.themeTokens.accent,
+    '--fyd-accent-decorative': roles.accentDecorative,
+    '--fyd-accent-text': roles.accentText,
+    '--fyd-on-accent': roles.onAccent,
+    '--fyd-font-display': ctx.spec.themeTokens.fontDisplay,
+    '--fyd-font-body': ctx.spec.themeTokens.fontBody,
+  } as CSSProperties;
+  return <div className={`ve ${hasMedia ? 've-photographic' : 've-editorial'}`} data-visitor-primary={primary} style={themeVars}>
     <header className="ve-header" style={{order:-1}}>
       <a className="ve-wordmark" href="#business">{name}</a>
       <nav aria-label="Business navigation">
@@ -166,7 +186,7 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
       </div>}
     </section>}
     {!!people.length && <section className="ve-section" style={{order:rank("People")}}><p className="ve-eyebrow">People</p><h2>Meet the team</h2><div className="ve-cards">{people.map(person => <article className="ve-card" key={person.id}><h3>{read(person, 'title')}</h3>{read(person, 'description') && <p>{read(person, 'description')}</p>}<SourceDisclosure object={person} checkpoint={ctx.projectionCheckpoint}/></article>)}</div></section>}
-    {ask && <section className="ve-concierge" id="ask" style={{order:rank("AskFYD")}}><div className="ve-concierge-intro"><p className="ve-eyebrow"><MessageCircle size={16}/>Ask FYD</p><h2>{phone.kind === "safe" ? <>A little help,<br/>before you call.</> : <>Your questions,<br/>answered.</>}</h2><p>Ask about services, contact details, or location. Answers use this business’s published information. Sources are there when you want them.</p></div><div className="ve-concierge-chat"><AskFydWidget pageCheckpoint={ctx.projectionCheckpoint} siteId={ctx.siteId} theme={conciergeTheme} initialQuestion={serviceQuestion} questionSequence={sequence} prompts={[...(services[0] ? [`Can they help with ${read(services[0], 'title')}?`] : []), 'What services do they offer?', 'How do I contact them?', 'Where are they located?']}/></div></section>}
+    {ask && <section className="ve-concierge" id="ask" style={{order:rank("AskFYD")}}><div className="ve-concierge-intro"><p className="ve-eyebrow"><MessageCircle size={16}/>Ask FYD</p><h2>{phone.kind === "safe" ? <>A little help,<br/>before you call.</> : <>Your questions,<br/>answered.</>}</h2><p>Ask about services, contact details, or location. Answers use this business’s published information. Sources are there when you want them.</p></div><div className="ve-concierge-chat"><AskFydWidget pageCheckpoint={ctx.projectionCheckpoint} siteId={ctx.siteId} theme={ctx.spec.themeTokens} initialQuestion={serviceQuestion} questionSequence={sequence} prompts={[...(services[0] ? [`Can they help with ${read(services[0], 'title')}?`] : []), 'What services do they offer?', 'How do I contact them?', 'Where are they located?']}/></div></section>}
     <footer className="ve-footer" style={{order:999}}><p>{name}</p><p>Presented by FYD · <a href="#business">Back to top ↑</a></p><details><summary>About this information</summary><p>Website statements and business-provided information are not independently verified. Owner presentation preferences affect what you see. Use “Why this?” for individual sources.</p></details></footer>
     {(action || ask) && <div className="ve-mobile-actions" aria-label="Quick actions">{action}{ask && <a className="ve-action ve-action-outline" href="#ask"><MessageCircle size={18}/>Ask FYD</a>}</div>}
     {openedObject && <div ref={overlayRegionRef}><ObjectOverlay object={{...openedObject,title:read(openedObject,"title") ?? "",description:read(openedObject,"description") ?? ""}} graph={ctx.graph} siteId={ctx.siteId ?? ""} visitor onAsk={ask ? () => { askService(read(openedObject, "title") ?? "this service"); closeOverlay(); } : undefined} onClose={closeOverlay}/></div>}
