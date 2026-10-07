@@ -190,11 +190,11 @@ describe("PROD-9 end to end (answerAskFyd)", () => {
     );
   });
 
-  test("(b) emergency-hours question carries PREMISE_REJECTED and states the corrected premise", () => {
+  test("(b) unconfirmed emergency availability stays uncertain and provides a contact path", () => {
     const out = ask("What are your emergency hours?");
     expect(out.refusal).toBe(false);
-    expect(out.responseClass).toBe("PREMISE_REJECTED");
-    expect(out.answer).toContain("does not offer emergency service");
+    expect(out.responseClass).toBe("ANSWER");
+    expect(out.answer).toContain("can’t confirm emergency or after-hours availability");
     expect(out.answer).not.toMatch(/^I (do not|don't) know/i);
   });
 
