@@ -3,15 +3,27 @@
 Label: **LAB-transport** (curl-measured transfer bytes through the egress
 proxy). NOT field performance; never p75, never CrUX, never real-user.
 
-Measured: 2026-10-07T22:17:05.874Z (run 2026-10-07-prefixed-baseline). Browser leg: NOT RUN — no live browser in this environment.
+Measured: 2026-10-07T22:52:00Z (post-item-8/9/10/11 deploy, build
+gD5ahRaVZTp5yxVrtW6XX, commit dc601412). Browser leg: NOT RUN — no live
+browser in this environment.
 
-Method: fetch page HTML, extract every `<script src>` / stylesheet link,
-sum `%{size_download}` (identity encoding, raw bytes, no compression).
+Method: fetch page HTML (N=5, median), extract every `<script src>` /
+stylesheet link, sum `%{size_download}` (identity encoding, raw bytes,
+no compression).
 
 | Metric (LAB-transport) | coppersmith-plumbing | happy-place |
 |---|---|---|
-| JS transferred | 852139 B | 852139 B |
+| HTML transferred | 66190 B | 63838 B |
+| JS transferred | 854316 B | 854316 B |
 | CSS transferred | 161122 B | 161122 B |
+
+Pre-fix reference (2026-10-07T22:17:05Z, pre-item-8/9/10/11 deploy):
+HTML 63618 / 61179 B, JS 852139 B, CSS 161122 B. Delta: JS +2177 B
+(+0.25%), HTML +2572 / +2659 B (srcset/sizes/provenance attributes),
+CSS unchanged. Honest attribution: the item-8 server/island split moved
+JS ~0 as predicted (sibling-owned site-client.tsx still imports the whole
+tree); the +2.2K is worker C's item 6/7 client code plus the new
+visitor-islands module in the shared bundle.
 
 ## Not measured here
 
