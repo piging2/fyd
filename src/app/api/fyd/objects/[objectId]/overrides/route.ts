@@ -101,11 +101,7 @@ import {
   OwnerCommandError,
 } from "@/fyd/object/owner-store";
 import { CorruptOwnerLogError, OwnerLogConflictError, readOwnerEvents } from "@/fyd/object/owner-events";
-import {
-  getPingObjectGraphSync,
-  getVerifiedPublicProjectionSync,
-} from "@/fyd/data/ping-object-source";
-import { readOverrides } from "@/fyd/object/owner-store";
+import { getSiteBundle } from "@/fyd/media/site-bundle";
 import {
   detectOrphanedCorrections,
   findBusinessObject,
@@ -194,29 +190,31 @@ export async function GET(
     }
     throw err;
   }
-  let projection;
+  let bundle;
   try {
-    projection = getVerifiedPublicProjectionSync(objectId, "owner");
+    bundle = await getSiteBundle(objectId);
   } catch {
     return NextResponse.json(
-      { ...ctx.responseLabel(), ok: false, error: "Unknown object." },
-      { status: 404 },
+      { ...ctx.responseLabel(), ok: false, error: "Business information unavailable." },
+      { status: 503 },
     );
   }
-  const view = loadObjectView(projection, objectId);
+  const projection = bundle?.ownerProjection;
+  const view = projection ? loadObjectView(projection, objectId, bundle?.readOwner) : null;
   if (!view) {
     return NextResponse.json(
       { ...ctx.responseLabel(), ok: false, error: "Unknown object." },
       { status: 404 },
     );
   }
-  const history = readOverrides(objectId).history;
+  const history = bundle!.readOwner!(objectId).history;
   // PROD-8: corrections active in the journal that apply to nothing in
   // the current graph. The customize panel renders these as warnings;
   // they are never silently dropped. Read-only: the journal is untouched.
   const orphanedCorrections = detectOrphanedCorrections(
-    projection.graph,
+    bundle!.sourceGraph!,
     objectId,
+    bundle!.readOwner,
   );
   return NextResponse.json({
     ...ctx.responseLabel(),
@@ -225,6 +223,7 @@ export async function GET(
     history,
     orphanedCorrections,
     siteId: objectId,
+    checkpoint: bundle!.projection!.provenance.checkpoint,
   });
 }
 
@@ -280,19 +279,6 @@ export async function POST(
     throw err;
   }
 
-  // Owner-authorized read (Q-C-01): the owner projection passes the
-  // boundary with the owner viewer policy, so hidden fields stay visible
-  // to the owner for management.
-  let ownerProjection;
-  try {
-    ownerProjection = getVerifiedPublicProjectionSync(objectId, "owner");
-  } catch {
-    return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Unknown object." }, { status: 404 });
-  }
-  if (!loadObjectView(ownerProjection, objectId)) {
-    return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Unknown object." }, { status: 404 });
-  }
-
   let body: unknown = null;
   try {
     body = await request.json();
@@ -310,6 +296,19 @@ export async function POST(
     }
   }
 
+  // Establish route tenancy before reading business data. Hidden fields
+  // stay available only within the existing owner projection policy.
+  let bundle;
+  try {
+    bundle = await getSiteBundle(objectId);
+  } catch {
+    return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Business information unavailable." }, { status: 503 });
+  }
+  const ownerProjection = bundle?.ownerProjection;
+  if (!ownerProjection || !bundle?.readOwner || !bundle.sourceGraph || !loadObjectView(ownerProjection, objectId, bundle.readOwner)) {
+    return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Unknown object." }, { status: 404 });
+  }
+
   const stage = record.stage;
 
   // Stage 1: interpret only. Never writes.
@@ -318,7 +317,8 @@ export async function POST(
     if (typeof text !== "string" || !text.trim()) {
       return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Describe the change in plain language." }, { status: 400 });
     }
-    const proposal = interpretTextCommand(text, objectId);
+    const services = knownServices(objectId, ownerProjection.graph, bundle.readOwner);
+    const proposal = interpretTextCommand(text, objectId, services);
     if (!proposal) {
       // HIGH / CRITICAL consequence: free text the interpreter does not
       // understand as a typed command may still be an action request in a
@@ -407,8 +407,8 @@ export async function POST(
     const evaluation = await ctx.evaluateCapability(objectId, "owner.correct-fact");
     const actor = ctx.actor;
     const capabilityImpact = ctx.capabilityImpactLine(evaluation);
-    const { ids, names } = knownServices(objectId);
-    const preview = buildPatchPreview(objectId, command, ids, names, capabilityImpact);
+    const { ids, names } = services;
+    const preview = buildPatchPreview(objectId, command, ids, names, capabilityImpact, bundle);
     const tier = commandConsequenceTier(command);
     return NextResponse.json({
       ...ctx.responseLabel(),
@@ -430,8 +430,8 @@ export async function POST(
       // on the proposal record (renderer reads it, never invents it).
       classification: classificationRecord(command),
       digests: {
-        baseStateDigest: ownerStateDigest(objectId),
-        baseViewDigest: buildViewDigest(ownerProjection, objectId),
+        baseStateDigest: ownerStateDigest(objectId, bundle.readOwner),
+        baseViewDigest: buildViewDigest(ownerProjection, objectId, bundle.readOwner),
         patchDigest: patchDigestOf(command),
       },
       chain: ctx.auditView(),
@@ -519,7 +519,7 @@ export async function POST(
     // unchanged owner journal). Either way the approval's binding is broken:
     // refuse, write nothing, name what moved.
     const currentBase = ownerStateDigest(objectId);
-    const currentView = buildViewDigest(ownerProjection, objectId);
+    const currentView = buildViewDigest(ownerProjection, objectId, bundle.readOwner);
     const stateMoved = presentedBase !== currentBase;
     const viewMoved = presentedView !== currentView;
     if (stateMoved || viewMoved) {
@@ -573,7 +573,11 @@ export async function POST(
           { status: 403 },
         );
       }
-      const { ids, names } = knownServices(objectId);
+      // Recheck the existing development gate after the capability await.
+      if (process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE !== "1" || !isDevOwnerHost(reqHost)) {
+        return NextResponse.json({ ...ctx.responseLabel(), ok: false, code: "demo_owner_mode_required", error: "Owner permission changed. Nothing was written." }, { status: 403 });
+      }
+      const { ids, names } = knownServices(objectId, ownerProjection.graph, bundle.readOwner);
       // Contact corrections, service description corrections, and
       // confirmations need two things only the server can attach honestly:
       // (1) the SOURCE's current value, read from the raw projection
@@ -593,7 +597,7 @@ export async function POST(
       ) {
         let sourceValue: string | null = null;
         try {
-          const rawGraph = getPingObjectGraphSync(objectId, { ownerOverlay: false }).graph;
+          const rawGraph = bundle.sourceGraph;
           if (command.type === "set-service-description") {
             // The SOURCE's current description for this service: read off
             // the raw projection at approval time, so the record keeps
@@ -605,7 +609,7 @@ export async function POST(
             if (business) sourceValue = rawFieldValue(business, command.field);
           }
         } catch {
-          sourceValue = null;
+          return NextResponse.json({ ...ctx.responseLabel(), ok: false, error: "Business information unavailable. Nothing was written." }, { status: 503 });
         }
         opts = {
           sourceValue,
@@ -626,8 +630,15 @@ export async function POST(
         eventId: lastEventId(objectId),
         resultDigest: digestOf(overrides),
       });
-      const refreshedProjection = getVerifiedPublicProjectionSync(objectId, "owner");
-      const view = loadObjectView(refreshedProjection, objectId);
+      let refreshedBundle;
+      try {
+        refreshedBundle = await getSiteBundle(objectId);
+        if (!refreshedBundle?.ownerProjection || !refreshedBundle.readOwner) throw new Error("Missing resolved owner view.");
+      } catch {
+        return NextResponse.json({ ...ctx.responseLabel(), ok: false, code: "recorded_view_unavailable", recorded: true, approval, error: "Your correction was recorded. Business information is temporarily unavailable; refresh to see it." }, { status: 503 });
+      }
+      const refreshedProjection = refreshedBundle.ownerProjection;
+      const view = loadObjectView(refreshedProjection, objectId, refreshedBundle.readOwner);
       // Fast proposal/undo for LOW (reversible presentation) changes: the
       // exact inverse command, pre-bound to the POST-APPLY digests, so the
       // owner can reverse a website change in one approve call. If the
@@ -643,14 +654,15 @@ export async function POST(
           : {
               command: inverse,
               summary: describeCommand(inverse, names),
-              baseStateDigest: ownerStateDigest(objectId),
-              baseViewDigest: buildViewDigest(ownerProjection, objectId),
+              baseStateDigest: ownerStateDigest(objectId, refreshedBundle.readOwner),
+              baseViewDigest: buildViewDigest(refreshedProjection, objectId, refreshedBundle.readOwner),
               patchDigest: patchDigestOf(inverse),
             };
       return NextResponse.json({
         ...ctx.responseLabel(),
         ok: true,
         view,
+        checkpoint: refreshedBundle.projection!.provenance.checkpoint,
         history: overrides.history,
         approval,
         tier,
