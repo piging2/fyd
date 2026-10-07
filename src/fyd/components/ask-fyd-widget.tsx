@@ -21,6 +21,7 @@
  */
 import { useState } from "react";
 import type { FYDThemeTokens } from "../sitespec/types";
+import { resolveThemeRoles } from "../sitespec/theme-roles";
 import type { AskFydCitation } from "../ask/visitor-answer";
 
 type AskStatus = "idle" | "loading" | "answered" | "error";
@@ -43,6 +44,8 @@ export interface AskFydWidgetProps {
 }
 
 export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: AskFydWidgetProps) {
+  // Item 4: text positions bind token roles, never raw accent/ink.
+  const roles = resolveThemeRoles(theme);
   const [question, setQuestion] = useState("");
   const [status, setStatus] = useState<AskStatus>("idle");
   const [answer, setAnswer] = useState("");
@@ -122,7 +125,7 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
           type="submit"
           disabled={!canAsk}
           className="min-h-[44px] rounded px-6 py-3 text-base font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-          style={{ background: theme.accent, color: theme.accentForeground }}
+          style={{ background: theme.accent, color: roles.onAccent }}
         >
           {busy ? "Asking..." : "Ask FYD"}
         </button>
@@ -154,7 +157,7 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
             {responseClass === "PREMISE_REJECTED" && (
               <p
                 className="mt-2 inline-block rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide"
-                style={{ borderColor: theme.accent, color: theme.accent }}
+                style={{ borderColor: roles.accentDecorative, color: roles.accentText, background: roles.surface }}
                 aria-label="Answer class: premise rejected"
               >
                 Corrected premise

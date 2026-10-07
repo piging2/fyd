@@ -30,6 +30,7 @@ import {
   type FieldVisibilityDecision,
 } from "../sitespec/field-visibility";
 import { resolveSafeLink, type SafeLinkResult } from "../sitespec/safe-link";
+import { resolveThemeRoles } from "../sitespec/theme-roles";
 import {
   contactMethodFor,
   type ClaimEvidence,
@@ -384,8 +385,11 @@ function CorrectionNote({
   correction: OwnerFieldCorrection;
   theme: FYDThemeTokens;
 }) {
+  // Item 4: muted copy binds the mutedForeground role, never opacity-faded
+  // ink (fading drops contrast unpredictably).
+  const roles = resolveThemeRoles(theme);
   return (
-    <p className="mt-1 text-xs" style={{ color: theme.ink, opacity: 0.65 }}>
+    <p className="mt-1 text-xs" style={{ color: roles.mutedForeground }}>
       Owner-corrected: the owner says this is the {correction.label.toLowerCase()}
       {correction.sourceValue
         ? ` (the site lists ${correction.sourceValue})`
@@ -709,6 +713,8 @@ function FydObjectCard({
 }) {
   const title = boundTitle(ctx, o);
   const description = boundDescription(ctx, o);
+  // Item 4: text positions bind token roles, never raw accent/ink.
+  const roles = resolveThemeRoles(theme);
   const motion = motionTokensForTheme(theme);
   const character = characterOf(theme);
   const char = CHARACTER_PRESENTATION[character];
@@ -777,7 +783,7 @@ function FydObjectCard({
         </h3>
       ) : null}
       {kicker ? (
-        <p className="text-sm font-medium" style={{ color: theme.accent }}>
+        <p className="text-sm font-medium" style={{ color: roles.accentText }}>
           {kicker}
         </p>
       ) : null}
@@ -846,6 +852,8 @@ export function ObjectDoorway({
 }) {
   const title = boundTitle(ctx, o);
   if (!title) return null;
+  // Item 4: the doorway binds roles (decorative border, text foreground).
+  const roles = resolveThemeRoles(theme);
   const detailHref = `/o/${encodeURIComponent(o.id)}`;
   const kindLabel = friendlySchemaLabel(o.schema);
   const dark = tone === "onDark";
@@ -867,8 +875,8 @@ export function ObjectDoorway({
         padding: "0.5rem 0.9rem",
         borderRadius: 9999,
         border: "1px solid",
-        borderColor: dark ? "rgba(255,255,255,0.35)" : theme.accent,
-        color: dark ? "#fff" : theme.ink,
+        borderColor: dark ? "rgba(255,255,255,0.35)" : roles.accentDecorative,
+        color: dark ? "#fff" : roles.foreground,
         background: dark ? "rgba(255,255,255,0.08)" : "transparent",
         fontSize: "0.875rem",
         fontWeight: 600,
@@ -1191,6 +1199,8 @@ function SectionShell({
 function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
+  // Item 4: accent buttons bind the validated onAccent/accent pairing.
+  const roles = resolveThemeRoles(theme);
   const website = safeWebsite(ctx);
   const heading = presentation.heading ?? boundTitle(ctx, o);
   const copy = presentation.copy ?? boundDescription(ctx, o);
@@ -1254,7 +1264,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
               className="rounded px-6 py-3 font-semibold"
               style={{
                 background: theme.accent,
-                color: theme.accentForeground,
+                color: roles.onAccent,
                 borderRadius: theme.radius === "full" ? 9999 : 8,
               }}
             >
@@ -1395,6 +1405,8 @@ function MobileInFlowObjects({
 
 function ServicesSection(props: SectionProps) {
   const { section, objects, presentation, theme, ctx, motionIndex } = props;
+  // Item 4: accent buttons bind the validated onAccent/accent pairing.
+  const roles = resolveThemeRoles(theme);
   const featured = presentation.featuredIds?.length
     ? objects.filter((o) => presentation.featuredIds!.includes(o.id))
     : objects;
@@ -1419,7 +1431,7 @@ function ServicesSection(props: SectionProps) {
             className="inline-flex min-h-[44px] items-center rounded px-6 py-3 font-semibold"
             style={{
               background: theme.accent,
-              color: theme.accentForeground,
+              color: roles.onAccent,
               borderRadius: theme.radius === "full" ? 9999 : 8,
             }}
           >
@@ -1490,6 +1502,8 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
 
 function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   if (objects.length === 0) return null;
+  // Item 4: role text binds the accentText role, never raw accent.
+  const roles = resolveThemeRoles(theme);
   // Structural differentiation from the graph: when person objects have
   // photographic media, they render as a people strip (portrait-led);
   // otherwise the honest card grid. No hand-built sections either way.
@@ -1570,7 +1584,7 @@ function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex
                   </h3>
                 ) : null}
                 {role ? (
-                  <p className="mt-0.5 text-sm font-medium" style={{ color: theme.accent }}>
+                  <p className="mt-0.5 text-sm font-medium" style={{ color: roles.accentText }}>
                     {role}
                   </p>
                 ) : null}
@@ -2003,6 +2017,8 @@ function boundOwnerTitle(ctx: RenderContext): string {
  * features: no binding, no factual output.
  */
 function ObjectRailSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
+  // Item 4: muted copy binds the mutedForeground role, never opacity-faded ink.
+  const roles = resolveThemeRoles(theme);
   const bound = objects.filter((o) => boundTitle(ctx, o) !== undefined);
   const featured = richestObject(bound, ctx.spec.ownerObjectId);
   if (!featured) return null;
@@ -2022,7 +2038,7 @@ function ObjectRailSection({ section, objects, presentation, theme, ctx, motionI
           {summary.trim()}
         </p>
       ) : null}
-      <p className="text-xs" style={{ color: theme.ink, opacity: 0.6 }}>
+      <p className="text-xs" style={{ color: roles.mutedForeground }}>
         {featuredView.provenance.label}
       </p>
     </div>
