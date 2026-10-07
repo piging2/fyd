@@ -7,7 +7,11 @@
  *
  * The four-case product contract:
  * - SUPPORTED: known PING fact -> answer -> object refs -> evidence refs.
- * - PARTIAL: mixed known/unknown -> the answer separates them.
+ * - PARTIAL (retired by the item 7 obligation model): each obligation
+ *   resolves on its own evidence, so a question whose obligations are
+ *   all unresolvable (business hours) is UNSUPPORTED with a named
+ *   unknown; partially-grounded questions answer the grounded
+ *   obligations and name the rest (see ask-relevance.test.ts).
  * - UNSUPPORTED: absent fact -> explicit lack of evidence (refusal).
  * - CONFLICTED: no conflict data exists in the fixture (and none is
  *   fabricated); conflict behavior is proven at the deterministic layer
@@ -123,19 +127,19 @@ describe("SUPPORTED: the boring proof", () => {
   });
 });
 
-describe("PARTIAL: mixed known/unknown is separated, never blended", () => {
-  test("hours unknown but the business known: the answer separates them explicitly", async () => {
+describe("OBLIGATION: an unresolvable obligation is refused with a named unknown", () => {
+  test("hours unknown: the obligation is refused honestly, never invented", async () => {
     const { resp, body } = await postAsk("ping-fyd", "What are the business hours?");
     expect(resp.status).toBe(200);
     expect(body.ok).toBe(true);
-    expect(body.refusal).toBe(false);
-    expect(body.answerState).toBe("KNOWN");
-    // The known half: the business is on record (cited). The unknown half:
-    // stated as unknown, never filled from a model prior.
-    expect(body.answer).toMatch(/PING Social/);
+    // Obligation model (item 7): the business-hours obligation has no
+    // evidence anywhere, so the question resolves UNSUPPORTED with the
+    // unknown named explicitly. No hours are ever filled from a model prior.
+    expect(body.refusal).toBe(true);
+    expect(body.answerClass).toBe("UNSUPPORTED");
+    expect(body.answerState).toBe("UNKNOWN");
     expect(body.answer).toMatch(/no hours are on record/i);
-    expect(body.citations.length).toBeGreaterThan(0);
-    expect(body.unknowns.length).toBeGreaterThan(0);
+    expect(body.unknowns).toContain("No hours are on record for PING Social.");
     expect(body.answer).not.toMatch(/\d{1,2}:\d{2}/);
   });
 });
