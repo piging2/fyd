@@ -1,6 +1,20 @@
-"use client";
+/**
+ * Item 8 (fyd-execution): the generated visitor page is a SERVER component.
+ *
+ * The audit found the core HTML already server-rendered; the defect was the
+ * client BOUNDARY (the whole VisitorExperience tree hydrated). This module
+ * now renders identity, business facts, services, locations, contact, static
+ * evidence-bound content, navigation, and structured data with zero client
+ * components of its own. Client code lives ONLY in the named islands in
+ * visitor-islands.tsx (AskFydIsland, ObjectOverlayIsland via the provider),
+ * pinned by the island allowlist (INV-SC-1,
+ * src/app/sites/__tests__/server-client-boundary.test.ts).
+ *
+ * Core business utility (identity, service summaries, phone/contact,
+ * navigation, service-detail destinations) survives hydration failure:
+ * every business fact below is plain HTML with real hrefs (INV-SC-2).
+ */
 
-import { useState, useRef, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { resolveThemeRoles } from '../sitespec/theme-roles';
 import { ArrowUpRight, MapPin, Phone, MessageCircle, ArrowRight } from 'lucide-react';
@@ -8,9 +22,14 @@ import { applyHiddenObjects, applyObjectOrder, resolveQuery, siteDeactivatedObje
 import type { RenderContext } from './renderer';
 import { visitorField, conciseSource, visitorCallLink, fieldExplanation } from '../sitespec/visitor-knowledge';
 import { resolveSafeLink } from '../sitespec/safe-link';
-import { AskFydWidget } from './ask-fyd-widget';
-import { useFydDialog } from '../ui/use-fyd-dialog';
-import { ObjectOverlay } from './object-overlay';
+import {
+  VisitorInteractionProvider,
+  CardActionsIsland,
+  AskAboutLinkIsland,
+  AskFydIsland,
+} from './visitor-islands';
+import type { DisplayMedia } from '../media/select';
+import { responsiveImgProps, heroFetchPriority } from '../media/responsive';
 import type { PingObject } from '../../lib/ping/types';
 import type { FYDSection } from '../sitespec/types';
 import './visitor-experience.css';
@@ -80,28 +99,47 @@ export function SourceDisclosure({ object, fields = ['description'], checkpoint,
   </details>;
 }
 
+/**
+ * Item 9 (fyd-execution): the hero figure, rendered from manifest variants
+ * only (INV-RM-1). srcset/sizes are honest: the sizes value is derived from
+ * the .ve-hero-media layout in visitor-experience.css (full-bleed ≤640px,
+ * ~48vw of the grid below 1360px, ~585px at max width). fetchpriority is
+ * measurement-gated (heroFetchPriority): "high" only when the pinned lab
+ * record names the hero as the LCP element. Provenance and rights ride as
+ * machine-readable attributes (INV-RM-2); the human credit stays visible
+ * in the figcaption.
+ */
+function HeroFigure({ media, siteId }: { media: DisplayMedia; siteId: string }) {
+  const img = responsiveImgProps(media, {
+    sizes: "(max-width: 640px) 100vw, (max-width: 1360px) 48vw, 585px",
+    eager: true,
+    priorityMeasured: heroFetchPriority(siteId) === "high",
+  });
+  return <figure className="ve-hero-media">
+    {/* Authorized pipeline derivative, served locally. No runtime hotlink. */}
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img
+      src={img.src}
+      {...(img.srcSet ? { srcSet: img.srcSet } : {})}
+      sizes={img.sizes}
+      alt={media.alt}
+      width={img.width}
+      height={img.height}
+      loading={img.loading}
+      decoding={img.decoding}
+      fetchPriority={img.fetchPriority}
+      data-provenance={img["data-provenance"]}
+      data-rights-source={img["data-rights-source"]}
+    />
+    <figcaption><details><summary>Image source</summary><p>From the business website. {media.rightsBasis}</p><a href={media.sourceUrl} target="_blank" rel="noreferrer">View original</a></details></figcaption>
+  </figure>;
+}
+
 export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
   const plan = visitorExperiencePlan(ctx);
-  const [serviceQuestion, setServiceQuestion] = useState('');
-  const [sequence, setSequence] = useState(0);
-  const [openedObject, setOpenedObject] = useState<PingObject | null>(null);
-  const overlayRegionRef = useRef<HTMLDivElement>(null);
-  const closeOverlay = useCallback(() => setOpenedObject(null), []);
-  // Item 2: coordinate the ObjectOverlay through the one FYD dialog
-  // primitive. ObjectOverlay is a legacy div-dialog that still owns its own
-  // focus and markup (its native-<dialog> migration is pending its lane's
-  // commit); the hook gives it balanced Lenis scroll ownership on every
-  // exit path and makes the returned focus visible.
-  useFydDialog(overlayRegionRef, {
-    open: openedObject !== null,
-    onClose: closeOverlay,
-    focus: "none",
-    deferTeardown: true,
-  });
   if (!plan) return null;
   const { name, summary, phoneValue, phone, emailValue, email, website, services, products, locations, people, locality, serviceArea, ask, primary, read, owner } = plan;
   const hasMedia = !!ctx.heroMedia && !!plan.section('Hero');
-  const askService = (title: string) => { setServiceQuestion(`Can they help with ${title}?`); setSequence(s => s + 1); };
   const action = phone.kind === 'safe' ? <a className="ve-action ve-action-primary" href={phone.href}><Phone size={18} /><span>Call {phoneValue}</span></a>
     : email.kind === 'safe' ? <a className="ve-action ve-action-primary" href={email.href}>Email {emailValue}</a> : null;
   const catalog = primary === 'products' ? products : services;
@@ -126,7 +164,8 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
     '--fyd-font-display': ctx.spec.themeTokens.fontDisplay,
     '--fyd-font-body': ctx.spec.themeTokens.fontBody,
   } as CSSProperties;
-  return <div className={`ve ${hasMedia ? 've-photographic' : 've-editorial'}`} data-visitor-primary={primary} style={themeVars}>
+  return <VisitorInteractionProvider graph={ctx.graph} siteId={ctx.siteId ?? ""} askEnabled={ask}>
+    <div className={`ve ${hasMedia ? 've-photographic' : 've-editorial'}`} data-visitor-primary={primary} style={themeVars}>
     <header className="ve-header" style={{order:-1}}>
       <a className="ve-wordmark" href="#business">{name}</a>
       <nav aria-label="Business navigation">
@@ -145,12 +184,7 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
         <div className="ve-actions">{action}{catalog.length > 0 && <a className="ve-action ve-action-outline" href={`#${catalogId}`}>Explore {catalogId}<ArrowRight size={18} /></a>}{ask && <a className="ve-text-action" href="#ask"><MessageCircle size={18} />Ask a question</a>}</div>
         {summary && <SourceDisclosure object={owner} checkpoint={ctx.projectionCheckpoint}><p>“{summary}”</p></SourceDisclosure>}
       </div>
-      {hasMedia && ctx.heroMedia && <figure className="ve-hero-media">
-        {/* Authorized pipeline derivative, served locally. No runtime hotlink. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={ctx.heroMedia.src} alt={ctx.heroMedia.alt} width={ctx.heroMedia.width} height={ctx.heroMedia.height} fetchPriority="high" />
-        <figcaption><details><summary>Image source</summary><p>From the business website. {ctx.heroMedia.rightsBasis}</p><a href={ctx.heroMedia.sourceUrl} target="_blank" rel="noreferrer">View original</a></details></figcaption>
-      </figure>}
+      {hasMedia && ctx.heroMedia && <HeroFigure media={ctx.heroMedia} siteId={ctx.siteId ?? ""} />}
     </section>
     {!!catalog.length && <section className="ve-section ve-catalog" id={catalogId} style={{order:rank(primary === "products" ? "Products" : "Services")}}>
       <div className="ve-section-heading"><div><p className="ve-eyebrow">{primary === 'products' ? 'Discover' : 'What they do'}</p><h2>{plan.section(primary === 'products' ? 'Products' : 'Services')?.presentation.heading ?? (primary === 'products' ? 'Explore products' : 'Find the right service')}</h2></div>{ask && <a href="#ask">Not sure? Ask FYD <ArrowUpRight size={18}/></a>}</div>
@@ -162,11 +196,7 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
           return <article className="ve-card" data-service-id={object.id} key={object.id}>
             <span className="ve-card-number">{String(i + 1).padStart(2, '0')}</span>
             <h3>{plan.parents.has(object.id) && <span className="ve-parent-label">{plan.parents.get(object.id)} / </span>}{title}</h3>{description && <p>{description}</p>}
-            <div className="ve-card-actions">
-              <button type="button" onClick={() => setOpenedObject(object)}>Explore {title} <ArrowUpRight size={16}/></button>
-              {ask && <a href="#ask" onClick={() => askService(title)}>Ask about {title} <ArrowUpRight size={16}/></a>}
-              {href.kind === 'safe' && <a href={href.href} target="_blank" rel="noreferrer">Service details <ArrowUpRight size={16}/></a>}
-            </div>
+            <CardActionsIsland object={object} title={title} description={description ?? ""} ask={ask} serviceHref={href.kind === 'safe' ? href.href : null} />
             <SourceDisclosure object={object} checkpoint={ctx.projectionCheckpoint}>{plan.parents.has(object.id) && <p>The source website places this service under {plan.parents.get(object.id)}. This reflects the website navigation.</p>}</SourceDisclosure>
           </article>;
         })}
@@ -176,7 +206,7 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
       {(locality || locations.length > 0 || serviceArea) && <div id="locations"><p className="ve-eyebrow">Where to find them</p><h2>{locations.length > 1 ? 'Locations' : 'Location & service area'}</h2>
         {(locations.length ? locations.map(o => read(o, 'title')) : [locality]).filter(Boolean).map(label => <p className="ve-location" key={label}><MapPin size={22}/>{label}</p>)}
         {serviceArea && <p>{serviceArea}</p>}
-        {ask && <a className="ve-text-action" href="#ask" onClick={() => askService('service in my area')}>Check whether they serve your area <ArrowUpRight size={16}/></a>}
+        {ask && <AskAboutLinkIsland title="service in my area" className="ve-text-action">Check whether they serve your area <ArrowUpRight size={16}/></AskAboutLinkIsland>}
         <SourceDisclosure object={locations[0] ?? owner} fields={["title","locality","address"]} checkpoint={ctx.projectionCheckpoint} />
       </div>}
       {(action || website.kind === 'safe') && <div><p className="ve-eyebrow">Let’s talk</p><h2>Contact the business</h2><div className="ve-contact-actions">{action}
@@ -186,9 +216,9 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
       </div>}
     </section>}
     {!!people.length && <section className="ve-section" style={{order:rank("People")}}><p className="ve-eyebrow">People</p><h2>Meet the team</h2><div className="ve-cards">{people.map(person => <article className="ve-card" key={person.id}><h3>{read(person, 'title')}</h3>{read(person, 'description') && <p>{read(person, 'description')}</p>}<SourceDisclosure object={person} checkpoint={ctx.projectionCheckpoint}/></article>)}</div></section>}
-    {ask && <section className="ve-concierge" id="ask" style={{order:rank("AskFYD")}}><div className="ve-concierge-intro"><p className="ve-eyebrow"><MessageCircle size={16}/>Ask FYD</p><h2>{phone.kind === "safe" ? <>A little help,<br/>before you call.</> : <>Your questions,<br/>answered.</>}</h2><p>Ask about services, contact details, or location. Answers use this business’s published information. Sources are there when you want them.</p></div><div className="ve-concierge-chat"><AskFydWidget pageCheckpoint={ctx.projectionCheckpoint} siteId={ctx.siteId} theme={ctx.spec.themeTokens} initialQuestion={serviceQuestion} questionSequence={sequence} prompts={[...(services[0] ? [`Can they help with ${read(services[0], 'title')}?`] : []), 'What services do they offer?', 'How do I contact them?', 'Where are they located?']}/></div></section>}
+    {ask && <section className="ve-concierge" id="ask" style={{order:rank("AskFYD")}}><div className="ve-concierge-intro"><p className="ve-eyebrow"><MessageCircle size={16}/>Ask FYD</p><h2>{phone.kind === "safe" ? <>A little help,<br/>before you call.</> : <>Your questions,<br/>answered.</>}</h2><p>Ask about services, contact details, or location. Answers use this business’s published information. Sources are there when you want them.</p><noscript><p>Ask FYD requires JavaScript to run. Call or email the business directly instead.</p></noscript></div><div className="ve-concierge-chat"><AskFydIsland pageCheckpoint={ctx.projectionCheckpoint} siteId={ctx.siteId} theme={ctx.spec.themeTokens} prompts={[...(services[0] ? [`Can they help with ${read(services[0], 'title')}?`] : []), 'What services do they offer?', 'How do I contact them?', 'Where are they located?']}/></div></section>}
     <footer className="ve-footer" style={{order:999}}><p>{name}</p><p>Presented by FYD · <a href="#business">Back to top ↑</a></p><details><summary>About this information</summary><p>Website statements and business-provided information are not independently verified. Owner presentation preferences affect what you see. Use “Why this?” for individual sources.</p></details></footer>
     {(action || ask) && <div className="ve-mobile-actions" aria-label="Quick actions">{action}{ask && <a className="ve-action ve-action-outline" href="#ask"><MessageCircle size={18}/>Ask FYD</a>}</div>}
-    {openedObject && <div ref={overlayRegionRef}><ObjectOverlay object={{...openedObject,title:read(openedObject,"title") ?? "",description:read(openedObject,"description") ?? ""}} graph={ctx.graph} siteId={ctx.siteId ?? ""} visitor onAsk={ask ? () => { askService(read(openedObject, "title") ?? "this service"); closeOverlay(); } : undefined} onClose={closeOverlay}/></div>}
-  </div>;
+    </div>
+  </VisitorInteractionProvider>;
 }
