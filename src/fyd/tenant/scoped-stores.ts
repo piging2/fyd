@@ -12,7 +12,15 @@
  * Ask FYD). assertTenantKey enforces key === tenantId.
  *
  * The underlying stores themselves remain unscoped; these wrappers are the
- * only sanctioned consumption path for request/worker code.
+ * sanctioned consumption path for request/worker code that carries an
+ * explicit TenantContext.
+ *
+ * A second sanctioned pattern exists for the Ask FYD request pipeline
+ * (src/app/api/fyd/ask/ask-pipeline.ts): it resolves the tenant from the
+ * trusted route path, loads the tenant bundle once, and injects a
+ * tenant-scoped loadBundle dependency (id === siteId ? bundle : null) into
+ * answerAskFyd. The isolation is enforced by the dependency, not by a
+ * wrapper. Both patterns are fail-closed; neither answers cross-tenant.
  */
 import {
   answerAskFyd,
