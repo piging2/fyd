@@ -371,6 +371,45 @@ export async function listStuckMissions(): Promise<StuckMission[]> {
   }));
 }
 
+
+/**
+ * Mission Control feed wiring (2026-10-07): list ALL ping_missions for the
+ * missions projection. Read-only. Returns newest first.
+ */
+export interface AllPingMission {
+  mission_id: string;
+  mission_type: string | null;
+  status: string | null;
+  tenant_id: string | null;
+  created_by: string | null;
+  created_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  assigned_to: string | null;
+}
+
+export async function listAllPingMissions(limit = 100): Promise<AllPingMission[]> {
+  const rows = await query<Record<string, unknown>>(
+    `SELECT mission_id, mission_type, status, tenant_id, created_by,
+            created_at, started_at, completed_at, assigned_to
+     FROM ping_missions
+     ORDER BY created_at DESC
+     LIMIT $1`,
+    [limit],
+  );
+  return rows.map((r) => ({
+    mission_id: String(r.mission_id),
+    mission_type: (r.mission_type as string) ?? null,
+    status: (r.status as string) ?? null,
+    tenant_id: (r.tenant_id as string) ?? null,
+    created_by: (r.created_by as string) ?? null,
+    created_at: iso(r.created_at),
+    started_at: iso(r.started_at),
+    completed_at: iso(r.completed_at),
+    assigned_to: (r.assigned_to as string) ?? null,
+  }));
+}
+
 /**
  * ORCA narrow lane (2026-10-04): today's pipeline counts for the
  * OBSERVE -> EVIDENCE -> LEARNING chain. All counts are for the current
