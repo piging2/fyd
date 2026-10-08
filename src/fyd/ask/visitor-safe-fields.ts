@@ -108,8 +108,10 @@ export function isVisitorSafeField(fieldName: string): boolean {
 
 /**
  * Return a copy of the object with only visitor-safe fields.
- * The input object is never mutated. When every field is already safe the
- * original object is returned unchanged (fast path).
+ * The input object is never mutated, and the returned object never aliases
+ * it: even when every field is already safe, a fresh top-level object and
+ * fields record are returned, so a downstream mutation of the projection
+ * cannot corrupt the canonical graph (FYD-010 anti-aliasing).
  */
 export function visitorSafeObject<T extends PingObject>(obj: T): T {
   const fields = obj.fields ?? {};
@@ -121,7 +123,7 @@ export function visitorSafeObject<T extends PingObject>(obj: T): T {
       break;
     }
   }
-  if (allSafe) return obj;
+  if (allSafe) return { ...obj, fields: { ...fields } };
   const safe: Record<string, string | string[]> = {};
   for (const [name, value] of entries) {
     if (isVisitorSafeField(name)) safe[name] = value;
