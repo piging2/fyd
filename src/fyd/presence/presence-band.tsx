@@ -98,6 +98,7 @@ export function PresenceBand({ presence }: { presence: Presence }) {
           alt={hero.alt}
           width={hero.width}
           height={hero.height}
+          fetchPriority="high"
           style={{
             position: "absolute",
             inset: 0,
