@@ -79,8 +79,15 @@ export async function GET(request: Request) {
     objects: { id: string; schema: string; title: string; via: string }[];
     website: string;
   }[] = [];
-  for (const t of getFydTenantIds()) {
-    const { graph, meta } = await getFydTenantGraph(t as never);
+  // Parallelize tenant graph loads: each is an independent read (fixture
+  // deep-clone + overlay application, no shared mutable state).
+  const tenantGraphs = await Promise.all(
+    getFydTenantIds().map(async (t) => ({
+      siteId: t,
+      ...(await getFydTenantGraph(t as never)),
+    }))
+  );
+  for (const { siteId: t, graph, meta } of tenantGraphs) {
     const objs: { id: string; schema: string; title: string; via: string }[] = [];
     for (const o of graph.objects) {
       const prov = (o.provenance ?? {}) as unknown as Record<string, unknown>;
