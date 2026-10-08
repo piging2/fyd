@@ -119,8 +119,13 @@ async function companiesView(): Promise<ViewResult> {
   const tenants = getFydTenantIds();
   const items: Record<string, unknown>[] = [];
   const sites: Record<string, unknown>[] = [];
-  for (const siteId of tenants) {
-    const { graph, digest16 } = await tenantGraph(siteId);
+  // Parallelize tenant graph loads: each is an independent cached read
+  // (fixture deep-clone + overlay application, no shared mutable state).
+  // Sequential await here cost N x graph-load latency.
+  const loaded = await Promise.all(
+    tenants.map(async (siteId) => ({ siteId, ...(await tenantGraph(siteId)) }))
+  );
+  for (const { siteId, graph, digest16 } of loaded) {
     const byId = new Map(graph.objects.map((o) => [o.id, o]));
     sites.push({
       siteId,
