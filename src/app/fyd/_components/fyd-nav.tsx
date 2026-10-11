@@ -3,8 +3,8 @@
 /**
  * FYD product section nav.
  *
- * Mobile: a disclosure button naming the current section, opening a
- * vertical list (no horizontal scroll, no overlapping labels).
+ * Mobile: hidden — the section links are consolidated into the site header
+ * hamburger menu ("On this page") so only one sticky bar renders on phones.
  * Desktop: an inline wrapping link row, current section marked with
  * aria-current and a visible indicator.
  */
@@ -61,7 +61,7 @@ export function FydNav() {
   return (
     <nav
       aria-label="FYD product"
-      className="sticky top-0 z-50 border-b border-text-on-dark/10 bg-deep/95 text-text-on-dark backdrop-blur"
+      className="sticky top-0 z-50 hidden border-b border-text-on-dark/10 bg-deep/95 text-text-on-dark backdrop-blur md:block"
     >
       <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-2 sm:px-6 lg:px-8">
         <a href="#top" className="flex shrink-0 items-center gap-2 py-2">
