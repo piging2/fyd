@@ -11,14 +11,16 @@
  * This seam derives every social/search tag from the site's own
  * PING-backed projection at render time: the business name and its real
  * description come from the public owner business object, and the
- * canonical/og:url are the site's own route resolved against the app's
- * metadataBase. Zero per-site conditionals: callers pass only their site
- * id. PING attribution is honest and labeled: the generator marker names
- * FYD Social as the generator; the business is the subject of every tag.
+ * canonical/og:url are the site's own route on the origin the request
+ * was actually served from. Zero per-site conditionals: callers pass
+ * only their site id. PING attribution is honest and labeled: the
+ * generator marker names FYD Social as the generator; the business is
+ * the subject of every tag.
  */
 
 import type { Metadata } from "next";
-import { getVerifiedPublicProjection } from "@/fyd/data/ping-object-source";
+import { headers } from "next/headers";
+import { getSiteBundle } from "@/fyd/media/site-bundle";
 import {
   ownerAssertionsFromGraph,
   resolveBoundFieldVerified,
@@ -31,6 +33,41 @@ const OWNER_BUSINESS_SCHEMA = "ping.social.business@1";
 function ownerObject(graph: ObjectGraph) {
   return graph.objects.find(
     (o) => o.schema === OWNER_BUSINESS_SCHEMA && o.visibility === "public",
+  );
+}
+
+/**
+ * Resolve one bound owner field through the strong verifier (AP-1).
+ * The direct lane is tried first (website-derived evidence). When it
+ * cannot bind, the owner_authored lane is tried: it binds a value only
+ * when a recorded owner assertion attests it. This matters for tenants
+ * whose owner object carries the legacy owner-asserted provenance kind:
+ * the direct lane rejects any non website-derived provenance, while
+ * ownerAssertionsFromGraph attests title, description, and field values
+ * for those objects (and ownerFieldCorrection values), so the
+ * owner_authored lane can bind them. Returns undefined when neither
+ * lane verifies, so callers keep their fail-closed fallbacks and never
+ * invent a value.
+ */
+function resolveBoundOwnerField(
+  graph: ObjectGraph,
+  objectId: string,
+  field: string,
+): string | undefined {
+  const assertions = ownerAssertionsFromGraph(graph);
+  const direct =
+    resolveBoundFieldVerified(
+      graph,
+      { objectId, field, classification: "direct" },
+      assertions,
+    )?.trim() || undefined;
+  if (direct) return direct;
+  return (
+    resolveBoundFieldVerified(
+      graph,
+      { objectId, field, classification: "owner_authored" },
+      assertions,
+    )?.trim() || undefined
   );
 }
 
@@ -52,13 +89,7 @@ export function resolveSiteDisplayName(graph: ObjectGraph): string {
   // owner-authored: a recorded owner assertion matching the value). An
   // unverified name is never published as the business's words.
   if (!owner) return "FYD Social generated site";
-  const assertions = ownerAssertionsFromGraph(graph);
-  const verifiedTitle =
-    resolveBoundFieldVerified(
-      graph,
-      { objectId: owner.id, field: "title", classification: "direct" },
-      assertions,
-    )?.trim() || undefined;
+  const verifiedTitle = resolveBoundOwnerField(graph, owner.id, "title");
   return verifiedTitle ?? "FYD Social generated site";
 }
 
@@ -69,15 +100,12 @@ export function resolveSiteDisplayName(graph: ObjectGraph): string {
 export async function generateSiteMetadata(siteId: string): Promise<Metadata> {
   // Verified public projection (Q-C-01): metadata derives from the
   // public graph, never the raw source graph.
-  const { graph } = await getVerifiedPublicProjection(siteId, "anonymous");
+  const bundle = await getSiteBundle(siteId);
+  if (!bundle) return {title:{absolute:"Business information unavailable"}};
+  const { graph } = bundle;
   const owner = ownerObject(graph);
-  const assertions = ownerAssertionsFromGraph(graph);
   const verifiedDescription = owner
-    ? resolveBoundFieldVerified(
-        graph,
-        { objectId: owner.id, field: "description", classification: "direct" },
-        assertions,
-      )?.trim() || undefined
+    ? resolveBoundOwnerField(graph, owner.id, "description")
     : undefined;
   // The visible header shares this exact seam (resolveSiteDisplayName)
   // so the <title> and the first <h1> can never disagree.
@@ -88,12 +116,25 @@ export async function generateSiteMetadata(siteId: string): Promise<Metadata> {
   // about the business and never mentions PING's infrastructure.
   const description =
     verifiedDescription ?? name + " | FYD Social generated site";
-  // Canonical product decision (2026-09-24, W-META 80% call): these demo
-  // tenants have no public domain of their own, so the canonical URL is
-  // the site's own served route, resolved against the app's metadataBase
-  // at render time. If a tenant ever gets its own domain, revisit this
-  // seam to point canonical at that domain.
+  // Canonical (AP-1): these demo tenants have no public domain of their
+  // own, so the canonical URL is the site's own route on the origin the
+  // request was actually served from, read from the request headers.
+  // Returning the relative route alone would let Next resolve it against
+  // the root layout metadataBase, which defaults to a foreign origin
+  // for these tenant pages. When there is no request scope (unit
+  // tests), fall back to the relative route instead of throwing.
   const route = `/sites/${siteId}`;
+  let canonical = route;
+  try {
+    const requestHeaders = await headers();
+    const proto = requestHeaders.get("x-forwarded-proto") ?? "http";
+    const host =
+      requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+    const origin = host ? proto + "://" + host : "";
+    canonical = origin ? origin + route : route;
+  } catch {
+    canonical = route;
+  }
   return {
     // Absolute: overrides the root layout's "%s · PING" title template so
     // the business page's <title> names the business, never PING.
@@ -104,14 +145,14 @@ export async function generateSiteMetadata(siteId: string): Promise<Metadata> {
       siteName: name,
       title: name,
       description,
-      url: route,
+      url: canonical,
     },
     twitter: {
       card: "summary",
       title: name,
       description,
     },
-    alternates: { canonical: route },
+    alternates: { canonical },
     // Honest, labeled generator attribution: FYD Social generated this
     // page. Rendered as <meta name="generator" content="FYD Social">.
     generator: "FYD Social",
