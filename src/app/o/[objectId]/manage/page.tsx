@@ -20,8 +20,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ChevronsDown, ChevronsUp, Eye, EyeOff, Plus } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { ObjectCircle } from "@/fyd/ui/object-circle";
+import { CustomizePanel } from "@/fyd/owner-mode/customize-panel";
 import type { FieldCorrectionView, ObjectView, OwnerCommand } from "@/fyd/object/types";
 
 type Status = "loading" | "ready" | "error";
@@ -31,9 +32,16 @@ interface HistoryEntry {
   text: string;
 }
 
+interface ProposalDigests {
+  baseStateDigest: string;
+  baseViewDigest: string;
+  patchDigest: string;
+}
+
 interface Proposal {
   command: OwnerCommand;
   summary: string;
+  digests?: ProposalDigests;
 }
 
 type CorrectableField = "phone" | "email" | "website";
@@ -76,7 +84,6 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [newService, setNewService] = useState("");
   const [command, setCommand] = useState("");
   const [commandNote, setCommandNote] = useState("");
   const [pendingProposal, setPendingProposal] = useState<Proposal | null>(null);
@@ -123,11 +130,12 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
   }, [objectId, load]);
 
   /**
-   * Applies a typed OwnerCommand through the approve stage. Direct buttons
-   * are unambiguous owner intent; free text always goes through propose
-   * first (see runCommand).
+   * Applies a typed OwnerCommand through the approve stage. Every approval
+   * must be bound to a previewed proposal: the caller passes the digests
+   * the propose stage issued for this exact command, and the server
+   * refuses any approval that does not echo them (approval_not_bound).
    */
-  async function send(cmd: OwnerCommand, note: string): Promise<boolean> {
+  async function send(cmd: OwnerCommand, note: string, digests?: ProposalDigests): Promise<boolean> {
     if (!objectId || busy) return false;
     setBusy(true);
     setError("");
@@ -135,7 +143,17 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
       const res = await fetch("/api/fyd/objects/" + encodeURIComponent(objectId) + "/overrides", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ stage: "approve", command: cmd }),
+        body: JSON.stringify({
+          stage: "approve",
+          command: cmd,
+          ...(digests
+            ? {
+                baseStateDigest: digests.baseStateDigest,
+                baseViewDigest: digests.baseViewDigest,
+                patchDigest: digests.patchDigest,
+              }
+            : {}),
+        }),
       });
       const json = (await res.json()) as {
         ok: boolean;
@@ -179,6 +197,7 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
       const json = (await res.json()) as {
         ok: boolean;
         proposal?: Proposal;
+        digests?: ProposalDigests;
         error?: string;
         hint?: string;
       };
@@ -186,7 +205,7 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
         setCommandNote((json.error ?? "Could not understand that.") + (json.hint ? " " + json.hint : ""));
         return;
       }
-      setPendingProposal(json.proposal);
+      setPendingProposal(json.digests ? { ...json.proposal, digests: json.digests } : json.proposal);
     } catch {
       setCommandNote("Could not reach the server.");
     } finally {
@@ -202,7 +221,7 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
   async function approveProposal() {
     if (!pendingProposal) return;
     const wasCorrection = pendingProposal.command.type === "set-contact-field";
-    const ok = await send(pendingProposal.command, pendingProposal.summary);
+    const ok = await send(pendingProposal.command, pendingProposal.summary, pendingProposal.digests);
     if (ok) {
       setPendingProposal(null);
       setCommand("");
@@ -214,6 +233,43 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
   function rejectProposal() {
     setPendingProposal(null);
     setCommandNote("Proposal rejected. Nothing changed.");
+  }
+
+  /**
+   * Revert is an approval too, so it takes the same bound path as the
+   * proposal card: propose the revert text, then approve the returned
+   * proposal with its digests echoed. One click for the owner; nothing
+   * unbound is ever sent.
+   */
+  async function revertCorrection(c: FieldCorrectionView) {
+    if (!objectId || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/fyd/objects/" + encodeURIComponent(objectId) + "/overrides", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ stage: "propose", text: "revert " + c.field + " correction" }),
+      });
+      const json = (await res.json()) as {
+        ok: boolean;
+        proposal?: Proposal;
+        digests?: ProposalDigests;
+        error?: string;
+      };
+      if (!res.ok || !json.ok || !json.proposal || !json.digests) {
+        setError(json.error ?? "Could not prepare the revert.");
+        return;
+      }
+      const proposal = json.proposal;
+      const digests = json.digests;
+      setBusy(false);
+      await send(proposal.command, "Reverted the " + c.label.toLowerCase() + " correction.", digests);
+    } catch {
+      setError("Could not reach the server.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (status === "loading" || !view) {
@@ -249,10 +305,10 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-extrabold">Manage {view.name}</h1>
-            <p className="text-sm text-stone-500">Ask FYD to change anything below.</p>
+            <p className="text-sm text-stone-500">Tell FYD what to show first or hide from your website.</p>
           </div>
           <Link
-            href={"/o/" + encodeURIComponent(view.id)}
+            href={"/sites/" + encodeURIComponent(objectId ?? view.id)}
             className="shrink-0 rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium hover:bg-stone-50"
           >
             View public page
@@ -265,7 +321,8 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
           </p>
         )}
 
-        <Section title="Overview">
+        {objectId && status === "ready" && <CustomizePanel siteId={objectId} compact />}
+      <Section title="Overview">
           <div className="max-w-sm">
             <ObjectCircle view={view} />
           </div>
@@ -291,7 +348,8 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
           )}
         </Section>
 
-        <Section title="Ask FYD">
+        <details className="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6"><summary className="min-h-[44px] cursor-pointer font-semibold">Business information and contact controls</summary><div className="mt-4 space-y-6">
+        <Section title="Contact and business record changes">
           <p className="text-sm text-stone-500">
             Tell FYD what to change in plain language. FYD proposes the exact
             change first; nothing applies until you approve it.
@@ -311,7 +369,7 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
               type="text"
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              placeholder='Try: "Put decks first"'
+              placeholder='Try: "Hide my street address"'
               disabled={busy}
               className="min-h-[44px] flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
             />
@@ -405,107 +463,9 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
           </p>
         </Section>
 
-        <Section title="Services">
-          <ul className="space-y-2">
-            {view.services.map((s) => (
-              <li
-                key={s.id}
-                className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2"
-              >
-                <span className={"flex-1 text-base font-medium " + (s.visible ? "" : "text-stone-400 line-through")}>
-                  {s.name}
-                </span>
-                <span className="hidden text-xs text-stone-400 sm:inline" title={s.basisLabel}>
-                  {s.basis === "owner" ? "owner" : "record"}
-                </span>
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    title="Move to top"
-                    aria-label={"Move " + s.name + " to top"}
-                    disabled={busy}
-                    onClick={() => void send({ type: "move-service", id: s.id, to: "first" }, "Moved " + s.name + " to the top.")}
-                    className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg hover:bg-stone-200 disabled:opacity-40"
-                  >
-                    <ChevronsUp className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Move up"
-                    aria-label={"Move " + s.name + " up"}
-                    disabled={busy}
-                    onClick={() => void send({ type: "move-service", id: s.id, to: "up" }, "Moved " + s.name + " up.")}
-                    className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg hover:bg-stone-200 disabled:opacity-40"
-                  >
-                    <ArrowUp className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Move down"
-                    aria-label={"Move " + s.name + " down"}
-                    disabled={busy}
-                    onClick={() => void send({ type: "move-service", id: s.id, to: "down" }, "Moved " + s.name + " down.")}
-                    className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg hover:bg-stone-200 disabled:opacity-40"
-                  >
-                    <ArrowDown className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Move to bottom"
-                    aria-label={"Move " + s.name + " to bottom"}
-                    disabled={busy}
-                    onClick={() => void send({ type: "move-service", id: s.id, to: "last" }, "Moved " + s.name + " to the bottom.")}
-                    className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg hover:bg-stone-200 disabled:opacity-40"
-                  >
-                    <ChevronsDown className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    title={s.visible ? "Hide" : "Show"}
-                    aria-label={(s.visible ? "Hide " : "Show ") + s.name}
-                    aria-pressed={!s.visible}
-                    disabled={busy}
-                    onClick={() => void send({ type: "set-service-visibility", id: s.id, visible: !s.visible }, (s.visible ? "Hid " : "Showed ") + s.name + ".")}
-                    className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-lg hover:bg-stone-200 disabled:opacity-40"
-                  >
-                    {s.visible ? <Eye className="h-4 w-4" aria-hidden="true" /> : <EyeOff className="h-4 w-4" aria-hidden="true" />}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <form
-            className="mt-3 flex flex-col gap-2 sm:flex-row"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const name = newService.trim();
-              if (!name) return;
-              void send({ type: "add-service", name }, "Added " + name + ".").then((ok) => {
-                if (ok) setNewService("");
-              });
-            }}
-          >
-            <label htmlFor="add-service" className="sr-only">
-              Add a service
-            </label>
-            <input
-              id="add-service"
-              type="text"
-              value={newService}
-              onChange={(e) => setNewService(e.target.value)}
-              placeholder="Add a service"
-              disabled={busy}
-              maxLength={60}
-              className="min-h-[44px] flex-1 rounded-lg border border-stone-300 px-4 py-2.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
-            />
-            <button
-              type="submit"
-              disabled={busy || newService.trim().length === 0}
-              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border border-stone-300 px-4 py-2.5 font-medium hover:bg-stone-50 disabled:opacity-50"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" /> Add service
-            </button>
-          </form>
+        <Section title="Recorded services">
+          <p className="text-sm text-stone-500">Website order follows your saved website changes above. These are the services in the business record.</p>
+          <ul className="mt-3 space-y-2">{view.services.map(s => <li key={s.id} className="rounded-lg border border-stone-200 p-3">{s.name}</li>)}</ul>
         </Section>
 
         <Section title="Media">
@@ -636,12 +596,7 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={() =>
-                        void send(
-                          { type: "revert-contact-field", field: c.field as CorrectableField },
-                          "Reverted the " + c.label.toLowerCase() + " correction.",
-                        )
-                      }
+                      onClick={() => void revertCorrection(c)}
                       className="shrink-0 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-stone-100 disabled:opacity-50"
                     >
                       Revert
@@ -703,35 +658,10 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
           </p>
         </Section>
 
-        <Section title="Appearance">
-          <p className="text-sm text-stone-500">
-            Style, typography, and section order are proposed through Ask FYD in the full product.
-            In this demo, describe the change in the Ask FYD box above (for example, "Put decks
-            first"): FYD proposes the exact change and applies it when you approve.
-          </p>
-        </Section>
-
-        <Section title="Connections">
-          <ul className="space-y-2 text-sm">
-            <li className="flex justify-between gap-3">
-              <span>Website</span>
-              <span className="font-medium text-emerald-700">
-                {view.contact.website ? "Connected" : "Not connected"}
-              </span>
-            </li>
-            {["Facebook", "ActivityPub", "ATProto", "Nostr"].map((n) => (
-              <li key={n} className="flex justify-between gap-3 text-stone-500">
-                <span>{n}</span>
-                <span>Not yet</span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-
-        <Section title="History">
+        <Section title="Contact and business record history">
           {history.length === 0 ? (
             <p className="text-sm text-stone-500">
-              Nothing changed yet. Website information was last observed{" "}
+              No contact or business record edits. Saved website changes are listed above. Website information was last observed{" "}
               {view.provenance.derivedAt.slice(0, 10)}.
             </p>
           ) : (
@@ -745,6 +675,7 @@ export default function ManagePage({ params }: { params: Promise<{ objectId: str
             </ul>
           )}
         </Section>
+        </div></details>
       </main>
     </div>
   );
