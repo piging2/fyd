@@ -28,12 +28,14 @@ export function QuoteForm({
   siteId,
   serviceId,
   serviceLabel,
+  startOpen = false,
 }: {
   siteId: string;
   serviceId: string;
   serviceLabel: string;
+  startOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");

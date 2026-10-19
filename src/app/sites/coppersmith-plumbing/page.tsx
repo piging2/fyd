@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
  */
 
 import { SiteClient } from "../_shared/site-client";
+import { SiteInquirySection } from "../_shared/inquiry-section";
 import { SiteJsonLd } from "../_shared/site-jsonld";
 import { compilePublicSite } from "../_shared/spec-pipeline";
 import {
@@ -81,6 +82,10 @@ export default async function CoppersmithDemoPage() {
         heroMedia={heroMedia}
         galleryMedia={galleryMedia}
         siteName={resolveSiteDisplayName(graph)}
+      />
+      <SiteInquirySection
+        siteId={SITE_ID}
+        businessName={resolveSiteDisplayName(graph)}
       />
     </main>
   );
