@@ -25,3 +25,43 @@ export const QUOTE_JOURNEY_BLURBS: Record<string, string> = {
   "svc-leak-repair": "Find it, stop it, fix it right.",
   "svc-fixture-install": "Faucets, toilets, and trim-outs.",
 };
+
+/**
+ * Coppersmith Plumbing demo tenant catalog (2026-10-18, CEO directive
+ * "Build products, not activity" P2: prove the complete Coppersmith
+ * customer journey end to end on the isolated test plane).
+ *
+ * Labels are the four service titles in the tenant record of record:
+ * the digest-pinned COPPERSMITH_GRAPH fixture
+ * (src/fyd/proceduralize/__fixtures__/coppersmith-graph.ts, pinned in
+ * FYD_TENANT_PINS in src/fyd/data/fyd-tenant-graph.ts), machine-generated
+ * from a crawl of the tenant's own website. The previous nine labels
+ * came from a superseded 2026-10-18 page presentation that the pinned
+ * record does not support, so they were removed in the J2 alignment.
+ * Coppersmith is a demo tenant (fictional 555 contact data); inquiries
+ * admitted under this catalog land in the same isolated journal +
+ * tenant-private store as the test tenant, never in the production
+ * journal, and trigger no external sends. Synthetic test data only.
+ */
+export const COPPERSMITH_SITE_ID = "coppersmith-plumbing";
+
+export const COPPERSMITH_CATALOG: readonly KnownService[] = [
+  { id: "svc-plumbing", label: "Plumbing" },
+  { id: "svc-heating-cooling", label: "Heating & Cooling" },
+  { id: "svc-hvac", label: "HVAC" },
+  { id: "svc-ventilation", label: "Ventilation" },
+];
+
+const SITE_CATALOGS: Record<string, readonly KnownService[]> = {
+  [QUOTE_JOURNEY_SITE_ID]: QUOTE_JOURNEY_CATALOG,
+  [COPPERSMITH_SITE_ID]: COPPERSMITH_CATALOG,
+};
+
+/**
+ * The published catalog for one admitted site. Unknown sites get an
+ * empty catalog (the intake then refuses every service), never another
+ * tenant's services.
+ */
+export function catalogForSite(siteId: string): readonly KnownService[] {
+  return SITE_CATALOGS[siteId] ?? [];
+}
