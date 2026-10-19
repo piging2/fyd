@@ -171,7 +171,7 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
       <nav aria-label="Business navigation">
         {!!catalog.length && <a href={`#${catalogId}`}>{primary === 'products' ? 'Products' : 'Services'}</a>}
         {(locality || locations.length > 0 || serviceArea) && <a href="#locations">Location</a>}
-        {(action || website.kind === 'safe') && <a href="#contact">Contact</a>}
+        {(action || website.kind === 'safe' || phoneValue || emailValue) && <a href="#contact">Contact</a>}
         {ask && <a href="#ask">Ask FYD</a>}
       </nav>
       {action && <div className="ve-header-action">{action}</div>}
@@ -202,14 +202,16 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
         })}
       </div>
     </section>}
-    {(locality || locations.length > 0 || serviceArea || action || website.kind === 'safe') && <section className="ve-section ve-contact-grid" id="contact" style={{order:Math.max(rank("Contact"),rank("Locations"))}}>
+    {(locality || locations.length > 0 || serviceArea || action || website.kind === 'safe' || phoneValue || emailValue) && <section className="ve-section ve-contact-grid" id="contact" style={{order:Math.max(rank("Contact"),rank("Locations"))}}>
       {(locality || locations.length > 0 || serviceArea) && <div id="locations"><p className="ve-eyebrow">Where to find them</p><h2>{locations.length > 1 ? 'Locations' : 'Location & service area'}</h2>
         {(locations.length ? locations.map(o => read(o, 'title')) : [locality]).filter(Boolean).map(label => <p className="ve-location" key={label}><MapPin size={22}/>{label}</p>)}
         {serviceArea && <p>{serviceArea}</p>}
         {ask && <AskAboutLinkIsland title="service in my area" className="ve-text-action">Check whether they serve your area <ArrowUpRight size={16}/></AskAboutLinkIsland>}
         <SourceDisclosure object={locations[0] ?? owner} fields={["title","locality","address"]} checkpoint={ctx.projectionCheckpoint} />
       </div>}
-      {(action || website.kind === 'safe') && <div><p className="ve-eyebrow">Let’s talk</p><h2>Contact the business</h2><div className="ve-contact-actions">{action}
+      {(action || website.kind === 'safe' || phoneValue || emailValue) && <div><p className="ve-eyebrow">Let’s talk</p><h2>Contact the business</h2><div className="ve-contact-actions">{action}
+        {phoneValue && phone.kind !== 'safe' && <p className="ve-location"><Phone size={22}/>Phone: {phoneValue}</p>}
+        {emailValue && email.kind !== 'safe' && <p className="ve-location">Email: {emailValue}</p>}
         {phone.kind === 'safe' && email.kind === 'safe' && <a className="ve-text-action" href={email.href}>Email {emailValue}</a>}
         {website.kind === 'safe' && <a className="ve-text-action" href={website.href} target="_blank" rel="noreferrer">Visit original website <ArrowUpRight size={18}/></a>}
         </div><SourceDisclosure object={owner} fields={["phone","email","website"]} checkpoint={ctx.projectionCheckpoint}/>
