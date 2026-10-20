@@ -161,17 +161,41 @@ export default function HomePage() {
                 PING turns information into reliable understanding, understanding into useful action,
                 and action into evidence that can be trusted and replayed.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="#architecture"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-honey px-8 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
-                >
+              <div className="mt-8 rounded-2xl border border-text-on-dark/15 bg-deep-2/60 p-6">
+                <h2 className="text-2xl font-bold text-text-on-dark sm:text-3xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+                  Inspired by the best of the best.
+                </h2>
+                <p className="mt-3 text-text-on-dark/85" style={{ lineHeight: 'var(--leading-body)' }}>
+                  We spotlight exceptional Western Colorado businesses, the people
+                  behind them, and the work that makes their communities stronger.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link
+                    href="/apply"
+                    className="inline-flex h-12 items-center justify-center rounded-full bg-honey px-8 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
+                  >
+                    Apply to be considered for a feature
+                  </Link>
+                  <a
+                    href="https://www.facebook.com/profile.php?id=61594275542163"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
+                  >
+                    Message PING to nominate a business
+                  </a>
+                </div>
+                <p className="mt-4 text-sm text-text-on-dark/70">
+                  Applying covers your own business. The message path is for
+                  nominating a business you admire. Featuring is free to apply
+                  for, and selection is not promised.
+                </p>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <Link href="#architecture" className="font-medium text-text-on-dark/70 underline-offset-4 hover:text-honey hover:underline">
                   Explore the architecture
                 </Link>
-                <Link
-                  href="#ping-social"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
-                >
+                <Link href="#ping-social" className="font-medium text-text-on-dark/70 underline-offset-4 hover:text-honey hover:underline">
                   PING Social
                 </Link>
               </div>
@@ -585,6 +609,7 @@ export default function HomePage() {
       <CTASection
         title="Talk to us about your business."
         subtitle="PING Social helps real businesses put AI to practical use: fewer missed opportunities, less busywork, systems that remember. Currently onboarding Western Colorado home-service businesses."
+        showApplyLink
       />
     </>
   );

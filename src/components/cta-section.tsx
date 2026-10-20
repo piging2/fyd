@@ -8,9 +8,11 @@ import { getTenant } from "@/lib/tenant-config";
 export function CTASection({
   title = "Talk to us about your business.",
   subtitle = "PING Social helps real businesses put AI to practical use: fewer missed opportunities, less busywork, systems that remember.",
+  showApplyLink = false,
 }: {
   title?: React.ReactNode;
   subtitle?: React.ReactNode;
+  showApplyLink?: boolean;
 }) {
   const tenant = getTenant();
   return (
@@ -28,6 +30,11 @@ export function CTASection({
           <Link href="/technology" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "transition-transform duration-150 active:scale-[0.98]")}>
             How PING works
           </Link>
+          {showApplyLink && (
+            <Link href="/apply" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "transition-transform duration-150 active:scale-[0.98]")}>
+              Apply to be considered for a feature
+            </Link>
+          )}
         </div>
       </Container>
     </Section>
