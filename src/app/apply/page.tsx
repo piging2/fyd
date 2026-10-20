@@ -33,7 +33,6 @@ export const metadata: Metadata = {
   },
 };
 
-const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61594275542163";
 
 export default function ApplyPage() {
   return (
