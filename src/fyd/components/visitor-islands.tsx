@@ -26,6 +26,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
   type ReactNode,
@@ -123,6 +124,178 @@ export function VisitorInteractionProvider({
         </div>
       )}
     </VisitorInteractionContext.Provider>
+  );
+}
+
+/**
+ * In-flow object trigger. The server tree renders the identity mark as
+ * children; this island only adds the click that opens the SAME
+ * ObjectOverlay the per-card Explore button opens, via the provider.
+ */
+export function ObjectTriggerIsland({
+  object,
+  title,
+  description,
+  className,
+  children,
+}: {
+  object: PingObject;
+  title: string;
+  description: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const ix = useVisitorInteraction();
+  return (
+    <button
+      type="button"
+      className={className}
+      aria-label={"Open " + title}
+      onClick={() => ix.openObject({ object, title, description })}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * Live website view. Opens an inline dialog in the ObjectOverlay idiom
+ * whose body is exactly one iframe over the /api/live proxy for the site.
+ * Scroll and focus coordination goes through the one FYD dialog
+ * primitive, exactly as VisitorInteractionProvider coordinates the
+ * ObjectOverlay, and the opening scroll position is saved and restored
+ * on close or unmount in the ObjectOverlay idiom.
+ */
+export function LiveSiteViewIsland({
+  siteId,
+  name,
+  websiteHref,
+}: {
+  siteId: string;
+  name: string;
+  websiteHref: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const savedScroll = useRef(0);
+  const close = useCallback(() => setOpen(false), []);
+  useFydDialog(dialogRef, {
+    open,
+    onClose: close,
+    focus: "none",
+    deferTeardown: true,
+  });
+  useEffect(() => {
+    if (!open) return;
+    savedScroll.current = window.scrollY;
+    return () => {
+      window.scrollTo(0, savedScroll.current);
+    };
+  }, [open ]);
+  return (
+    <>
+      <button type="button" className="ve-text-action" onClick={() => setOpen(true)}>
+        View live website
+      </button>
+      {open && (
+        <div ref={dialogRef}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={name}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 100,
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "center",
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Dismiss live website"
+              tabIndex={-1}
+              onClick={close}
+              style={{
+                border: 0,
+                position: "absolute",
+                inset: 0,
+                background: "rgba(0, 0, 0, 0.5)",
+              }}
+            />
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                maxWidth: "900px",
+                height: "90vh",
+                maxHeight: "90vh",
+                overflow: "hidden",
+                background: "#fff",
+                borderRadius: "16px 16px 0 0",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                  padding: "20px 24px",
+                  paddingRight: "72px",
+                }}
+              >
+                <span
+                  style={{
+                    WebkitTextStroke: "1.5px rgba(26, 15, 4, 0.92)",
+                    textShadow: "none",
+                    fontSize: "24px",
+                    fontWeight: 600,
+                  }}
+                >
+                  {name}
+                </span>
+                {typeof websiteHref === "string" && websiteHref.length > 0 && (
+                  <a href={websiteHref} target="_blank" rel="noreferrer">
+                    Open site
+                  </a>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={close}
+                aria-label="Close"
+                data-object-close
+                style={{
+                  position: "absolute",
+                  top: "16px",
+                  right: "16px",
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "50%",
+                  border: "1px solid #e0e0e0",
+                  background: "#fff",
+                  fontSize: "18px",
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <iframe
+                  src={"/api/live/" + encodeURIComponent(siteId)}
+                  sandbox="allow-scripts allow-forms allow-popups"
+                  title={name + " live website"}
+                  style={{ width: "100%", height: "100%", border: 0, display: "block" }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

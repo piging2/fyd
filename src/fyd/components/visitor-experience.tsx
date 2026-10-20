@@ -27,7 +27,11 @@ import {
   CardActionsIsland,
   AskAboutLinkIsland,
   AskFydIsland,
+  ObjectTriggerIsland,
+  LiveSiteViewIsland,
 } from './visitor-islands';
+import { ObjectIdentityMark } from '../presentation/object-identity-mark';
+import { findConfiguredMark } from '../presentation/identity';
 import type { DisplayMedia } from '../media/select';
 import { responsiveImgProps, heroFetchPriority } from '../media/responsive';
 import type { PingObject } from '../../lib/ping/types';
@@ -164,6 +168,8 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
     '--fyd-font-display': ctx.spec.themeTokens.fontDisplay,
     '--fyd-font-body': ctx.spec.themeTokens.fontBody,
   } as CSSProperties;
+  const businessMark = findConfiguredMark(owner.id) ?? (ctx.siteId ? findConfiguredMark(ctx.siteId) : null);
+  const markFor = (o: PingObject, t: string) => ({ id: o.id, name: t, fallbackMark: businessMark ?? undefined });
   return <VisitorInteractionProvider graph={ctx.graph} siteId={ctx.siteId ?? ""} askEnabled={ask}>
     <div className={`ve ${hasMedia ? 've-photographic' : 've-editorial'}`} data-visitor-primary={primary} style={themeVars}>
     <header className="ve-header" style={{order:-1}}>
@@ -181,6 +187,14 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
         {locality && <p className="ve-eyebrow"><MapPin size={14} />{locality}</p>}
         <h1>{name}</h1>
         {summary && <p className="ve-summary">{conciseSource(summary)}</p>}
+        <div className="ve-object-row" data-fyd-object={owner.id}>
+          <ObjectTriggerIsland object={owner} title={name} description={summary ?? ""} className="ve-object-trigger">
+            <ObjectIdentityMark object={markFor(owner, name)} size={72} />
+            <span className="ve-object-open-label">Open {name}</span>
+          </ObjectTriggerIsland>
+          {ctx.siteId && <LiveSiteViewIsland siteId={ctx.siteId} name={name} websiteHref={website.kind === "safe" ? website.href : null} />}
+          <a href={"/o/" + encodeURIComponent(owner.id)} className="ve-text-action">Full object</a>
+        </div>
         <div className="ve-actions">{action}{catalog.length > 0 && <a className="ve-action ve-action-outline" href={`#${catalogId}`}>Explore {catalogId}<ArrowRight size={18} /></a>}{ask && <a className="ve-text-action" href="#ask"><MessageCircle size={18} />Ask a question</a>}</div>
         {summary && <SourceDisclosure object={owner} checkpoint={ctx.projectionCheckpoint}><p>“{summary}”</p></SourceDisclosure>}
       </div>
@@ -194,6 +208,9 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
           const description = read(object, 'description');
           const href = resolveSafeLink(read(object, 'service_href') ?? read(object, 'url'), 'navigate');
           return <article className="ve-card" data-service-id={object.id} key={object.id}>
+            <ObjectTriggerIsland object={object} title={title} description={description ?? ""} className="ve-card-mark-trigger">
+              <ObjectIdentityMark object={markFor(object, title)} size={48} />
+            </ObjectTriggerIsland>
             <span className="ve-card-number">{String(i + 1).padStart(2, '0')}</span>
             <h3>{plan.parents.has(object.id) && <span className="ve-parent-label">{plan.parents.get(object.id)} / </span>}{title}</h3>{description && <p>{description}</p>}
             <CardActionsIsland object={object} title={title} description={description ?? ""} ask={ask} serviceHref={href.kind === 'safe' ? href.href : null} />
@@ -204,7 +221,7 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
     </section>}
     {(locality || locations.length > 0 || serviceArea || action || website.kind === 'safe' || phoneValue || emailValue) && <section className="ve-section ve-contact-grid" id="contact" style={{order:Math.max(rank("Contact"),rank("Locations"))}}>
       {(locality || locations.length > 0 || serviceArea) && <div id="locations"><p className="ve-eyebrow">Where to find them</p><h2>{locations.length > 1 ? 'Locations' : 'Location & service area'}</h2>
-        {(locations.length ? locations.map(o => read(o, 'title')) : [locality]).filter(Boolean).map(label => <p className="ve-location" key={label}><MapPin size={22}/>{label}</p>)}
+        {locations.length ? locations.map(o => { const title = read(o, 'title')!; return <div className="ve-location-object" data-fyd-object={o.id} key={o.id}><ObjectIdentityMark object={markFor(o, title)} size={40} /><ObjectTriggerIsland object={o} title={title} description={read(o, 'description') ?? ""} className="ve-object-trigger"><span>{title}</span></ObjectTriggerIsland></div>; }) : [locality].filter(Boolean).map(label => <p className="ve-location" key={label}><MapPin size={22}/>{label}</p>)}
         {serviceArea && <p>{serviceArea}</p>}
         {ask && <AskAboutLinkIsland title="service in my area" className="ve-text-action">Check whether they serve your area <ArrowUpRight size={16}/></AskAboutLinkIsland>}
         <SourceDisclosure object={locations[0] ?? owner} fields={["title","locality","address"]} checkpoint={ctx.projectionCheckpoint} />
@@ -217,7 +234,7 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
         </div><SourceDisclosure object={owner} fields={["phone","email","website"]} checkpoint={ctx.projectionCheckpoint}/>
       </div>}
     </section>}
-    {!!people.length && <section className="ve-section" style={{order:rank("People")}}><p className="ve-eyebrow">People</p><h2>Meet the team</h2><div className="ve-cards">{people.map(person => <article className="ve-card" key={person.id}><h3>{read(person, 'title')}</h3>{read(person, 'description') && <p>{read(person, 'description')}</p>}<SourceDisclosure object={person} checkpoint={ctx.projectionCheckpoint}/></article>)}</div></section>}
+    {!!people.length && <section className="ve-section" style={{order:rank("People")}}><p className="ve-eyebrow">People</p><h2>Meet the team</h2><div className="ve-cards">{people.map(person => { const title = read(person, 'title')!; const description = read(person, 'description'); return <article className="ve-card" key={person.id}><ObjectTriggerIsland object={person} title={title} description={description ?? ""} className="ve-card-mark-trigger"><ObjectIdentityMark object={markFor(person, title)} size={48} /></ObjectTriggerIsland><h3>{title}</h3>{description && <p>{description}</p>}<SourceDisclosure object={person} checkpoint={ctx.projectionCheckpoint}/></article>; })}</div></section>}
     {ask && <section className="ve-concierge" id="ask" style={{order:rank("AskFYD")}}><div className="ve-concierge-intro"><p className="ve-eyebrow"><MessageCircle size={16}/>Ask FYD</p><h2>{phone.kind === "safe" ? <>A little help,<br/>before you call.</> : <>Your questions,<br/>answered.</>}</h2><p>Ask about services, contact details, or location. Answers use this business’s published information. Sources are there when you want them.</p><noscript><p>Ask FYD requires JavaScript to run. Call or email the business directly instead.</p></noscript></div><div className="ve-concierge-chat"><AskFydIsland pageCheckpoint={ctx.projectionCheckpoint} siteId={ctx.siteId} theme={ctx.spec.themeTokens} prompts={[...(services[0] ? [`Can they help with ${read(services[0], 'title')}?`] : []), 'What services do they offer?', 'How do I contact them?', 'Where are they located?']}/></div></section>}
     <footer className="ve-footer" style={{order:999}}><p>{name}</p><p>Presented by FYD · <a href="#business">Back to top ↑</a></p><details><summary>About this information</summary><p>Website statements and business-provided information are not independently verified. Owner presentation preferences affect what you see. Use “Why this?” for individual sources.</p></details></footer>
     {(action || ask) && <div className="ve-mobile-actions" aria-label="Quick actions">{action}{ask && <a className="ve-action ve-action-outline" href="#ask"><MessageCircle size={18}/>Ask FYD</a>}</div>}
