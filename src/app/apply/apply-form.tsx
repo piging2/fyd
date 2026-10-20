@@ -172,9 +172,7 @@ export function ApplyForm() {
         </ul>
         <div className="mt-6 flex flex-wrap gap-3">
           <a
-            href={FACEBOOK_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/nominate"
             className="inline-flex h-11 items-center justify-center rounded-full bg-honey px-6 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
           >
             Nominate a business for a PING feature.

@@ -74,12 +74,7 @@ export default function ApplyPage() {
             <p>
               The form below is the application path for your own business.
               Know a business that deserves a spotlight instead?{" "}
-              <a
-                href={FACEBOOK_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-honey hover:underline"
-              >
+              <a href="/nominate" className="font-semibold text-honey hover:underline">
                 Nominate a business for a PING feature.
               </a>
               : nominating is how you point us to a business you admire.

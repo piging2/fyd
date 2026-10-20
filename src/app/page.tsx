@@ -188,14 +188,12 @@ export default function HomePage() {
                   PING helps exceptional people and businesses get recognized, work smarter and put technology to practical use. We start by listening, understanding how things really work and finding improvements that make a measurable difference.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <a
-                    href="https://www.facebook.com/profile.php?id=61594275542163"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/nominate"
                     className="inline-flex h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
                   >
                     Nominate a business for a PING feature.
-                  </a>
+                  </Link>
                   <Link
                     href="/apply"
                     className="inline-flex h-12 items-center justify-center rounded-full bg-honey px-8 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
