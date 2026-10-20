@@ -163,24 +163,17 @@ export default function HomePage() {
   return (
     <>
       {/* 01 HERO: the living system moment */}
-      <Section className="bg-deep relative overflow-hidden">
+      <Section size="minor" className="bg-deep relative overflow-hidden">
         <BlueprintGrid />
         <Container className="relative">
-          <p className="mb-6 font-mono text-xs font-bold uppercase tracking-widest text-honey">/live</p>
+          <p className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-honey">/live</p>
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <ScrollReveal>
               <div className="mb-6">
                 <PingWordmark className="scale-125 origin-left" />
               </div>
               <p className="text-lg font-medium text-honey">{tenant.tagline}</p>
-              <h1 className="mt-4 text-4xl font-bold text-text-on-dark sm:text-5xl lg:text-6xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-                Systems that remember,<br />agents you can trust
-              </h1>
-              <p className="mt-6 max-w-xl text-lg text-text-on-dark/90" style={{ lineHeight: 'var(--leading-body)' }}>
-                PING turns information into reliable understanding, understanding into useful action,
-                and action into evidence that can be trusted and replayed.
-              </p>
-              <div className="mt-8 rounded-2xl border border-text-on-dark/15 bg-deep-2/60 p-6">
+              <div className="mt-6 rounded-2xl border border-text-on-dark/15 bg-deep-2/60 p-6">
                 <h2 className="text-2xl font-bold text-text-on-dark sm:text-3xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
                   Inspired by the best of the best.
                 </h2>
@@ -214,6 +207,13 @@ export default function HomePage() {
                   not promised.
                 </p>
               </div>
+              <h1 className="mt-10 text-4xl font-bold text-text-on-dark sm:text-5xl lg:text-6xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+                Systems that remember,<br />agents you can trust
+              </h1>
+              <p className="mt-6 max-w-xl text-lg text-text-on-dark/90" style={{ lineHeight: 'var(--leading-body)' }}>
+                PING turns information into reliable understanding, understanding into useful action,
+                and action into evidence that can be trusted and replayed.
+              </p>
               <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
                 <Link href="#architecture" className="font-medium text-text-on-dark/70 underline-offset-4 hover:text-honey hover:underline">
                   Explore the architecture
