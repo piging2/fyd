@@ -20,10 +20,27 @@ import {
 } from "@/components/architecture";
 import { getTenant } from "@/lib/tenant-config";
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://ping.vercel.app");
+
 export const metadata: Metadata = {
   title: "PING: Continuity infrastructure for AI agents",
   description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve.",
   alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    title: "PING: Continuity infrastructure for AI agents",
+    description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve.",
+    url: siteUrl + "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PING: Continuity infrastructure for AI agents",
+    description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve.",
+  },
 };
 
 /* Eyebrow taxonomy, picked once and used relentlessly:

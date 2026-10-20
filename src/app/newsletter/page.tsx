@@ -1,11 +1,29 @@
 import type { Metadata } from "next";
+import { getTenant } from "@/lib/tenant-config";
 import { Container, Section } from "@/components/section";
 import { NewsletterSignup } from "@/components/newsletter-signup";
+
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://ping.vercel.app");
 
 export const metadata: Metadata = {
   title: "Newsletter",
   description: "Follow the PING build: notes on continuity, agents, business systems, and building in public.",
   alternates: { canonical: "/newsletter" },
+  openGraph: {
+    type: "website",
+    title: "Newsletter",
+    description: "Follow the PING build: notes on continuity, agents, business systems, and building in public.",
+    url: siteUrl + "/newsletter",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Newsletter",
+    description: "Follow the PING build: notes on continuity, agents, business systems, and building in public.",
+  },
 };
 
 export default function NewsletterPage() {

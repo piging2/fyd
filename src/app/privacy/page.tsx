@@ -2,10 +2,27 @@ import type { Metadata } from "next";
 import { Container, Section } from "@/components/section";
 import { getTenant } from "@/lib/tenant-config";
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://ping.vercel.app");
+
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "How PING handles your information.",
   alternates: { canonical: "/privacy" },
+  openGraph: {
+    type: "website",
+    title: "Privacy Policy",
+    description: "How PING handles your information.",
+    url: siteUrl + "/privacy",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy",
+    description: "How PING handles your information.",
+  },
 };
 
 export default function PrivacyPage() {

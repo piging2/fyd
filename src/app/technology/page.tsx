@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTenant } from "@/lib/tenant-config";
 import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
@@ -13,10 +14,27 @@ import {
   MultiRuntime,
 } from "@/components/architecture";
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://ping.vercel.app");
+
 export const metadata: Metadata = {
   title: "Technology",
   description: "How PING actually works: system topology, TenantOS, events, knowledge graph, business graph, missions, capability boundaries, workers, evidence, witness, lineage, replay, and multi-runtime execution.",
   alternates: { canonical: "/technology" },
+  openGraph: {
+    type: "website",
+    title: "Technology",
+    description: "How PING actually works: system topology, TenantOS, events, knowledge graph, business graph, missions, capability boundaries, workers, evidence, witness, lineage, replay, and multi-runtime execution.",
+    url: siteUrl + "/technology",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Technology",
+    description: "How PING actually works: system topology, TenantOS, events, knowledge graph, business graph, missions, capability boundaries, workers, evidence, witness, lineage, replay, and multi-runtime execution.",
+  },
 };
 
 const DEEP_DIVES = [

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTenant } from "@/lib/tenant-config";
 import Link from "next/link";
 import { Container, Section } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
@@ -9,11 +10,28 @@ import {
   type ProductStatus,
 } from "@/lib/products";
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://ping.vercel.app");
+
 export const metadata: Metadata = {
   title: "Products",
   description:
     "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware.",
   alternates: { canonical: "/products" },
+  openGraph: {
+    type: "website",
+    title: "Products",
+    description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware.",
+    url: siteUrl + "/products",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Products",
+    description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware.",
+  },
 };
 
 const STATUS_ORDER: ProductStatus[] = ["available", "in-development", "future"];
