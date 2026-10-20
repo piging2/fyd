@@ -54,7 +54,7 @@ export function ApplyForm() {
   function validate(): Errors {
     const e: Errors = {};
     if (businessName.trim().length < 2) e.businessName = "Please give the business name.";
-    if (collar !== "blue" && collar !== "white") e.collar = "Choose blue collar or white collar.";
+    if (collar !== "blue" && collar !== "white") e.collar = "Choose skilled trades or knowledge work.";
     if (trade.trim().length < 2) e.trade = "Please give the trade or profession.";
     if (contactName.trim().length < 2) e.contactName = "Please give the owner or contact name.";
     if (serviceArea.trim().length < 5) e.serviceArea = "Please describe the service area.";
@@ -132,8 +132,8 @@ export function ApplyForm() {
         <h2 className="text-2xl font-bold text-text">Thank you. Your application is in.</h2>
         <p className="mt-3 text-text-muted" style={{ lineHeight: "var(--leading-body)" }}>
           Applications are reviewed by PING. Selection is not promised. Features
-          appear in the Top Ranked Blue Collar Businesses of Western Colorado and
-          Top Ranked White Collar Businesses of Western Colorado groups and on
+          appear in the Top Ranked Skilled Tradespeople of Western Colorado and
+          Top Ranked Knowledge Workers of Western Colorado groups and on
           PING&apos;s pages.
         </p>
         {replayed && (
@@ -231,7 +231,7 @@ export function ApplyForm() {
                 onChange={(e) => setCollar(e.target.value)}
                 className="focus:outline-none focus:ring-2 focus:ring-honey/60"
               />
-              Blue collar
+              Skilled tradespeople
             </label>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-text">
               <input
@@ -242,7 +242,7 @@ export function ApplyForm() {
                 onChange={(e) => setCollar(e.target.value)}
                 className="focus:outline-none focus:ring-2 focus:ring-honey/60"
               />
-              White collar
+              Knowledge workers
             </label>
           </div>
           {errors.collar && (

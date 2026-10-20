@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   }
   const collarRaw = str(body, "collar");
   if (collarRaw !== "blue" && collarRaw !== "white") {
-    return invalid("collar", "Choose blue collar or white collar.");
+    return invalid("collar", "Choose skilled trades or knowledge work.");
   }
   const collar = collarRaw as FeaturedCollar;
   const trade = str(body, "trade");

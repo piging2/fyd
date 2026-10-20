@@ -12,7 +12,7 @@ const siteUrl =
 
 const TITLE = "Apply to be considered for a feature";
 const DESCRIPTION =
-  "Apply to be considered for a PING feature: exceptional blue collar and white collar businesses across Western Colorado, spotlighted in the Top Ranked groups.";
+  "Apply to be considered for a PING feature: exceptional skilled trades and knowledge worker businesses across Western Colorado, in the Top Ranked groups.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -59,9 +59,9 @@ export default function ApplyPage() {
           </p>
           <div className="mt-6 max-w-2xl space-y-4 text-text-on-dark/80">
             <p>
-              Being featured means a spotlight in the Top Ranked Blue Collar
-              Businesses of Western Colorado or the Top Ranked White Collar
-              Businesses of Western Colorado group, and on PING&apos;s pages.
+              Being featured means a spotlight in the Top Ranked Skilled Tradespeople
+              of Western Colorado or the Top Ranked Knowledge Workers of Western
+              Colorado group, and on PING&apos;s pages.
               It is recognition for businesses whose work speaks for itself.
             </p>
             <p>
