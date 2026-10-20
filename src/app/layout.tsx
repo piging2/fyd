@@ -34,11 +34,20 @@ export const metadata: Metadata = {
     title: seo.title,
     description: seo.description,
     url: siteUrl,
+    images: [
+      {
+        url: "/brand/og-card.png",
+        width: 1200,
+        height: 630,
+        alt: "PING Social",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: seo.title,
     description: seo.description,
+    images: ["/brand/og-card.png"],
   },
   alternates: { canonical: siteUrl },
   icons: { icon: "/brand/favicon.svg", apple: "/brand/favicon.svg" },
@@ -66,6 +75,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   // x-pathname header set in middleware.
   const pathname = (await headers()).get("x-pathname") ?? "";
   const chromeless =
+    pathname === "/mission-control" ||
     pathname === "/o" ||
     pathname.startsWith("/o/") ||
     pathname.startsWith("/sites/") ||
