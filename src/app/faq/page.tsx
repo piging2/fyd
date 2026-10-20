@@ -19,9 +19,11 @@ export const metadata: Metadata = {
     title: "FAQ",
     description: "Common questions about PING, PING Social, continuity, and the TenantOS direction.",
     url: siteUrl + "/faq",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
+    images: ["/brand/og-card.png"],
     title: "FAQ",
     description: "Common questions about PING, PING Social, continuity, and the TenantOS direction.",
   },

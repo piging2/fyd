@@ -19,9 +19,11 @@ export const metadata: Metadata = {
     title: "About",
     description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses.",
     url: siteUrl + "/about",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
+    images: ["/brand/og-card.png"],
     title: "About",
     description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses.",
   },

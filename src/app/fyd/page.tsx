@@ -31,9 +31,11 @@ export const metadata: Metadata = {
     title: "FYD: your business, understood",
     description: "FYD learns your business as connected things, builds your digital presence from that understanding, answers customers from evidence, and keeps you in control. Try it: paste your URL.",
     url: siteUrl + "/fyd",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
+    images: ["/brand/og-card.png"],
     title: "FYD: your business, understood",
     description: "FYD learns your business as connected things, builds your digital presence from that understanding, answers customers from evidence, and keeps you in control. Try it: paste your URL.",
   },
