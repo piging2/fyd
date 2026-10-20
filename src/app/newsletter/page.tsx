@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Container, Section, SectionHeading } from "@/components/section";
+import { Container, Section } from "@/components/section";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 
 export const metadata: Metadata = {
@@ -13,11 +13,11 @@ export default function NewsletterPage() {
     <>
       <Section className="bg-deep">
         <Container className="max-w-4xl">
-          <SectionHeading
-            eyebrow={<span className="text-honey">Newsletter</span>}
-            title={<span className="text-text-on-dark">Follow the build</span>}
-            description={<span className="text-text-on-dark/90">Notes on continuity, agents, business systems, and building PING. One email when there is something worth saying. No spam, no fluff.</span>}
-          />
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-accent" style={{ letterSpacing: '0.12em' }}><span className="text-honey">Newsletter</span></p>
+            <h1 className="mt-4 font-display text-4xl font-bold text-primary sm:text-5xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}><span className="text-text-on-dark">Follow the build</span></h1>
+            <p className="mt-5 text-lg sm:text-xl text-text-muted" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}><span className="text-text-on-dark/90">Notes on continuity, agents, business systems, and building PING. One email when there is something worth saying. No spam, no fluff.</span></p>
+          </div>
         </Container>
       </Section>
 

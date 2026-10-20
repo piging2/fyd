@@ -37,11 +37,11 @@ export default function TechnologyPage() {
       {/* Header */}
       <Section className="bg-deep">
         <Container className="max-w-4xl">
-          <SectionHeading
-            eyebrow={<span className="text-honey">Technology</span>}
-            title={<span className="text-text-on-dark">How PING actually works</span>}
-            description={<span className="text-text-on-dark/90">No hype, no vaporware. Each topic is labeled honestly: documented, in development, or direction. Diagrams are architectural models, not marketing illustrations.</span>}
-          />
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-accent" style={{ letterSpacing: '0.12em' }}><span className="text-honey">Technology</span></p>
+            <h1 className="mt-4 font-display text-4xl font-bold text-primary sm:text-5xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}><span className="text-text-on-dark">How PING actually works</span></h1>
+            <p className="mt-5 text-lg sm:text-xl text-text-muted" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}><span className="text-text-on-dark/90">No hype, no vaporware. Each topic is labeled honestly: documented, in development, or direction. Diagrams are architectural models, not marketing illustrations.</span></p>
+          </div>
         </Container>
       </Section>
 
