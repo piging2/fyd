@@ -181,7 +181,7 @@ export function QuoteForm({
           onChange={(e) => setContact(e.target.value)}
           required
           autoComplete="email"
-          placeholder="you@example.com or +1 555 010 1234"
+          placeholder="you@example.com or your phone number"
           style={{ padding: 8 }}
         />
       </label>
