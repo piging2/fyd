@@ -24,11 +24,30 @@ export const ISOLATED_TENANT = "quote-journey-test";
  * The only site ids this test-plane route admits inquiries for. Override
  * with FYD_QUOTE_JOURNEY_SITES (comma-separated). Anything else -> 403
  * site_not_enabled before any intake work.
+ *
+ * coppersmith-plumbing is admitted as a DEMO tenant (2026-10-18, CEO
+ * directive P2) so its customer journey can be proven end to end with
+ * synthetic data. Admission changes nothing about isolation: its
+ * inquiries land in the same isolated journal + tenant-private store,
+ * under its own tenant scope, with no external sends and no connection
+ * to the production journal.
  */
+export const DEMO_TENANT_COPPERSMITH = "coppersmith-plumbing";
+
+/**
+ * PING's own tenant site (2026-10-20, PING-WEBSITE-IMPROVE F9) is
+ * admitted the same way Coppersmith is, so a prospect on /sites/ping-fyd
+ * can leave their details. Admission changes nothing about isolation:
+ * its inquiries land in the same isolated journal + tenant-private
+ * store, under its own tenant scope, with no external sends and no
+ * connection to the production journal.
+ */
+export const PING_FYD_TENANT = "ping-fyd";
+
 export function isolatedSiteAllowlist(): string[] {
   const raw = process.env.FYD_QUOTE_JOURNEY_SITES;
   if (raw) return raw.split(",").map((s) => s.trim()).filter(Boolean);
-  return [ISOLATED_TENANT];
+  return [ISOLATED_TENANT, DEMO_TENANT_COPPERSMITH, PING_FYD_TENANT];
 }
 
 /** Tenant-private inquiry store base (passed as privateDir to the intake). */
