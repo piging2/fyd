@@ -673,7 +673,7 @@ export default function HomePage() {
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey">/follow · newsletter</p>
           <h2 className="mt-3 text-2xl font-bold text-text-on-dark sm:text-3xl">Follow the build</h2>
           <p className="mt-3 text-text-on-dark/80">
-            Notes on continuity, agents, and building PING. One email when there is something worth saying.
+            Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.
           </p>
           <div className="mt-6 text-left">
             <NewsletterSignup />

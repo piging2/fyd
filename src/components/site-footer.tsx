@@ -76,7 +76,7 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-text-on-dark/8 py-6 text-center text-xs text-text-on-dark">
-        © {new Date().getFullYear()} {tenant.siteName}. {tenant.provenance.note}
+        © {new Date().getFullYear()} {tenant.siteName}.
       </div>
     </footer>
   );

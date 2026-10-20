@@ -22,18 +22,18 @@ const siteUrl =
 
 export const metadata: Metadata = {
   title: "Technology",
-  description: "How PING actually works: system topology, TenantOS, events, knowledge graph, business graph, missions, capability boundaries, workers, evidence, witness, lineage, replay, and multi-runtime execution.",
+  description: "How PING actually works: the continuity, evidence, and agent infrastructure that turns business information into reliable understanding and useful action.",
   alternates: { canonical: "/technology" },
   openGraph: {
     type: "website",
     title: "Technology",
-    description: "How PING actually works: system topology, TenantOS, events, knowledge graph, business graph, missions, capability boundaries, workers, evidence, witness, lineage, replay, and multi-runtime execution.",
+    description: "How PING actually works: the continuity, evidence, and agent infrastructure that turns business information into reliable understanding and useful action.",
     url: siteUrl + "/technology",
   },
   twitter: {
     card: "summary_large_image",
     title: "Technology",
-    description: "How PING actually works: system topology, TenantOS, events, knowledge graph, business graph, missions, capability boundaries, workers, evidence, witness, lineage, replay, and multi-runtime execution.",
+    description: "How PING actually works: the continuity, evidence, and agent infrastructure that turns business information into reliable understanding and useful action.",
   },
 };
 
@@ -69,7 +69,7 @@ export default function TechnologyPage() {
           <SectionHeading
             eyebrow="Architecture overview"
             title="System topology"
-            description="Five layers. Each has one job. Upper layers depend on lower layers, never the reverse."
+            description="Five layers. How the parts of PING fit together."
           />
           <div className="mt-10">
             <SystemTopology />

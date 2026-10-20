@@ -11,18 +11,18 @@ const siteUrl =
 
 export const metadata: Metadata = {
   title: "Newsletter",
-  description: "Follow the PING build: notes on continuity, agents, business systems, and building in public.",
+  description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.",
   alternates: { canonical: "/newsletter" },
   openGraph: {
     type: "website",
     title: "Newsletter",
-    description: "Follow the PING build: notes on continuity, agents, business systems, and building in public.",
+    description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.",
     url: siteUrl + "/newsletter",
   },
   twitter: {
     card: "summary_large_image",
     title: "Newsletter",
-    description: "Follow the PING build: notes on continuity, agents, business systems, and building in public.",
+    description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.",
   },
 };
 
@@ -34,7 +34,7 @@ export default function NewsletterPage() {
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.12em] text-accent" style={{ letterSpacing: '0.12em' }}><span className="text-honey">Newsletter</span></p>
             <h1 className="mt-4 font-display text-4xl font-bold text-primary sm:text-5xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}><span className="text-text-on-dark">Follow the build</span></h1>
-            <p className="mt-5 text-lg sm:text-xl text-text-muted" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}><span className="text-text-on-dark/90">Notes on continuity, agents, business systems, and building PING. One email when there is something worth saying. No spam, no fluff.</span></p>
+            <p className="mt-5 text-lg sm:text-xl text-text-muted" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}><span className="text-text-on-dark/90">Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.</span></p>
           </div>
         </Container>
       </Section>

@@ -10,18 +10,18 @@ const siteUrl =
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "How PING handles your information.",
+  description: "How PING collects and uses your information when you subscribe or contact us, sends the newsletter you asked for, and never sells your information.",
   alternates: { canonical: "/privacy" },
   openGraph: {
     type: "website",
     title: "Privacy Policy",
-    description: "How PING handles your information.",
+    description: "How PING collects and uses your information when you subscribe or contact us, sends the newsletter you asked for, and never sells your information.",
     url: siteUrl + "/privacy",
   },
   twitter: {
     card: "summary_large_image",
     title: "Privacy Policy",
-    description: "How PING handles your information.",
+    description: "How PING collects and uses your information when you subscribe or contact us, sends the newsletter you asked for, and never sells your information.",
   },
 };
 
