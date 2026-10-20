@@ -177,7 +177,7 @@ export function ApplyForm() {
             rel="noopener noreferrer"
             className="inline-flex h-11 items-center justify-center rounded-full bg-honey px-6 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
           >
-            Message PING to nominate a business
+            Nominate a business for a PING feature.
           </a>
           <a
             href="/"

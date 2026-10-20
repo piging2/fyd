@@ -78,7 +78,7 @@ export default function ApplyPage() {
                 rel="noopener noreferrer"
                 className="font-semibold text-honey hover:underline"
               >
-                Message PING to nominate a business
+                Nominate a business for a PING feature.
               </a>
               : nominating is how you point us to a business you admire.
             </p>

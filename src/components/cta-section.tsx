@@ -32,7 +32,7 @@ export function CTASection({
           </Link>
           {showApplyLink && (
             <Link href="/apply" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "transition-transform duration-150 active:scale-[0.98]")}>
-              Apply to be considered for a feature
+              Apply to be considered for a feature.
             </Link>
           )}
         </div>

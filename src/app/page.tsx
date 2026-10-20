@@ -166,29 +166,35 @@ export default function HomePage() {
                   Inspired by the best of the best.
                 </h2>
                 <p className="mt-3 text-text-on-dark/85" style={{ lineHeight: 'var(--leading-body)' }}>
-                  We spotlight exceptional Western Colorado businesses, the people
-                  behind them, and the work that makes their communities stronger.
+                  PING helps exceptional people and businesses get recognized, work smarter and put technology to practical use. We start by listening, understanding how things really work and finding improvements that make a measurable difference.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <Link
-                    href="/apply"
-                    className="inline-flex h-12 items-center justify-center rounded-full bg-honey px-8 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
-                  >
-                    Apply to be considered for a feature
-                  </Link>
                   <a
                     href="https://www.facebook.com/profile.php?id=61594275542163"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
                   >
-                    Message PING to nominate a business
+                    Nominate a business for a PING feature.
                   </a>
+                  <Link
+                    href="/apply"
+                    className="inline-flex h-12 items-center justify-center rounded-full bg-honey px-8 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
+                  >
+                    Apply to be considered for a feature.
+                  </Link>
+                  <Link
+                    href="/assessment"
+                    className="inline-flex h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
+                  >
+                    Explore a practical technology and operations assessment.
+                  </Link>
                 </div>
                 <p className="mt-4 text-sm text-text-on-dark/70">
-                  Applying covers your own business. The message path is for
-                  nominating a business you admire. Featuring is free to apply
-                  for, and selection is not promised.
+                  Applying covers your own business. Nominating is how you point
+                  us to a business you admire: message PING on Facebook and tell
+                  us its name. Featuring is free to apply for, and selection is
+                  not promised.
                 </p>
               </div>
               <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
@@ -213,6 +219,62 @@ export default function HomePage() {
 
       {/* Portal margin: PING circles inhabit unused peripheral space only. Geometry, not breakpoints, decides whether a slot is honest. */}
       <PortalHost portals={portalProjections} />
+
+      {/* 01b OFFERS AND PATHS: the offer architecture, compact and honest */}
+      <Section size="minor" className="bg-surface-2">
+        <Container className="max-w-5xl">
+          <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey">/offers</p>
+          <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+            What PING offers
+          </h2>
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Business Spotlight</h3>
+              <p className="mt-2 text-sm text-text-muted">Exceptional Western Colorado businesses, featured in the Top Ranked groups and on PING&apos;s pages. Free to apply.</p>
+              <Link href="/apply" className="mt-3 inline-block font-medium text-honey hover:underline">Apply to be considered for a feature.</Link>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Practical technology and operations assessment</h3>
+              <p className="mt-2 text-sm text-text-muted">A scoped introductory assessment: what is wasting time or money, the root cause, and what would genuinely improve it.</p>
+              <Link href="/assessment" className="mt-3 inline-block font-medium text-honey hover:underline">Explore a practical technology and operations assessment.</Link>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Digital Concierge and business websites</h3>
+              <p className="mt-2 text-sm text-text-muted">An always-on front desk for your business, and a website built from your business understanding. Delivered today as bespoke PING Social engagements.</p>
+              <Link href="/products" className="mt-3 inline-block font-medium text-honey hover:underline">See it in Products</Link>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Operational Memory and Automation</h3>
+              <p className="mt-2 text-sm text-text-muted">Systems that remember how your business works and automate the repetitive parts. In development, applied incrementally through engagements.</p>
+              <Link href="/products" className="mt-3 inline-block font-medium text-honey hover:underline">See it in Products</Link>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Ongoing Improvement partnership</h3>
+              <p className="mt-2 text-sm text-text-muted">A partnership posture, not a packaged product: keep improving what is working, and measure the difference over time.</p>
+              <Link href="/contact" className="mt-3 inline-block font-medium text-honey hover:underline">Start a conversation</Link>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">The PING Platform</h3>
+              <p className="mt-2 text-sm text-text-muted">The intelligence system underneath everything. Its ambitions are labelled as ambitions: documented, in development, or direction.</p>
+              <Link href="/technology" className="mt-3 inline-block font-medium text-honey hover:underline">Read the technology</Link>
+            </div>
+          </div>
+          <div className="mt-10">
+            <h3 className="text-lg font-bold text-text">Start where you are</h3>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link href="/apply" className="inline-flex min-h-[44px] items-center rounded-full border border-border px-5 font-medium text-text transition-colors hover:bg-surface">
+                Local businesses and tradespeople
+              </Link>
+              <Link href="/apply" className="inline-flex min-h-[44px] items-center rounded-full border border-border px-5 font-medium text-text transition-colors hover:bg-surface">
+                Professional firms and teams
+              </Link>
+              <Link href="/technology" className="inline-flex min-h-[44px] items-center rounded-full border border-border px-5 font-medium text-text transition-colors hover:bg-surface">
+                Technology partners and developers
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </Section>
 
       {/* 02 THE CONTINUITY PROBLEM, compressed */}
       <div id="problem"><Section size="minor">
