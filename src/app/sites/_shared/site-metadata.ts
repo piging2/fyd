@@ -21,6 +21,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { getSiteBundle } from "@/fyd/media/site-bundle";
+import { findConfiguredMark } from "@/fyd/presentation/identity";
 import {
   ownerAssertionsFromGraph,
   resolveBoundFieldVerified,
@@ -135,22 +136,43 @@ export async function generateSiteMetadata(siteId: string): Promise<Metadata> {
   } catch {
     canonical = route;
   }
+  // The tenant's own reviewed presentation mark (the same asset the
+  // visible header renders) doubles as the page's icon and social-card
+  // image, so browser chrome and link previews identify the business,
+  // not the platform. Resolved from the shared mark registry by site
+  // id; a tenant with no reviewed mark simply gets neither, never a
+  // platform default.
+  const mark = findConfiguredMark(siteId);
   return {
     // Absolute: overrides the root layout's "%s · PING" title template so
     // the business page's <title> names the business, never PING.
     title: { absolute: name },
     description,
+    ...(mark ? { icons: { icon: mark.src } } : {}),
     openGraph: {
       type: "website",
       siteName: name,
       title: name,
       description,
       url: canonical,
+      ...(mark
+        ? {
+            images: [
+              {
+                url: mark.src,
+                width: mark.width,
+                height: mark.height,
+                alt: name,
+              },
+            ],
+          }
+        : {}),
     },
     twitter: {
       card: "summary",
       title: name,
       description,
+      ...(mark ? { images: [mark.src] } : {}),
     },
     alternates: { canonical },
     // Honest, labeled generator attribution: FYD Social generated this
