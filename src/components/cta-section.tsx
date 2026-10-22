@@ -2,7 +2,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Container, Section } from "@/components/section";
-import { getTenant } from "@/lib/tenant-config";
+import { getTenant, getTenantPhoneHref } from "@/lib/tenant-config";
 
 /** Reusable call-to-action: drives to contact and technology. */
 export function CTASection({
@@ -15,6 +15,7 @@ export function CTASection({
   showApplyLink?: boolean;
 }) {
   const tenant = getTenant();
+  const phoneHref = getTenantPhoneHref();
   return (
     <Section className="relative bg-surface-2">
       <div className="absolute inset-0 bg-gradient-to-br from-surface-2 via-surface to-surface-muted opacity-100" aria-hidden="true" />
@@ -27,6 +28,11 @@ export function CTASection({
           <Link href="/contact" className={cn(buttonVariants({ variant: "primary", size: "lg" }), "transition-transform duration-150 active:scale-[0.98]")}>
             Contact {tenant.operator.business}
           </Link>
+          {phoneHref && tenant.contact.phone && (
+            <a href={phoneHref} className={cn(buttonVariants({ variant: "outline", size: "lg" }), "transition-transform duration-150 active:scale-[0.98]")}>
+              Call {tenant.contact.phone}
+            </a>
+          )}
           <Link href="/technology" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "transition-transform duration-150 active:scale-[0.98]")}>
             How PING works
           </Link>
