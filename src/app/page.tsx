@@ -183,19 +183,19 @@ export default function HomePage() {
                 <div className="mt-5 flex flex-wrap gap-3">
                   <Link
                     href="/nominate"
-                    className="inline-flex h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
+                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 py-2 text-center font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
                   >
                     Nominate a business for a PING feature.
                   </Link>
                   <Link
                     href="/apply"
-                    className="inline-flex h-12 items-center justify-center rounded-full bg-honey px-8 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
+                    className="inline-flex min-h-12 items-center justify-center rounded-full bg-honey px-8 py-2 text-center font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
                   >
                     Apply to be considered for a feature.
                   </Link>
                   <Link
                     href="/assessment"
-                    className="inline-flex h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
+                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 py-2 text-center font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
                   >
                     Explore a practical technology and operations assessment.
                   </Link>
