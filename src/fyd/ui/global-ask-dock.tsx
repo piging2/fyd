@@ -16,8 +16,8 @@ import { ObjectIdentityMark } from "../presentation/object-identity-mark";
  *
  * Q&A pattern harvested from src/fyd/components/ask-fyd-widget.tsx
  * (states, refusal copy, citation disclosure, 44px targets, 320px-safe),
- * re-skinned for the PING homepage tokens. Posts to POST /api/fyd/ask
- * with { siteId, objectId, question, mode: "visitor" }: evidence-bounded,
+ * re-skinned for the PING homepage tokens. Posts through the canonical
+ * client (@/fyd/ask/ask-client) to POST /api/fyd/ask/[siteId]: evidence-bounded,
  * anonymous, public objects only. Fail closed: transport or server failure
  * never invents an answer.
  */
@@ -25,13 +25,16 @@ import { ObjectIdentityMark } from "../presentation/object-identity-mark";
 import * as React from "react";
 import { MessageCircleQuestion, X } from "lucide-react";
 import type { AskFydCitation } from "@/fyd/ask/visitor-answer";
+import { askFydQuestion } from "@/fyd/ask/ask-client";
 import { cn } from "@/lib/utils";
 
 export interface AskDockContext {
   /** Tenant for the trusted-path Ask route (/api/fyd/ask/[siteId]). */
   siteId: string;
-  /** The circle's PING object id, sent as the question's object scope. */
-  objectId: string;
+  /** Graph object scope, when the context is a sub-object. A business
+   * (tenant) context omits it: the slug is not a graph object id, and
+   * the pipeline defaults an object-less ask to the business object. */
+  objectId?: string;
   name: string;
 }
 
@@ -43,14 +46,6 @@ interface GlobalAskDockProps {
 }
 
 type AskStatus = "idle" | "loading" | "answered" | "error";
-
-interface AskApiResponse {
-  ok: boolean;
-  answer?: string;
-  refusal?: boolean;
-  citations?: AskFydCitation[];
-  error?: string;
-}
 
 const NO_EVIDENCE_COPY = "I don't have evidence for that yet.";
 
@@ -76,7 +71,7 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
 
   // A new context resets the conversation: answers belong to the identity
   // they were asked about, never carried across identities.
-  const contextKey = context ? `${context.siteId}:${context.objectId}` : null;
+  const contextKey = context ? `${context.siteId}:${context.objectId ?? ""}` : null;
   React.useEffect(() => {
     // A new identity invalidates any in-flight answer: abort the network
     // request and bump the request id so a late response is discarded.
@@ -138,26 +133,21 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
     try {
       // Trusted path: the tenant comes from the route path, the object
       // scope from the body. Evidence-bounded, visitor-safe, no grants.
-      const res = await fetch("/api/fyd/ask/" + encodeURIComponent(context.siteId), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          question: q,
-          objectId: askedObjectId,
-          mode: "visitor",
-        }),
+      const data = await askFydQuestion({
+        siteId: context.siteId,
+        objectId: askedObjectId,
+        question: q,
+        mode: "visitor",
         signal: controller.signal,
       });
-      let data: AskApiResponse | null = null;
-      try {
-        data = (await res.json()) as AskApiResponse;
-      } catch {
-        data = null;
-      }
       if (!stillCurrent()) return;
-      if (!res.ok || !data || !data.ok) {
+      if (!data.ok) {
         setStatus("error");
-        setError(data?.error ?? "Ask FYD could not answer right now. Please try again.");
+        setError(
+          data.transportError
+            ? "Could not reach Ask FYD. Check your connection and try again."
+            : (data.error ?? "Ask FYD could not answer right now. Please try again."),
+        );
         return;
       }
       setAnswer(data.answer ?? "");
@@ -228,7 +218,7 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
             <p className="mt-1 text-xs text-accent/70" aria-live="polite">
               {context ? (
                 <>
-                  <ObjectIdentityMark object={{ id: context.objectId, name: context.name }} size={24} decorative className="inline-block align-middle mr-1" />
+                  <ObjectIdentityMark object={{ id: context.objectId ?? context.siteId, name: context.name }} size={24} decorative className="inline-block align-middle mr-1" />
                   Asking about <strong className="text-accent">{context.name}</strong>
                 </>
               ) : (

@@ -8,7 +8,7 @@ import { PingWordmark } from "@/components/ping-wordmark";
 import { BlueprintGrid } from "@/components/blueprint-grid";
 import { MaturityLabel, type Maturity } from "@/components/maturity-label";
 import { buildPortalProjection, HOMEPAGE_CIRCLE_SITE_IDS } from "@/fyd/preview/pipeline";
-import { PortalHost } from "@/fyd/ui/portal-host";
+import { HomeCircles, type HomePortal } from "@/fyd/ui/home-circles";
 import {
   KnowledgeLoop,
   BusinessGraph,
@@ -159,7 +159,7 @@ const CHANGELOG = [
 
 export default function HomePage() {
   const tenant = getTenant();
-  const portalProjections = HOMEPAGE_CIRCLE_SITE_IDS.flatMap((id) => { const pr = buildPortalProjection(id); return pr ? [pr] : []; });
+  const homePortals: HomePortal[] = HOMEPAGE_CIRCLE_SITE_IDS.flatMap((id) => { const pr = buildPortalProjection(id); return pr ? [{ siteId: id, projection: pr }] : []; });
   return (
     <>
       {/* 01 HERO: the living system moment */}
@@ -235,7 +235,7 @@ export default function HomePage() {
       </Section>
 
       {/* Portal margin: PING circles inhabit unused peripheral space only. Geometry, not breakpoints, decides whether a slot is honest. */}
-      <PortalHost portals={portalProjections} />
+      <HomeCircles portals={homePortals} />
 
       {/* 01b OFFERS AND PATHS: the offer architecture, compact and honest */}
       <Section size="minor" className="bg-surface-2">
