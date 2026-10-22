@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container, Section } from "@/components/section";
 import { getAllSlugs, getPost, renderMarkdown } from "@/lib/blog";
+import { SocialsHub } from "@/components/socials-hub";
 
 export async function generateStaticParams() {
   return getAllSlugs().map((slug) => ({ slug }));
@@ -71,6 +72,10 @@ export default async function BlogPostPage({
       <Section>
         <Container className="max-w-4xl">
           <article dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }} />
+
+          <div className="mt-12">
+            <SocialsHub />
+          </div>
 
           <div className="mt-12 pt-8 border-t border-border-soft">
             <h3 className="text-xl font-bold text-text mb-4">Questions about PING?</h3>
