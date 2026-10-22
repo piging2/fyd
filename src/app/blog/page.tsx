@@ -2,10 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { getAllPosts } from "@/lib/blog";
+import { episodeVideos, featuredFilm, shortVideos } from "@/lib/longping-media";
+import { VideoCard } from "@/components/video-card";
+import { SocialsHub } from "@/components/socials-hub";
 
 export const metadata: Metadata = {
   title: "Blog",
-  description: "PING build notes: architecture, implementation, and the reasoning behind both.",
+  description:
+    "PING build notes and The Long Ping on film: architecture, implementation, the reasoning behind both, and every episode with its Shorts, transcripts, and listening links in one place.",
   alternates: { canonical: "/blog" },
 };
 
@@ -35,6 +39,36 @@ export default function BlogPage() {
               </span>
             }
           />
+        </Container>
+      </Section>
+
+      <Section size="minor" className="bg-surface-muted/40">
+        <Container>
+          <SectionHeading
+            eyebrow={<span className="text-honey">Watch</span>}
+            title="The Long Ping, on film"
+            description="Every episode is a full-length film on YouTube, an audio edition on Spotify, and a written transcript series on Substack. Start with the newest film, then take the Shorts as trailers for the arguments."
+          />
+
+          <div className="mt-10">
+            <VideoCard video={featuredFilm} large />
+          </div>
+
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
+            {episodeVideos.map((video) => (
+              <VideoCard key={video.id} video={video} />
+            ))}
+          </div>
+
+          <h3 className="mt-12 text-xl font-bold text-text">The Shorts</h3>
+          <p className="mt-1 text-text-muted">
+            Three short cuts from The Grid Problem, each a complete story on its own.
+          </p>
+          <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {shortVideos.map((video) => (
+              <VideoCard key={video.id} video={video} />
+            ))}
+          </div>
         </Container>
       </Section>
 
@@ -71,6 +105,10 @@ export default function BlogPage() {
                 </Link>
               </article>
             ))}
+          </div>
+
+          <div className="mt-16">
+            <SocialsHub />
           </div>
         </Container>
       </Section>
