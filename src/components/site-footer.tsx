@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { getTenant } from "@/lib/tenant-config";
+import { getTenant, getTenantPhoneHref } from "@/lib/tenant-config";
 import { getNavigation } from "@/lib/navigation";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
 export function SiteFooter() {
   const tenant = getTenant();
+  const phoneHref = getTenantPhoneHref();
   const navigation = getNavigation();
   return (
     <footer className="border-t border-border/60 bg-deep text-text-on-dark">
@@ -57,6 +58,13 @@ export function SiteFooter() {
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-wide text-text-on-dark">Connect</h3>
           <ul className="mt-3 space-y-3 text-sm">
+            {phoneHref && tenant.contact.phone && (
+              <li>
+                <a href={phoneHref} className="inline-block min-h-[44px] py-2 text-text-on-dark hover:text-honey">
+                  Call {tenant.contact.phone}
+                </a>
+              </li>
+            )}
             {tenant.contact.facebook && (
               <li>
                 <a href={tenant.contact.facebook} target="_blank" rel="noopener noreferrer" className="inline-block min-h-[44px] py-2 text-text-on-dark hover:text-honey">
