@@ -7,6 +7,8 @@
  * hamburger menu ("On this page") so only one sticky bar renders on phones.
  * Desktop: an inline wrapping link row, current section marked with
  * aria-current and a visible indicator.
+ * Sticky offset: docks at top-[81px], directly beneath the 81 px site header,
+ * so the two sticky bars never cover each other while scrolling.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -61,10 +63,10 @@ export function FydNav() {
   return (
     <nav
       aria-label="FYD product"
-      className="sticky top-0 z-50 hidden border-b border-text-on-dark/10 bg-deep/95 text-text-on-dark backdrop-blur md:block"
+      className="sticky top-[81px] z-40 hidden border-b border-text-on-dark/10 bg-deep/95 text-text-on-dark backdrop-blur md:block"
     >
       <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-2 sm:px-6 lg:px-8">
-        <a href="#top" className="flex shrink-0 items-center gap-2 py-2">
+        <a href="#top" className="flex min-h-[44px] shrink-0 items-center gap-2 py-2">
           <span className="text-lg font-black tracking-tight">FYD</span>
           <span className="hidden text-xs opacity-60 sm:inline">
             the business, understood
@@ -139,7 +141,7 @@ export function FydNav() {
         </div>
 
         {/* Desktop: wrapping inline links, no horizontal scrollbar */}
-        <ul className="hidden flex-1 flex-wrap items-center gap-1 md:flex">
+        <ul className="hidden flex-1 flex-wrap items-center gap-x-1 gap-y-2 md:flex">
           {LINKS.map((s) => {
             const id = s.href.replace(/^#/, "");
             const isCurrent = id === currentId;
@@ -148,7 +150,7 @@ export function FydNav() {
                 <a
                   href={s.href}
                   aria-current={isCurrent ? "true" : undefined}
-                  className={`whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium ${
+                  className={`flex min-h-[44px] items-center whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium ${
                     isCurrent
                       ? "bg-text-on-dark/10 text-honey"
                       : "text-text-on-dark/75 hover:bg-text-on-dark/10 hover:text-honey"
@@ -163,7 +165,7 @@ export function FydNav() {
 
         <a
           href="#try"
-          className="hidden shrink-0 items-center justify-center rounded-full bg-honey px-5 py-2 text-sm font-semibold text-honey-foreground transition-colors hover:bg-honey-hover md:inline-flex"
+          className="hidden min-h-[44px] shrink-0 items-center justify-center rounded-full bg-honey px-5 py-2 text-sm font-semibold text-honey-foreground transition-colors hover:bg-honey-hover md:inline-flex"
         >
           Try it
         </a>

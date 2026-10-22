@@ -101,7 +101,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="hidden items-center md:flex relative" aria-label="Primary" ref={navRef}>
+        <nav className="hidden items-center lg:flex relative" aria-label="Primary" ref={navRef}>
           {primary.map((item) => (
             <Link
               key={item.href}
@@ -131,7 +131,7 @@ export function SiteHeader() {
 
         <button
           type="button"
-          className="flex h-11 w-11 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-muted md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-muted lg:hidden"
           aria-expanded={open}
           aria-controls="mobile-menu"
           aria-label={open ? "Close menu" : "Open menu"}
@@ -142,7 +142,7 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <div id="mobile-menu" ref={menuRef} onClick={handleMenuClick} className="border-t border-border/60 bg-[#F8F6F3] dark:bg-surface md:hidden">
+        <div id="mobile-menu" ref={menuRef} onClick={handleMenuClick} className="border-t border-border/60 bg-[#F8F6F3] dark:bg-surface lg:hidden">
           <nav className="flex flex-col p-3" aria-label="Mobile">
             {navigation.map((item) => (
               <Link
@@ -168,7 +168,7 @@ export function SiteHeader() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="rounded-lg px-3 py-2.5 text-[15px] font-medium text-black/80 dark:text-text-on-dark/80 hover:bg-white/50 dark:hover:bg-surface-muted/50"
+                    className="flex min-h-[44px] items-center rounded-lg px-3 py-3 text-[15px] font-medium text-black/80 dark:text-text-on-dark/80 hover:bg-white/50 dark:hover:bg-surface-muted/50"
                   >
                     {item.label}
                   </Link>
