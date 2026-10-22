@@ -16,7 +16,7 @@
  * - Scroll position is preserved across open/traverse/back/close; the
  *   page is never destroyed and there are no dead-end pages.
  * - Ask FYD in the sheet posts { siteId, question, objectId } to
- *   /api/fyd/ask: the answer context is the current object + authorized
+ *   /api/fyd/ask/[siteId]: the answer context is the current object + authorized
  *   neighborhood + bound evidence (the same edges the sheet shows).
  * - [Why this?] serves edge/object provenance via /api/fyd/why-this; it
  *   is the trust path, not the primary workflow.
@@ -40,7 +40,7 @@ export function edgeClientScript(siteSlug: string): string {
     "  var ATTENTION = 8;\n" +
     '  var EDGE_ENDPOINT = "/api/fyd/edge/object";\n' +
     '  var WHY_ENDPOINT = "/api/fyd/why-this";\n' +
-    '  var ASK_ENDPOINT = "/api/fyd/ask";\n' +
+    '  var ASK_ENDPOINT = "/api/fyd/ask/" + encodeURIComponent(SITE);\n' +
     "\n" +
     "  function esc(s) {\n" +
     '    return String(s == null ? "" : s)\n' +

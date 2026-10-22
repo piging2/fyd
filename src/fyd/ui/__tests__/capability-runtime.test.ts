@@ -64,16 +64,15 @@ describe("legacy social executor compatibility", () => {
 });
 
 describe("submitAsk", () => {
-  it("posts siteId, question, and visitor mode, returning the answer", async () => {
+  it("posts question and visitor mode to the trusted path, returning the answer", async () => {
     const fetchMock = mockFetchJson({ ok: true, answer: "Nine to five.", refusal: false });
     const result = await submitAsk("happy-place", "What are the hours?");
     expect(result).toEqual({ ok: true, answer: "Nine to five.", refusal: false });
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/fyd/ask",
+      "/api/fyd/ask/happy-place",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
-          siteId: "happy-place",
           question: "What are the hours?",
           mode: "visitor",
         }),

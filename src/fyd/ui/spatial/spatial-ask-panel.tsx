@@ -1,33 +1,34 @@
 "use client";
 
 /**
- * SpatialAskPanel: visitor Ask FYD scoped to one focused object.
+ * SpatialAskPanel: the spatial presentation of the ONE Ask FYD chat,
+ * scoped to one focused object.
  *
- * Posts to the trusted-path route POST /api/fyd/ask/happy-place with
- * { question, objectId: focusedObjectId, mode: "visitor" }. Evidence
- * bounded: answers cite sources; refusal is rendered honestly instead of
- * guessing. Structure mirrors the proven AskObjectPanel; the objectId
- * scoping is why this is a separate component.
+ * Canonical chat consolidation (2026-10-22): this panel no longer owns a
+ * private fetch or a hardcoded tenant. Like every FYD ask surface it
+ * talks to the pipeline only through the canonical client
+ * (@/fyd/ask/ask-client) and the trusted-path route
+ * POST /api/fyd/ask/[siteId]; the tenant arrives as the `siteId` prop
+ * from the portal that owns the snapshot context. Evidence bounded:
+ * answers cite sources; refusal is rendered honestly instead of
+ * guessing. Structure mirrors the canonical AskObjectPanel; the spatial
+ * skin (dark portal styling) is presentation only.
  */
 
 import { useState } from "react";
 import type { AskFydCitation } from "../../ask/visitor-answer";
+import { askFydQuestion } from "../../ask/ask-client";
 
 type AskStatus = "idle" | "loading" | "answered" | "error";
 
-interface AskApiResponse {
-  ok: boolean;
-  answer?: string;
-  refusal?: boolean;
-  citations?: AskFydCitation[];
-  error?: string;
-}
-
 export function SpatialAskPanel({
+  siteId,
   objectId,
   objectName,
   sampleQuestions,
 }: {
+  /** Tenant slug for the trusted-path route (the snapshot's site). */
+  siteId: string;
   /** Graph object id, or undefined to ask about the site's business object. */
   objectId?: string;
   objectName: string;
@@ -48,38 +49,32 @@ export function SpatialAskPanel({
     setQuestion(query);
     setStatus("loading");
     setError("");
+    let data;
     try {
-      const body: { question: string; mode: string; objectId?: string } = {
+      data = await askFydQuestion({
+        siteId,
+        objectId,
         question: query,
         mode: "visitor",
-      };
-      if (objectId) body.objectId = objectId;
-      const res = await fetch("/api/fyd/ask/happy-place", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
       });
-      let data: AskApiResponse | null = null;
-      try {
-        data = (await res.json()) as AskApiResponse;
-      } catch {
-        data = null;
-      }
-      if (!res.ok || !data || !data.ok) {
-        setStatus("error");
-        setError(
-          data?.error ?? "Ask FYD could not answer right now. Please try again.",
-        );
-        return;
-      }
-      setAnswer(data.answer ?? "");
-      setRefusal(data.refusal === true);
-      setCitations(Array.isArray(data.citations) ? data.citations : []);
-      setStatus("answered");
     } catch {
       setStatus("error");
       setError("Could not reach Ask FYD. Check your connection and try again.");
+      return;
     }
+    if (!data.ok) {
+      setStatus("error");
+      setError(
+        data.transportError
+          ? "Could not reach Ask FYD. Check your connection and try again."
+          : (data.error ?? "Ask FYD could not answer right now. Please try again."),
+      );
+      return;
+    }
+    setAnswer(data.answer ?? "");
+    setRefusal(data.refusal === true);
+    setCitations(Array.isArray(data.citations) ? data.citations : []);
+    setStatus("answered");
   }
 
   const paragraphs = answer

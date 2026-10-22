@@ -64,10 +64,9 @@ export interface AskResult {
   refusal?: boolean;
 }
 
-/** POST /api/fyd/ask with mode "visitor". */
+/** POST /api/fyd/ask/[siteId] (trusted path) with mode "visitor". */
 export async function submitAsk(objectId: string, question: string): Promise<AskResult> {
-  const d = await postJson<AskBody>("/api/fyd/ask", {
-    siteId: objectId,
+  const d = await postJson<AskBody>("/api/fyd/ask/" + encodeURIComponent(objectId), {
     question,
     mode: "visitor",
   });

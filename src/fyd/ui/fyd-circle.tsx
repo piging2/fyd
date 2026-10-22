@@ -35,6 +35,7 @@ import {
   INITIAL_CIRCLE_STATE,
   isCircleOpen,
 } from "./circle-machine";
+import { askFydQuestion } from "../ask/ask-client";
 
 /* ---------------- constants ---------------- */
 
@@ -417,17 +418,12 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
     askingRef.current = true;
     setAskStatus("asking");
     try {
-      const res = await fetch("/api/fyd/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          siteId: siteId ?? projection.id,
-          objectId: projection.id,
-          question: query,
-          mode: "visitor",
-        }),
+      const data = await askFydQuestion({
+        siteId: siteId ?? projection.id,
+        objectId: projection.id,
+        question: query,
+        mode: "visitor",
       });
-      const data = await res.json();
       if (!data || data.ok !== true || data.refusal) {
         setAskStatus("empty");
         setAnswer("");
