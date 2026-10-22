@@ -60,6 +60,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     name: tenant.siteName,
     description: tenant.description,
     url: siteUrl,
+    // Contact facts come from the tenant authority (tenant.*.v1.json),
+    // the same source the visible contact surfaces render from, so the
+    // structured data can never drift from what visitors see.
+    ...(tenant.contact.phone ? { telephone: tenant.contact.phone } : {}),
+    ...(tenant.contact.facebook ? { sameAs: [tenant.contact.facebook] } : {}),
     founder: {
       "@type": "Person",
       name: tenant.operator.name,

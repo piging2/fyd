@@ -31,6 +31,7 @@ export interface TenantBrand {
 
 export interface TenantContact {
   facebook: string | null;
+  phone: string | null;
   email: string | null;
   note: string;
 }
