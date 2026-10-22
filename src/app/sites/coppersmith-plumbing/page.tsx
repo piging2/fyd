@@ -23,6 +23,7 @@ import {
   resolveSiteDisplayName,
 } from "../_shared/site-metadata";
 import { galleryMediaFor, heroMediaFor } from "@/fyd/media/select";
+import { localBusinessJsonLd } from "@/fyd/proceduralize/render-jsonld";
 import {
   auditSitesRenderClaims,
   logSitesRenderAudit,
@@ -64,6 +65,17 @@ export default async function CoppersmithDemoPage() {
     // The audit must never break the render path.
   }
 
+  const siteName = resolveSiteDisplayName(graph);
+  // The business phone, read through the same structured-data claims
+  // seam that emits the page's JSON-LD (single truth source): the
+  // utility bar and footer below can never show a number the verified
+  // projection does not carry.
+  const phone =
+    localBusinessJsonLd(projection)?.claims.find((c) => c.field === "phone")
+      ?.value ?? null;
+  const phoneDigits = phone?.replace(/\D/g, "").replace(/^1/, "");
+  const phoneHref = phoneDigits ? `tel:+1${phoneDigits}` : null;
+
   // PROD-1 (2026-09-27): PUBLIC ROUTE. Owner chrome is never mounted
   // here, even with NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1: no DemoOwnerMode
   // panel (it lives only on explicit owner routes such as /dev/objects),
@@ -72,6 +84,25 @@ export default async function CoppersmithDemoPage() {
   return (
     <main className="min-h-screen bg-background">
       <SiteJsonLd projection={projection} />
+      {/* Utility bar: the two actions a trades visitor comes for,
+          reachable from the top of the page instead of only by
+          scrolling to the contact band and the quote forms at the
+          very bottom. The quote link targets the inquiry section's
+          own anchor. */}
+      <div className="border-b bg-card">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-2 text-sm">
+          {phone && phoneHref ? (
+            <a href={phoneHref} className="font-medium hover:underline">
+              Call {phone}
+            </a>
+          ) : (
+            <span />
+          )}
+          <a href="#inquiry" className="font-semibold hover:underline">
+            Request a quote
+          </a>
+        </div>
+      </div>
       <SiteClient
         spec={spec}
         graph={graph}
@@ -81,12 +112,25 @@ export default async function CoppersmithDemoPage() {
         projectionCheckpoint={projection.provenance.checkpoint}
         heroMedia={heroMedia}
         galleryMedia={galleryMedia}
-        siteName={resolveSiteDisplayName(graph)}
+        siteName={siteName}
       />
-      <SiteInquirySection
-        siteId={SITE_ID}
-        businessName={resolveSiteDisplayName(graph)}
-      />
+      <SiteInquirySection siteId={SITE_ID} businessName={siteName} />
+      {/* Closing footer: the page previously ended on the last quote
+          form's fine print. The platform template treats footer
+          attribution as a constant, and a visitor who reaches the
+          bottom gets the business name, its phone, and that
+          attribution instead of a form's legal line. */}
+      <footer className="border-t">
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-6 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{siteName}</span>
+          {phone && phoneHref && (
+            <a href={phoneHref} className="hover:underline">
+              {phone}
+            </a>
+          )}
+          <span>Powered by FYD Social</span>
+        </div>
+      </footer>
     </main>
   );
 }
