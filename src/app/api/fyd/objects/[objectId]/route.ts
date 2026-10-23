@@ -16,9 +16,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { loadObjectViewBySlugOrId } from "@/fyd/object/by-id";
-import { getVerifiedPublicProjectionSync } from "@/fyd/data/ping-object-source";
-import type { VerifiedPublicProjection } from "@/fyd/sitespec/public-projection";
+import { loadObjectViewById } from "@/fyd/object/by-id";
+import { loadObjectView } from "@/fyd/object/view";
+import { getSiteBundle, listSiteIds } from "@/fyd/media/site-bundle";
 import { objectViewToProjection } from "@/fyd/object/object-projection";
 
 export const dynamic = "force-dynamic";
@@ -29,39 +29,24 @@ export async function GET(
   { params }: { params: Promise<{ objectId: string }> },
 ) {
   const { objectId } = await params;
-  // Memoized boundary resolver: the cross-tenant scan must not re-verify a
-  // tenant it already projected.
-  const cache = new Map<string, VerifiedPublicProjection | null>();
-  const resolveProjection = (
-    siteId: string,
-  ): VerifiedPublicProjection | null => {
-    if (!cache.has(siteId)) {
-      try {
-        cache.set(
-          siteId,
-          getVerifiedPublicProjectionSync(siteId, "anonymous"),
-        );
-      } catch {
-        cache.set(siteId, null);
-      }
-    }
-    return cache.get(siteId) ?? null;
-  };
-  const resolved = loadObjectViewBySlugOrId(objectId, resolveProjection);
-  if (!resolved) {
-    return NextResponse.json(
-      { ok: false, error: "Unknown object." },
-      { status: 404 },
-    );
+  const ids = listSiteIds();
+  let resolved: { view: NonNullable<ReturnType<typeof loadObjectView>>; siteId: string; verified: NonNullable<Awaited<ReturnType<typeof getSiteBundle>>>["projection"] } | null = null;
+  let unavailable = false;
+  for (const siteId of ids.includes(objectId) ? [objectId] : ids) {
+    try {
+      const bundle = await getSiteBundle(siteId);
+      if (!bundle?.projection) continue;
+      const view = siteId === objectId
+        ? loadObjectView(bundle.projection, siteId, bundle.readOwner)
+        : loadObjectViewById(bundle.projection, siteId, objectId, bundle.readOwner);
+      if (view) { resolved = { view, siteId, verified: bundle.projection }; break; }
+    } catch { unavailable = true; }
   }
-  const { view, siteId } = resolved;
-  const verified = resolveProjection(siteId);
-  if (!verified) {
-    return NextResponse.json(
-      { ok: false, error: "Projection unavailable." },
-      { status: 503 },
-    );
-  }
+  if (!resolved?.verified) return NextResponse.json(
+    { ok: false, error: unavailable ? "Business information unavailable." : "Unknown object." },
+    { status: unavailable ? 503 : 404 },
+  );
+  const { view, siteId, verified } = resolved;
   const projection = objectViewToProjection(view, verified.graph);
   const { provenance } = verified;
   return NextResponse.json({

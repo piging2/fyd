@@ -20,8 +20,8 @@
  *   applied as a max-width frame so the projection can be inspected at size
  * - viewer context: anonymous / owner / follower / unrelated authenticated.
  *   Owner reuses the demo-owner-mode pattern: dev-only, visibly labeled
- *   "not real authentication", and this page has zero write operations so it
- *   is structurally unable to authorize production actions.
+ *   "not real authentication". Existing demo capability checks govern
+ *   owner actions; approved changes are recorded as demo overlays.
  * - evidence state filter: direct / derived / inferred / owner-corrected.
  *   The filter is a labeled layer over the real projection data: layers with
  *   no content in the current projection render an honest empty state.
@@ -421,9 +421,9 @@ export function ObjectsLabClient({
             </p>
             <p className="mt-1 text-sm text-stone-700">
               This viewer context is simulated for development: no session, no
-              credential check, no authorization decision. This page exposes
-              zero write operations, so it is structurally unable to authorize
-              production actions.
+              credential check, and no production owner identity is verified.
+              Existing demo capability checks govern owner actions; approving
+              a change records a demo overlay.
             </p>
             <DemoOwnerMode siteId={siteId} enabled={demoOwnerModeEnabled} />
           </div>

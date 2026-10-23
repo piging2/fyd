@@ -155,8 +155,9 @@ function structuredServices(graph: ObjectGraph, businessId: string): PingObject[
 function buildServices(
   structured: { id: string; name: string }[],
   objectId: string,
+  readOwner: typeof readOverrides = readOverrides,
 ): { services: ObjectServiceView[]; knownIds: string[]; knownNames: Map<string, string> } {
-  const overrides = readOverrides(objectId);
+  const overrides = readOwner(objectId);
   const knownIds: string[] = [];
   const knownNames = new Map<string, string>();
   const basis: ObjectServiceView[] = structured.map(({ id, name }) => {
@@ -341,11 +342,12 @@ export function composeObjectView(
   objectId: string,
   viewId: string,
   overridesKey: string,
+  readOwner: typeof readOverrides = readOverrides,
 ): ObjectView | null {
   const graph = projection.graph;
   const obj = graph.objects.find((o) => o.id === objectId);
   if (!obj) return null;
-  const overrides = readOverrides(overridesKey);
+  const overrides = readOwner(overridesKey);
   const description = field(obj, "description") ?? obj.description ?? "";
   const website = field(obj, "website");
   const phone = field(obj, "phone");
@@ -356,6 +358,7 @@ export function composeObjectView(
   const { services } = buildServices(
     structuredServices(graph, obj.id).map((s) => ({ id: s.id, name: s.title })),
     overridesKey,
+    readOwner,
   );
 
   // Media via the semantic attachment: the manifest is joined to the
@@ -431,7 +434,7 @@ export function composeObjectView(
       kind: obj.provenance?.kind ?? "unknown",
       ref: obj.provenance?.ref ?? "",
       derivedAt: obj.provenance?.derivedAt ?? obj.updatedAt ?? "",
-      label: domain ? "Information observed on " + domain : "Information from the business website",
+      label: obj.ownerFieldCorrections?.length ? "Website observations with owner corrections; see individual fields" : domain ? "Information observed on " + domain : "Information from the business record",
     },
     ownerUpdatedAt: overrides.history.length > 0 ? overrides.updatedAt : null,
     fieldCorrections,
@@ -455,6 +458,7 @@ export function composeObjectView(
 export function loadObjectView(
   projection: VerifiedPublicProjection | null,
   slug: string,
+  readOwner: typeof readOverrides = readOverrides,
 ): ObjectView | null {
   if (!projection) return null;
   const graph = projection.graph;
@@ -462,7 +466,7 @@ export function loadObjectView(
     (o) => SCHEMA_ROLES.business.includes(o.schema) && o.visibility === "public",
   );
   if (!business) return null;
-  return composeObjectView(projection, slug, business.id, slug, slug);
+  return composeObjectView(projection, slug, business.id, slug, slug, readOwner);
 }
 
 /**
@@ -472,10 +476,10 @@ export function loadObjectView(
 export const buildObjectView = loadObjectView;
 
 /** Service id/name sets for validating owner commands. Exposed for the API route. */
-export function knownServices(objectId: string): { ids: string[]; names: Map<string, string> } {
+export function knownServices(objectId: string, resolvedGraph?: ObjectGraph, readOwner: typeof readOverrides = readOverrides): { ids: string[]; names: Map<string, string> } {
   let graph: ObjectGraph;
   try {
-    graph = getPingObjectGraphSync(objectId).graph;
+    graph = resolvedGraph ?? getPingObjectGraphSync(objectId).graph;
   } catch {
     return { ids: [], names: new Map() };
   }
@@ -486,6 +490,7 @@ export function knownServices(objectId: string): { ids: string[]; names: Map<str
   const { knownIds, knownNames } = buildServices(
     structuredServices(graph, business.id).map((s) => ({ id: s.id, name: s.title })),
     objectId,
+    readOwner,
   );
   return { ids: knownIds, names: knownNames };
 }

@@ -449,8 +449,8 @@ export function correctionWhyThisFor(
     {
       step: "Support",
       detail:
-        "Confirmed by you. You updated the business, so this value changed everywhere " +
-        "FYD answers: the site, Ask, search, and all projections.",
+        "Recorded as an owner correction. FYD uses this effective value in the resolved " +
+        "website, Ask answer, and owner view, subject to visibility and conflict decisions.",
       state: "observed",
     },
   ];

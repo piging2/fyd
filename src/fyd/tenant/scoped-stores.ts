@@ -73,6 +73,7 @@ export function scopedApplyOwnerCommand(
   opts?: ApplyCommandOpts,
 ): OwnerOverrides {
   assertTenantKey(ctx, objectId);
+  // applyOwnerCommand invalidates the site bundle cache on commit.
   return applyOwnerCommand(objectId, cmd, knownServiceIds, knownServiceNames, opts);
 }
 

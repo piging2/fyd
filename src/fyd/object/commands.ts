@@ -26,8 +26,8 @@ export interface TextProposal {
  * Interprets one line of owner intent. Returns a typed proposal or null
  * when the text is not an understood command. Never mutates anything.
  */
-export function interpretTextCommand(text: string, objectId: string): TextProposal | null {
-  const { names } = knownServices(objectId);
+export function interpretTextCommand(text: string, objectId: string, services?: ReturnType<typeof knownServices>): TextProposal | null {
+  const { names } = services ?? knownServices(objectId);
   const lower = text.trim().toLowerCase();
   let m: RegExpMatchArray | null;
 

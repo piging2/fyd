@@ -19,7 +19,7 @@ import {
   isolatedSiteAllowlist,
   withIsolatedJournal,
 } from "./isolated";
-import { QUOTE_JOURNEY_CATALOG } from "./catalog";
+import { catalogForSite } from "./catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -56,8 +56,10 @@ export async function POST(req: NextRequest) {
         typeof body.visitorContact === "string" ? body.visitorContact : "",
       visitorMessage:
         typeof body.visitorMessage === "string" ? body.visitorMessage : "",
-      // Closed world: the catalog comes from the server, never the client.
-      knownServices: QUOTE_JOURNEY_CATALOG,
+      // Closed world: the catalog comes from the server, never the
+      // client, and is scoped to the admitted site: one tenant's
+      // services are never quotable under another tenant's id.
+      knownServices: catalogForSite(siteId),
       ...(typeof body.idempotencyKey === "string"
         ? { idempotencyKey: body.idempotencyKey }
         : {}),

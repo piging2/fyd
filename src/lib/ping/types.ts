@@ -179,6 +179,8 @@ export interface OwnerFieldCorrection {
    * still wins; this flag makes the drift visible instead of silent.
    */
   sourceDrifted?: boolean;
+  /** Current observation before this correction was applied; read-only metadata. */
+  currentSourceValue?: string | null;
 }
 
 export interface PingRelationship {

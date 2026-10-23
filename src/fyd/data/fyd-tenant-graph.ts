@@ -310,6 +310,8 @@ export function applyTenantOverlays(
           if (field === "title" || field === "description") {
             if (!isStr(value)) throw malformed(eid, rawOp, "bad set_field");
             target[field] = value;
+            // Keep an existing scalar mirror consistent with the canonical pseudo-field.
+            if (field in target.fields) target.fields[field] = value;
           } else {
             target.fields[field] = value as string | string[];
           }

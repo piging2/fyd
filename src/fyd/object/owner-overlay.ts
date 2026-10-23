@@ -212,8 +212,9 @@ function driftValuesEqual(a: string | null, b: string | null): boolean {
 export function applyOwnerFieldCorrections(
   graph: ObjectGraph,
   siteId: string,
+  readOwner: typeof readOverrides = readOverrides,
 ): OwnerOverlayResult {
-  const overrides = readOverrides(siteId);
+  const overrides = readOwner(siteId);
   const corrections = Object.values(overrides.fieldCorrections ?? {});
   if (corrections.length === 0) return { graph, applied: [], orphaned: [] };
 
@@ -240,6 +241,7 @@ export function applyOwnerFieldCorrections(
     const currentSource = rawFieldValue(obj, correction.field);
     const target = take(obj);
     target.fields[correction.field] = correction.ownerValue;
+    if (correction.field === "description") target.description = correction.ownerValue;
     const attached: OwnerFieldCorrection = {
       ...correction,
       // Derived per read, never persisted: true when the source was
@@ -248,6 +250,7 @@ export function applyOwnerFieldCorrections(
       // Comparison is normalization-symmetric (driftValuesEqual): a
       // whitespace / bidi-mark re-emission is not drift.
       sourceDrifted: !driftValuesEqual(currentSource, correction.sourceValue),
+      currentSourceValue: currentSource,
     };
     // Preserve any corrections already attached (there should be none on a
     // raw projection, but never silently drop evidence).
@@ -346,12 +349,13 @@ export function applyOwnerFieldCorrections(
 export function detectOrphanedCorrections(
   graph: ObjectGraph,
   objectId: string,
+  readOwner: typeof readOverrides = readOverrides,
 ): OrphanedCorrection[] {
-  const overrides = readOverrides(objectId);
+  const overrides = readOwner(objectId);
   // Field corrections the overlay could not compose onto the refreshed
   // graph (no business object, or an ambiguous target).
   const out: OrphanedCorrection[] = [
-    ...applyOwnerFieldCorrections(graph, objectId).orphaned,
+    ...applyOwnerFieldCorrections(graph, objectId, readOwner).orphaned,
   ];
 
   // The service ids a correction can currently apply to: structured

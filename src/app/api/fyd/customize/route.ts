@@ -104,7 +104,7 @@ async function demoDenied(req: Request, siteId: string, action: string) {
       await resolveOwnerIdentity(),
     ),
   );
-  if (!answer.allowed) {
+  if (!answer.allowed || process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE !== "1" || !isDevOwnerHost(req.headers.get("host") ?? "")) {
     return NextResponse.json(
       {
         ok: false,
@@ -118,6 +118,14 @@ async function demoDenied(req: Request, siteId: string, action: string) {
     );
   }
   return null;
+}
+
+class ExecutionAuthorizationError extends Error {
+  constructor(readonly response: NextResponse) { super("Current authorization refused execution."); }
+}
+async function revalidateCustomization(req: Request, siteId: string, action: string) {
+  const refused = await demoDenied(req, siteId, action);
+  if (refused) throw new ExecutionAuthorizationError(refused);
 }
 
 interface InspectView {
@@ -473,6 +481,7 @@ async function handleApprove(
         const { eventId, deduped } = await emitOverlayEvent(siteId, [op], {
           requestId,
           timeoutMs: 10_000,
+          revalidateAuthorization: () => revalidateCustomization(req, siteId, "approve"),
           // Flaw D: the approval was granted against derived.baseSpecDigest
           // (captured in derive above). Re-verify immediately before the
           // journal write; a moved base, a moved journaled directive set
@@ -505,6 +514,7 @@ async function handleApprove(
     // Flaw D: the stale-state guard tripped between approval and the
     // journal write. Nothing was executed and nothing was written; the
     // owner must re-run parse and approve the regenerated proposal.
+    if (e instanceof ExecutionAuthorizationError) return e.response;
     if (e instanceof StaleGuardError) {
       return NextResponse.json(
         {
@@ -604,12 +614,13 @@ async function handleClear(req: Request, siteId: string, intentId: string, reque
         const { eventId, deduped } = await emitOverlayEvent(
           siteId,
           [{ op: "clear_presentation_intent", intentId: derived.intentId }],
-          { requestId, timeoutMs: 10_000 },
+          { requestId, timeoutMs: 10_000, revalidateAuthorization: () => revalidateCustomization(req, siteId, "clear") },
         );
         return { eventId, deduped, fields: { intentId: derived.intentId } };
       },
     });
   } catch (e) {
+    if (e instanceof ExecutionAuthorizationError) return e.response;
     return journalFailureResponse("clear", requestId, e);
   }
 

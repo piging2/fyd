@@ -39,6 +39,7 @@ import {
   type OwnerEventDraft,
   type OwnerEventEvidence,
 } from "./owner-events";
+import { invalidateSiteBundle } from "../media/site-bundle";
 import { slugifyService } from "./services";
 
 export class OwnerCommandError extends Error {
@@ -667,6 +668,10 @@ export function applyOwnerCommand(
   }
 
   appendOwnerEvent(objectId, draft, { expectedLength: opts?.expectedLength });
+  // Owner log committed. The site bundle's inputs changed: drop this
+  // site's cached bundle so the next read rebuilds from the new truth.
+  // objectId is the site/tenant key on every write path (G4).
+  invalidateSiteBundle(objectId);
   return readOverrides(objectId);
 }
 

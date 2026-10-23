@@ -38,6 +38,7 @@ import type {
 } from "./types";
 import { UnknownOutcomeError } from "./write-boundary";
 import { TENANT_ID_PATTERN } from "../tenant/tenant-context";
+import { invalidateSiteBundle } from "@/fyd/media/site-bundle";
 import { readFileSync } from "node:fs";
 
 export interface CustomizedSite {
@@ -224,6 +225,8 @@ export interface EmitOverlayOpts {
    * documented).
    */
   staleGuard?: StaleGuardPrecondition;
+  /** Re-resolve through the caller's existing permission boundary at execution. */
+  revalidateAuthorization?: () => Promise<void>;
   /**
    * Test-only injection for the stale guard's base-state read. Production
    * callers must not set this: the default (loadCustomizedSite) reads the
@@ -570,7 +573,6 @@ export async function emitOverlayEvent(
   const timeoutMs = opts.timeoutMs ?? 10_000;
   const requestId = opts.requestId;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
   // Tenant identity is immutable on the envelope: in this runtime the
   // tenant id IS the site id. The journal gateway re-validates it on
   // append (tenant_id vs aggregate_id vs event_data.siteId).
@@ -597,6 +599,9 @@ export async function emitOverlayEvent(
       opts.staleGuardReadJournal,
     );
   }
+  // Digest/actor stamps do not establish current permission. The route
+  // supplies its existing authorization resolver; denial throws before POST.
+  if (opts.revalidateAuthorization) await opts.revalidateAuthorization();
   const envelope: Record<string, unknown> = {
     event_type: "FYD_SITE_OVERLAY",
     tenant_id: siteId,
@@ -606,6 +611,7 @@ export async function emitOverlayEvent(
   };
   if (requestId) envelope.request_id = requestId;
   let res: Response;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const writeToken = gatewayWriteToken();
     const headers: Record<string, string> = {
@@ -626,7 +632,10 @@ export async function emitOverlayEvent(
       throw new Error("customize: demo gateway unreachable at " + gatewayUrl() + ": " + preSend);
     }
     // Anything else (abort/timeout, socket destroyed mid-flight): the POST
-    // may have been recorded. UNKNOWN, never failed.
+    // may have been recorded. UNKNOWN, never failed. Invalidate: a stale
+    // cache shadowing a possibly-committed write is worse than one extra
+    // rebuild.
+    invalidateSiteBundle(siteId);
     const tag =
       e instanceof Error && e.name === "AbortError"
         ? "timeout after " + timeoutMs + "ms"
@@ -647,6 +656,7 @@ export async function emitOverlayEvent(
   } catch {
     // The gateway appends before responding: a 200 with an unreadable body
     // most likely recorded the event. UNKNOWN, not failure.
+    invalidateSiteBundle(siteId);
     throw new UnknownOutcomeError(
       requestId ?? "unknown",
       "gateway returned non-JSON on event emit",
@@ -660,6 +670,7 @@ export async function emitOverlayEvent(
   if (typeof eid !== "string" || eid.length === 0) {
     // Accepted (HTTP 200) but no usable event_id: UNKNOWN, not failure.
     // Retry with the same request_id converges via gateway dedupe.
+    invalidateSiteBundle(siteId);
     throw new UnknownOutcomeError(
       requestId ?? "unknown",
       "gateway accepted the event but returned no event_id",
@@ -669,6 +680,10 @@ export async function emitOverlayEvent(
     doc !== null &&
     typeof doc === "object" &&
     (doc as Record<string, unknown>)["deduped"] === true;
+  // Commit point: the journal recorded the overlay. The site bundle's inputs
+  // changed -> drop this site's cached bundle. Surgical: other sites keep
+  // theirs.
+  invalidateSiteBundle(siteId);
   return { eventId: eid, deduped };
 }
 
