@@ -1,0 +1,473 @@
+/**
+ * Client shell for a public FYD Social generated site page.
+ *
+ * Page tabs render from spec.navigation (never hardcoded). The structured
+ * "Customize this site" editor is OWNER CHROME: it renders only when an
+ * owner route passes ownerConsole (PROD-1, 2026-09-27). Public pages
+ * leave it off, so the customer DOM contains no owner console even with
+ * NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1. When mounted it offers the
+ * lightweight customizations only: reorder sections, hide/show,
+ * featured-object selection, proposed copy edits, basic design tokens.
+ * Every change becomes a site_patch proposal with a digest; copy and
+ * token edits stay drafts until approved.
+ */
+
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { SitePageView, resolveQuery } from "@/fyd/components/renderer";
+import { getComponentDef } from "@/fyd/components/registry";
+import { applySitePatch, proposeSitePatch, type SiteIntent, type SitePatchBody } from "@/fyd/proceduralize/patch";
+import type {
+  FYDFinding,
+  FYDSiteSpec,
+  FYDThemeTokens,
+  ObjectGraph,
+  ViewerContext,
+} from "@/fyd/sitespec/types";
+// Type-only: the hero and gallery media are serialized DisplayMedia
+// resolved on the server; the client never touches the media store.
+import type { DisplayMedia } from "@/fyd/media/select";
+import { FydMotionFallback } from "@/fyd/components/fyd-motion-fallback";
+import { ObjectOverlay } from "@/fyd/components/object-overlay";
+import { edgeClientScript } from "@/fyd/edge/client";
+import { MarginObjectLayer } from "@/fyd/ui/object-layer/MarginObjectLayer";
+import { selectMarginObjects } from "@/fyd/ui/object-layer/margin-select";
+
+declare global {
+  interface Window {
+    /** Published by the edge client script: opens the edge object sheet. */
+    __fydEdgeOpen?: (objectId: string, trigger: unknown) => void;
+  }
+}
+
+const VIEWER: ViewerContext = { viewerId: null, displayName: null };
+
+/**
+ * Provenance footer sentence (QA-TRUTH F-001). Plain owner-facing language
+ * only: no "object graph", no "acceptance sequences", no raw ingestion
+ * identifiers. The honest epistemic claim is preserved: every claim on the
+ * page is a website statement, never independently verified fact.
+ * The spec param is kept for the call site; spec.provenance.source is typed
+ * "website-ingestion" only, so the static wording stays honest without
+ * interpolating spec data (PROD-6 repair, 2026-09-27).
+ */
+import { provenanceSentence } from "./site-provenance";
+
+export function SiteEditorClient({
+  spec: initialSpec,
+  graph,
+  findings,
+  renderable,
+  siteId,
+  projectionCheckpoint,
+  heroMedia = null,
+  galleryMedia = null,
+  siteName,
+  ownerConsole = false,
+}: {
+  spec: FYDSiteSpec;
+  graph: ObjectGraph;
+  findings: FYDFinding[];
+  renderable: boolean;
+  siteId?: string;
+  projectionCheckpoint?: string;
+  heroMedia?: DisplayMedia | null;
+  galleryMedia?: DisplayMedia[] | null;
+  /**
+   * PROD-1 (2026-09-27): the site header's first <h1>. Resolved
+   * server-side by the page through resolveSiteDisplayName (the same
+   * binding-verified seam as the metadata) and passed down. Never a
+   * demo label: "Generated site demo" / "Procedural clone proof" do not
+   * render on public chrome.
+   */
+  siteName: string;
+  /**
+   * PROD-1 (2026-09-27): the structured "Customize this site" editor is
+   * owner chrome. It renders ONLY when an explicit owner route opts in.
+   * Public pages leave the default (false), so the customer DOM contains
+   * no owner console even with NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1.
+   */
+  ownerConsole?: boolean;
+}) {
+  const [spec, setSpec] = useState(initialSpec);
+  const [activeSlug, setActiveSlug] = useState(
+    initialSpec.navigation[0]?.pageSlug ?? "home",
+  );
+  const [proposal, setProposal] = useState<SitePatchBody | null>(null);
+  const [patchError, setPatchError] = useState<string | null>(null);
+  const [overlayObjectId, setOverlayObjectId] = useState<string | null>(null);
+
+  const ctx = useMemo(
+    () => ({ spec, graph, viewer: VIEWER, siteId, projectionCheckpoint, heroMedia, galleryMedia }),
+    [spec, graph, siteId, projectionCheckpoint, heroMedia, galleryMedia],
+  );
+  const page = spec.pages.find((p) => p.slug === activeSlug) ?? spec.pages[0];
+  // MARGIN-1 (Nolan 2026-09-25): the page-level edge/margin object layer.
+  // graph -> eligibility -> contextual selection -> projection ->
+  // MarginObjectLayer -> browser. Deterministic eligibility first;
+  // the layer is the production feed (no debug flag in this path).
+  const marginObjects = useMemo(
+    () =>
+      page
+        ? selectMarginObjects({
+            graph,
+            page,
+            ownerId: spec.ownerObjectId,
+            siteId: siteId ?? "",
+          })
+        : [],
+    [graph, page, spec.ownerObjectId, siteId],
+  );
+  // Object doorway: intercept taps/clicks on /o/ links. EDGE-1 routes them
+  // into the edge object sheet (the functional doorway into the authorized
+  // graph). The legacy ObjectOverlay remains only as a fallback when the
+  // edge script failed to load. Close returns to exact scroll position
+  // (handled by the sheet / ObjectOverlay).
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a[href^="/o/"]') as HTMLAnchorElement | null;
+      if (!link) return;
+      // Let modifier clicks (new tab), #ask links, and explicit
+      // full-navigation links (data-fyd-open-full) pass through.
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+      if (link.hasAttribute("data-fyd-open-full")) return;
+      const href = link.getAttribute("href") || "";
+      if (href.includes("#ask")) return;
+      const match = href.match(/^\/o\/([^#?]+)/);
+      if (!match) return;
+      const objectId = decodeURIComponent(match[1]);
+      // Verify the object exists in the public graph.
+      const obj = graph.objects.find((o) => o.id === objectId);
+      if (!obj) return;
+      e.preventDefault();
+      const edgeOpen = window.__fydEdgeOpen;
+      if (typeof edgeOpen === "function") {
+        edgeOpen(objectId, link);
+      } else {
+        setOverlayObjectId(objectId);
+      }
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [graph]);
+
+  const runIntent = (intent: SiteIntent) => {
+    setPatchError(null);
+    const result = proposeSitePatch(spec, intent);
+    if (!result.ok || !result.proposal) {
+      setPatchError(result.error ?? "Invalid intent.");
+      setProposal(null);
+      return;
+    }
+    setProposal(result.proposal);
+  };
+
+  const approveProposal = () => {
+    if (!proposal) return;
+    setSpec(applySitePatch(spec, proposal));
+    setProposal(null);
+  };
+
+  return (
+    <div>
+      <FydMotionFallback />
+      {/* EDGE-1: tap-to-expand edge-object client. The script publishes
+          window.__fydEdgeOpen, which the /o/ interceptor above routes
+          doorway taps into. */}
+      {siteId ? (
+        <script dangerouslySetInnerHTML={{ __html: edgeClientScript(siteId) }} />
+      ) : null}
+      {/* MARGIN-1: page-level margin object layer (very-right overlay on
+          mobile). Mounted always; no debug flag in the production path. */}
+      {renderable ? <MarginObjectLayer objects={marginObjects} /> : null}
+      {overlayObjectId && (() => {
+        const obj = graph.objects.find((o) => o.id === overlayObjectId);
+        if (!obj) return null;
+        return (
+          <ObjectOverlay
+            object={obj}
+            graph={graph}
+            siteId={siteId ?? ""}
+            onClose={() => setOverlayObjectId(null)}
+          />
+        );
+      })()}
+      {/* Site header. Product surface: the business owns the page.
+          The first <h1> is the business name, never a demo label
+          (PROD-1, 2026-09-27). No "Generated site demo", no
+          "Procedural clone proof" on public chrome. */}
+      <header className="border-b border-border-soft bg-background">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-accent">
+              FYD Social
+            </p>
+            <h1 className="text-xl font-bold">{siteName}</h1>
+          </div>
+        </div>
+        <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 pb-3 sm:px-6" aria-label="Site pages">
+          {spec.navigation.map((n) => (
+            <button
+              key={n.pageSlug}
+              onClick={() => setActiveSlug(n.pageSlug)}
+              className={
+                "rounded px-4 py-2 text-sm font-medium " +
+                (n.pageSlug === activeSlug
+                  ? "bg-primary text-primary-foreground"
+                  : "text-accent hover:bg-surface")
+              }
+            >
+              {n.label}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      {/* Validation status. An invalid spec never renders. */}
+      {!renderable ? (
+        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+          <h2 className="text-lg font-semibold text-red-700">Spec failed validation</h2>
+          <ul className="mt-3 list-disc pl-5 text-sm">
+            {findings
+              .filter((f) => f.severity === "error")
+              .map((f, i) => (
+                <li key={i}>
+                  {f.path}: {f.message}
+                </li>
+              ))}
+          </ul>
+        </div>
+      ) : (
+        page && <SitePageView key={page.slug + JSON.stringify(spec.themeTokens)} page={page} ctx={ctx} />
+      )}
+
+      {/* Provenance footer. */}
+      <footer className="border-t border-border-soft bg-surface">
+        <div className="mx-auto max-w-5xl px-4 py-6 text-sm text-accent sm:px-6">
+          <p>{provenanceSentence(spec)}</p>
+          {findings.filter((f) => f.severity !== "error").length > 0 && (
+            <details className="mt-2">
+              <summary className="cursor-pointer underline">
+                Validator notes ({findings.filter((f) => f.severity !== "error").length})
+              </summary>
+              <ul className="mt-2 list-disc pl-5">
+                {findings
+                  .filter((f) => f.severity !== "error")
+                  .map((f, i) => (
+                    <li key={i}>
+                      [{f.severity}] {f.path}: {f.message}
+                    </li>
+                  ))}
+              </ul>
+            </details>
+          )}
+        </div>
+      </footer>
+
+      {/* Structured editor (OWNER CHROME). Renders only when an
+          explicit owner route passes ownerConsole; public pages never
+          mount it (PROD-1, 2026-09-27). */}
+      {ownerConsole ? (
+      <section className="border-t-4 border-primary bg-background">
+        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+          <h2 className="text-2xl font-semibold">Customize this site</h2>
+          <p className="mt-2 max-w-2xl text-sm text-accent">
+            Structured editing only: reorder sections, hide or show them, pick
+            featured objects, propose copy edits, tune basic design tokens.
+            Every change becomes a proposal with a digest. Copy and token edits
+            stay drafts until the digest is approved.
+          </p>
+          {page && (
+            <EditorPanel
+              spec={spec}
+              graph={graph}
+              pageSlug={page.slug}
+              onIntent={runIntent}
+            />
+          )}
+          {patchError && (
+            <p className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+              {patchError}
+            </p>
+          )}
+          {proposal && (
+            <div className="mt-4 rounded border border-border-soft bg-surface p-4">
+              <h3 className="font-semibold">Proposed change</h3>
+              <pre className="mt-2 overflow-x-auto rounded bg-primary p-3 text-xs text-primary-foreground">
+                {JSON.stringify(proposal, null, 2)}
+              </pre>
+              <p className="mt-2 text-xs text-accent">
+                Digest: <code className="break-all">{proposal.proposalDigest}</code>
+              </p>
+              <p className="mt-1 text-xs text-accent">
+                Draft only. Approving applies it to this demo preview.
+              </p>
+              <button
+                onClick={approveProposal}
+                className="mt-3 rounded bg-honey px-5 py-2 text-sm font-semibold text-honey-foreground"
+              >
+                Approve and apply to preview
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+      ) : null}
+    </div>
+  );
+}
+
+function EditorPanel({
+  spec,
+  graph,
+  pageSlug,
+  onIntent,
+}: {
+  spec: FYDSiteSpec;
+  graph: ObjectGraph;
+  pageSlug: string;
+  onIntent: (intent: SiteIntent) => void;
+}) {
+  const page = spec.pages.find((p) => p.slug === pageSlug);
+  const [copyDrafts, setCopyDrafts] = useState<Record<string, { heading: string; copy: string }>>({});
+  const [tokenDrafts, setTokenDrafts] = useState<Partial<Record<keyof FYDThemeTokens, string>>>({});
+  if (!page) return null;
+
+  return (
+    <div className="mt-6 flex flex-col gap-4">
+      {page.sections.map((s, i) => {
+        const def = getComponentDef(s.component);
+        const objects = resolveQuery(s.query, graph, spec.ownerObjectId);
+        const draft = copyDrafts[s.id] ?? { heading: s.presentation.heading ?? "", copy: s.presentation.copy ?? "" };
+        return (
+          <div key={s.id} className="rounded border border-border-soft bg-surface p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="font-semibold">
+                  {def?.label ?? s.component}{" "}
+                  <span className="text-xs font-normal text-accent">({s.id})</span>
+                </p>
+                <p className="text-xs text-accent">
+                  {objects.length} object{objects.length === 1 ? "" : "s"} resolved
+                  {s.presentation.hidden ? " - hidden" : ""}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className="rounded border border-border-soft px-3 py-1 text-xs"
+                  disabled={i === 0}
+                  onClick={() => onIntent({ kind: "reorder_section", pageSlug, sectionId: s.id, toIndex: i - 1 })}
+                >
+                  Up
+                </button>
+                <button
+                  className="rounded border border-border-soft px-3 py-1 text-xs"
+                  disabled={i === page.sections.length - 1}
+                  onClick={() => onIntent({ kind: "reorder_section", pageSlug, sectionId: s.id, toIndex: i + 1 })}
+                >
+                  Down
+                </button>
+                <button
+                  className="rounded border border-border-soft px-3 py-1 text-xs"
+                  onClick={() => onIntent({ kind: "toggle_section", pageSlug, sectionId: s.id, hidden: !s.presentation.hidden })}
+                >
+                  {s.presentation.hidden ? "Show" : "Hide"}
+                </button>
+              </div>
+            </div>
+
+            {objects.length > 1 && (
+              <div className="mt-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-accent">Featured</p>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {objects.map((o) => {
+                    const active = s.presentation.featuredIds?.includes(o.id) ?? false;
+                    return (
+                      <button
+                        key={o.id}
+                        onClick={() => {
+                          const current = new Set(s.presentation.featuredIds ?? objects.map((x) => x.id));
+                          if (active) current.delete(o.id);
+                          else current.add(o.id);
+                          onIntent({ kind: "set_featured", pageSlug, sectionId: s.id, objectIds: [...current] });
+                        }}
+                        className={
+                          "rounded-full border px-3 py-1 text-xs " +
+                          (active ? "bg-primary text-primary-foreground" : "border-border-soft")
+                        }
+                      >
+                        {o.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <input
+                className="rounded border border-border-soft bg-background px-3 py-2 text-sm"
+                placeholder="Proposed heading"
+                value={draft.heading}
+                onChange={(e) =>
+                  setCopyDrafts({ ...copyDrafts, [s.id]: { ...draft, heading: e.target.value } })
+                }
+                aria-label={"Proposed heading for " + s.id}
+              />
+              <input
+                className="rounded border border-border-soft bg-background px-3 py-2 text-sm"
+                placeholder="Proposed copy"
+                value={draft.copy}
+                onChange={(e) =>
+                  setCopyDrafts({ ...copyDrafts, [s.id]: { ...draft, copy: e.target.value } })
+                }
+                aria-label={"Proposed copy for " + s.id}
+              />
+            </div>
+            <button
+              className="mt-2 rounded border border-border-soft px-3 py-1 text-xs"
+              onClick={() =>
+                onIntent({
+                  kind: "edit_copy",
+                  pageSlug,
+                  sectionId: s.id,
+                  heading: draft.heading || undefined,
+                  copy: draft.copy || undefined,
+                })
+              }
+            >
+              Propose copy edit
+            </button>
+          </div>
+        );
+      })}
+
+      <div className="rounded border border-border-soft bg-surface p-4">
+        <p className="font-semibold">Design tokens</p>
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {(["accent", "surface", "ink"] as (keyof FYDThemeTokens)[]).map((token) => (
+            <label key={token} className="flex items-center gap-2 text-sm">
+              <span className="w-20 capitalize text-accent">{token}</span>
+              <input
+                className="min-w-0 flex-1 rounded border border-border-soft bg-background px-3 py-2 text-sm"
+                value={tokenDrafts[token] ?? String(spec.themeTokens[token])}
+                onChange={(e) => setTokenDrafts({ ...tokenDrafts, [token]: e.target.value })}
+              />
+              <button
+                className="rounded border border-border-soft px-3 py-1 text-xs"
+                onClick={() => {
+                  const value = (tokenDrafts[token] ?? String(spec.themeTokens[token])).trim();
+                  onIntent({ kind: "set_theme_token", token, value });
+                }}
+              >
+                Propose
+              </button>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
