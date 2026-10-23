@@ -3,9 +3,14 @@
 /**
  * FYD product section nav.
  *
- * Mobile: hidden — the section links are consolidated into the site header
- * hamburger menu ("On this page") so only one sticky bar renders on phones.
- * Desktop: an inline wrapping link row, current section marked with
+ * Phones (below md): hidden — the section links are consolidated into the
+ * site header hamburger menu ("On this page") so only one sticky bar
+ * renders on phones.
+ * Tablet and landscape-phone band (md to xl): a compact "Section"
+ * disclosure menu. The eight-link inline row is never rendered in this
+ * band: it wrapped into a crowded two-row pill bar beside the brand
+ * (owner report, 2026-10-22).
+ * Desktop (xl and up): an inline link row, current section marked with
  * aria-current and a visible indicator.
  * Sticky offset: docks at top-[81px], directly beneath the 81 px site header,
  * so the two sticky bars never cover each other while scrolling.
@@ -73,14 +78,14 @@ export function FydNav() {
           </span>
         </a>
 
-        {/* Mobile: compact section menu */}
-        <div className="relative flex-1 md:hidden" ref={panelRef}>
+        {/* Below xl: compact section menu */}
+        <div className="relative flex-1 xl:hidden" ref={panelRef}>
           <button
             type="button"
             aria-expanded={open}
             aria-haspopup="true"
             onClick={() => setOpen((v) => !v)}
-            className="flex w-full items-center justify-between gap-2 rounded-full border border-text-on-dark/20 px-4 py-2 text-sm font-medium"
+            className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded-full border border-text-on-dark/20 px-4 py-2 text-sm font-medium"
           >
             <span className="truncate">
               <span className="mr-2 text-xs opacity-60">Section</span>
@@ -140,8 +145,8 @@ export function FydNav() {
           )}
         </div>
 
-        {/* Desktop: wrapping inline links, no horizontal scrollbar */}
-        <ul className="hidden flex-1 flex-wrap items-center gap-x-1 gap-y-2 md:flex">
+        {/* Desktop (xl and up): inline links */}
+        <ul className="hidden flex-1 flex-wrap items-center gap-x-1 gap-y-2 xl:flex">
           {LINKS.map((s) => {
             const id = s.href.replace(/^#/, "");
             const isCurrent = id === currentId;
