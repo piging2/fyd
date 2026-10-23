@@ -19,7 +19,7 @@
  * Mobile: 320px safe, no horizontal overflow; input and button are at least
  * 44px tall, the Why this? toggle at least 24px.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FYDThemeTokens } from "../sitespec/types";
 import { resolveThemeRoles } from "../sitespec/theme-roles";
 import type { AskFydCitation } from "../ask/visitor-answer";
@@ -34,16 +34,22 @@ interface AskApiResponse {
   responseClass?: "ANSWER" | "DENIAL" | "PREMISE_REJECTED";
   citations?: AskFydCitation[];
   error?: string;
+  kind?: string;
+  answerCheckpoint?: string;
 }
 
 export interface AskFydWidgetProps {
   /** Public site slug, threaded from the page (e.g. "happy-place"). */
   siteId?: string;
+  pageCheckpoint?: string;
   theme: FYDThemeTokens;
   inputId?: string;
+  prompts?: string[];
+  initialQuestion?: string;
+  questionSequence?: number;
 }
 
-export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: AskFydWidgetProps) {
+export function AskFydWidget({ siteId, pageCheckpoint, theme, inputId = "ask-fyd-question", prompts = ["What services do they offer?", "How do I contact them?", "Where are they located?"], initialQuestion, questionSequence }: AskFydWidgetProps) {
   // Item 4: text positions bind token roles, never raw accent/ink.
   const roles = resolveThemeRoles(theme);
   const [question, setQuestion] = useState("");
@@ -55,28 +61,64 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
   );
   const [citations, setCitations] = useState<AskFydCitation[]>([]);
   const [error, setError] = useState("");
+  const [stale, setStale] = useState(false);
+  const generation = useRef(0);
+  const scope = `${siteId ?? ''}:${pageCheckpoint ?? ''}`;
+  const currentScope = useRef(scope);
+  currentScope.current = scope;
+  const previousScope = useRef(scope);
+  const staleCopy = "Business information changed. Refresh this view.";
+  const questionKey = `fyd-refresh-question:${siteId ?? ''}`;
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(questionKey);
+      if (saved !== null) { setQuestion(saved); sessionStorage.removeItem(questionKey); }
+    } catch { /* Unavailable browser storage never changes the answer boundary. */ }
+  }, [questionKey]);
+  useEffect(() => {
+    if (previousScope.current === scope) return;
+    previousScope.current = scope;
+    generation.current++;
+    setAnswer(""); setCitations([]); setStatus("idle"); setError(""); setStale(false);
+  }, [scope]);
+  useEffect(() => () => { generation.current++; }, []);
 
   const configured = typeof siteId === "string" && siteId.length > 0;
   const busy = status === "loading";
-  const canAsk = configured && !busy && question.trim().length > 0;
+  const canAsk = configured && !busy && !stale && question.trim().length > 0;
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault();
-    const q = question.trim();
-    if (!configured || busy || q.length === 0) return;
+  useEffect(() => {
+    if (initialQuestion) {
+      generation.current++;
+      setQuestion(initialQuestion); setStatus("idle"); setAnswer(""); setCitations([]);
+    }
+  }, [initialQuestion, questionSequence]);
+
+  async function ask(value: string): Promise<void> {
+    const q = value.trim();
+    if (!configured || stale || q.length === 0) return;
+    const requestGeneration = ++generation.current;
+    const requestScope = scope;
+    const isCurrent = () => generation.current === requestGeneration && currentScope.current === requestScope;
     setStatus("loading");
     setError("");
+    setAnswer(""); setCitations([]);
     try {
-      const res = await fetch("/api/fyd/ask", {
+      const res = await fetch(`/api/fyd/ask/${encodeURIComponent(siteId!)}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ siteId, question: q, mode: "visitor" }),
+        body: JSON.stringify({ siteId, question: q, mode: "visitor", pageCheckpoint }),
       });
       let data: AskApiResponse | null = null;
       try {
         data = (await res.json()) as AskApiResponse;
       } catch {
         data = null;
+      }
+      if (!isCurrent()) return;
+      if (data?.kind === "stale_view" || (data?.ok && pageCheckpoint && data.answerCheckpoint !== pageCheckpoint)) {
+        setStale(true); setStatus("error"); setError(staleCopy); return;
       }
       if (!res.ok || !data || !data.ok) {
         setStatus("error");
@@ -93,6 +135,7 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
       setCitations(Array.isArray(data.citations) ? data.citations : []);
       setStatus("answered");
     } catch {
+      if (!isCurrent()) return;
       setStatus("error");
       setError("Could not reach Ask FYD. Check your connection and try again.");
     }
@@ -105,7 +148,7 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
 
   return (
     <div>
-      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-3 sm:flex-row" aria-label="Ask FYD">
+      <form onSubmit={(e) => { e.preventDefault(); void ask(question); }} className="mt-6 flex flex-col gap-3 sm:flex-row" aria-label="Ask FYD">
         <label htmlFor={inputId} className="sr-only">
           Ask a question about this business
         </label>
@@ -117,7 +160,7 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
           placeholder={
             configured ? "What do you want to know?" : "Ask FYD is not available on this page"
           }
-          disabled={!configured || busy}
+          disabled={!configured}
           maxLength={2000}
           className="min-h-[44px] flex-1 rounded border border-border-soft bg-background px-4 py-3 text-base text-ink"
         />
@@ -136,6 +179,13 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
           Ask FYD is not available on this page yet.
         </p>
       )}
+      {configured && (
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="Suggested questions">
+          {prompts.map(prompt => <button key={prompt} type="button" disabled={stale}
+            className="min-h-[44px] rounded-full border border-current/30 px-4 py-2 text-sm text-background hover:bg-white/10 disabled:opacity-50"
+            onClick={() => { setQuestion(prompt); void ask(prompt); }}>{prompt}</button>)}
+        </div>
+      )}
 
       <div aria-live="polite" className="mt-4">
         {busy && <p className="text-sm text-background/70">Looking that up...</p>}
@@ -144,6 +194,10 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
             {error}
           </p>
         )}
+        {stale && <button type="button" className="min-h-[44px] underline" onClick={() => {
+          try { sessionStorage.setItem(questionKey, question); } catch { return; }
+          window.location.reload();
+        }}>Refresh this view</button>}
         {status === "answered" && (
           <div>
             {responseClass === "DENIAL" && (
@@ -165,7 +219,7 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
             )}
             {paragraphs.map((p, i) => (
               <p key={i} className="mt-2 text-base leading-relaxed text-background">
-                {p}
+                {p.replace(/\s*\[\d+\]/g, "")}
               </p>
             ))}
             {refusal && citations.length === 0 && responseClass === "DENIAL" && (
@@ -176,7 +230,7 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
             )}
             {citations.length > 0 && (
               <details className="mt-3">
-                <summary className="inline-block min-h-[24px] cursor-pointer py-1 text-sm text-background underline">
+                <summary className="inline-flex min-h-[44px] cursor-pointer items-center py-1 text-sm text-background underline">
                   Why this?
                 </summary>
                 <ul className="mt-2 space-y-2">
@@ -187,6 +241,11 @@ export function AskFydWidget({ siteId, theme, inputId = "ask-fyd-question" }: As
                       </span>
                       <span className="block break-words text-xs opacity-80">Source: {c.source}</span>
                       <span className="block text-xs opacity-80">Basis: {c.basis}</span>
+                      {c.provenance?.origin === "owner" && <>
+                        <span className="block text-xs">FYD uses your correction: {c.provenance.effectiveValue}</span>
+                        <span className="block text-xs">Original observation: {c.provenance.originalObservation ?? "No value recorded"}</span>
+                        {c.provenance.sourceDrifted && <span className="block text-xs">The source changed to {c.provenance.currentObservation ?? "no recorded value"}. Your correction still applies.</span>}
+                      </>}
                       {c.lastChecked ? (
                         <span className="block text-xs opacity-80">
                           Last checked: {c.lastChecked}

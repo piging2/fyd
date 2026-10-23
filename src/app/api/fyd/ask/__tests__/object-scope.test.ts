@@ -119,15 +119,15 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
     }
     expect(out.answer).not.toContain("Pergola");
     expect(out.citations.length).toBeGreaterThan(0);
-    expect(out.citations.every((c) => HAPPY_SERVICES.includes(c.id))).toBe(true);
-    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
+    expect(out.citations.every((c) => c.kind === "relationship" ? HAPPY_BUNDLE.graph.relationships.some(r => r.id === c.id && r.status === "active" && r.subject === HAPPY_BIZ && HAPPY_SERVICES.includes(r.object)) : HAPPY_SERVICES.includes(c.id))).toBe(true);
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("DERIVED");
   });
 
   test("happy-place business: location answered from the location object", () => {
     const out = askOk(HAPPY, HAPPY_BIZ, "where are they located?");
     expect(out.refusal).toBe(false);
     expect(out.answer).toContain("Adair Village");
-    expect(out.citations.every((c) => c.id === HAPPY_LOC)).toBe(true);
+    expect(out.citations.every((c) => c.id === HAPPY_BIZ + "#locality" || c.id === HAPPY_LOC + "#title" || c.kind === "relationship")).toBe(true);
     expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED DIRECTLY");
   });
 
@@ -153,7 +153,7 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
     const where = askOk(COPPER, COPPER_BIZ, "where are they located?");
     expect(where.refusal).toBe(false);
     expect(where.answer).toMatch(/Grand Junction/i);
-    expect(where.citations.every((c) => c.id === COPPER_LOC)).toBe(true);
+    expect(where.citations.every((c) => c.id === COPPER_BIZ + "#locality" || c.id === COPPER_LOC + "#title" || c.kind === "relationship")).toBe(true);
     expect(answerClassFor(where.refusal, where.citations, where.claimClassifications)).toBe("SUPPORTED DIRECTLY");
 
     const assoc = askOk(COPPER, COPPER_BIZ, "who is associated?");
@@ -176,8 +176,8 @@ describe("object-scoped ask: business objects, four visitor questions", () => {
       expect(out.answer).toContain(name);
     }
     expect(out.citations.length).toBeGreaterThan(0);
-    expect(out.citations.every((c) => COPPER_SERVICES.includes(c.id))).toBe(true);
-    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
+    expect(out.citations.every((c) => c.kind === "relationship" ? COPPER_BUNDLE.graph.relationships.some(r => r.id === c.id && r.status === "active" && r.subject === COPPER_BIZ && COPPER_SERVICES.includes(r.object)) : COPPER_SERVICES.includes(c.id))).toBe(true);
+    expect(answerClassFor(out.refusal, out.citations, out.claimClassifications)).toBe("DERIVED");
   });
 });
 
@@ -245,9 +245,10 @@ describe("object-scoped ask: no cross-object leakage", () => {
     expect(out.citations.every((c) => c.id === COPPER_PERSON)).toBe(true);
   });
 
-  test("business service answer cites the service object, never the business", () => {
+  test("business service answer cites service records and their actual business relationships", () => {
     const out = askOk(HAPPY, HAPPY_BIZ, "what services do they offer?");
-    expect(out.citations.every((c) => HAPPY_SERVICES.includes(c.id))).toBe(true);
+    expect(out.citations.filter(c => c.kind === "object").every((c) => HAPPY_SERVICES.includes(c.id))).toBe(true);
+    expect(out.citations.filter(c => c.kind === "relationship").every(c => HAPPY_BUNDLE.graph.relationships.some(r => r.id === c.id && r.status === "active" && r.subject === HAPPY_BIZ && HAPPY_SERVICES.includes(r.object)))).toBe(true);
   });
 });
 

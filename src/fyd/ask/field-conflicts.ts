@@ -93,7 +93,11 @@ export function suppressConflictedFields(
       if (hidden.has(key)) continue;
       fields[key] = value;
     }
-    return { ...o, fields };
+    return { ...o, fields,
+      ...(hidden.has("description") ? {description:""} : {}),
+      ...(hidden.has("title") ? {title:""} : {}),
+      ...(o.ownerFieldCorrections ? {ownerFieldCorrections:o.ownerFieldCorrections.filter(c => !hidden.has(c.field))} : {}),
+    };
   });
   return { objects, relationships: graph.relationships };
 }

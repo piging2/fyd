@@ -177,7 +177,7 @@ describe("genuinely supported questions keep working", () => {
     const body = await askTrusted("What services do you offer?");
     expect(body.ok).toBe(true);
     expect(body.refusal).toBe(false);
-    expect(body.answerClass).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
+    expect(body.answerClass).toBe("DERIVED"); // The enumerated service count is computed from the bound graph.
     expect(body.answerState).toBe("KNOWN");
     expect(body.citations.length).toBeGreaterThan(0);
     for (const name of ["Repairs", "Fencing", "Painting", "Drywall", "Restoration"]) {

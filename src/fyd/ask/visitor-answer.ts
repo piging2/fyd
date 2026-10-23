@@ -1,3 +1,4 @@
+import { fieldExplanation } from "../sitespec/visitor-knowledge";
 /**
  * Visitor Ask FYD answer pipeline (server-only, framework-free).
  *
@@ -287,6 +288,7 @@ export interface AskFydCitation {
   /** The kind of evidence behind the citation (field / object / relationship). */
   kind: "field" | "object" | "relationship";
   source: string;
+  provenance?: ReturnType<typeof fieldExplanation>;
   basis: string;
   lastChecked: string | null;
   /** 5-class label: "SUPPORTED DIRECTLY" (cited evidence), "DERIVED" (derived / inferred / generated, explicitly labeled), "CONFLICTED" (cites a source disagreement). */
@@ -336,8 +338,9 @@ function buildAnswerRefs(citations: AskFydCitation[]): {
   }));
   const seenObjects = new Map<string, AskFydObjectRef>();
   for (const c of citations) {
-    if (c.kind === "object" && !seenObjects.has(c.id)) {
-      seenObjects.set(c.id, { objectId: c.id, label: c.label, claimClass: c.claimClass });
+    const objectId = c.kind === "object" ? c.id : c.kind === "field" && c.id.includes("#") && parseConflictObservationRefId(c.id) === null ? c.id.slice(0, c.id.lastIndexOf("#")) : null;
+    if (objectId && !seenObjects.has(objectId)) {
+      seenObjects.set(objectId, { objectId, label: c.label, claimClass: c.claimClass });
     }
   }
   const seenSources = new Map<string, AskFydSourceRef>();
@@ -556,7 +559,16 @@ function citationFor(
       // producer of field refs is an owner field correction (the composer
       // labels it as such), so the citation names the owner as the source
       // instead of misattributing the value to the website.
-      source = "Owner correction";
+      const split = ref.id.lastIndexOf("#");
+      const obj = objects.get(ref.id.slice(0, split));
+      const field = ref.id.slice(split + 1);
+      const correction = obj?.ownerFieldCorrections?.find(c => c.field === field);
+      const prov = obj?.provenance;
+      if (correction || !obj) source = "Owner correction";
+      else if (prov?.ref.startsWith("website-ingestion:")) source = `The business website (${prov.ref.slice("website-ingestion:".length)})`;
+      else if ((prov?.kind as string) === "owner-asserted") source = "Provided by the business";
+      else source = "Site record";
+      lastChecked = correction?.correctedAt?.slice(0, 10) ?? prov?.derivedAt?.slice(0, 10) ?? null;
     }
   } else if (ref.kind === "object") {
     const obj = objects.get(ref.id);
@@ -587,6 +599,11 @@ function citationFor(
     label: ref.label,
     kind: ref.kind,
     source,
+    ...(ref.kind === "field" && parseConflictObservationRefId(ref.id) === null ? {provenance: (() => {
+      const split = ref.id.lastIndexOf("#");
+      const object = objects.get(ref.id.slice(0, split));
+      return object ? fieldExplanation(object, ref.id.slice(split + 1)) : null;
+    })()} : {}),
     basis: classification ? basisForClassification(classification) : "Site record",
     lastChecked,
     // A conflict-observation cite is always CONFLICTED: it evidences the
