@@ -234,6 +234,20 @@ export default function HomePage() {
         </Container>
       </Section>
 
+      {/* Trademark disclaimer: placed directly above the portal
+          circles, whose faces are the logos of the displayed businesses. */}
+      <div className="bg-background">
+        <Container className="max-w-5xl">
+          <p className="py-6 text-base leading-relaxed text-text">
+            The logos shown below are the property of their respective
+            owners and are used solely for identification and free
+            promotional purposes. This website is not affiliated with,
+            endorsed by, sponsored by, or officially connected to any of
+            the businesses displayed.
+          </p>
+        </Container>
+      </div>
+
       {/* Portal margin: PING circles inhabit unused peripheral space only. Geometry, not breakpoints, decides whether a slot is honest. */}
       <HomeCircles portals={homePortals} />
 
