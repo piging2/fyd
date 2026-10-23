@@ -160,6 +160,15 @@ export interface PingObjectReader {
    * material cross the reader boundary.
    */
   queryFydSiteOverlays(siteId: string): Promise<FydJournalOverlay[]>;
+  /**
+   * Bundled overlay snapshot status: the configured path
+   * (FYD_OVERLAY_SNAPSHOT, else the bundled default) and its event count,
+   * with eventCount null when the snapshot is missing, unreadable, or
+   * malformed. Shares the read path's parser, so a readiness probe can
+   * never disagree with what queryFydSiteOverlays would serve from the
+   * snapshot.
+   */
+  bundledOverlaySnapshotStatus(): { path: string; eventCount: number | null };
 }
 
 /**
@@ -276,6 +285,20 @@ class GatewayPingObjectReader implements PingObjectReader {
     }
   }
 
+  /** Configured bundled snapshot path: FYD_OVERLAY_SNAPSHOT wins when set. */
+  private overlaySnapshotPath(): string {
+    const raw = process.env.FYD_OVERLAY_SNAPSHOT;
+    return raw && raw.trim() ? raw.trim() : "fyd-projections/fyd-overlay-snapshot.json";
+  }
+
+  bundledOverlaySnapshotStatus(): { path: string; eventCount: number | null } {
+    const path = this.overlaySnapshotPath();
+    // readOverlaySnapshotList ignores its siteId argument (the list is the
+    // whole snapshot; per-site filtering happens in parseOverlayList).
+    const list = this.readOverlaySnapshotList("");
+    return { path, eventCount: list ? list.length : null };
+  }
+
   /**
    * DEPLOY-2026-10-02: bundled journal snapshot fallback for static
    * deployments (e.g. Vercel) where the FYD journal gateway is unreachable.
@@ -292,9 +315,7 @@ class GatewayPingObjectReader implements PingObjectReader {
    * the gateway error is rethrown and the call stays fail-closed.
    */
   private readOverlaySnapshotList(siteId: string): unknown[] | null {
-    const raw = process.env.FYD_OVERLAY_SNAPSHOT;
-    const configured =
-      raw && raw.trim() ? raw.trim() : "fyd-projections/fyd-overlay-snapshot.json";
+    const configured = this.overlaySnapshotPath();
     try {
       const abs = configured.startsWith("/") ? configured : join(process.cwd(), configured);
       const parsed: unknown = JSON.parse(readFileSync(abs, "utf8"));
