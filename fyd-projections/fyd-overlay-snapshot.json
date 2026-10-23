@@ -1,0 +1,3086 @@
+{
+  "exportedAt": "2026-10-23T02:59:18.515Z",
+  "source": "http://127.0.0.1:18199",
+  "tenants": [
+    "happy-place",
+    "coppersmith-plumbing",
+    "ping-fyd"
+  ],
+  "events": [
+    {
+      "event_id": "fyd-seed-ovl-001",
+      "timestamp": "2026-09-19T18:30:59.221Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "add_object",
+            "object": {
+              "id": "website-service-51de038c1defe8bd",
+              "schema": "ping.social.service@1",
+              "controllerId": "identity_fyd_demo_operator",
+              "visibility": "public",
+              "title": "Pergola Design Consultations",
+              "description": "Complimentary consultations for custom pergola design",
+              "fields": {
+                "name": "Pergola Design Consultations",
+                "serviceType": "Consultation",
+                "availability": "Limited slots"
+              },
+              "createdAt": "2026-09-19T18:30:59.221Z",
+              "updatedAt": "2026-09-19T18:30:59.221Z",
+              "provenance": {
+                "kind": "overlay-authored",
+                "ref": "demo-overlay:happy-place",
+                "derivedAt": "2026-09-19T18:30:59.221Z"
+              }
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-seed-ovl-002",
+      "timestamp": "2026-09-19T18:32:14.908Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "add_relationship",
+            "relationship": {
+              "id": "rel-demo-pergola-01",
+              "subject": "website-business-6fa5ebd99d72c4cb",
+              "predicate": "offers",
+              "object": "website-service-51de038c1defe8bd",
+              "status": "active",
+              "createdAt": "2026-09-19T18:32:14.908Z"
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-seed-ovl-003",
+      "timestamp": "2026-09-19T18:36:12.105Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-stub-001",
+            "siteIntent": {
+              "kind": "reorder_sections",
+              "target": "services"
+            },
+            "proposal": {
+              "proposalDigest": "stub-proposal-digest-001"
+            },
+            "approval": {
+              "proposalDigest": "stub-proposal-digest-001",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-19T18:36:12.105Z",
+              "note": "DEMO OWNER MODE - not real authentication"
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-seed-ovl-004",
+      "timestamp": "2026-09-19T18:36:12.124Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-stub-002",
+            "siteIntent": {
+              "kind": "reorder_sections",
+              "target": "services"
+            },
+            "proposal": {
+              "proposalDigest": "stub-proposal-digest-002"
+            },
+            "approval": {
+              "proposalDigest": "stub-proposal-digest-002",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-19T18:36:12.105Z",
+              "note": "DEMO OWNER MODE - not real authentication"
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-seed-ovl-005",
+      "timestamp": "2026-09-19T18:36:12.136Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-stub-003",
+            "siteIntent": {
+              "kind": "reorder_sections",
+              "target": "services"
+            },
+            "proposal": {
+              "proposalDigest": "stub-proposal-digest-003"
+            },
+            "approval": {
+              "proposalDigest": "stub-proposal-digest-003",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-19T18:36:12.105Z",
+              "note": "DEMO OWNER MODE - not real authentication"
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-seed-ovl-006",
+      "timestamp": "2026-09-19T18:36:12.153Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-stub-002"
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-seed-ovl-007",
+      "timestamp": "2026-09-19T18:36:14.017Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "deactivate_object",
+            "objectId": "website-service-51de038c1defe8bd"
+          },
+          {
+            "op": "set_field",
+            "objectId": "website-business-6fa5ebd99d72c4cb",
+            "field": "tagline",
+            "value": "Built right. Built to last."
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufgsyxx-3836bf09f4a4",
+      "timestamp": "2026-09-24T11:44:58.341Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_field",
+            "objectId": "website-business-6fa5ebd99d72c4cb",
+            "field": "phone",
+            "value": "+1 555 019 2837"
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufgw6px-737a81b0326c",
+      "timestamp": "2026-09-24T11:47:28.389Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_field",
+            "objectId": "website-business-6fa5ebd99d72c4cb",
+            "field": "phone",
+            "value": "+15412865190",
+            "note": "revert of conflict-simulation event fyd-ovl-mufgsyxx-3836bf09f4a4; restores pre-task source value"
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufpbnyr-95298bf28158",
+      "timestamp": "2026-09-24T15:43:27.507Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-a692a9c40c6c2431",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                  "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                  "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                  "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                  "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "1b8f3be0b22d87d7086e56248234ab766d60c4420bb418d132be21b6397c373e"
+            },
+            "approval": {
+              "proposalDigest": "1b8f3be0b22d87d7086e56248234ab766d60c4420bb418d132be21b6397c373e",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T15:43:27.501Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufpbnz9-7b7eba231035",
+      "timestamp": "2026-09-24T15:43:27.525Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-82e950e5cd191340",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                  "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                  "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                  "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                  "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "670ccf906741b4a7ec7d97fc76ceff0e65264211d2cd16c0668353ce2cae80f0"
+            },
+            "approval": {
+              "proposalDigest": "670ccf906741b4a7ec7d97fc76ceff0e65264211d2cd16c0668353ce2cae80f0",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T15:43:27.522Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufpbnzn-36b65da03aa8",
+      "timestamp": "2026-09-24T15:43:27.540Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-a692a9c40c6c2431",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                  "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                  "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                  "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                  "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "1b8f3be0b22d87d7086e56248234ab766d60c4420bb418d132be21b6397c373e"
+            },
+            "approval": {
+              "proposalDigest": "1b8f3be0b22d87d7086e56248234ab766d60c4420bb418d132be21b6397c373e",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T15:43:27.537Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufpkmv1-2241b965f9d3",
+      "timestamp": "2026-09-24T15:50:25.981Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-a692a9c40c6c2431"
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufpkmvb-85291618759a",
+      "timestamp": "2026-09-24T15:50:25.991Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-82e950e5cd191340"
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufppzj1-e08c5815cc6a",
+      "timestamp": "2026-09-24T15:54:35.677Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-a692a9c40c6c2431",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                  "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                  "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                  "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                  "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "1b8f3be0b22d87d7086e56248234ab766d60c4420bb418d132be21b6397c373e"
+            },
+            "approval": {
+              "proposalDigest": "1b8f3be0b22d87d7086e56248234ab766d60c4420bb418d132be21b6397c373e",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T15:54:35.668Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufpq48d-c33c214696c7",
+      "timestamp": "2026-09-24T15:54:41.773Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-82e950e5cd191340",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                  "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                  "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                  "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                  "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "670ccf906741b4a7ec7d97fc76ceff0e65264211d2cd16c0668353ce2cae80f0"
+            },
+            "approval": {
+              "proposalDigest": "670ccf906741b4a7ec7d97fc76ceff0e65264211d2cd16c0668353ce2cae80f0",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T15:54:41.772Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufpq8c6-183b4eb3ec6c",
+      "timestamp": "2026-09-24T15:54:47.094Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-a692a9c40c6c2431",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-6fa5ebd99d72c4cb-service-7f1139c11dab",
+                  "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                  "website-business-6fa5ebd99d72c4cb-service-340c39513223",
+                  "website-business-6fa5ebd99d72c4cb-service-c63c87ed8420",
+                  "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "1b8f3be0b22d87d7086e56248234ab766d60c4420bb418d132be21b6397c373e"
+            },
+            "approval": {
+              "proposalDigest": "1b8f3be0b22d87d7086e56248234ab766d60c4420bb418d132be21b6397c373e",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T15:54:47.092Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufpqszc-b985f4415847",
+      "timestamp": "2026-09-24T15:55:13.848Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-a692a9c40c6c2431"
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mufpqszr-6f305bb7aa75",
+      "timestamp": "2026-09-24T15:55:13.863Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-82e950e5cd191340"
+          }
+        ]
+      },
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-muga9ldb-424796a96442",
+      "timestamp": "2026-09-25T01:29:42.768Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-b1429ed32a022be4",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "moveFrom": 2,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428"
+            },
+            "approval": {
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-25T01:29:42.762Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "1d8de7e0-8dc4-44e4-b5d8-1fe249557a42",
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-muga9lec-4048953756f6",
+      "timestamp": "2026-09-25T01:29:42.804Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-b1429ed32a022be4"
+          }
+        ]
+      },
+      "request_id": "1d537554-e000-490b-9793-66f8b390d2c1",
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mugabxpq-736e8b1d1a30",
+      "timestamp": "2026-09-25T01:31:32.078Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-b1429ed32a022be4",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "moveFrom": 2,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428"
+            },
+            "approval": {
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-25T01:31:32.075Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "0be1e742-96f7-4c76-9dc6-9e80b252d5ec",
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mugacttv-f2ccbcbffdb8",
+      "timestamp": "2026-09-25T01:32:13.699Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-b1429ed32a022be4"
+          }
+        ]
+      },
+      "request_id": "e4d5ce17-ca03-41ed-9f11-e83178248e8d",
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mugapozh-3cd0b3487446",
+      "timestamp": "2026-09-25T01:42:13.950Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-0eaa4fff820090c6",
+            "siteIntent": {
+              "kind": "toggle_section",
+              "pageSlug": "home",
+              "sectionId": "home:Locations:3",
+              "hidden": true
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Locations:3",
+              "component": "Locations",
+              "propsDiff": {
+                "presentation.hidden": true
+              },
+              "reason": "Hide section.",
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9"
+            },
+            "approval": {
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-25T01:42:13.946Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "e2e-seam-test-20260924-1938-approve",
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mugaq8gr-b7910f5ef743",
+      "timestamp": "2026-09-25T01:42:39.195Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-0eaa4fff820090c6"
+          }
+        ]
+      },
+      "request_id": "e2e-seam-test-20260924-1938-clear",
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mugymda0-780d835cefae",
+      "timestamp": "2026-09-25T12:51:29.592Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-b1429ed32a022be4",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "moveFrom": 2,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428"
+            },
+            "approval": {
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-25T12:51:29.587Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "lane7-test-001",
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-mugynxgi-9fc299958109",
+      "timestamp": "2026-09-25T12:52:42.402Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-b1429ed32a022be4"
+          }
+        ]
+      },
+      "request_id": "42d88e92-6fd9-4de0-98c6-4a722554a5df",
+      "tenant_id": "happy-place"
+    },
+    {
+      "event_id": "fyd-ovl-muklxc7l-333f04fa678b",
+      "timestamp": "2026-09-28T02:07:11.121Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-82b6c64f99149682",
+            "siteIntent": {
+              "kind": "edit_copy",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "heading": "Emergency Services",
+              "copy": "Get in touch with us for urgent repairs at Happy Place Carpentry LLC. We're always ready to help, but we can't promise response speed or ranking."
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.heading": "Emergency Services",
+                "presentation.copy": "Get in touch with us for urgent repairs at Happy Place Carpentry LLC. We're always ready to help, but we can't promise response speed or ranking."
+              },
+              "reason": "Approved MC proposal p0prop-ac04480a6d1809fd (heading+copy portion). Format-translated for the overlay applier; content identical to the approved bytes.",
+              "proposalDigest": "ad71ac5125d39b3e8ebe2217a246728ae4b61697bdbe860c050eb3aec524d7e9"
+            },
+            "approval": {
+              "proposalDigest": "ad71ac5125d39b3e8ebe2217a246728ae4b61697bdbe860c050eb3aec524d7e9",
+              "approvedBy": "nolan:owner",
+              "approvedAt": "2026-09-28T02:04:52Z",
+              "note": "DEMO OWNER MODE journal transport. MC approval p0prop-ac04480a6d1809fd (digest 5c1d873706c14c7c3c7b5ded02bb73924419e4cdf3e17f6dc6bc98795731e7aa) by nolan:owner 2026-09-28T02:04:52Z per GRILL-LOCKED-2026-09-27 (exact-transition binding). Directive content is the exact approved bytes, format-translated for the overlay applier; no content change."
+            }
+          },
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-b9d3ea837d2e222e",
+            "siteIntent": {
+              "kind": "set_featured",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.featuredIds": [
+                  "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+                ]
+              },
+              "reason": "Approved MC proposal p0prop-ac04480a6d1809fd (featured-object portion). Format-translated for the overlay applier; content identical to the approved bytes.",
+              "proposalDigest": "1186273ef24cad8ff09dd2c918591e0eb939230a1ed6ee31283da478f3e6e802"
+            },
+            "approval": {
+              "proposalDigest": "1186273ef24cad8ff09dd2c918591e0eb939230a1ed6ee31283da478f3e6e802",
+              "approvedBy": "nolan:owner",
+              "approvedAt": "2026-09-28T02:04:52Z",
+              "note": "DEMO OWNER MODE journal transport. MC approval p0prop-ac04480a6d1809fd (digest 5c1d873706c14c7c3c7b5ded02bb73924419e4cdf3e17f6dc6bc98795731e7aa) by nolan:owner 2026-09-28T02:04:52Z per GRILL-LOCKED-2026-09-27 (exact-transition binding). Directive content is the exact approved bytes, format-translated for the overlay applier; no content change."
+            }
+          }
+        ]
+      },
+      "request_id": null
+    },
+    {
+      "event_id": "fyd-ovl-mulxaxri-c3dbf3e08b33",
+      "timestamp": "2026-09-29T00:13:27.534Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-dd15109312187b42",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Contact:4",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Contact:4",
+              "component": "Contact",
+              "propsDiff": {
+                "moveFrom": 4,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "b78821def6cc66907d131a30420deeb64a651ff8f802216a814f90b49c51f9e9"
+            },
+            "approval": {
+              "proposalDigest": "b78821def6cc66907d131a30420deeb64a651ff8f802216a814f90b49c51f9e9",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-29T00:13:27.524Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "dda4663b-f043-4bf6-a759-b7f07e079864"
+    },
+    {
+      "event_id": "fyd-ovl-mulxdrme-8013374d3d29",
+      "timestamp": "2026-09-29T00:15:39.542Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-dd15109312187b42"
+          }
+        ]
+      },
+      "request_id": "847f9f91-f429-4f8b-bcd0-7ba2193a0f8e"
+    },
+    {
+      "event_id": "fyd-ovl-mulye7z7-d09630ea3ee7",
+      "timestamp": "2026-09-29T00:44:00.355Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-dd15109312187b42",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Contact:4",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Contact:4",
+              "component": "Contact",
+              "propsDiff": {
+                "moveFrom": 4,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "b78821def6cc66907d131a30420deeb64a651ff8f802216a814f90b49c51f9e9"
+            },
+            "approval": {
+              "proposalDigest": "b78821def6cc66907d131a30420deeb64a651ff8f802216a814f90b49c51f9e9",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-29T00:44:00.345Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "converge-test-001"
+    },
+    {
+      "event_id": "fyd-ovl-mulyer3l-992f4e6e6462",
+      "timestamp": "2026-09-29T00:44:25.137Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-dd15109312187b42"
+          }
+        ]
+      },
+      "request_id": "converge-test-clear-001"
+    },
+    {
+      "event_id": "fyd-ovl-muzmod7b-704953d95483",
+      "timestamp": "2026-10-08T14:24:44.759Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-0eaa4fff820090c6",
+            "siteIntent": {
+              "kind": "toggle_section",
+              "pageSlug": "home",
+              "sectionId": "home:Locations:3",
+              "hidden": true
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Locations:3",
+              "component": "Locations",
+              "propsDiff": {
+                "presentation.hidden": true
+              },
+              "reason": "Hide section.",
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9"
+            },
+            "approval": {
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:24:44.736Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "6d1c088d-99f8-4d77-8210-ba7f22af2040"
+    },
+    {
+      "event_id": "fyd-ovl-muzmoebz-99c9eb41324e",
+      "timestamp": "2026-10-08T14:24:46.223Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-0eaa4fff820090c6"
+          }
+        ]
+      },
+      "request_id": "9e022527-472a-4112-b022-86a0beeefc39"
+    },
+    {
+      "event_id": "fyd-ovl-muzmqee3-4b1e95e81edb",
+      "timestamp": "2026-10-08T14:26:19.611Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-0eaa4fff820090c6",
+            "siteIntent": {
+              "kind": "toggle_section",
+              "pageSlug": "home",
+              "sectionId": "home:Locations:3",
+              "hidden": true
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Locations:3",
+              "component": "Locations",
+              "propsDiff": {
+                "presentation.hidden": true
+              },
+              "reason": "Hide section.",
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9"
+            },
+            "approval": {
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:26:19.593Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "124cade9-5582-4a32-9c73-5cc7acc21ffd"
+    },
+    {
+      "event_id": "fyd-ovl-muzmqf4b-532a24092b8a",
+      "timestamp": "2026-10-08T14:26:20.555Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-0eaa4fff820090c6"
+          }
+        ]
+      },
+      "request_id": "7e31c862-5bc1-4e1b-898c-63d2af800394"
+    },
+    {
+      "event_id": "fyd-ovl-muzn76vd-364b000a0816",
+      "timestamp": "2026-10-08T14:39:23.017Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-3be82d3b5226154c",
+            "siteIntent": {
+              "kind": "set_featured",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.featuredIds": [
+                  "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                  "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+                ]
+              },
+              "reason": "Select featured objects for section.",
+              "proposalDigest": "39bab7761113d6f11c88bd3ec76d1dd5b9b91e55b428902a25bf6d1ea1c12682"
+            },
+            "approval": {
+              "proposalDigest": "39bab7761113d6f11c88bd3ec76d1dd5b9b91e55b428902a25bf6d1ea1c12682",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:39:22.996Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "35cd07d1-d6cf-42ee-98c1-81abd76bc3f6"
+    },
+    {
+      "event_id": "fyd-ovl-muzn78y2-9a379a945c11",
+      "timestamp": "2026-10-08T14:39:25.706Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-3be82d3b5226154c"
+          }
+        ]
+      },
+      "request_id": "e4cf1598-d7f0-4255-885a-6cd9e7090eac"
+    },
+    {
+      "event_id": "fyd-ovl-muzn79t9-0704c7d9694a",
+      "timestamp": "2026-10-08T14:39:26.829Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-e280fc79270dadf5",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Contact:5",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Contact:5",
+              "component": "Contact",
+              "propsDiff": {
+                "moveFrom": 5,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "1aeb9061f176d6129aee2299fc20c45823abc49e76f02f9f65c289808dae7774"
+            },
+            "approval": {
+              "proposalDigest": "1aeb9061f176d6129aee2299fc20c45823abc49e76f02f9f65c289808dae7774",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:39:26.813Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "2db2c399-4e8b-4f97-b02a-85daef23300c"
+    },
+    {
+      "event_id": "fyd-ovl-muzn7bzr-49855cedbe14",
+      "timestamp": "2026-10-08T14:39:29.655Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-e280fc79270dadf5"
+          }
+        ]
+      },
+      "request_id": "82bb0e0e-0121-4489-ba9c-3a7d2fdda136"
+    },
+    {
+      "event_id": "fyd-ovl-muznrko6-cce959724b64",
+      "timestamp": "2026-10-08T14:55:14.022Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-3be82d3b5226154c",
+            "siteIntent": {
+              "kind": "set_featured",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.featuredIds": [
+                  "website-business-6fa5ebd99d72c4cb-service-3263502c8175",
+                  "website-business-6fa5ebd99d72c4cb-service-cd28e52699a5"
+                ]
+              },
+              "reason": "Select featured objects for section.",
+              "proposalDigest": "39bab7761113d6f11c88bd3ec76d1dd5b9b91e55b428902a25bf6d1ea1c12682"
+            },
+            "approval": {
+              "proposalDigest": "39bab7761113d6f11c88bd3ec76d1dd5b9b91e55b428902a25bf6d1ea1c12682",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:55:14.000Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "4087441a-1c25-4be8-a629-fe807de6310e"
+    },
+    {
+      "event_id": "fyd-ovl-muznrmrb-66ed855b1ce4",
+      "timestamp": "2026-10-08T14:55:16.727Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-3be82d3b5226154c"
+          }
+        ]
+      },
+      "request_id": "b3cc4c55-ec0c-4c70-b5f6-6c3b7411f159"
+    },
+    {
+      "event_id": "fyd-ovl-muznrnme-8cce565df7ba",
+      "timestamp": "2026-10-08T14:55:17.846Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-e280fc79270dadf5",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Contact:5",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Contact:5",
+              "component": "Contact",
+              "propsDiff": {
+                "moveFrom": 5,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "1aeb9061f176d6129aee2299fc20c45823abc49e76f02f9f65c289808dae7774"
+            },
+            "approval": {
+              "proposalDigest": "1aeb9061f176d6129aee2299fc20c45823abc49e76f02f9f65c289808dae7774",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:55:17.830Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "37c7192b-c2df-49d6-ae4f-c7b217b6476d"
+    },
+    {
+      "event_id": "fyd-ovl-muznrprs-fc20d38ca978",
+      "timestamp": "2026-10-08T14:55:20.632Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-e280fc79270dadf5"
+          }
+        ]
+      },
+      "request_id": "2e3694c7-f876-4e65-9741-78fd29cc6149"
+    },
+    {
+      "event_id": "fyd-ovl-muznsqis-2525c5b9274d",
+      "timestamp": "2026-10-08T14:56:08.260Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-0eaa4fff820090c6",
+            "siteIntent": {
+              "kind": "toggle_section",
+              "pageSlug": "home",
+              "sectionId": "home:Locations:3",
+              "hidden": true
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Locations:3",
+              "component": "Locations",
+              "propsDiff": {
+                "presentation.hidden": true
+              },
+              "reason": "Hide section.",
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9"
+            },
+            "approval": {
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:56:08.239Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "897985aa-39ea-438f-aaec-0b5691f82a33"
+    },
+    {
+      "event_id": "fyd-ovl-muznsr9w-be2a76253420",
+      "timestamp": "2026-10-08T14:56:09.236Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-0eaa4fff820090c6"
+          }
+        ]
+      },
+      "request_id": "611c60f0-9798-4a5a-83c1-69c50040eecb"
+    },
+    {
+      "event_id": "fyd-ovl-muzr8ivd-db946945d1ff",
+      "timestamp": "2026-10-08T16:32:23.689Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-dd15109312187b42",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Contact:4",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Contact:4",
+              "component": "Contact",
+              "propsDiff": {
+                "moveFrom": 4,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "b78821def6cc66907d131a30420deeb64a651ff8f802216a814f90b49c51f9e9"
+            },
+            "approval": {
+              "proposalDigest": "b78821def6cc66907d131a30420deeb64a651ff8f802216a814f90b49c51f9e9",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T16:32:23.675Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "846e2052-5a01-41d7-9924-f34ae4894137"
+    },
+    {
+      "event_id": "fyd-ovl-muzr8ykb-7e0a612c71f1",
+      "timestamp": "2026-10-08T16:32:44.027Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "happy-place",
+      "aggregate_id": "fyd-site:happy-place",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "happy-place",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-dd15109312187b42"
+          }
+        ]
+      },
+      "request_id": "3e67e0f3-2c83-4d76-a6e6-b1b946f38c53"
+    },
+    {
+      "event_id": "fyd-ovl-mufh0cte-41aef0c10164",
+      "timestamp": "2026-09-24T11:50:42.914Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-37b2061541c5a9bc",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "moveFrom": 2,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428"
+            },
+            "approval": {
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T11:50:42.907Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufh2e3o-6d6d2181b617",
+      "timestamp": "2026-09-24T11:52:17.892Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-37b2061541c5a9bc"
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufhf8y2-c390da9d75f3",
+      "timestamp": "2026-09-24T12:02:17.738Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-37b2061541c5a9bc",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "moveFrom": 2,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428"
+            },
+            "approval": {
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T12:02:17.736Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufhfclg-4aad14f81921",
+      "timestamp": "2026-09-24T12:02:22.468Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-37b2061541c5a9bc"
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufhgy03-c4a7e1c89024",
+      "timestamp": "2026-09-24T12:03:36.867Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-37b2061541c5a9bc",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "moveFrom": 2,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428"
+            },
+            "approval": {
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T12:03:36.865Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufhj55z-bb2595840bc7",
+      "timestamp": "2026-09-24T12:05:19.463Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-37b2061541c5a9bc"
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-muflorw7-a0fc09d0c31f",
+      "timestamp": "2026-09-24T14:01:40.663Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-ccb8d3d3d2d8b2f6",
+            "siteIntent": {
+              "kind": "toggle_section",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "hidden": true
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.hidden": true
+              },
+              "reason": "Hide section.",
+              "proposalDigest": "452ee90ab9d9ea7a279958a5b6ba1c92f6241ac5478e9d37fbe7cfdd4cc82fff"
+            },
+            "approval": {
+              "proposalDigest": "452ee90ab9d9ea7a279958a5b6ba1c92f6241ac5478e9d37fbe7cfdd4cc82fff",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T14:01:40.654Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-muflusab-7d88fbfa599f",
+      "timestamp": "2026-09-24T14:06:21.107Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-ccb8d3d3d2d8b2f6"
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufmf64g-4a2e46c4fec3",
+      "timestamp": "2026-09-24T14:22:12.160Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-2e120da637f2d826",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                "website-business-2f1327c09d622175-service-78962f315c55"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "349f5a70e3acedd891b799bfe39e585892c64a532838dcac113ba10b99859301"
+            },
+            "approval": {
+              "proposalDigest": "349f5a70e3acedd891b799bfe39e585892c64a532838dcac113ba10b99859301",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T14:22:12.151Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufmg3au-d53c521f8696",
+      "timestamp": "2026-09-24T14:22:55.158Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-9f644e1053c3ec9b",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                "website-business-2f1327c09d622175-service-78962f315c55"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765"
+            },
+            "approval": {
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T14:22:55.156Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufn95kl-0881f5ffa321",
+      "timestamp": "2026-09-24T14:45:31.125Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-6bc3c3a3fa80961d",
+            "siteIntent": {
+              "kind": "deactivate_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectId": "website-business-2f1327c09d622175-service-2dbc12c16f83"
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.hiddenObjectIds": [
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83"
+                ]
+              },
+              "reason": "Deactivate (hide) an object within section.",
+              "proposalDigest": "d26f07d04d07f54eace478ac9e6fd38044421da01cf710cb60ed47fea0e25e64"
+            },
+            "approval": {
+              "proposalDigest": "d26f07d04d07f54eace478ac9e6fd38044421da01cf710cb60ed47fea0e25e64",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T14:45:31.118Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufnbs7w-765cfba57b57",
+      "timestamp": "2026-09-24T14:47:33.788Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-6bc3c3a3fa80961d"
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufnbsd6-fed23af928df",
+      "timestamp": "2026-09-24T14:47:33.978Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-6bc3c3a3fa80961d",
+            "siteIntent": {
+              "kind": "deactivate_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectId": "website-business-2f1327c09d622175-service-2dbc12c16f83"
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.hiddenObjectIds": [
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83"
+                ]
+              },
+              "reason": "Deactivate (hide) an object within section.",
+              "proposalDigest": "d26f07d04d07f54eace478ac9e6fd38044421da01cf710cb60ed47fea0e25e64"
+            },
+            "approval": {
+              "proposalDigest": "d26f07d04d07f54eace478ac9e6fd38044421da01cf710cb60ed47fea0e25e64",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T14:47:33.975Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufncgny-793abe94be9e",
+      "timestamp": "2026-09-24T14:48:05.470Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-6bc3c3a3fa80961d"
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufomp17-b60f5fc4b3a9",
+      "timestamp": "2026-09-24T15:24:02.491Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-6bc3c3a3fa80961d",
+            "siteIntent": {
+              "kind": "deactivate_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectId": "website-business-2f1327c09d622175-service-2dbc12c16f83"
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.hiddenObjectIds": [
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83"
+                ]
+              },
+              "reason": "Deactivate (hide) an object within section.",
+              "proposalDigest": "d26f07d04d07f54eace478ac9e6fd38044421da01cf710cb60ed47fea0e25e64"
+            },
+            "approval": {
+              "proposalDigest": "d26f07d04d07f54eace478ac9e6fd38044421da01cf710cb60ed47fea0e25e64",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T15:24:02.483Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufowjjb-1b2771c09059",
+      "timestamp": "2026-09-24T15:31:41.927Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-6bc3c3a3fa80961d"
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufp2jxd-7e6d3dffb7b9",
+      "timestamp": "2026-09-24T15:36:22.369Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-2e120da637f2d826",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                "website-business-2f1327c09d622175-service-78962f315c55"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "349f5a70e3acedd891b799bfe39e585892c64a532838dcac113ba10b99859301"
+            },
+            "approval": {
+              "proposalDigest": "349f5a70e3acedd891b799bfe39e585892c64a532838dcac113ba10b99859301",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T15:36:22.367Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufp4mjn-1ecba64f6b67",
+      "timestamp": "2026-09-24T15:37:59.075Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-d7684cc227c660fe",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-78962f315c55",
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-78962f315c55",
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "ddb07a6af5461918eb81b79fdb827215b694098bcb15b70185fb83d8c30305a5"
+            },
+            "approval": {
+              "proposalDigest": "ddb07a6af5461918eb81b79fdb827215b694098bcb15b70185fb83d8c30305a5",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-24T15:37:59.073Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mufp4z9e-a309380b90fe",
+      "timestamp": "2026-09-24T15:38:15.554Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-d7684cc227c660fe"
+          }
+        ]
+      },
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mugyb574-9d1e075926e7",
+      "timestamp": "2026-09-25T12:42:45.904Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-9f644e1053c3ec9b",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                "website-business-2f1327c09d622175-service-78962f315c55"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765"
+            },
+            "approval": {
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-25T12:42:45.890Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "0c2370e0-ebd0-4d9b-baa8-0c2e4f9c66e4",
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mugycvod-ef3e70a9a2b0",
+      "timestamp": "2026-09-25T12:44:06.877Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-9f644e1053c3ec9b"
+          }
+        ]
+      },
+      "request_id": "bfa46f0a-8df5-42af-8c72-9426f88179ff",
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mugyend7-2ba3c3d622c6",
+      "timestamp": "2026-09-25T12:45:29.420Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-9f644e1053c3ec9b",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                "website-business-2f1327c09d622175-service-78962f315c55"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765"
+            },
+            "approval": {
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-25T12:45:29.415Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "e603841c-48d5-4b2d-bdad-25a3e9b0077f",
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mugyeup8-927b91cb6108",
+      "timestamp": "2026-09-25T12:45:38.924Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-9f644e1053c3ec9b"
+          }
+        ]
+      },
+      "request_id": "8c261615-56fe-40fd-9f7c-c483159b2e70",
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mugymf21-9155315690c3",
+      "timestamp": "2026-09-25T12:51:31.897Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-9f644e1053c3ec9b",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                "website-business-2f1327c09d622175-service-78962f315c55"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765"
+            },
+            "approval": {
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-25T12:51:31.894Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "6e3c6b6a-092d-459f-90fc-38411e3b033f",
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mugyn4o2-f61a56827992",
+      "timestamp": "2026-09-25T12:52:05.090Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-9f644e1053c3ec9b"
+          }
+        ]
+      },
+      "request_id": "75a1aee0-d345-4777-92c8-51441e600d9a",
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mugyq6x1-df4c9c7eda6d",
+      "timestamp": "2026-09-25T12:54:27.973Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-9f644e1053c3ec9b",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                "website-business-2f1327c09d622175-service-78962f315c55"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765"
+            },
+            "approval": {
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-25T12:54:27.962Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "20d0b139-67a8-49e0-9f39-758b22eccc46",
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-mugyrmiu-087b48869787",
+      "timestamp": "2026-09-25T12:55:34.854Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-9f644e1053c3ec9b"
+          }
+        ]
+      },
+      "request_id": "b0ba88e3-37fd-4921-b580-848939b7962d",
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-muh4ohlx-ffa7e06a21bd",
+      "timestamp": "2026-09-25T15:41:06.213Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-9f644e1053c3ec9b",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                "website-business-2f1327c09d622175-service-78962f315c55"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765"
+            },
+            "approval": {
+              "proposalDigest": "dd2efbf4c5435ffc7fa78835917bdc7c369c5c3ab32512399864848ca7976765",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-25T15:41:06.209Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "6180fc0b-5df5-417a-aac1-702596c19812",
+      "tenant_id": "coppersmith-plumbing"
+    },
+    {
+      "event_id": "fyd-ovl-muj36ky7-3906671f7c90",
+      "timestamp": "2026-09-27T00:34:43.471Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-2e120da637f2d826",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                "website-business-2f1327c09d622175-service-78962f315c55"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "349f5a70e3acedd891b799bfe39e585892c64a532838dcac113ba10b99859301"
+            },
+            "approval": {
+              "proposalDigest": "349f5a70e3acedd891b799bfe39e585892c64a532838dcac113ba10b99859301",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-27T00:34:43.465Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "376557c1-84ec-4fda-859c-fc045caefa29"
+    },
+    {
+      "event_id": "fyd-ovl-muj3ane7-9f948ab0a104",
+      "timestamp": "2026-09-27T00:37:53.263Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-2e120da637f2d826"
+          }
+        ]
+      },
+      "request_id": "49f086a1-3e73-4b48-bd95-ea184c074932"
+    },
+    {
+      "event_id": "fyd-ovl-mulutp2p-c082dc1d86c7",
+      "timestamp": "2026-09-28T23:04:03.889Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-06d2931650907ebd",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Contact:5",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Contact:5",
+              "component": "Contact",
+              "propsDiff": {
+                "moveFrom": 5,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "1aeb9061f176d6129aee2299fc20c45823abc49e76f02f9f65c289808dae7774"
+            },
+            "approval": {
+              "proposalDigest": "1aeb9061f176d6129aee2299fc20c45823abc49e76f02f9f65c289808dae7774",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-28T23:04:03.881Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "635efbac-451f-4cd1-a32a-0f302d7a2b81"
+    },
+    {
+      "event_id": "fyd-ovl-muvm8j4d-a5133ab9c17a",
+      "timestamp": "2026-10-05T19:01:21.230Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-b82ddce482c61133",
+            "siteIntent": {
+              "kind": "reorder_object",
+              "pageSlug": "home",
+              "sectionId": "home:Services:3",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-78962f315c55",
+                "website-business-2f1327c09d622175-service-139408827c27",
+                "website-business-2f1327c09d622175-service-a2008c93fb04",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:3",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.objectOrder": [
+                  "website-business-2f1327c09d622175-service-78962f315c55",
+                  "website-business-2f1327c09d622175-service-139408827c27",
+                  "website-business-2f1327c09d622175-service-a2008c93fb04",
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83"
+                ]
+              },
+              "reason": "Reorder objects within section.",
+              "proposalDigest": "f8daa4917284fa7519f3a7ca268952ecb3442b8fdfb76d37eced33cb557dda22"
+            },
+            "approval": {
+              "proposalDigest": "f8daa4917284fa7519f3a7ca268952ecb3442b8fdfb76d37eced33cb557dda22",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-05T19:01:21.205Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "5956695b-54ff-4a0c-8755-5627c7ead149"
+    },
+    {
+      "event_id": "fyd-ovl-muyl9u3m-612f575c93b6",
+      "timestamp": "2026-10-07T20:57:41.027Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-278c2f6541274d2e",
+            "siteIntent": {
+              "kind": "set_featured",
+              "pageSlug": "home",
+              "sectionId": "home:Services:3",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-2dbc12c16f83"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:3",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.featuredIds": [
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83"
+                ]
+              },
+              "reason": "Select featured objects for section.",
+              "proposalDigest": "de87fc638b67362ce254038ffaaf659ec50e422a3604ac25a79188c9079ae49f"
+            },
+            "approval": {
+              "proposalDigest": "de87fc638b67362ce254038ffaaf659ec50e422a3604ac25a79188c9079ae49f",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-07T20:57:41.011Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "5d954a18-52d2-4127-acf3-1625f4500a1a"
+    },
+    {
+      "event_id": "fyd-ovl-muzmoauz-513fb2ef1306",
+      "timestamp": "2026-10-08T14:24:41.724Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-3b548890b9b40c67",
+            "siteIntent": {
+              "kind": "toggle_section",
+              "pageSlug": "home",
+              "sectionId": "home:Locations:3",
+              "hidden": true
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Locations:3",
+              "component": "Locations",
+              "propsDiff": {
+                "presentation.hidden": true
+              },
+              "reason": "Hide section.",
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9"
+            },
+            "approval": {
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:24:41.695Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "7add0819-8c7d-4ac7-be23-83e9eea582e4"
+    },
+    {
+      "event_id": "fyd-ovl-muzmoc2u-c15fd4c75b32",
+      "timestamp": "2026-10-08T14:24:43.302Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-3b548890b9b40c67"
+          }
+        ]
+      },
+      "request_id": "a31e79dd-bce2-446f-9157-1b9c55a76b90"
+    },
+    {
+      "event_id": "fyd-ovl-muzmqcra-91e6b6dfd555",
+      "timestamp": "2026-10-08T14:26:17.494Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-3b548890b9b40c67",
+            "siteIntent": {
+              "kind": "toggle_section",
+              "pageSlug": "home",
+              "sectionId": "home:Locations:3",
+              "hidden": true
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Locations:3",
+              "component": "Locations",
+              "propsDiff": {
+                "presentation.hidden": true
+              },
+              "reason": "Hide section.",
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9"
+            },
+            "approval": {
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:26:17.477Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "cf031b49-6a73-49bc-86dd-f0a3fca8a050"
+    },
+    {
+      "event_id": "fyd-ovl-muzmqdhz-fdbc93841122",
+      "timestamp": "2026-10-08T14:26:18.455Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-3b548890b9b40c67"
+          }
+        ]
+      },
+      "request_id": "7f7e8f2f-ae9a-493d-85ae-5f481267a4d2"
+    },
+    {
+      "event_id": "fyd-ovl-muzn70eq-31ac5896649f",
+      "timestamp": "2026-10-08T14:39:14.642Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-485f2083ad78f334",
+            "siteIntent": {
+              "kind": "set_featured",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-78962f315c55",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.featuredIds": [
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Select featured objects for section.",
+              "proposalDigest": "4474c3b6d5327fe44799bb89bae39dde1da1328abf7ea5f2623c267378cc604f"
+            },
+            "approval": {
+              "proposalDigest": "4474c3b6d5327fe44799bb89bae39dde1da1328abf7ea5f2623c267378cc604f",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:39:14.622Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "a189c09f-39ac-4048-ab28-0e37ef06bc2e"
+    },
+    {
+      "event_id": "fyd-ovl-muzn72i7-8e9d8178843a",
+      "timestamp": "2026-10-08T14:39:17.359Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-485f2083ad78f334"
+          }
+        ]
+      },
+      "request_id": "c08b6b26-bec0-469f-b1cc-b2de62f08eef"
+    },
+    {
+      "event_id": "fyd-ovl-muznrfen-18fe7184028d",
+      "timestamp": "2026-10-08T14:55:07.199Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-485f2083ad78f334",
+            "siteIntent": {
+              "kind": "set_featured",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "objectIds": [
+                "website-business-2f1327c09d622175-service-78962f315c55",
+                "website-business-2f1327c09d622175-service-2dbc12c16f83"
+              ]
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "presentation.featuredIds": [
+                  "website-business-2f1327c09d622175-service-2dbc12c16f83",
+                  "website-business-2f1327c09d622175-service-78962f315c55"
+                ]
+              },
+              "reason": "Select featured objects for section.",
+              "proposalDigest": "4474c3b6d5327fe44799bb89bae39dde1da1328abf7ea5f2623c267378cc604f"
+            },
+            "approval": {
+              "proposalDigest": "4474c3b6d5327fe44799bb89bae39dde1da1328abf7ea5f2623c267378cc604f",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:55:07.180Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "b84dd582-3c82-4fc9-9190-53168304a1ba"
+    },
+    {
+      "event_id": "fyd-ovl-muznrhi5-392243ea0b80",
+      "timestamp": "2026-10-08T14:55:09.917Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-485f2083ad78f334"
+          }
+        ]
+      },
+      "request_id": "e876b12f-5c09-4dad-84f7-11603079c3af"
+    },
+    {
+      "event_id": "fyd-ovl-muznsoti-dd89bd62d75d",
+      "timestamp": "2026-10-08T14:56:06.055Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-3b548890b9b40c67",
+            "siteIntent": {
+              "kind": "toggle_section",
+              "pageSlug": "home",
+              "sectionId": "home:Locations:3",
+              "hidden": true
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Locations:3",
+              "component": "Locations",
+              "propsDiff": {
+                "presentation.hidden": true
+              },
+              "reason": "Hide section.",
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9"
+            },
+            "approval": {
+              "proposalDigest": "a61fd86ca6b45987a1b32eafbcfbd016eb41cee871461f5992d03181513444e9",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-10-08T14:56:06.032Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "b2cc711f-71db-4707-a837-b3027141da7d"
+    },
+    {
+      "event_id": "fyd-ovl-muznspkr-dca9be4af32b",
+      "timestamp": "2026-10-08T14:56:07.035Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "clear_presentation_intent",
+            "intentId": "pi-3b548890b9b40c67"
+          }
+        ]
+      },
+      "request_id": "d4c416ae-f380-4c73-b48a-3bab3fc61e28"
+    },
+    {
+      "event_id": "fyd-ovl-mv77vw2g-4c2d0797b49f",
+      "timestamp": "2026-10-13T21:52:50.968Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "coppersmith-plumbing",
+      "aggregate_id": "fyd-site:coppersmith-plumbing",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "coppersmith-plumbing",
+        "ops": [
+          {
+            "op": "set_field",
+            "objectId": "website-business-2f1327c09d622175-service-2dbc12c16f83",
+            "field": "title",
+            "value": "Heating & Cooling"
+          },
+          {
+            "op": "set_field",
+            "objectId": "website-business-2f1327c09d622175-service-2dbc12c16f83",
+            "field": "description",
+            "value": "We maintain or repair furnaces, air conditioning units, heat pumps, mini split systems and more."
+          },
+          {
+            "op": "set_field",
+            "objectId": "website-business-2f1327c09d622175-service-2dbc12c16f83",
+            "field": "service_href",
+            "value": "https://coppersmithplumbing.com/services/hvac/cooling/"
+          },
+          {
+            "op": "set_field",
+            "objectId": "website-business-2f1327c09d622175-service-2dbc12c16f83",
+            "field": "fyd_evidence_v1",
+            "value": "{\"version\":\"fyd-service-evidence@1\",\"records\":[{\"field\":\"title\",\"value\":\"Heating & Cooling\",\"evidence\":{\"sourceUrl\":\"https://www.coppersmithplumbing.com/\",\"sourceDigest\":\"0584ea7b2965e67dc1db77ee672c26c296831f76f2c6f2da0e93b4188413c75d\",\"selector\":\"a[href=\\\"https://coppersmithplumbing.com/services/hvac/cooling/\\\"]\",\"coordinateSystem\":\"utf8-bytes-v1\",\"byteSpan\":[67362,68613],\"fragmentDigest\":\"81ccb0ab81b88f81c1d5976750b4b62f876f6020c4142ef82f1aaa75e638fedf\",\"extractionMethod\":\"fyd-service-cards-regex-v3-utf8\",\"observedAt\":\"2026-09-21T12:01:10.844Z\"}},{\"field\":\"description\",\"value\":\"We maintain or repair furnaces, air conditioning units, heat pumps, mini split systems and more.\",\"evidence\":{\"sourceUrl\":\"https://www.coppersmithplumbing.com/\",\"sourceDigest\":\"0584ea7b2965e67dc1db77ee672c26c296831f76f2c6f2da0e93b4188413c75d\",\"selector\":\"a[href=\\\"https://coppersmithplumbing.com/services/hvac/cooling/\\\"]\",\"coordinateSystem\":\"utf8-bytes-v1\",\"byteSpan\":[67362,68613],\"fragmentDigest\":\"81ccb0ab81b88f81c1d5976750b4b62f876f6020c4142ef82f1aaa75e638fedf\",\"extractionMethod\":\"fyd-service-cards-regex-v3-utf8\",\"observedAt\":\"2026-09-21T12:01:10.844Z\"}},{\"field\":\"service_href\",\"value\":\"https://coppersmithplumbing.com/services/hvac/cooling/\",\"evidence\":{\"sourceUrl\":\"https://www.coppersmithplumbing.com/\",\"sourceDigest\":\"0584ea7b2965e67dc1db77ee672c26c296831f76f2c6f2da0e93b4188413c75d\",\"selector\":\"a[href=\\\"https://coppersmithplumbing.com/services/hvac/cooling/\\\"]\",\"coordinateSystem\":\"utf8-bytes-v1\",\"byteSpan\":[67362,68613],\"fragmentDigest\":\"81ccb0ab81b88f81c1d5976750b4b62f876f6020c4142ef82f1aaa75e638fedf\",\"extractionMethod\":\"fyd-service-cards-regex-v3-utf8\",\"observedAt\":\"2026-09-21T12:01:10.844Z\"}}]}"
+          }
+        ]
+      },
+      "request_id": "exact-source:coppersmith-plumbing:78dc822b75a6d3f928902701d80129ae"
+    },
+    {
+      "event_id": "fyd-ovl-mumzkn87-a211ccecf0aa",
+      "timestamp": "2026-09-29T18:04:45.847Z",
+      "event_type": "FYD_SITE_OVERLAY",
+      "tenant_id": "ping-fyd",
+      "aggregate_id": "fyd-site:ping-fyd",
+      "aggregate_type": "fyd_site",
+      "event_data": {
+        "siteId": "ping-fyd",
+        "ops": [
+          {
+            "op": "set_presentation_intent",
+            "intentId": "pi-e9431c39d99ec49a",
+            "siteIntent": {
+              "kind": "reorder_section",
+              "pageSlug": "home",
+              "sectionId": "home:Services:2",
+              "toIndex": 0
+            },
+            "proposal": {
+              "kind": "site_patch",
+              "targetPage": "home",
+              "targetSection": "home:Services:2",
+              "component": "Services",
+              "propsDiff": {
+                "moveFrom": 2,
+                "moveTo": 0
+              },
+              "reason": "Reorder section within page.",
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428"
+            },
+            "approval": {
+              "proposalDigest": "0135a2e48c28a3b8ef7ee92eee90b0cc29f292eec2aaf45cddee4e05b8297428",
+              "approvedBy": "demo-owner (seeded, unverified)",
+              "approvedAt": "2026-09-29T18:04:45.834Z",
+              "note": "DEMO OWNER MODE - not real authentication. No identity was verified."
+            }
+          }
+        ]
+      },
+      "request_id": "75c1be49-a450-4622-8268-3ea78623f2fb"
+    }
+  ]
+}

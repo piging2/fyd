@@ -9,7 +9,11 @@ import { getFydTenantGraph } from "@/fyd/data/fyd-tenant-graph";
  * - The widget module compiles under strict TS (import check).
  */
 import { answerAskFyd, type AnswerAskFydDeps } from "../../../../../fyd/ask/visitor-answer";
-import { getSiteBundle, type SiteBundle } from "../../../../../fyd/media/site-bundle";
+import {
+  getSiteBundle,
+  invalidateSiteBundle,
+  type SiteBundle,
+} from "../../../../../fyd/media/site-bundle";
 import { AskFydWidget } from "../../../../../fyd/components/ask-fyd-widget";
 import type { PingObject } from "../../../../../lib/ping/types";
 import { POST as postNested } from "../[siteId]/route";
@@ -288,8 +292,25 @@ describe("journal read failure (FL: Ask FYD error mapping)", () => {
 
   test("POST returns structured 503 when the journal read fails", async () => {
     const saved = process.env.FYD_JOURNAL_GATEWAY_URL;
+    const savedSnapshot = process.env.FYD_OVERLAY_SNAPSHOT;
     // Nothing listens here: the governed reader fails closed.
     process.env.FYD_JOURNAL_GATEWAY_URL = "http://127.0.0.1:1";
+    // Hermetic isolation (chat-projection landing): the repo root may now
+    // carry the real bundled snapshot at
+    // fyd-projections/fyd-overlay-snapshot.json, which the reader would
+    // correctly fall back to when the gateway is dead. Point the snapshot
+    // env at a nonexistent absolute path so this case still exercises the
+    // journal-failure path only. The reader reads FYD_OVERLAY_SNAPSHOT at
+    // call time (readOverlaySnapshotList), so setting it here is enough.
+    process.env.FYD_OVERLAY_SNAPSHOT = "/tmp/no-such-snapshot.json";
+    // Hermetic isolation (cache): getSiteBundle carries a 60s TTL bundle
+    // cache, populated by this suite's beforeAll. Without invalidation the
+    // case is served the cached bundle (200) and never reaches the reader
+    // at all — proven in the W3 baseline run, where this case fails with
+    // 200 in BOTH the baseline worktree (no snapshot, old reader) and the
+    // candidate. Invalidating the one tenant makes the case exercise the
+    // journal-failure path it asserts on.
+    invalidateSiteBundle("happy-place");
     try {
       const resp = await postAsk({
         siteId: "happy-place",
@@ -310,6 +331,8 @@ describe("journal read failure (FL: Ask FYD error mapping)", () => {
     } finally {
       if (saved === undefined) delete process.env.FYD_JOURNAL_GATEWAY_URL;
       else process.env.FYD_JOURNAL_GATEWAY_URL = saved;
+      if (savedSnapshot === undefined) delete process.env.FYD_OVERLAY_SNAPSHOT;
+      else process.env.FYD_OVERLAY_SNAPSHOT = savedSnapshot;
     }
   });
 
