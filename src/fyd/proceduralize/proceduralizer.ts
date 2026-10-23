@@ -733,6 +733,11 @@ export interface ProjectedGraph {
 }
 
 export interface ProjectOptions {
+  /** Existing source projection identity supplied by the trusted refresh
+   * caller. This preserves old object keys across extractor versions.
+   * It confers no tenant/controller ownership and is rejected when the
+   * canonical source URL or controller differs. Never read from a URL form. */
+  refreshFrom?: PingObject;
   entities?: EntityCandidate[];
   entityFields?: Map<string, ExtractedField[]>;
   relationships?: StructuredRelation[];
@@ -915,7 +920,20 @@ export function project(
   } catch {
     entityUrl = sourceUrl;
   }
-  const businessId = deriveBusinessId(entityUrl);
+  let businessId = deriveBusinessId(entityUrl);
+  if (opts.refreshFrom) {
+    const existing = opts.refreshFrom;
+    const priorSource = existing.provenance?.ref.startsWith("website-ingestion:")
+      ? existing.provenance.ref.slice("website-ingestion:".length) : "";
+    const priorWebsite = typeof existing.fields.website === "string" ? existing.fields.website : priorSource;
+    const sameSource = priorSource && canonicalEntityUrl(priorSource) === canonicalEntityUrl(sourceUrl)
+      && canonicalEntityUrl(priorWebsite) === canonicalEntityUrl(entityUrl);
+    if (!sameSource || existing.schema !== "ping.social.business@1" || !existing.id
+      || existing.controllerId !== controllerId) {
+      throw new Error("Source refresh identity mismatch: retain the old projection and owner directives until the source is resolved.");
+    }
+    businessId = existing.id;
+  }
   const provenance = {
     kind: "website-derived" as const,
     ref: "website-ingestion:" + sourceUrl,
@@ -1435,6 +1453,8 @@ export function project(
 // ---------------------------------------------------------------------------
 
 export interface PipelineOptions {
+  /** Same trusted refresh anchor as project(); initial acquisition omits it. */
+  refreshFrom?: PingObject;
   sourceUrl: string;
   observedAt: string;
   controllerId: string;
@@ -1577,6 +1597,7 @@ export async function runExtractionPipeline(
   const pairs = relate(pageScope);
 
   const graph = project(resolved, opts.sourceUrl, opts.observedAt, opts.controllerId, {
+    refreshFrom: opts.refreshFrom,
     entities: structured.entities,
     entityFields,
     relationships: structured.relationships,
