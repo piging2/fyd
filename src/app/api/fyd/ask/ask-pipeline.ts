@@ -62,6 +62,7 @@ import {
   answerAskFyd,
   answerStateFor,
   responseClassFor,
+  claimClassFor,
   type AnswerAskFydDeps,
   type AskAnswerClass,
   type AskAnswerState,
@@ -120,25 +121,13 @@ export async function loadBundleWithOwnerOverlay(
 ): Promise<SiteBundle | null> {
   const bundle = await getSiteBundle(siteId, reader ? { reader } : undefined);
   if (!bundle) return null;
-  try {
-    const overlaid = applyOwnerFieldCorrections(bundle.graph, siteId);
-    // THE boundary (Q-C-01): Ask FYD consumes an already-authorized public
-    // projection, it never retrieves broadly and redacts afterward. Owner
-    // corrections are owner-authorized values composed BEFORE the boundary;
-    // visibility policy applies over them, so a hidden field stays hidden
-    // even when the owner corrected its value. The siteId is threaded so
-    // site-keyed owner visibility decisions resolve (Lane A). Fail closed:
-    // on boundary failure nothing is served, never the unprojected graph.
-    const decisions = decisionsForGraph(overlaid.graph, siteId);
-    const verified = verifyPublicProjection(overlaid.graph, decisions, "anonymous");
-    return {
-      ...bundle,
-      graph: verified.graph,
-      fieldVisibilityDecisions: decisions,
-    };
-  } catch {
-    return null;
-  }
+  if (bundle.projection) return bundle;
+  // Legacy injected bundles still pass the existing boundary; production
+  // bundles have already resolved all inputs once in getSiteBundle.
+  const overlaid = applyOwnerFieldCorrections(bundle.graph, siteId);
+  const decisions = decisionsForGraph(overlaid.graph, siteId);
+  const verified = verifyPublicProjection(overlaid.graph, decisions, "anonymous");
+  return { ...bundle, projection: verified, graph: verified.graph, fieldVisibilityDecisions: decisions };
 }
 
 /** Body keys that claim a tenant identity. Only the route path may do that. */
@@ -166,7 +155,7 @@ export function answerClassFor(
 ): AskAnswerClass {
   if (refusal || citations.length === 0) return "UNSUPPORTED";
   if (citations.some((c) => c.claimClass === "CONFLICTED")) return "CONFLICTED";
-  if (citations.some((c) => c.claimClass === "DERIVED")) return "DERIVED";
+  if (citations.some((c) => c.claimClass === "DERIVED") || claimClassifications?.some(c => claimClassFor(c.classification) === "DERIVED")) return "DERIVED";
   // Group direct evidence refs by the claim they support.
   const claimForRef = new Map<string, string>();
   for (const cc of claimClassifications ?? []) {
@@ -340,6 +329,15 @@ export async function handleAskRequest(
     );
   }
 
+  const answerCheckpoint = bundle?.projection?.provenance.checkpoint;
+  const pageCheckpoint = record.pageCheckpoint;
+  if (pageCheckpoint !== undefined && (typeof pageCheckpoint !== "string" || !pageCheckpoint.trim() || pageCheckpoint.length > 512)) {
+    return NextResponse.json({ok:false,error:"Invalid page checkpoint."},{status:400});
+  }
+  if (typeof pageCheckpoint === "string" && pageCheckpoint !== answerCheckpoint) {
+    return NextResponse.json({ok:false,kind:"stale_view",error:"Business information changed. Refresh this view.",pageCheckpoint,answerCheckpoint},{status:409});
+  }
+
   const deps: AnswerAskFydDeps = {
     // Tenant-scoped: the answer engine can only ever load this request's
     // tenant bundle, never another tenant's graph.
@@ -445,6 +443,7 @@ export async function handleAskRequest(
   return NextResponse.json({
     ok: true,
     contractVersion: ASK_RESPONSE_CONTRACT_VERSION,
+    answerCheckpoint,
     answer: outcome.answer,
     answerClass,
     answerState,
@@ -455,6 +454,7 @@ export async function handleAskRequest(
     // OUTPUT "CLAIMS": claim text + support class + the evidence ref ids
     // behind it. Every factual answer is recoverable to evidence here.
     claims,
+    ...(outcome.bindingVerification ? { bindingVerification: outcome.bindingVerification } : {}),
     // Structured, citation-backed refs: the objects, evidence, and sources
     // the answer stands on. Derived from citations only; never invented.
     objectRefs: outcome.objectRefs,

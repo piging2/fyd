@@ -45,6 +45,13 @@ import type {
   PingRelationship,
 } from "../../lib/ping/types";
 import type { ObjectGraph } from "../sitespec/types";
+import {
+  buildVerifiedRenderModel,
+  classifyRenderAtom,
+  ownerAssertionsFromGraph,
+  type VerifiedRenderModel,
+} from "../sitespec/binding-verifier";
+import type { PresentationBinding } from "../sitespec/graph";
 
 /** The epistemic grade of one claim. */
 export type ConciergeGrade = "SUPPORTED" | "DERIVED" | "INFERRED" | "UNKNOWN";
@@ -82,6 +89,8 @@ export interface GradedClaim {
   text: string;
   grade: ConciergeGrade;
   evidence: ConciergeEvidence[];
+  bindings?: PresentationBinding[];
+  relationshipIds?: string[];
 }
 
 /** One detected contradiction: one fact, two or more differing values, each cited. */
@@ -104,6 +113,7 @@ export interface ConciergeAnswer {
   unknowns: string[];
   /** True only when the question could not be answered from evidence at all. */
   refused: boolean;
+  bindingVerification?: VerifiedRenderModel;
 }
 
 export interface ConciergeInput {
@@ -209,7 +219,7 @@ function sourceFor(obj: PingObject): string {
   const kind: string = prov?.kind ?? "";
   if (kind === "overlay-authored") return "Demo content added by the site operator";
   if (kind === "canonical-journal") return "Site record (canonical journal)";
-  if (kind === "owner") return "Owner-authored content";
+  if (kind === "owner" || kind === "owner-asserted") return "Owner-authored content";
   if (kind === "procedural-fixture") return "Site record (fixture)";
   if (url) return `The business website (${url})`;
   return "The business website";
@@ -220,7 +230,7 @@ function basisFor(obj: PingObject): string {
   if (kind === "overlay-authored")
     return "Demo content added by the site operator (not the website's own words, not a recorded fact)";
   if (kind === "canonical-journal") return "A recorded fact in the site data";
-  if (kind === "owner") return "Owner-authored content";
+  if (kind === "owner" || kind === "owner-asserted") return "Owner-authored content";
   if (kind === "website-derived" || kind === "website-ingestion" || (obj.provenance?.ref ?? "").startsWith("website-ingestion:"))
     return "The site's own words (website statement, not independently verified)";
   return "The site record";
@@ -231,7 +241,7 @@ function claimClassFor(obj: PingObject, isRelationship: boolean): string {
   const kind: string = obj.provenance?.kind ?? "";
   if (kind === "overlay-authored") return "DEMO_SYNTHETIC";
   if (kind === "canonical-journal") return "DIRECT_FACT";
-  if (kind === "owner") return "owner_authorship";
+  if (kind === "owner" || kind === "owner-asserted") return "owner_authorship";
   if (typeof obj.fields["claimKind"] === "string" && (obj.fields["claimKind"] as string).length > 0) {
     return obj.fields["claimKind"] as string;
   }
@@ -359,7 +369,7 @@ function buildGraphView(target: PingObject, objects: PingObject[], relationships
   const incident = active.filter((r) => r.subject === target.id || r.object === target.id);
 
   const serviceRels = incident
-    .filter((r) => OFFER_PREDICATES.has(r.predicate))
+    .filter((r) => r.subject === target.id && byId.has(r.object) && OFFER_PREDICATES.has(r.predicate))
     .sort((a, b) => (a.id < b.id ? -1 : 1));
   const services: PingObject[] = [];
   for (const r of serviceRels) {
@@ -461,17 +471,30 @@ function claimsServices(target: PingObject, view: GraphView): GradedClaim[] {
   if (view.services.length === 0) {
     return [
       {
-        text: `Services offered: unknown. The site data lists no service records for ${name}, so I will not invent a service list.`,
+        text: "I cannot answer that: nothing in the site record covers it, and I will not guess. Services offered: unknown.",
         grade: "UNKNOWN",
         evidence: [],
       },
     ];
   }
-  const claims: GradedClaim[] = view.services.map((s) => {
+  const graph = { objects: [...view.byId.values()], relationships: view.serviceRels };
+  const assertions = ownerAssertionsFromGraph(graph);
+  const bindTitle = (obj: PingObject): PresentationBinding => ({
+    objectId: obj.id,
+    field: "title",
+    classification: assertions.some(a => a.objectId === obj.id && a.field === "title")
+      ? "owner_authored"
+      : obj.provenance?.kind === "website-derived" ? "direct" : "derived",
+  });
+  const supported = view.services.filter(service =>
+    [bindTitle(target), bindTitle(service)].every(binding =>
+      classifyRenderAtom(binding, graph, assertions).classification !== "UNKNOWN",
+    ),
+  );
+  const claims: GradedClaim[] = supported.map((s) => {
     const rel = view.serviceRels.find(
       (r) =>
-        (r.subject === target.id && r.object === s.id) ||
-        (r.object === target.id && r.subject === s.id),
+        r.subject === target.id && r.object === s.id,
     );
     const evidence = [evidenceForObject(s)];
     if (rel) evidence.push(evidenceForRelationship(rel, view.byId));
@@ -479,15 +502,24 @@ function claimsServices(target: PingObject, view: GraphView): GradedClaim[] {
       text: `Offers: ${s.title || s.id}.`,
       grade: "SUPPORTED" as ConciergeGrade,
       evidence,
+      bindings: [bindTitle(target), bindTitle(s)],
+      relationshipIds: rel ? [rel.id] : [],
     };
   });
-  claims.push({
-    text: `The site data lists ${view.services.length} service${view.services.length === 1 ? "" : "s"} for ${name}.`,
+  if (supported.length) claims.push({
+    text: `The current evidence supports ${supported.length} service${supported.length === 1 ? "" : "s"} for ${name}.`,
     grade: "DERIVED",
     evidence: [
-      ...view.services.map((s) => evidenceForObject(s)),
-      ...view.serviceRels.map((r) => evidenceForRelationship(r, view.byId)),
+      ...supported.map((s) => evidenceForObject(s)),
+      ...view.serviceRels.filter(r => supported.some(s => s.id === r.object)).map((r) => evidenceForRelationship(r, view.byId)),
     ],
+    bindings: [bindTitle(target), ...supported.map(bindTitle)],
+    relationshipIds: view.serviceRels.filter(r => supported.some(s => s.id === r.object)).map(r => r.id),
+  });
+  if (supported.length !== view.services.length) claims.push({
+    text: "Services with unbound or stale evidence: unknown; their names are withheld.",
+    grade: "UNKNOWN",
+    evidence: [],
   });
   return claims;
 }
@@ -897,7 +929,14 @@ export function answerConciergeQuestion(input: ConciergeInput): ConciergeAnswer 
 
   const { text, evidence } = renderAnswer(questionId, input.siteId, businessName, claims);
   const refused = claims.length > 0 && claims.every((c) => c.grade === "UNKNOWN");
-  return { questionId, siteId: input.siteId, businessName, claims, text, evidence, conflicts, unknowns, refused };
+  const graph = { objects: input.objects, relationships: input.relationships };
+  const bindingVerification = questionId === "services"
+    ? buildVerifiedRenderModel(
+      claims.flatMap(c => c.bindings ?? []), graph, ownerAssertionsFromGraph(graph),
+      { rendererVersion: "fyd.ask-services@1", viewerId: null },
+    )
+    : undefined;
+  return { questionId, siteId: input.siteId, businessName, claims, text, evidence, conflicts, unknowns, refused, bindingVerification };
 }
 
 /** The seven canonical questions, in the fixed order the tests iterate. */
@@ -922,6 +961,7 @@ export interface ConciergeAskFydView {
   evidenceRefs: AskEvidenceRef[];
   claimClassifications: AskClaimClassification[];
   unknowns: string[];
+  bindingVerification?: VerifiedRenderModel;
 }
 
 const GRADE_TO_CLASSIFICATION: Record<Exclude<ConciergeGrade, "UNKNOWN">, string> = {
@@ -940,7 +980,7 @@ export function toAskFydAnswer(ans: ConciergeAnswer): ConciergeAskFydView {
   const evidenceRefs: AskEvidenceRef[] = ans.evidence.map((e) => ({
     kind: e.relationId ? ("relationship" as const) : e.field ? ("field" as const) : ("object" as const),
     id: e.relationId ?? (e.field ? `${e.objectId}#${e.field}` : e.objectId),
-    label: e.label,
+    label: e.label.replace(/^Service record: /, "service: "),
     detail: `Source: ${e.source}. Basis: ${e.basis}.`,
   }));
   const claimClassifications: AskClaimClassification[] = [];
@@ -961,9 +1001,15 @@ export function toAskFydAnswer(ans: ConciergeAnswer): ConciergeAskFydView {
       claim.grade === "SUPPORTED"
         ? (claim.evidence[0]?.claimClass ?? GRADE_TO_CLASSIFICATION.SUPPORTED)
         : GRADE_TO_CLASSIFICATION[claim.grade];
-    claimClassifications.push({ claim: claim.text, classification, evidenceRefIds: refIds });
+    claimClassifications.push({
+      claim: claim.text, classification, evidenceRefIds: refIds,
+      ...(claim.bindings ? { bindings: claim.bindings, relationshipIds: claim.relationshipIds } : {}),
+    });
   }
-  return { answer: ans.text, evidenceRefs, claimClassifications, unknowns };
+  // Evidence stays in the optional Why this disclosure. The primary answer
+  // carries claims and citation markers, without the forensic dump/grades.
+  const answer = ans.text.split("\n\nEvidence\n\n")[0].replace(/^\[(SUPPORTED|DERIVED|INFERRED|UNKNOWN)\] /gm, "");
+  return { answer, evidenceRefs, claimClassifications, unknowns, bindingVerification: ans.bindingVerification };
 }
 
 /** Build a ConciergeInput from the same public graph the pipeline answers from. */

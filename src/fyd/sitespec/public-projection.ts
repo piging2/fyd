@@ -93,10 +93,12 @@ export interface PublicProjectionProvenance {
   decisionsDigest: string;
   /** sha256 hex of canonicalize({viewerKind, boundaryVersion, decisionsDigest, capabilities}). */
   viewerPolicyDigest: string;
-  /** The meaningful snapshot id: `${graphDigest}:${decisionsDigest}`. */
+  /** Snapshot identity: graph, visibility decisions, and resolved inputs when supplied. */
   checkpoint: string;
   capabilities: string[];
   projectedAt: string;
+  /** Resolved source/conflict inputs, when assembled by the shared bundle. */
+  inputsDigest?: string;
 }
 
 /**
@@ -146,8 +148,9 @@ export function isVerifiedPublicProjection(
  */
 export function objectDecisionsToFieldVisibility(
   objectId: string,
+  readOwner: typeof readOverrides = readOverrides,
 ): FieldVisibilityDecision[] {
-  const overrides = readOverrides(objectId);
+  const overrides = readOwner(objectId);
   const decisions: FieldVisibilityDecision[] = [];
   // decidedAt comes from durable state, never from the wall clock, so the
   // decisions digest is replay-deterministic. The addressVisibilityAssertion
@@ -177,11 +180,12 @@ export function objectDecisionsToFieldVisibility(
 export function decisionsForGraph(
   graph: ObjectGraph,
   siteId?: string,
+  readOwner: typeof readOverrides = readOverrides,
 ): FieldVisibilityDecision[] {
   const decisions: FieldVisibilityDecision[] = [];
   const seenLog = new Set<string>();
   for (const obj of graph.objects) {
-    decisions.push(...objectDecisionsToFieldVisibility(obj.id));
+    decisions.push(...objectDecisionsToFieldVisibility(obj.id, readOwner));
     seenLog.add(obj.id);
   }
   // Site-keyed owner log bridge (privacy P0, 2026-09-25): the owner-management
@@ -197,7 +201,7 @@ export function decisionsForGraph(
     const businessIds = graph.objects
       .filter((o) => SCHEMA_ROLES.business.includes(o.schema))
       .map((o) => o.id);
-    for (const d of objectDecisionsToFieldVisibility(siteId)) {
+    for (const d of objectDecisionsToFieldVisibility(siteId, readOwner)) {
       for (const targetId of businessIds) {
         decisions.push({ ...d, objectId: targetId });
       }
@@ -262,8 +266,10 @@ export function verifyPublicProjection(
   graph: ObjectGraph,
   decisions: FieldVisibilityDecision[],
   viewerKind: PublicViewerKind,
+  resolvedInputs?: unknown,
 ): VerifiedPublicProjection {
   const graphDigest = sha256Hex(canonicalize(graph));
+  const inputsDigest = resolvedInputs === undefined ? undefined : sha256Hex(canonicalize(resolvedInputs));
   // OwnerOverrides are a SET: the decisions digest must not depend on
   // caller input order. Sort canonically before hashing (explicit
   // tie-breaker, same discipline as render-model.canonicalizeOverrides)
@@ -334,7 +340,8 @@ export function verifyPublicProjection(
       graphDigest,
       decisionsDigest,
       viewerPolicyDigest,
-      checkpoint: `${graphDigest}:${decisionsDigest}`,
+      checkpoint: `${graphDigest}:${decisionsDigest}${inputsDigest ? ":" + inputsDigest : ""}`,
+      ...(inputsDigest ? { inputsDigest } : {}),
       capabilities,
       projectedAt: new Date().toISOString(),
     },

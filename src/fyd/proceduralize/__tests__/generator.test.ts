@@ -356,7 +356,7 @@ describe("generateSiteSpec Gallery emission (media-backed)", () => {
   test("emits no Gallery section when the site manifest has no gallery assets", () => {
     const spec = generateSiteSpec(ownerOnlyGraph(), {
       ...OPTS,
-      siteId: "happy-place",
+      siteId: "ping-fyd",
     });
     expect(homeComponents(spec)).not.toContain("Gallery");
   });

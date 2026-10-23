@@ -48,6 +48,14 @@ export const FYD_OWNER_GENERATOR = "fyd-owner@1";
  * confirmed / corrected / hid / restored, plus added for owner-created
  * facts (services). The reducer handles every type; unknown types fail
  * closed.
+ *
+ * Vendored P2 (2026-10-11) vocabulary from the owner-mode lane: adds
+ * "customer.inquiry-received", a customer-originated quote request
+ * admitted through this SAME append-only journal (not a parallel write
+ * path). The reducer treats it as an audit line only — no owner-state
+ * mutation — and the event carries NO customer contact details: those
+ * live in the tenant-private inquiry store, and the event's
+ * evidence.ref is the opaque protected receipt.
  */
 export type OwnerEventType =
   | "owner.confirmed-fact"
@@ -55,7 +63,8 @@ export type OwnerEventType =
   | "owner.hid-fact"
   | "owner.restored-fact"
   | "owner.defaulted-fact"
-  | "owner.added-fact";
+  | "owner.added-fact"
+  | "customer.inquiry-received";
 
 /**
  * Fact addresses inside one object. Contact fields, the service order,
@@ -104,7 +113,13 @@ export function serviceFieldOf(t: string): string {
  */
 export type OwnerEventActor =
   | { kind: "demo"; label: string }
-  | { kind: "owner"; identityId: string; label: string };
+  | { kind: "owner"; identityId: string; label: string }
+  // Vendored P2 (2026-10-11): an explicitly anonymous, unauthenticated
+  // public actor — a site visitor submitting a quote request. A visitor
+  // actor carries NO credential and NO entitlement; the inquiry intake
+  // admits the event on server-side validation, policy, rate limits, and
+  // the site's published inquiry capability, never on the actor's say-so.
+  | { kind: "visitor"; label: string };
 
 /** Provenance reference carried by every event. */
 export interface OwnerEventEvidence {
@@ -274,6 +289,16 @@ export function reduceOwnerEvents(
         if (!o.addedServices.some((s) => s.id === v.id)) {
           o.addedServices.push({ id: v.id, name: v.name });
         }
+        break;
+      }
+      case "customer.inquiry-received": {
+        // Vendored P2 (2026-10-11): a customer-originated quote request
+        // admitted through this journal. Not an owner decision, so no
+        // owner-visible state changes: the event is the audit line (its
+        // history entry was already recorded above). The note and
+        // newValue are sanitized at intake and carry no contact details;
+        // evidence.ref is the opaque protected receipt, resolvable only
+        // from the tenant-private inquiry store.
         break;
       }
       case "owner.hid-fact": {

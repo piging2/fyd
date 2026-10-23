@@ -34,11 +34,20 @@ export const metadata: Metadata = {
     title: seo.title,
     description: seo.description,
     url: siteUrl,
+    images: [
+      {
+        url: "/brand/og-card.png",
+        width: 1200,
+        height: 630,
+        alt: "PING Social",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: seo.title,
     description: seo.description,
+    images: ["/brand/og-card.png"],
   },
   alternates: { canonical: siteUrl },
   icons: { icon: "/brand/favicon.svg", apple: "/brand/favicon.svg" },
@@ -51,6 +60,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     name: tenant.siteName,
     description: tenant.description,
     url: siteUrl,
+    // Contact facts come from the tenant authority (tenant.*.v1.json),
+    // the same source the visible contact surfaces render from, so the
+    // structured data can never drift from what visitors see.
+    ...(tenant.contact.phone ? { telephone: tenant.contact.phone } : {}),
+    ...(tenant.contact.facebook ? { sameAs: [tenant.contact.facebook] } : {}),
     founder: {
       "@type": "Person",
       name: tenant.operator.name,
@@ -66,6 +80,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   // x-pathname header set in middleware.
   const pathname = (await headers()).get("x-pathname") ?? "";
   const chromeless =
+    pathname === "/mission-control" ||
     pathname === "/o" ||
     pathname.startsWith("/o/") ||
     pathname.startsWith("/sites/") ||

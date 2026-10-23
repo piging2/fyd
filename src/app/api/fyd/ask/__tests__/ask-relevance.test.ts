@@ -25,6 +25,14 @@
  * SUPPORTED label.
  *
  * Run with: npx jest --config src/fyd/ask/jest.config.cjs ask-relevance
+ *
+ * Item 7 (obligation model, 2026-10-07): the refusal mechanism above is
+ * superseded by per-obligation decomposition. Each named topic becomes its
+ * own obligation: grounded obligations are answered with cited evidence
+ * and ungrounded ones are named as unknowns ("I can't confirm <topic>
+ * from the published information I have."). The relevance guarantee
+ * survives at the obligation level: no claim presents an ungrounded
+ * topic as offered.
  */
 import { getSiteBundle, type SiteBundle } from "../../../../../fyd/media/site-bundle";
 import { POST as postNested } from "../[siteId]/route";
@@ -100,14 +108,27 @@ describe("live-regression queries refuse honestly", () => {
     expect(body.unknowns).toContain("dogs");
   });
 
-  test("roof/plumbing/electrical: one generic word must not ground a listing", async () => {
+  test("roof/plumbing/electrical: ungrounded topics are named unknowns, never offered", async () => {
+    // Obligation model (item 7): each named topic is its own obligation.
+    // "repairs" grounds to the Repairs/Drywall services and is answered with
+    // cited evidence; roof replacement and electrical panel upgrades have no
+    // evidence and are named as unknowns. No claim invents them as offered.
     const body = await askTrusted(
       "Do you offer roof replacement, plumbing repairs, and electrical panel upgrades?",
     );
-    expectHonestRefusal(body);
-    for (const topic of ["roof", "plumbing", "electrical", "panel", "upgrades"]) {
-      expect(body.unknowns).toContain(topic);
+    expect(body.ok).toBe(true);
+    expect(body.answerClass).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
+    expect(body.unknowns).toContain(
+      "I can't confirm roof replacement from the published information I have.",
+    );
+    expect(body.unknowns).toContain(
+      "I can't confirm electrical panel upgrades from the published information I have.",
+    );
+    for (const claim of body.claims) {
+      expect(claim.claim).not.toMatch(/roof|electrical|panel upgrade/i);
     }
+    expect(body.answer).toMatch(/can't confirm roof replacement/i);
+    expect(body.answer).toMatch(/can't confirm electrical panel upgrades/i);
   });
 
   test("Microsoft affiliation refusal keeps passing", async () => {
@@ -134,13 +155,20 @@ describe("adversarial variants", () => {
     expectHonestRefusal(body);
   });
 
-  test("partially grounded services question refuses instead of mislabeling", async () => {
-    // "repairs" is on record (Repairs); "saunas" is not. The record
-    // cannot address the question's claims as asked, so the answer must
-    // not carry a SUPPORTED label for it.
+  test("partially grounded services question names the ungrounded topic instead of mislabeling", async () => {
+    // Obligation model (item 7): "repairs" grounds to the Repairs service
+    // and is answered with cited evidence; "saunas" has no evidence and is
+    // named as an unknown. Saunas is never presented as offered.
     const body = await askTrusted("Do you offer repairs and saunas?");
-    expectHonestRefusal(body);
-    expect(body.unknowns).toContain("saunas");
+    expect(body.ok).toBe(true);
+    expect(body.answerClass).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
+    expect(body.answer).toContain("Repairs");
+    expect(body.unknowns).toContain(
+      "I can't confirm saunas from the published information I have.",
+    );
+    for (const claim of body.claims) {
+      expect(claim.claim).not.toMatch(/sauna/i);
+    }
   });
 });
 
@@ -149,7 +177,7 @@ describe("genuinely supported questions keep working", () => {
     const body = await askTrusted("What services do you offer?");
     expect(body.ok).toBe(true);
     expect(body.refusal).toBe(false);
-    expect(body.answerClass).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
+    expect(body.answerClass).toBe("DERIVED"); // The enumerated service count is computed from the bound graph.
     expect(body.answerState).toBe("KNOWN");
     expect(body.citations.length).toBeGreaterThan(0);
     for (const name of ["Repairs", "Fencing", "Painting", "Drywall", "Restoration"]) {

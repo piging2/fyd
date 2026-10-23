@@ -54,6 +54,17 @@ function NavShimmer({ children, className }: { children: React.ReactNode; classN
   );
 }
 
+const FYD_SECTIONS: { href: string; label: string }[] = [
+  { href: "#understand", label: "Understand" },
+  { href: "#explore", label: "Explore" },
+  { href: "#how", label: "How it works" },
+  { href: "#ask", label: "Ask" },
+  { href: "#network", label: "Network" },
+  { href: "#inside", label: "PING inside" },
+  { href: "#privacy", label: "Your data" },
+  { href: "#try", label: "Try it" },
+];
+
 export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
@@ -90,7 +101,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="hidden items-center md:flex relative" aria-label="Primary" ref={navRef}>
+        <nav className="hidden items-center lg:flex relative" aria-label="Primary" ref={navRef}>
           {primary.map((item) => (
             <Link
               key={item.href}
@@ -120,7 +131,7 @@ export function SiteHeader() {
 
         <button
           type="button"
-          className="flex h-11 w-11 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-muted md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-muted lg:hidden"
           aria-expanded={open}
           aria-controls="mobile-menu"
           aria-label={open ? "Close menu" : "Open menu"}
@@ -131,12 +142,13 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <div id="mobile-menu" ref={menuRef} onClick={handleMenuClick} className="border-t border-border/60 bg-[#F8F6F3] dark:bg-surface md:hidden">
+        <div id="mobile-menu" ref={menuRef} onClick={handleMenuClick} className="border-t border-border/60 bg-[#F8F6F3] dark:bg-surface lg:hidden">
           <nav className="flex flex-col p-3" aria-label="Mobile">
             {navigation.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setOpen(false)}
                 aria-current={isActive(item.href) ? "page" : undefined}
                 className={cn(
                   "rounded-lg px-3 py-3 text-base font-medium transition-colors duration-200",
@@ -146,6 +158,23 @@ export function SiteHeader() {
                 {isActive(item.href) ? <NavShimmer>{item.label}</NavShimmer> : item.label}
               </Link>
             ))}
+            {pathname.startsWith("/fyd") && (
+              <>
+                <div className="mt-2 px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-black/50 dark:text-text-on-dark/50">
+                  On this page
+                </div>
+                {FYD_SECTIONS.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="flex min-h-[44px] items-center rounded-lg px-3 py-3 text-[15px] font-medium text-black/80 dark:text-text-on-dark/80 hover:bg-white/50 dark:hover:bg-surface-muted/50"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </>
+            )}
             <div className="mt-2 pt-2 border-t border-border/40 flex items-center justify-between">
               <span className="text-sm text-black dark:text-text-on-dark">Theme</span>
               <ThemeToggle />

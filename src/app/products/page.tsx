@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { getTenant } from "@/lib/tenant-config";
 import Link from "next/link";
-import { Container, Section, SectionHeading } from "@/components/section";
+import { Container, Section } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import {
   getProducts,
@@ -9,11 +10,30 @@ import {
   type ProductStatus,
 } from "@/lib/products";
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://ping.vercel.app");
+
 export const metadata: Metadata = {
   title: "Products",
   description:
     "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware.",
   alternates: { canonical: "/products" },
+  openGraph: {
+    type: "website",
+    title: "Products",
+    description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware.",
+    url: siteUrl + "/products",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/brand/og-card.png"],
+    title: "Products",
+    description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware.",
+  },
 };
 
 const STATUS_ORDER: ProductStatus[] = ["available", "in-development", "future"];
@@ -107,16 +127,14 @@ export default function ProductsPage() {
     <>
       <Section className="bg-deep">
         <Container className="max-w-4xl">
-          <SectionHeading
-            eyebrow={<span className="text-honey">Products</span>}
-            title={<span className="text-text-on-dark">What exists, what is being built</span>}
-            description={
-              <span className="text-text-on-dark/90">
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-accent" style={{ letterSpacing: '0.12em' }}><span className="text-honey">Products</span></p>
+            <h1 className="mt-4 font-display text-4xl font-bold text-primary sm:text-5xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}><span className="text-text-on-dark">What exists, what is being built</span></h1>
+            <p className="mt-5 text-lg sm:text-xl text-text-muted" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}><span className="text-text-on-dark/90">
                 Honest labels. Nothing here is vaporware and nothing unfinished
                 is sold as finished.
-              </span>
-            }
-          />
+              </span></p>
+          </div>
         </Container>
       </Section>
 

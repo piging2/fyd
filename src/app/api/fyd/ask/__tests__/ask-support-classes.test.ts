@@ -58,10 +58,10 @@ describe("paired services grounding", () => {
     const body = await askTrusted("What services does this business offer, and how do you know?");
     expect(body.ok).toBe(true);
     expect(body.refusal).toBe(false);
-    // Five distinct direct service citations behind the same claim.
-    expect(body.answerClass).toBe("SUPPORTED BY MULTIPLE EVIDENCE");
+    // Individual offerings have direct bindings; their count is derived.
+    expect(body.answerClass).toBe("DERIVED");
     expect(body.answerState).toBe("KNOWN");
-    expect(answerStateFor(body.answerClass as "SUPPORTED BY MULTIPLE EVIDENCE")).toBe("KNOWN");
+    expect(answerStateFor(body.answerClass as "DERIVED")).toBe("KNOWN");
     // The answer names the visible services from the record.
     for (const name of ["Repairs", "Fencing", "Painting", "Drywall", "Restoration"]) {
       expect(body.answer).toContain(name);
@@ -107,7 +107,7 @@ describe("hostile filler-invention", () => {
   test("emergency-service question stays honest: no 24/7 claim invented", async () => {
     const body = await askTrusted("Does this business offer 24/7 emergency service?");
     expect(body.refusal).toBe(false);
-    expect(body.answer).toMatch(/does not offer emergency service/i);
+    expect(body.answer).toMatch(/can’t confirm emergency or after-hours availability/i);
     expect(body.answer).not.toMatch(/24\/7|around the clock/i);
   });
 });

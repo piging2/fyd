@@ -54,26 +54,39 @@ interface InspectData {
   unresolved: { intentId: string; reason: string }[];
 }
 
+function reviewLine(line: string): string {
+  const labels: Record<string,string> = {Hero:'Introduction',BusinessSummary:'About',AskFYD:'Ask FYD',CTA:'Actions',ObjectRail:'Related information',RecentObjects:'Updates'};
+  return line.replace(/^Objects in ([^:]+): /, '$1: ').replace(/\s*\(home:[^)]+\)/g, '').replace(/\b(Hero|BusinessSummary|AskFYD|CTA|ObjectRail|RecentObjects)\b/g, key => labels[key]).replace(/ \| /g, ' → ');
+}
+function reviewTitle(change: {title:string;before:string[]}): string {
+  if (change.before.some(line => line.startsWith('Objects in Services:'))) return 'Service order';
+  if (change.title.startsWith('Move section')) return 'Page order';
+  return change.title;
+}
+
 type Phase = "idle" | "proposing" | "proposed" | "approving" | "done";
 
-const card = {
+const baseCard = {
   background: "#221b0e",
   border: "1px solid #6b5518",
   borderRadius: 8,
   padding: "12px 16px",
 };
 
-const label = {
+const baseLabel = {
   color: "#9c8a4d",
   fontSize: 11,
   textTransform: "uppercase" as const,
   letterSpacing: 1,
 };
 
-const body = { color: "#c9b98a", fontSize: 13, marginTop: 6 };
+const baseBody = { color: "#c9b98a", fontSize: 13, marginTop: 6 };
 
-export function CustomizePanel({ siteId }: { siteId: string }) {
-  const [text, setText] = useState("Move emergency plumbing first");
+export function CustomizePanel({ siteId, compact = false }: { siteId: string; compact?: boolean }) {
+  const card = compact ? { ...baseCard, background: "#fff", border: "1px solid #cbd4ce", borderRadius: 14, padding: "24px" } : baseCard;
+  const label = compact ? { ...baseLabel, color: "#50605c", fontSize: 12 } : baseLabel;
+  const body = compact ? { ...baseBody, color: "#435650", fontSize: 14, lineHeight: 1.6 } : baseBody;
+  const [text, setText] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<ApiError | null>(null);
   const [proposal, setProposal] = useState<ParsedProposal | null>(null);
@@ -172,26 +185,25 @@ export function CustomizePanel({ siteId }: { siteId: string }) {
 
   return (
     <div style={{ ...card, marginTop: 16 }}>
-      <div style={label}>Owner action: customize with FYD (demo)</div>
+      <div style={label}>Change your website · LOCAL DEMO</div>
       <div style={body}>
-        Describe a presentation change in plain English. FYD parses it into a
-        typed intent, proposes a digest-bound site patch, and only applies it
-        after you approve. Facts are never changed; the design system is not
-        customizable here; unsupported requests are refused, not guessed at.
+        Tell FYD what to change. Review the preview, then apply it.
+        This local demo does not verify business ownership.
       </div>
 
       <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
         <input
+          placeholder="Put a service first, feature something, or hide a section…"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Make the services section the first thing people see"
+          onKeyDown={(e) => { if (e.key === "Enter" && text.trim() && phase !== "proposing" && phase !== "approving") { e.preventDefault(); void runParse(); } }}
           aria-label="Customization request"
           style={{
             flex: 1,
             minWidth: 240,
-            background: "#100c06",
-            color: "#f5eeda",
-            border: "1px solid #6b5518",
+            background: compact ? "#f6f8f4" : "#100c06",
+            color: compact ? "#142d31" : "#f5eeda",
+            border: compact ? "1px solid #cbd4ce" : "1px solid #6b5518",
             borderRadius: 8,
             padding: "10px 14px",
             fontSize: 14,
@@ -200,10 +212,10 @@ export function CustomizePanel({ siteId }: { siteId: string }) {
         <button
           type="button"
           onClick={runParse}
-          disabled={phase === "proposing" || phase === "approving"}
+          disabled={!text.trim() || phase === "proposing" || phase === "approving"}
           style={{
-            background: "#f5c518",
-            color: "#171208",
+            background: compact ? "#142d31" : "#f5c518",
+            color: compact ? "#fff" : "#171208",
             fontWeight: 700,
             border: "none",
             borderRadius: 8,
@@ -229,7 +241,7 @@ export function CustomizePanel({ siteId }: { siteId: string }) {
           role="alert"
         >
           <strong>Not applied:</strong> {error.error}
-          {error.code ? (
+          {error.code && !compact ? (
             <div style={{ fontSize: 12, marginTop: 4, color: "#c98a80" }}>
               code: {error.code}
             </div>
@@ -241,52 +253,52 @@ export function CustomizePanel({ siteId }: { siteId: string }) {
         <div
           style={{
             marginTop: 12,
-            background: "#100c06",
-            border: "1px solid #6b5518",
+            background: compact ? "#f6f8f4" : "#100c06",
+            border: compact ? "1px solid #cbd4ce" : "1px solid #6b5518",
             borderRadius: 8,
             padding: "12px 14px",
           }}
         >
-          <div style={{ color: "#f5eeda", fontWeight: 700, fontSize: 14 }}>
-            {proposal.reviewCard.title}
+          <div style={{ color: compact ? "#142d31" : "#f5eeda", fontWeight: 700, fontSize: 14 }}>
+            {compact ? reviewTitle(proposal.reviewCard) : proposal.reviewCard.title}
           </div>
-          <div style={{ color: "#c9b98a", fontSize: 13, marginTop: 6 }}>
+          {!compact && <div style={{ color: compact ? "#435650" : "#c9b98a", fontSize: 13, marginTop: 6 }}>
             Typed intent: <code>{proposal.intent.kind}</code> on{" "}
             <code>{proposal.intent.target}</code>
-          </div>
-          <div style={{ color: "#c9b98a", fontSize: 13, marginTop: 4 }}>
+          </div>}
+          <div style={{ color: compact ? "#435650" : "#c9b98a", fontSize: 13, marginTop: 4 }}>
             {proposal.resolutionNote}
           </div>
           <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 220 }}>
               <div style={label}>Before</div>
               {proposal.reviewCard.before.map((line, i) => (
-                <div key={i} style={{ color: "#9c8a4d", fontSize: 13, marginTop: 4 }}>
-                  {line}
+                <div key={i} style={{ color: compact ? "#50605c" : "#9c8a4d", fontSize: 13, marginTop: 4 }}>
+                  {compact ? reviewLine(line) : line}
                 </div>
               ))}
             </div>
             <div style={{ flex: 1, minWidth: 220 }}>
               <div style={label}>After</div>
               {proposal.reviewCard.after.map((line, i) => (
-                <div key={i} style={{ color: "#7fd08a", fontSize: 13, marginTop: 4 }}>
-                  {line}
+                <div key={i} style={{ color: compact ? "#22602e" : "#7fd08a", fontSize: 13, marginTop: 4 }}>
+                  {compact ? reviewLine(line) : line}
                 </div>
               ))}
             </div>
           </div>
-          <div style={{ color: "#9c8a4d", fontSize: 12, marginTop: 10 }}>
+          {!compact && <div style={{ color: compact ? "#50605c" : "#9c8a4d", fontSize: 12, marginTop: 10 }}>
             proposal digest: <code>{String(proposal.proposal.proposalDigest).slice(0, 20)}...</code>
             {" "}· spec digest: <code>{proposal.specDigest.slice(0, 20)}...</code>
-          </div>
+          </div>}
           <button
             type="button"
             onClick={runApprove}
             disabled={phase !== "proposed"}
             style={{
               marginTop: 12,
-              background: phase === "proposed" ? "#f5c518" : "#6b5518",
-              color: "#171208",
+              background: compact ? "#142d31" : phase === "proposed" ? "#f5c518" : "#6b5518",
+              color: compact ? "#fff" : "#171208",
               fontWeight: 700,
               border: "none",
               borderRadius: 8,
@@ -294,12 +306,9 @@ export function CustomizePanel({ siteId }: { siteId: string }) {
               cursor: phase === "proposed" ? "pointer" : "not-allowed",
             }}
           >
-            {phase === "approving" ? "Recording approval..." : "Approve and apply (demo)"}
+            {phase === "approving" ? "Recording approval..." : "Apply (local demo)"}
           </button>
-          <div style={{ color: "#9c8a4d", fontSize: 12, marginTop: 8 }}>
-            Approval journals a presentation-intent overlay event. DEMO OWNER
-            MODE - not real authentication.
-          </div>
+          <div style={{ ...body, fontSize: 12, marginTop: 8 }}>{compact ? "Applies only to this local demo website. Business ownership is not verified." : "Approval journals a presentation-intent overlay event. DEMO OWNER MODE - not real authentication."}</div>
         </div>
       ) : null}
 
@@ -316,27 +325,35 @@ export function CustomizePanel({ siteId }: { siteId: string }) {
           }}
           role="status"
         >
-          <strong>Approved and journaled.</strong>
+          <strong>Applied. Your change is saved.</strong>
+          {compact && <a href={"/sites/" + encodeURIComponent(siteId)} className="block mt-2 underline min-h-[44px] py-2">View your updated website</a>}
+          <details><summary className="cursor-pointer min-h-[44px] py-2">Change receipt (local demo)</summary>
           <div style={{ marginTop: 4 }}>
             intent: <code>{approval.intentId}</code> · event:{" "}
             <code>{approval.eventId}</code>
           </div>
-          <div style={{ marginTop: 4, color: "#7fd08a" }}>{approval.note}</div>
+          <div style={{ marginTop: 4, color: compact ? "#22602e" : "#7fd08a" }}>{approval.note}</div>
+          </details>
         </div>
       ) : null}
 
-      <div style={{ ...label, marginTop: 16 }}>Current presentation intent (live)</div>
+      {compact && inspect && <div style={{ marginTop: 20 }} aria-label="Saved website changes">
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: "#142d31" }}>Saved website changes</h2>
+        {inspect.directives.length === 0 ? <p style={body}>No website changes saved yet.</p> : <ul style={{ paddingLeft: 20, color: "#435650", fontSize: 14 }}>{inspect.directives.slice().reverse().map(d => <li key={d.intentId} style={{ marginTop: 10 }}><strong>{d.change ? reviewTitle(d.change) : "Website presentation change"}</strong>{d.change && <p style={{ margin: "4px 0" }}>{d.change.after.map(reviewLine).join(" → ")}</p>}<span style={{ fontSize: 12 }}>Saved {d.approvedAt.slice(0, 10)} · local demo</span></li>)}</ul>}
+        {inspect.unresolved.length > 0 && <p role="alert" style={{ color: "#8b3024" }}>Some saved changes need review before they can be shown.</p>}
+      </div>}
+      <details open={!compact}><summary className="cursor-pointer min-h-[44px] py-2" style={{ ...label, marginTop: 16 }}>Saved changes and technical details</summary>
       {inspectError ? (
         <div style={{ ...body, color: "#f0a9a0" }}>inspect unavailable: {inspectError}</div>
       ) : inspect ? (
         <div style={{ marginTop: 8 }}>
-          <div style={{ color: "#c9b98a", fontSize: 13 }}>
+          <div style={{ color: compact ? "#435650" : "#c9b98a", fontSize: 13 }}>
             Section order (home):{" "}
             {(inspect.pageOrder.find((p) => p.pageSlug === "home")?.sections ?? [])
               .map((s) => s.component + (s.hidden ? " (hidden)" : ""))
               .join(" → ") || "(no home page)"}
           </div>
-          <div style={{ color: "#9c8a4d", fontSize: 12, marginTop: 4 }}>
+          <div style={{ color: compact ? "#50605c" : "#9c8a4d", fontSize: 12, marginTop: 4 }}>
             spec digest: <code>{inspect.specDigest.slice(0, 20)}...</code> · base:{" "}
             <code>{inspect.baseSpecDigest.slice(0, 20)}...</code>
           </div>
@@ -350,8 +367,8 @@ export function CustomizePanel({ siteId }: { siteId: string }) {
           ) : (
             <ul style={{ listStyle: "none", margin: "8px 0 0", padding: 0 }}>
               {inspect.directives.map((d) => (
-                <li key={d.intentId} style={{ marginTop: 8, fontSize: 13, color: "#c9b98a" }}>
-                  <code style={{ color: "#f5eeda" }}>{d.intentId}</code> ·{" "}
+                <li key={d.intentId} style={{ marginTop: 8, fontSize: 13, color: compact ? "#435650" : "#c9b98a" }}>
+                  <code style={{ color: compact ? "#142d31" : "#f5eeda" }}>{d.intentId}</code> ·{" "}
                   {String(JSON.stringify(d.siteIntent))} ·
                   approved {d.approvedAt} by {d.approvedBy}
                   {d.eventId ? (
@@ -359,7 +376,7 @@ export function CustomizePanel({ siteId }: { siteId: string }) {
                   ) : null}{" "}
                   {d.change ? (
                     <div style={{ marginTop: 4, fontSize: 12 }}>
-                      <div style={{ color: "#9c8a4d" }}>What changed: {d.change.title}</div>
+                      <div style={{ color: compact ? "#50605c" : "#9c8a4d" }}>What changed: {d.change.title}</div>
                       <div>Before: {d.change.before.join(" ")}</div>
                       <div>After: {d.change.after.join(" ")}</div>
                     </div>
@@ -388,6 +405,7 @@ export function CustomizePanel({ siteId }: { siteId: string }) {
       ) : (
         <div style={body}>Loading current intent...</div>
       )}
+      </details>
     </div>
   );
 }

@@ -28,6 +28,11 @@ import {
   getFydTenantIds,
   type FydOverlayReader,
 } from "../data/fyd-tenant-graph";
+import { applyOwnerFieldCorrections } from "../object/owner-overlay";
+import { readOverrides } from "../object/owner-store";
+import { decisionsForGraph, verifyPublicProjection, type VerifiedPublicProjection } from "../sitespec/public-projection";
+import { applyPresentationIntent } from "../customize/apply-layer";
+import { suppressConflictedFields, type AskFieldConflict } from "../ask/field-conflicts";
 import { getMediaManifest } from "./bundle-media";
 import { generateSiteSpec } from "../proceduralize/generator";
 import { isRenderable, validateSiteSpec } from "../sitespec/validator";
@@ -48,6 +53,14 @@ export interface MediaManifest {
 
 export interface SiteBundle {
   siteId: string;
+  /** The resolved public read product. Optional only for legacy pure test fixtures. */
+  projection?: VerifiedPublicProjection;
+  /** Server-only owner read and source observations captured in the same bundle. */
+  ownerProjection?: VerifiedPublicProjection;
+  sourceGraph?: ObjectGraph;
+  /** Server-only captured owner reads: never serialize this function or raw history. */
+  readOwner?: typeof readOverrides;
+  conflictState?: "available";
   businessName: string;
   graph: ObjectGraph;
   spec: FYDSiteSpec;
@@ -79,43 +92,97 @@ function businessNameFor(graph: ObjectGraph, spec: FYDSiteSpec, siteId: string):
 
 async function buildBundle(
   siteId: string,
-  reader?: FydOverlayReader,
+  opts?: { reader?: FydOverlayReader; readConflicts?: () => Promise<AskFieldConflict[]> },
 ): Promise<SiteBundle> {
-  const tenant = await getFydTenantGraph(siteId, reader ? { reader } : undefined);
-  const { graph, meta } = tenant;
-  const spec = generateSiteSpec(graph, {
-    generatedAt: meta.generatedAt,
-    eventSequences: meta.eventSequences ?? undefined,
+  const tenant = await getFydTenantGraph(siteId, opts?.reader ? { reader: opts.reader } : undefined);
+  // Capture each existing owner log once. Later consumers cannot reread a
+  // newer correction or visibility preference under this checkpoint.
+  const states = new Map<string, ReturnType<typeof readOverrides>>();
+  for (const key of new Set([siteId, ...tenant.graph.objects.map(o => o.id)])) {
+    states.set(key, readOverrides(key));
+  }
+  const readOwner: typeof readOverrides = key => {
+    const state = states.get(key);
+    if (!state) throw new Error("Owner state was not captured for this projection.");
+    return state;
+  };
+  // Existing bundles have no conflict producer yet. Zero means no declared
+  // conflicts in this successful read, never an unavailable read converted to [].
+  const conflicts = opts?.readConflicts ? await opts.readConflicts() : [];
+  if (!Array.isArray(conflicts) || conflicts.some(c => !c || typeof c.objectId !== "string" || typeof c.field !== "string" ||
+      !["unresolved", "resolved"].includes(c.status) || !Array.isArray(c.observations) ||
+      (c.status === "unresolved" && c.observations.length < 2) ||
+      c.observations.some(o => !o || typeof o.value !== "string" || typeof o.provenanceRef !== "string" || typeof o.provenanceKind !== "string"))) {
+    throw new Error("Conflict information unavailable.");
+  }
+  const corrected = applyOwnerFieldCorrections(tenant.graph, siteId, readOwner).graph;
+  const decisions = decisionsForGraph(corrected, siteId, readOwner);
+  const projection = verifyPublicProjection(suppressConflictedFields(corrected, conflicts), decisions, "anonymous", {sourceDigest:tenant.meta.graphDigest, conflicts, presentationIntent:tenant.presentationIntent});
+  const ownerProjection = verifyPublicProjection(suppressConflictedFields(corrected, conflicts), decisions, "owner", {sourceDigest:tenant.meta.graphDigest, conflicts, presentationIntent:tenant.presentationIntent});
+  const graph = projection.graph;
+  const base = generateSiteSpec(graph, {
+    generatedAt: tenant.meta.generatedAt,
+    eventSequences: tenant.meta.eventSequences ?? undefined,
+    siteId,
   });
+  const spec = applyPresentationIntent(base, tenant.presentationIntent, graph).spec;
   const findings = validateSiteSpec(spec, new Set(graph.objects.map((o) => o.schema)));
   return {
-    siteId,
-    businessName: businessNameFor(graph, spec, siteId),
-    graph,
-    spec,
-    findings,
+    siteId, projection, ownerProjection, sourceGraph: tenant.graph, readOwner, conflictState: "available",
+    businessName: businessNameFor(graph, spec, siteId), graph, spec, findings,
     renderable: isRenderable(findings),
-    // The media lane owns this value: the rights-gated, provenance-backed
-    // manifest of FYD-served media for the site (null when the site has no
-    // pipeline manifest). Ask FYD cites these items, never hotlinks.
     mediaManifest: getMediaManifest(siteId),
+    fieldConflicts: conflicts,
+    fieldVisibilityDecisions: decisions,
   };
 }
 
 /**
  * Return the bundle for a known site id, or null for unknown ids.
  *
- * Deliberately uncached and async: the bundle is rebuilt through the
- * authorized graph read on every call, so a newly journaled overlay is
- * visible to Ask FYD on the next request. The graphs are tiny; freshness
- * outranks the memo.
+ * Bounded TTL cache (60s): the bundle is rebuilt at most once per minute
+ * per site, not on every request. This fixes a memory leak where per-request
+ * rebuilds accumulated unreleased native memory (2026-10-08: +0.17MB heap
+ * per /sites request, +500MB RSS from 100 requests). Freshness is preserved
+ * (max 60s stale) while preventing unbounded growth. Cache is bounded by
+ * tenant count (small) with TTL eviction.
  */
+const bundleCache = new Map<string, { bundle: SiteBundle | null; at: number }>();
+const BUNDLE_TTL_MS = 60_000;
+
+/**
+ * Invalidate the cached bundle for one site id.
+ *
+ * Call immediately AFTER an authoritative write commits (owner correction,
+ * approved proposal, presentation-intent overlay, regeneration, source
+ * replacement, company-data update). Required order: WRITE COMMITS ->
+ * INVALIDATE -> NEXT READ REBUILDS FROM NEW TRUTH. Do not call before the
+ * write commits; if the write rolls back, the old cache stays valid.
+ *
+ * Surgical: only the affected site entry is dropped. A write to site A
+ * never flushes site B. TTL remains a safety fallback; TTL is not
+ * consistency.
+ */
+export function invalidateSiteBundle(siteId: string): void {
+  bundleCache.delete(siteId);
+}
 export async function getSiteBundle(
   siteId: string,
-  opts?: { reader?: FydOverlayReader },
+  opts?: { reader?: FydOverlayReader; readConflicts?: () => Promise<AskFieldConflict[]> },
 ): Promise<SiteBundle | null> {
   if (!getFydTenantIds().includes(siteId)) return null;
-  return buildBundle(siteId, opts?.reader);
+  // Bypass cache when custom reader/conflicts are provided (tests, overlays)
+  if (opts?.reader || opts?.readConflicts) {
+    return buildBundle(siteId, opts);
+  }
+  const now = Date.now();
+  const cached = bundleCache.get(siteId);
+  if (cached && (now - cached.at) < BUNDLE_TTL_MS) {
+    return cached.bundle;
+  }
+  const bundle = await buildBundle(siteId, opts);
+  bundleCache.set(siteId, { bundle, at: now });
+  return bundle;
 }
 
 /**

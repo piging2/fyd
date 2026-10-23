@@ -139,8 +139,16 @@ export async function GET(request: Request) {
   // Intent: which business facts conflict
   if (/conflict/.test(q)) {
     const out: { siteId: string; objectId: string; corrections: unknown[] }[] = [];
-    for (const t of getFydTenantIds()) {
-      const { graph } = await getFydTenantGraph(t as never);
+    // Parallelize tenant graph loads: each is an independent read (fixture
+    // deep-clone + overlay application, no shared mutable state). Awaiting
+    // sequentially here cost N x graph-load latency.
+    const tenantGraphs = await Promise.all(
+      getFydTenantIds().map(async (t) => ({
+        siteId: t,
+        graph: (await getFydTenantGraph(t as never)).graph,
+      }))
+    );
+    for (const { siteId: t, graph } of tenantGraphs) {
       for (const o of graph.objects) {
         if (o.ownerFieldCorrections?.length) {
           out.push({

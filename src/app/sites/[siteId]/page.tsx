@@ -1,9 +1,18 @@
+export const dynamic = "force-dynamic";
+
 /**
  * FYD Social generated-site: dynamic site route.
  *
- * Live observability: this single route serves ALL sites discovered from
- * the projection directory. No per-business directories, no hardcoded
- * site IDs. Adding a projection JSON automatically adds the site.
+ * Site identity: this route serves exactly the site ids the bundle seam
+ * can serve (the pinned tenant registry behind listSiteIds). It does not
+ * serve arbitrary projection-directory files: the bundle seam deliberately
+ * rejects disk-driven discovery to protect its closed-read convergence
+ * boundary (see the DUPLICATION DEBT note in fyd-tenant-graph.ts).
+ *
+ * Unknown slugs are an honest 404 via notFound(), never a 500
+ * (2026-10-08, kims-auto-parts 500: the fail-closed throw inside
+ * compilePublicSite is reserved for the pinned-but-broken case such as a
+ * tampered base or digest mismatch, not for "this site does not exist").
  *
  * The page is compiled from the site's PING-backed object graph through
  * generateSiteSpec, then rendered from the declarative spec. No hand-layout
@@ -14,26 +23,29 @@
  * The spec is validated before render. An invalid spec never renders.
  */
 
+import { notFound } from "next/navigation";
 import { SiteClient } from "../_shared/site-client";
 import { compilePublicSite } from "../_shared/spec-pipeline";
+import { isServableSiteId } from "../_shared/site-lookup";
 import {
   generateSiteMetadata,
   resolveSiteDisplayName,
 } from "../_shared/site-metadata";
+import { SiteJsonLd } from "../_shared/site-jsonld";
 import { galleryMediaFor, heroMediaFor } from "@/fyd/media/select";
 import {
   auditSitesRenderClaims,
   logSitesRenderAudit,
 } from "@/fyd/sitespec/sites-render-audit";
-import { listPingSiteIdsSync } from "@/fyd/data/ping-object-source";
+import { listSiteIds } from "@/fyd/media/site-bundle";
 
 /**
- * Pre-render all known sites at build time. New projections added after
+ * Pre-render the servable sites at build time. New tenants pinned after
  * the build are served dynamically (no rebuild required for the route
  * to exist, though ISR may be needed for full static optimization).
  */
 export async function generateStaticParams() {
-  return listPingSiteIdsSync().map((siteId) => ({ siteId }));
+  return listSiteIds().map((siteId) => ({ siteId }));
 }
 
 export async function generateMetadata({
@@ -42,6 +54,8 @@ export async function generateMetadata({
   params: Promise<{ siteId: string }>;
 }) {
   const { siteId } = await params;
+  // Unknown slug: honest 404, never a 500 (2026-10-08 site-lookup gate).
+  if (!isServableSiteId(siteId)) notFound();
   // Trust seam (2026-09-24): title, description, og/twitter tags, and
   // canonical all derive from the site's own PING-backed projection at
   // render time. Nothing hardcoded per site.
@@ -55,11 +69,14 @@ export default async function DynamicSitePage({
 }) {
   const { siteId: SITE_ID } = await params;
 
+  // Unknown slug: honest 404, never a 500 (2026-10-08 site-lookup gate).
+  if (!isServableSiteId(SITE_ID)) notFound();
+
   // Shared render pipeline: base spec compiled from the PING-backed graph
   // with the approved presentation intent applied over it.
   // Verified public projection (Q-C-01): the graph below already passed
   // the single public projection boundary; no separate publicGraph step.
-  const { graph, spec, findings, renderable } =
+  const { projection, graph, spec, findings, renderable } =
     await compilePublicSite(SITE_ID);
   // Hero media, resolved once per page load at the server render
   // seam. Null when the owner has no acquired media.
@@ -88,12 +105,14 @@ export default async function DynamicSitePage({
   // first <h1> is the binding-verified business name.
   return (
     <main className="min-h-screen bg-background">
+      <SiteJsonLd projection={projection} />
       <SiteClient
         spec={spec}
         graph={graph}
         findings={findings}
         renderable={renderable}
         siteId={SITE_ID}
+        projectionCheckpoint={projection.provenance.checkpoint}
         heroMedia={heroMedia}
         galleryMedia={galleryMedia}
         siteName={resolveSiteDisplayName(graph)}

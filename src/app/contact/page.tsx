@@ -4,10 +4,29 @@ import { CTASection } from "@/components/cta-section";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { getTenant } from "@/lib/tenant-config";
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://ping.vercel.app");
+
 export const metadata: Metadata = {
   title: "Contact",
   description: "Contact PING Social about AI concierge and business automation for your business.",
   alternates: { canonical: "/contact" },
+  openGraph: {
+    type: "website",
+    title: "Contact",
+    description: "Contact PING Social about AI concierge and business automation for your business.",
+    url: siteUrl + "/contact",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/brand/og-card.png"],
+    title: "Contact",
+    description: "Contact PING Social about AI concierge and business automation for your business.",
+  },
 };
 
 export default function ContactPage() {

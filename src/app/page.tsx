@@ -8,7 +8,7 @@ import { PingWordmark } from "@/components/ping-wordmark";
 import { BlueprintGrid } from "@/components/blueprint-grid";
 import { MaturityLabel, type Maturity } from "@/components/maturity-label";
 import { buildPortalProjection, HOMEPAGE_CIRCLE_SITE_IDS } from "@/fyd/preview/pipeline";
-import { PortalHost } from "@/fyd/ui/portal-host";
+import { HomeCircles, type HomePortal } from "@/fyd/ui/home-circles";
 import {
   KnowledgeLoop,
   BusinessGraph,
@@ -20,10 +20,29 @@ import {
 } from "@/components/architecture";
 import { getTenant } from "@/lib/tenant-config";
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://ping.vercel.app");
+
 export const metadata: Metadata = {
   title: "PING: Continuity infrastructure for AI agents",
   description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve.",
   alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    title: "PING: Continuity infrastructure for AI agents",
+    description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve.",
+    url: siteUrl + "/",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/brand/og-card.png"],
+    title: "PING: Continuity infrastructure for AI agents",
+    description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve.",
+  },
 };
 
 /* Eyebrow taxonomy, picked once and used relentlessly:
@@ -140,38 +159,66 @@ const CHANGELOG = [
 
 export default function HomePage() {
   const tenant = getTenant();
-  const portalProjections = HOMEPAGE_CIRCLE_SITE_IDS.flatMap((id) => { const pr = buildPortalProjection(id); return pr ? [pr] : []; });
+  const homePortals: HomePortal[] = HOMEPAGE_CIRCLE_SITE_IDS.flatMap((id) => { const pr = buildPortalProjection(id); return pr ? [{ siteId: id, projection: pr }] : []; });
   return (
     <>
       {/* 01 HERO: the living system moment */}
-      <Section className="bg-deep relative overflow-hidden">
+      <Section size="minor" className="bg-deep relative overflow-hidden">
         <BlueprintGrid />
         <Container className="relative">
-          <p className="mb-6 font-mono text-xs font-bold uppercase tracking-widest text-honey">/live</p>
+          <p className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-honey">/live</p>
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <ScrollReveal>
               <div className="mb-6">
                 <PingWordmark className="scale-125 origin-left" />
               </div>
               <p className="text-lg font-medium text-honey">{tenant.tagline}</p>
-              <h1 className="mt-4 text-4xl font-bold text-text-on-dark sm:text-5xl lg:text-6xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+              <div className="mt-6 rounded-2xl border border-text-on-dark/15 bg-deep-2/60 p-6">
+                <h2 className="text-2xl font-bold text-text-on-dark sm:text-3xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+                  Inspired by the best of the best.
+                </h2>
+                <p className="mt-3 text-text-on-dark/85" style={{ lineHeight: 'var(--leading-body)' }}>
+                  PING helps exceptional people and businesses get recognized, work smarter and put technology to practical use. We start by listening, understanding how things really work and finding improvements that make a measurable difference.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link
+                    href="/nominate"
+                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 py-2 text-center font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
+                  >
+                    Nominate a business for a PING feature.
+                  </Link>
+                  <Link
+                    href="/apply"
+                    className="inline-flex min-h-12 items-center justify-center rounded-full bg-honey px-8 py-2 text-center font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
+                  >
+                    Apply to be considered for a feature.
+                  </Link>
+                  <Link
+                    href="/assessment"
+                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 py-2 text-center font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
+                  >
+                    Explore a practical technology and operations assessment.
+                  </Link>
+                </div>
+                <p className="mt-4 text-sm text-text-on-dark/70">
+                  Applying covers your own business. Nominating is how you point
+                  us to a business you admire: message PING on Facebook and tell
+                  us its name. Featuring is free to apply for, and selection is
+                  not promised.
+                </p>
+              </div>
+              <h1 className="mt-10 text-4xl font-bold text-text-on-dark sm:text-5xl lg:text-6xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
                 Systems that remember,<br />agents you can trust
               </h1>
               <p className="mt-6 max-w-xl text-lg text-text-on-dark/90" style={{ lineHeight: 'var(--leading-body)' }}>
                 PING turns information into reliable understanding, understanding into useful action,
                 and action into evidence that can be trusted and replayed.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="#architecture"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-honey px-8 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
-                >
+              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <Link href="#architecture" className="font-medium text-text-on-dark/70 underline-offset-4 hover:text-honey hover:underline">
                   Explore the architecture
                 </Link>
-                <Link
-                  href="#ping-social"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
-                >
+                <Link href="#ping-social" className="font-medium text-text-on-dark/70 underline-offset-4 hover:text-honey hover:underline">
                   PING Social
                 </Link>
               </div>
@@ -188,7 +235,63 @@ export default function HomePage() {
       </Section>
 
       {/* Portal margin: PING circles inhabit unused peripheral space only. Geometry, not breakpoints, decides whether a slot is honest. */}
-      <PortalHost portals={portalProjections} />
+      <HomeCircles portals={homePortals} />
+
+      {/* 01b OFFERS AND PATHS: the offer architecture, compact and honest */}
+      <Section size="minor" className="bg-surface-2">
+        <Container className="max-w-5xl">
+          <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey">/offers</p>
+          <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+            What PING offers
+          </h2>
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Business Spotlight</h3>
+              <p className="mt-2 text-sm text-text-muted">Exceptional Western Colorado businesses, featured in the Top Ranked groups and on PING&apos;s pages. Free to apply.</p>
+              <Link href="/apply" className="mt-3 inline-block font-medium text-honey hover:underline">Apply to be considered for a feature.</Link>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Practical technology and operations assessment</h3>
+              <p className="mt-2 text-sm text-text-muted">A scoped introductory assessment: what is wasting time or money, the root cause, and what would genuinely improve it.</p>
+              <Link href="/assessment" className="mt-3 inline-block font-medium text-honey hover:underline">Explore a practical technology and operations assessment.</Link>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Digital Concierge and business websites</h3>
+              <p className="mt-2 text-sm text-text-muted">An always-on front desk for your business, and a website built from your business understanding. Delivered today as bespoke PING Social engagements.</p>
+              <Link href="/products" className="mt-3 inline-block font-medium text-honey hover:underline">See it in Products</Link>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Operational Memory and Automation</h3>
+              <p className="mt-2 text-sm text-text-muted">Systems that remember how your business works and automate the repetitive parts. In development, applied incrementally through engagements.</p>
+              <Link href="/products" className="mt-3 inline-block font-medium text-honey hover:underline">See it in Products</Link>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Ongoing Improvement partnership</h3>
+              <p className="mt-2 text-sm text-text-muted">A partnership posture, not a packaged product: keep improving what is working, and measure the difference over time.</p>
+              <Link href="/contact" className="mt-3 inline-block font-medium text-honey hover:underline">Start a conversation</Link>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">The PING Platform</h3>
+              <p className="mt-2 text-sm text-text-muted">The intelligence system underneath everything. Its ambitions are labelled as ambitions: documented, in development, or direction.</p>
+              <Link href="/technology" className="mt-3 inline-block font-medium text-honey hover:underline">Read the technology</Link>
+            </div>
+          </div>
+          <div className="mt-10">
+            <h3 className="text-lg font-bold text-text">Start where you are</h3>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link href="/apply" className="inline-flex min-h-[44px] items-center rounded-full border border-border px-5 font-medium text-text transition-colors hover:bg-surface">
+                Local businesses and tradespeople
+              </Link>
+              <Link href="/apply" className="inline-flex min-h-[44px] items-center rounded-full border border-border px-5 font-medium text-text transition-colors hover:bg-surface">
+                Professional firms and teams
+              </Link>
+              <Link href="/technology" className="inline-flex min-h-[44px] items-center rounded-full border border-border px-5 font-medium text-text transition-colors hover:bg-surface">
+                Technology partners and developers
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </Section>
 
       {/* 02 THE CONTINUITY PROBLEM, compressed */}
       <div id="problem"><Section size="minor">
@@ -570,7 +673,7 @@ export default function HomePage() {
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey">/follow · newsletter</p>
           <h2 className="mt-3 text-2xl font-bold text-text-on-dark sm:text-3xl">Follow the build</h2>
           <p className="mt-3 text-text-on-dark/80">
-            Notes on continuity, agents, and building PING. One email when there is something worth saying.
+            Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.
           </p>
           <div className="mt-6 text-left">
             <NewsletterSignup />
@@ -585,6 +688,7 @@ export default function HomePage() {
       <CTASection
         title="Talk to us about your business."
         subtitle="PING Social helps real businesses put AI to practical use: fewer missed opportunities, less busywork, systems that remember. Currently onboarding Western Colorado home-service businesses."
+        showApplyLink
       />
     </>
   );

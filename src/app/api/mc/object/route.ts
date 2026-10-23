@@ -90,12 +90,15 @@ export async function GET(request: Request) {
       ...(typeof prov.ref === "string" ? [prov.ref] : []),
     ];
     const journalRefs = refs.filter((r) => r.startsWith("ping-event:"));
-    const evidence: Record<string, unknown>[] = [];
-    for (const ref of journalRefs) {
-      const eventId = ref.slice("ping-event:".length);
-      const lookup = await findJournalEvent(eventId);
-      evidence.push({ ref, lookup });
-    }
+    // Parallelize journal lookups: each is an independent HTTP fetch to the
+    // gateway. Sequential await here cost N x gateway latency.
+    const evidence: Record<string, unknown>[] = await Promise.all(
+      journalRefs.map(async (ref) => {
+        const eventId = ref.slice("ping-event:".length);
+        const lookup = await findJournalEvent(eventId);
+        return { ref, lookup };
+      })
+    );
 
     const related = graph.relationships.filter(
       (r) => r.subject === id || r.object === id

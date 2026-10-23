@@ -53,6 +53,8 @@ export interface SnapshotInfo {
 }
 
 const SNAPSHOT_OBJECT_ID = "happy-place";
+/** The snapshot tenant slug: the trusted-path tenant for Ask FYD. */
+const SNAPSHOT_SITE_ID = "happy-place";
 const SITE_UNAVAILABLE = "Site preview unavailable";
 
 function hashHue(id: string): number {
@@ -343,6 +345,7 @@ export function CenterPortal({
         {machine.state === "ask" ? (
           <div className="flex h-full w-full items-center overflow-y-auto py-[16%]">
             <SpatialAskPanel
+              siteId={SNAPSHOT_SITE_ID}
               objectId={askObjectId}
               objectName={projection.name}
               sampleQuestions={projection.sampleQuestions}

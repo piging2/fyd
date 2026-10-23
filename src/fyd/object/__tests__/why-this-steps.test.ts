@@ -131,9 +131,11 @@ describe("correctionWhyThisFor (owner correction X/Y)", () => {
     expect(c.chain[1].detail).toContain("2026-09-29");
     expect(c.chain[2].detail).toContain("Demo Owner (seeded, unverified)");
     expect(c.chain[2].state).toBe("observed");
-    // OWNER-CONFIRMED with the owner-facing language law wording.
-    expect(c.chain[3].detail).toContain("Confirmed by you");
-    expect(c.chain[3].detail).toContain("the site, Ask, search, and all projections");
+    // The correction's effects are bounded by the resolved product and visibility.
+    expect(c.chain[3].detail).toContain("Recorded as an owner correction");
+    expect(c.chain[3].detail).toContain("website, Ask answer, and owner view");
+    expect(c.chain[3].detail).toContain("visibility and conflict decisions");
+    expect(c.chain[3].detail).not.toContain("search, and all projections");
   });
 
   test("null source value is honest, never invented", () => {

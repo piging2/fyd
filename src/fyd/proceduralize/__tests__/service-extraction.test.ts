@@ -252,7 +252,12 @@ describe("ask fyd services question", () => {
     // Offer nodes are evidence-chain scaffolding, not services: the
     // answer must not present them as offered services.
     expect(answer.answer).not.toContain("Emergency Plumbing Offer");
-    expect(answer.unknowns).toEqual([]);
+    // Obligation model (item 7): the question's 'how do you know?' half is a
+    // separate obligation whose confirmation is not in the published
+    // information, so it is surfaced as a named unknown instead of silence.
+    expect(answer.unknowns).toEqual([
+      "I can't confirm how know from the published information I have.",
+    ]);
     expect(answer.sourceUrls).toEqual(["https://example.test/"]);
 
     // 3 named services + 4 provenance sentences: the intentional
@@ -308,7 +313,12 @@ describe("ask fyd services question", () => {
       "I cannot answer that: nothing in the site record covers it, and I will not guess.",
 
     )).toBe(true);
-    expect(answer.unknowns).toEqual(["services offered by this business"]);
+    // Obligation model (item 7): the frozen refusal still leads, and each
+    // unanswerable obligation of the question is named as an unknown.
+    expect(answer.unknowns).toEqual([
+      "services offered by this business",
+      "I can't confirm how know from the published information I have.",
+    ]);
     expect(answer.claimClassifications).toEqual([]);
     expect(answer.sourceUrls).toEqual(["https://example.test/"]);
   });

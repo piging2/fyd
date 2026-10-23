@@ -19,6 +19,7 @@
  * (loadObjectView / loadCircleProjection) take the same branded projection.
  */
 
+import { readOverrides } from "./owner-store";
 import type { VerifiedPublicProjection } from "../sitespec/public-projection";
 import type { CircleProjection, ObjectView } from "./types";
 import { composeObjectView, listObjectIds, loadObjectView } from "./view";
@@ -34,12 +35,13 @@ export function loadObjectViewById(
   projection: VerifiedPublicProjection | null,
   siteId: string,
   objectId: string,
+  readOwner: typeof readOverrides = readOverrides,
 ): ObjectView | null {
   if (!projection) return null;
   const obj = projection.graph.objects.find((o) => o.id === objectId);
   if (!obj) return null;
   if (obj.visibility !== "public") return null;
-  return composeObjectView(projection, siteId, obj.id, obj.id, obj.id);
+  return composeObjectView(projection, siteId, obj.id, obj.id, obj.id, readOwner);
 }
 
 /**

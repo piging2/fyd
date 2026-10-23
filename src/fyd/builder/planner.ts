@@ -12,7 +12,9 @@
  * Pipeline:
  *   verified graph -> generateSiteSpec (base, data-driven sections)
  *     -> eligibility filter (defensive) -> dimension-vector composition
- *        (section order, density, tokens, presence) -> owner-intent
+ *        (section order, density, tokens, presence) + service-graph signal
+ *        (item 6: cardinality + evidence quality + topology -> Services
+ *        boost and featuredIds, owner intent wins) -> owner-intent
  *        filters -> generated presentation (verified) -> dependency
  *        manifest + confidence records -> planned site
  *
@@ -79,6 +81,11 @@ import {
   type PresentationBinding,
   type VerifiedRenderModel,
 } from "../sitespec/binding-verifier";
+import {
+  SERVICE_TIER_BOOST,
+  serviceSignal,
+  type ServiceSignal,
+} from "./service-strength";
 
 export const SITE_PLANNER_VERSION = "fyd-site-planner@2";
 
@@ -318,6 +325,23 @@ export function planSite(input: SitePlannerInput): PlannedSite {
 
   const policy = policyForVector(vector);
 
+  // Item 6 (service discovery): the service graph influences composition.
+  // A strong service signal (cardinality + evidence quality + relationship
+  // topology) boosts the Services component and features the strongest
+  // services. Owner intent wins over the automatic signal: a pre-set
+  // featuredIds, a hidden Services section, or an explicit Services entry
+  // in intent.priorities yields the automatic boost and featuring.
+  const svcSignal: ServiceSignal = serviceSignal(graph, ownerId);
+  const ownerYieldServices =
+    base.pages.some((p) =>
+      p.sections.some(
+        (s) =>
+          s.component === "Services" &&
+          ((s.presentation.featuredIds?.length ?? 0) > 0 || s.presentation.hidden === true),
+      ),
+    ) || intent.priorities.includes("Services");
+  const serviceGraphBoost = ownerYieldServices ? 0 : SERVICE_TIER_BOOST[svcSignal.tier];
+
   const plannedPages: FYDPage[] = [];
   for (const page of base.pages) {
     // Filter: eligible components only, minus intent-removed.
@@ -336,17 +360,44 @@ export function planSite(input: SitePlannerInput): PlannedSite {
       }
       return ok;
     });
-    // Order: dimension-vector composition policy. Stable sort by
-    // (baseRank - boost, original index): the same vector always yields
-    // the same order.
+    // Order: dimension-vector composition policy + the service-graph
+    // signal (item 6). Stable sort by (composed rank, original index):
+    // the same (vector, graph) always yields the same order. The service
+    // boost never outranks the Hero: identity stays first.
+    const heroRank = baseRank("Hero") - (policy.sectionBoosts["Hero"] ?? 0);
+    const composedRank = (component: string): number => {
+      let r = baseRank(component) - (policy.sectionBoosts[component] ?? 0);
+      if (component === "Services") {
+        r -= serviceGraphBoost;
+        if (r <= heroRank) r = heroRank + 0.5;
+      }
+      return r;
+    };
     const indexed = sections.map((s, i) => ({ s, i }));
     indexed.sort((a, b) => {
-      const ra = baseRank(a.s.component) - (policy.sectionBoosts[a.s.component] ?? 0);
-      const rb = baseRank(b.s.component) - (policy.sectionBoosts[b.s.component] ?? 0);
+      const ra = composedRank(a.s.component);
+      const rb = composedRank(b.s.component);
       if (ra !== rb) return ra - rb;
       return a.i - b.i;
     });
     sections = indexed.map((x) => x.s);
+    // Item 6: strong service signals feature the top services on every
+    // surviving Services section. Deterministic top-k by evidence score,
+    // intersected with the section's bound objects. Owner-set featuredIds
+    // are never overwritten (owner > pin > inference).
+    if (!ownerYieldServices && (svcSignal.tier === "strong" || svcSignal.tier === "dominant")) {
+      const featured = svcSignal.topServiceIds;
+      if (featured.length > 0) {
+        sections = sections.map((s) => {
+          if (s.component !== "Services") return s;
+          if ((s.presentation.featuredIds?.length ?? 0) > 0) return s;
+          const bound = new Set(resolveQueryObjects(graph, s.query, ownerId).map((o) => o.id));
+          const ids = featured.filter((id) => bound.has(id));
+          if (ids.length === 0) return s;
+          return { ...s, presentation: { ...s.presentation, featuredIds: ids } };
+        });
+      }
+    }
     // Must-win preservation: the density cap may drop optional sections,
     // never must-wins. Must-win sections keep their composed order and
     // fill first; remaining capacity fills with optional sections in
@@ -492,6 +543,22 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     "composition: vector=" + JSON.stringify(vector) +
       " policy=" + policy.density + "/" + policy.mediaTreatment +
       "/cta-" + policy.ctaEmphasis + "/presence-" + policy.presenceMode,
+  );
+  // Item 6: the service-discovery rule, visible and deterministic. Both
+  // decisions (section order, featuredIds) live in the spec, so they are
+  // inside the semantic digest; this note names the rule for operators.
+  manifest.notes.push(
+    "service-signal: score=" + svcSignal.score +
+      " (cardinality=" + svcSignal.cardinality +
+      ", quality=" + svcSignal.evidenceQuality +
+      ", topology=" + svcSignal.topologyDepth +
+      ") -> tier=" + svcSignal.tier +
+      (ownerYieldServices
+        ? " (yielded to owner intent: no automatic boost, no automatic featuredIds)"
+        : " -> services boost +" + serviceGraphBoost +
+          (svcSignal.tier === "strong" || svcSignal.tier === "dominant"
+            ? ", featured=[" + svcSignal.topServiceIds.join(",") + "]"
+            : "")),
   );
 
   const navigation = plannedPages.map((p) => ({ label: p.navLabel, pageSlug: p.slug }));

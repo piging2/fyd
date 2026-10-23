@@ -33,6 +33,11 @@ import type {
   PlannedAction,
   SitePatchProposalBody,
 } from "./types";
+import {
+  decomposeObligations,
+  forcedUnknownFor,
+  isObligationCovered,
+} from "@/fyd/ask/obligations";
 
 export const ASK_LIMITS = {
   maxRelated: 8,
@@ -580,7 +585,7 @@ function namesTradesWork(q: string): boolean {
  * the election, fix this?" names trades work via "fix", but the election
  * is the subject, so it must refuse, not blurb).
  */
-function namesOutOfScopeTopic(q: string): boolean {
+export function namesOutOfScopeTopic(q: string): boolean {
   for (const w of OUT_OF_SCOPE_WORDS) {
     if (hasWord(q, w)) return true;
   }
@@ -790,7 +795,30 @@ export function stripInternalIds(text: string, labels: ReadonlyMap<string, strin
   return text.replace(INTERNAL_ID_RE, (id) => labels.get(id) ?? "the site record");
 }
 
+/**
+ * Item 7: the fallback composer answers one branch, but the served
+ * response still cannot silently omit an obligation. For multi-obligation
+ * questions the fallback did not resolve, every uncovered obligation
+ * surfaces as an honest UNKNOWN in the uncertainties channel (fail-safe,
+ * never invented, never silent). Single-obligation questions keep the
+ * existing behavior byte-for-byte.
+ */
+function withObligationCoverage(question: string, ans: AskAnswer): AskAnswer {
+  const obligations = decomposeObligations(question);
+  if (obligations.length <= 1) return ans;
+  const claimTexts = ans.claimClassifications.map((c) => c.claim);
+  const missing = obligations.filter(
+    (ob) => !isObligationCovered(ob, { answer: ans.answer, unknowns: ans.unknowns, claimTexts }),
+  );
+  if (missing.length === 0) return ans;
+  return { ...ans, unknowns: [...ans.unknowns, ...missing.map(forcedUnknownFor)] };
+}
+
 export function composeAnswer(ctx: AskContext, question: string, opts: ComposeAnswerOpts = {}): AskAnswer {
+  return withObligationCoverage(question, composeAnswerInner(ctx, question, opts));
+}
+
+function composeAnswerInner(ctx: AskContext, question: string, opts: ComposeAnswerOpts = {}): AskAnswer {
   const q = question.toLowerCase().trim();
   const target = ctx.target;
   const base = baseAnswer(ctx);

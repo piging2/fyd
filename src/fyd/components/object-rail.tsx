@@ -33,6 +33,7 @@ import { schemaRole } from "../sitespec/schemas";
 import type { ClaimEvidence, ObjectProjection } from "../object/object-projection";
 import type { ObjectView } from "../object/types";
 import { verifyPresentationBinding } from "../sitespec/graph";
+import { evidenceScore } from "../builder/service-strength";
 
 /** Resolved placement for one render. */
 export type RailPlacement = "rail" | "drawer" | "hidden";
@@ -330,22 +331,12 @@ export function pingObjectToView(o: PingObject): ObjectView {
 /**
  * Evidence-richness score for featured-object selection.
  *
- * Deterministic and monotone in observable evidence: description words
- * weigh most (customer-meaningful prose), then populated field count,
- * then a small bonus for a recorded provenance ref. No randomness, no
- * wall clock, no network.
+ * Hoisted to src/fyd/builder/service-strength.ts (item 6, single owner):
+ * the ObjectRail doorway and the service-discovery signal share one
+ * scoring function so the two consumers cannot drift. Re-exported here
+ * so existing importers are unchanged.
  */
-export function evidenceScore(o: PingObject): number {
-  const words = (o.description ?? "").trim().split(/\s+/).filter(Boolean).length;
-  const fields = Object.values(o.fields ?? {}).filter((v) =>
-    typeof v === "string"
-      ? v.trim().length > 0
-      : Array.isArray(v)
-        ? v.length > 0
-        : v !== null && v !== undefined,
-  ).length;
-  return words * 4 + fields * 3 + (o.provenance?.ref ? 5 : 0);
-}
+export { evidenceScore };
 
 /**
  * The single richest public non-owner object. Id-sorted before scoring so

@@ -378,6 +378,12 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
               pointerEvents: "none",
             }}
           >
+        {/* Mobile edge overlay clamp (2026-10-19): the wrapper is anchored
+            to the right edge (right: 0), never offset past it. The old
+            -(PEEK_D - 28) offset pushed the 56px trigger 28px beyond the
+            layout width, widening the document (+13px overflow at
+            430/390/375/320). Desktop peek geometry is a separate path
+            (slot assignments above) and is unchanged. */}
         {portals.map((portal, i) => (
           <div
             key={portal.circle.id}
@@ -386,7 +392,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
             style={{
               position: "absolute",
               top: overlayY + i * (PEEK_D + 14),
-              right: -(PEEK_D - 28),
+              right: 0,
               width: PEEK_D,
               height: PEEK_D,
               pointerEvents: "auto",

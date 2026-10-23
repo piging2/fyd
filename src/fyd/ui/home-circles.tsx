@@ -56,7 +56,11 @@ export function HomeCircles({ portals }: { portals: HomePortal[] }) {
     if (!home) return null;
     return {
       siteId: home.siteId,
-      objectId: home.projection.circle.id,
+      // No objectId: a homepage Circle IS the business, and the business
+      // slug is not a graph object id. The pipeline defaults an
+      // object-less ask to the site's business object; passing the slug
+      // as objectId 404s ("Unknown object for this site."). Same rule
+      // as the spatial canvas's home focus.
       name: home.projection.circle.name,
     };
   }, [askContextId, portals]);

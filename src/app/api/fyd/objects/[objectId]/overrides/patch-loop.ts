@@ -31,6 +31,7 @@ import { readOwnerEvents, serviceFieldTarget } from "@/fyd/object/owner-events";
 import type { OwnerCommand } from "@/fyd/object/types";
 import { loadObjectView } from "@/fyd/object/view";
 import type { VerifiedPublicProjection } from "@/fyd/sitespec/public-projection";
+import type { ObjectGraph } from "@/fyd/sitespec/types";
 
 /** sha256 hex over the canonicalized value. Deterministic across reads. */
 export function digestOf(value: unknown): string {
@@ -42,8 +43,8 @@ export function digestOf(value: unknown): string {
  * event-log projection for this object. Stable across reads when nothing
  * is written (updatedAt tracks the last event, not read time).
  */
-export function ownerStateDigest(objectId: string): string {
-  return digestOf(readOverrides(objectId));
+export function ownerStateDigest(objectId: string, readOwner: typeof readOverrides = readOverrides): string {
+  return digestOf(readOwner(objectId));
 }
 
 /** Digest of the typed command the owner is asked to approve. */
@@ -105,9 +106,9 @@ function serviceName(names: Map<string, string>, id: string): string {
 }
 
 /** The service order the site shows now: owner order first, then derived ids. */
-function currentOrder(objectId: string, ids: string[]): string[] {
+function currentOrder(objectId: string, ids: string[], readOwner: typeof readOverrides = readOverrides): string[] {
   const known = new Set(ids);
-  const owner = readOverrides(objectId).serviceOrder.filter((id) => known.has(id));
+  const owner = readOwner(objectId).serviceOrder.filter((id) => known.has(id));
   const order = [...owner];
   for (const id of ids) if (!order.includes(id)) order.push(id);
   return order;
@@ -126,9 +127,9 @@ function movedOrder(order: string[], id: string, to: "up" | "down" | "first" | "
   return next;
 }
 
-function sourceFieldValue(objectId: string, field: "phone" | "email" | "website"): string | null {
+function sourceFieldValue(objectId: string, field: "phone" | "email" | "website", sourceGraph?: ObjectGraph): string | null {
   try {
-    const graph = getPingObjectGraphSync(objectId, { ownerOverlay: false }).graph;
+    const graph = sourceGraph ?? getPingObjectGraphSync(objectId, { ownerOverlay: false }).graph;
     const business = findBusinessObject(graph);
     if (!business) return null;
     return rawFieldValue(business, field);
@@ -138,9 +139,9 @@ function sourceFieldValue(objectId: string, field: "phone" | "email" | "website"
 }
 
 /** The SOURCE's current description for one service: raw projection, overlay off. */
-function sourceServiceDescription(objectId: string, serviceId: string): string | null {
+function sourceServiceDescription(objectId: string, serviceId: string, sourceGraph?: ObjectGraph): string | null {
   try {
-    const graph = getPingObjectGraphSync(objectId, { ownerOverlay: false }).graph;
+    const graph = sourceGraph ?? getPingObjectGraphSync(objectId, { ownerOverlay: false }).graph;
     const service = graph.objects.find((o) => o.id === serviceId);
     if (!service) return null;
     return rawFieldValue(service, "description");
@@ -161,12 +162,14 @@ export function buildPatchPreview(
   serviceIds: string[],
   serviceNames: Map<string, string>,
   capabilityImpact: string,
+  resolved?: { sourceGraph?: ObjectGraph; readOwner?: typeof readOverrides },
 ): PatchPreview | null {
-  const overrides = readOverrides(objectId);
+  const readOwner = resolved?.readOwner ?? readOverrides;
+  const overrides = readOwner(objectId);
   switch (command.type) {
     case "set-contact-field": {
       const existing = overrides.fieldCorrections[command.field];
-      const before = existing ? existing.ownerValue : (sourceFieldValue(objectId, command.field) ?? "(not on record)");
+      const before = existing ? existing.ownerValue : (sourceFieldValue(objectId, command.field, resolved?.sourceGraph) ?? "(not on record)");
       return {
         before: command.field + ": " + before,
         after: command.field + ": " + command.value,
@@ -181,7 +184,7 @@ export function buildPatchPreview(
     case "revert-contact-field": {
       const existing = overrides.fieldCorrections[command.field];
       if (!existing) return null;
-      const source = sourceFieldValue(objectId, command.field) ?? "(not on record)";
+      const source = sourceFieldValue(objectId, command.field, resolved?.sourceGraph) ?? "(not on record)";
       return {
         before: command.field + ": " + existing.ownerValue + " (owner correction)",
         after: command.field + ": " + source + " (site's value shown again)",
@@ -192,7 +195,7 @@ export function buildPatchPreview(
       };
     }
     case "move-service": {
-      const order = currentOrder(objectId, serviceIds);
+      const order = currentOrder(objectId, serviceIds, readOwner);
       if (!order.includes(command.id)) return null;
       const after = movedOrder(order, command.id, command.to);
       const nameOf = (id: string) => serviceName(serviceNames, id);
@@ -220,7 +223,7 @@ export function buildPatchPreview(
       };
     }
     case "add-service": {
-      const order = currentOrder(objectId, serviceIds);
+      const order = currentOrder(objectId, serviceIds, readOwner);
       return {
         before: order.length + " services: " + order.map((id) => serviceName(serviceNames, id)).join(", "),
         after: order.length + 1 + " services: " + [...order.map((id) => serviceName(serviceNames, id)), command.name].join(", "),
@@ -244,7 +247,7 @@ export function buildPatchPreview(
       const correction = overrides.fieldCorrections[command.field];
       const effective = correction
         ? correction.ownerValue
-        : sourceFieldValue(objectId, command.field);
+        : sourceFieldValue(objectId, command.field, resolved?.sourceGraph);
       if (effective === null) return null;
       return {
         before: command.field + ": " + effective,
@@ -266,7 +269,7 @@ export function buildPatchPreview(
       const name = serviceName(serviceNames, command.serviceId);
       const before = existing
         ? existing.ownerValue
-        : (sourceServiceDescription(objectId, command.serviceId) ?? "(not on record)");
+        : (sourceServiceDescription(objectId, command.serviceId, resolved?.sourceGraph) ?? "(not on record)");
       return {
         before: "Description of " + name + ": " + before,
         after: "Description of " + name + ": " + command.value,
@@ -283,7 +286,7 @@ export function buildPatchPreview(
       const existing = overrides.fieldCorrections[target];
       if (!existing) return null;
       const name = serviceName(serviceNames, command.serviceId);
-      const source = sourceServiceDescription(objectId, command.serviceId) ?? "(not on record)";
+      const source = sourceServiceDescription(objectId, command.serviceId, resolved?.sourceGraph) ?? "(not on record)";
       return {
         before: "Description of " + name + ": " + existing.ownerValue + " (owner correction)",
         after: "Description of " + name + ": " + source + " (site's description shown again)",
@@ -342,8 +345,9 @@ export interface BoundApproval {
 export function buildViewDigest(
   projection: VerifiedPublicProjection,
   objectId: string,
+  readOwner: typeof readOverrides = readOverrides,
 ): string {
-  const view = loadObjectView(projection, objectId);
+  const view = loadObjectView(projection, objectId, readOwner);
   return digestOf(view ?? { objectId, missing: true });
 }
 

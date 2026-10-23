@@ -4,22 +4,37 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 import { FydCopyClassLabel } from "./fyd-copy-class";
 
 /**
- * Live demo sites: the two authorized FYD demo tenants running on this
- * server. Referenced as running proof, not customer sites.
+ * Running proof sites: the two authorized FYD demo tenants plus PING's
+ * own business, all running on this server. The demos are referenced
+ * as running proof, not customer sites. PING Social is the operator's
+ * own business running on the same system: not a demo, not a customer
+ * testimonial.
  */
 
 const SITES = [
   {
     href: "/sites/happy-place",
+    kind: "Demo tenant",
+    cta: "Open the demo",
     name: "Happy Place",
     proves: "A complete business presence generated from its FYD understanding.",
     ask: "Ask about its services, hours, and offers.",
   },
   {
     href: "/sites/coppersmith-plumbing",
+    kind: "Demo tenant",
+    cta: "Open the demo",
     name: "Coppersmith Plumbing",
     proves: "A trades business presence, including conversational customization proven on this demo.",
     ask: "Ask about emergency plumbing and services.",
+  },
+  {
+    href: "/sites/ping-fyd",
+    kind: "Operator's own business",
+    cta: "Open PING Social",
+    name: "PING Social",
+    proves: "PING's own business running on the same system: the operator's real presence, built from its FYD understanding.",
+    ask: "Ask about AI call answering, lead follow-up, scheduling support, and admin automation.",
   },
 ];
 
@@ -30,21 +45,23 @@ export function FydDemoSites() {
         <Container className="max-w-5xl">
           <SectionHeading
             eyebrow="/see · running proof"
-            title="Two live demos, running on this server"
+            title="Two live demos and PING itself, running on this server"
             description="Complete FYD presences generated from their business understanding. Open one, explore its objects, ask it questions, check the why behind its answers."
           />
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <FydCopyClassLabel kind="live" />
             <p className="text-sm text-text-muted">
-              Demo businesses for the product test. Not customer sites.
+              The two demo businesses are for the product test and are not
+              customer sites. PING Social is the operator&apos;s own business,
+              running on the same system.
             </p>
           </div>
-          <div className="mt-10 grid gap-6 md:grid-cols-2">
+          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {SITES.map((s) => (
               <ScrollReveal key={s.href}>
                 <div className="flex h-full flex-col rounded-2xl border border-border-soft bg-surface p-8">
                   <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey">
-                    Demo tenant
+                    {s.kind}
                   </p>
                   <h3 className="mt-2 text-2xl font-bold text-text">{s.name}</h3>
                   <p className="mt-3 flex-1 text-text-muted">{s.proves}</p>
@@ -54,7 +71,7 @@ export function FydDemoSites() {
                       href={s.href}
                       className="inline-flex h-11 items-center justify-center rounded-full bg-honey px-6 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
                     >
-                      Open the demo
+                      {s.cta}
                     </Link>
                     <a
                       href="#fyd-ask"

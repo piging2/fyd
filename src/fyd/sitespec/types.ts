@@ -302,8 +302,38 @@ export interface FYDThemeTokens {
    * normal token-override path.
    */
   designIntent?: FYDDesignIntent;
+  /**
+   * Item 4 (fyd-execution, 2026-10-07): semantic text-role tokens.
+   * All optional and additive: absent roles resolve deterministically via
+   * resolveThemeRoles (src/fyd/sitespec/theme-roles.ts), so specs written
+   * before this change validate and render unchanged.
+   *
+   * - accentDecorative: brand accent for decoration ONLY (borders, fills,
+   *   brand marks). May be below the text contrast threshold; NEVER text.
+   * - accentText: accent adjusted to >=4.5:1 on surface. The only accent
+   *   allowed in a text position.
+   * - foreground: primary text on surface (defaults to ink).
+   * - mutedForeground: secondary text on surface; still text, so still
+   *   >=4.5:1 on surface (replaces opacity-faded ink).
+   * - surfaceForeground: elevated surface tone (cards, sheets).
+   * - onAccent: text on an accent background (defaults to accentForeground).
+   */
+  accentDecorative?: string;
+  accentText?: string;
+  foreground?: string;
+  mutedForeground?: string;
+  surfaceForeground?: string;
+  onAccent?: string;
 }
 
+/**
+ * Item 4: the v1 base fields are frozen. Semantic roles are NOT stored here:
+ * they derive deterministically from the base palette via resolveThemeRoles
+ * (src/fyd/sitespec/theme-roles.ts) at the validate/render seams. Deriving
+ * at the seams (instead of baking roles into the constant) keeps owner
+ * patches coherent: patching `accent` re-derives accentDecorative/accentText
+ * from the new value instead of leaving a stale stored role behind.
+ */
 export const DEFAULT_FYD_THEME: FYDThemeTokens = {
   accent: "#C9A227",
   accentForeground: "#1c1917",

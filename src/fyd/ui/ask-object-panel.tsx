@@ -1,11 +1,16 @@
 /**
- * AskObjectPanel: visitor Ask FYD for one object Node.
+ * AskObjectPanel: the canonical Ask FYD panel for one object Node.
  *
- * Posts to POST /api/fyd/ask with the object's site id, and with the
- * object id when known (object-targeted questions: the pipeline answers
- * from that object's evidence graph). Evidence-bounded: answers cite
- * their sources; when the pipeline has no supporting evidence it refuses
- * honestly instead of guessing. Never hallucinates business information.
+ * Canonical chat consolidation (2026-10-22): this panel is the shared
+ * object-scoped presentation of the ONE Ask FYD chat. Like every FYD ask
+ * surface it talks to the pipeline only through the canonical client
+ * (@/fyd/ask/ask-client) and the trusted-path route
+ * POST /api/fyd/ask/[siteId]: the tenant comes from the route path, the
+ * object id scopes the question inside that tenant's public graph
+ * (object-targeted questions: the pipeline answers from that object's
+ * evidence graph). Evidence-bounded: answers cite their sources; when
+ * the pipeline has no supporting evidence it refuses honestly instead of
+ * guessing. Never hallucinates business information.
  */
 
 "use client";
@@ -13,25 +18,20 @@
 import { useEffect, useRef, useState } from "react";
 import { fyd, fydMirrorCard } from "./object-layer/fyd-tokens";
 import type { AskFydCitation } from "../ask/visitor-answer";
+import { askFydQuestion } from "../ask/ask-client";
 import type { AskPageContext } from "./object-layer/types";
 
 type AskStatus = "idle" | "loading" | "answered" | "error";
 
-interface AskApiResponse {
-  ok: boolean;
-  answer?: string;
-  refusal?: boolean;
-  citations?: AskFydCitation[];
-  error?: string;
-}
-
 /**
- * Pure: the POST /api/fyd/ask body. objectId is included only when known,
- * so the pipeline can target the question at this object's evidence graph.
- * pageContext is included when the caller has it (the Circle layer passes
- * the visible object ids and the viewer's current object); the route
- * currently reads only known fields and ignores extras, so this is a
- * forward-compatible client contract the pipeline can adopt.
+ * Pure: the canonical ask request fields. objectId is included only when
+ * known, so the pipeline can target the question at this object's
+ * evidence graph. pageContext is included when the caller has it (the
+ * Circle layer passes the visible object ids and the viewer's current
+ * object); the route currently reads only known fields and ignores
+ * extras, so this is a forward-compatible client contract the pipeline
+ * can adopt. The tenant (siteId) travels in the route path via
+ * askFydQuestion, never as a body claim.
  */
 export function askRequestBody(
   siteId: string,
@@ -107,31 +107,34 @@ export function AskObjectPanel({
     setQuestion(query);
     setStatus("loading");
     setError("");
+    const body = askRequestBody(siteId, objectId, query, pageContext);
+    let data;
     try {
-      const res = await fetch("/api/fyd/ask", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(askRequestBody(siteId, objectId, query, pageContext)),
+      data = await askFydQuestion({
+        siteId: body.siteId,
+        objectId: body.objectId,
+        question: body.question,
+        mode: body.mode,
+        pageContext: body.pageContext,
       });
-      let data: AskApiResponse | null = null;
-      try {
-        data = (await res.json()) as AskApiResponse;
-      } catch {
-        data = null;
-      }
-      if (!res.ok || !data || !data.ok) {
-        setStatus("error");
-        setError(data?.error ?? "Ask FYD could not answer right now. Please try again.");
-        return;
-      }
-      setAnswer(data.answer ?? "");
-      setRefusal(data.refusal === true);
-      setCitations(Array.isArray(data.citations) ? data.citations : []);
-      setStatus("answered");
     } catch {
       setStatus("error");
       setError("Could not reach Ask FYD. Check your connection and try again.");
+      return;
     }
+    if (!data.ok) {
+      setStatus("error");
+      setError(
+        data.transportError
+          ? "Could not reach Ask FYD. Check your connection and try again."
+          : (data.error ?? "Ask FYD could not answer right now. Please try again."),
+      );
+      return;
+    }
+    setAnswer(data.answer ?? "");
+    setRefusal(data.refusal === true);
+    setCitations(Array.isArray(data.citations) ? data.citations : []);
+    setStatus("answered");
   }
 
   const paragraphs = answer

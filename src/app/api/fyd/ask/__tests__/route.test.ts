@@ -1,3 +1,4 @@
+import { getFydTenantGraph } from "@/fyd/data/fyd-tenant-graph";
 /**
  * Visitor Ask FYD pipeline tests (fyd/ask-fyd-visitor lane).
  *
@@ -238,13 +239,15 @@ describe("answerAskFyd", () => {
 });
 
 describe("journal overlays compose through the HTTP read path", () => {
-  test("deactivated demo service exists but is private; set_field applied", () => {
+  test("deactivated service stays on the governed source but is absent from the resolved public bundle", async () => {
+    const {graph: source} = await getFydTenantGraph("happy-place");
     // If the reader failed to parse the journal row shape, these overlays
     // would be silently dropped and the pergola object would be absent.
-    const pergola = HAPPY_BUNDLE.graph.objects.find(
+    const pergola = source.objects.find(
       (o) => o.id === "website-service-51de038c1defe8bd",
     );
     expect(pergola).toBeDefined();
+    expect(HAPPY_BUNDLE.graph.objects.find(o => o.id === pergola!.id)).toBeUndefined();
     expect(pergola!.visibility).toBe("private");
     expect(pergola!.provenance.kind).toBe("canonical-journal");
     expect(pergola!.provenance.ref).toBe("ping-event:stub-ev-001");

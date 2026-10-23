@@ -2,8 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
+import { resolveSafeLink } from "../sitespec/safe-link";
 import { WhyThis } from "../ui/why-this";
-import { whyThisClaimChainFor } from "../object/why-this-steps";
+import { correctionsWhyThisFor, whyThisClaimChainFor } from "../object/why-this-steps";
 import { verifyPresentationBinding } from "../sitespec/graph";
 import { coarsenAddress } from "../sitespec/field-visibility";
 import type { ObjectGraph } from "../sitespec/types";
@@ -15,6 +16,9 @@ interface ObjectOverlayProps {
   graph: ObjectGraph;
   siteId: string;
   onClose: () => void;
+  /** Visitor presentation keeps the same verified object and evidence. */
+  visitor?: boolean;
+  onAsk?: () => void;
 }
 
 /**
@@ -153,11 +157,12 @@ export function overlayRelationships(
  * Scroll preservation: saves window.scrollY on mount, restores on unmount.
  * The page behind does not scroll while the overlay is open.
  */
-export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayProps) {
+export function ObjectOverlay({ object, graph, siteId, onClose, visitor = false, onAsk }: ObjectOverlayProps) {
   const savedScroll = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     // Save scroll position.
     savedScroll.current = window.scrollY;
     // Lock body scroll.
@@ -176,16 +181,20 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
     return () => {
       document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", onKey);
+      previousFocus?.focus({ preventScroll: true });
       // Restore exact scroll position.
       window.scrollTo(0, savedScroll.current);
     };
   }, [onClose]);
 
   const detailHref = `/o/${encodeURIComponent(object.id)}`;
-  const askHref = `/o/${encodeURIComponent(object.id)}#ask`;
+  const askHref = visitor && onAsk ? "#ask" : `/o/${encodeURIComponent(object.id)}#ask`;
 
   const schemaLabel = object.schema.replace("ping.social.", "").replace("@1", "");
-  const facts = overlayFacts(object, graph);
+  const boundFacts = overlayFacts(object, graph);
+  const facts = visitor ? boundFacts.filter(f => !["Name", "Service href", "Url", "Website"].includes(f.label)) : boundFacts;
+  const sourceFact = boundFacts.find(f => ["Service href", "Url", "Website"].includes(f.label));
+  const sourceLink = resolveSafeLink(sourceFact?.value, "navigate");
   const relationships = overlayRelationships(object, graph);
   const whySteps = whyThisClaimChainFor(object);
 
@@ -212,15 +221,15 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
         alignItems: "flex-end",
         justifyContent: "center",
       }}
-      onClick={(e) => {
-        // Click backdrop to close.
-        if (e.target === e.currentTarget) onClose();
-      }}
     >
       {/* Backdrop */}
-      <div
-        aria-hidden="true"
+      <button
+        type="button"
+        aria-label="Dismiss service view"
+        tabIndex={-1}
+        onClick={onClose}
         style={{
+          border: 0,
           position: "absolute",
           inset: 0,
           background: "rgba(0, 0, 0, 0.5)",
@@ -251,8 +260,8 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
             position: "absolute",
             top: "16px",
             right: "16px",
-            width: "36px",
-            height: "36px",
+            width: "44px",
+            height: "44px",
             borderRadius: "50%",
             border: "1px solid #e0e0e0",
             background: "#fff",
@@ -310,7 +319,7 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: "8px" }}>
               {relationships.map((r) => (
                 <li key={r.predicateLabel + ":" + r.neighborId} style={{ fontSize: "14px" }}>
-                  <span style={{ color: "#666" }}>{r.predicateLabel}: </span>
+                  <span style={{ color: "#666" }}>{visitor && !r.outgoing && r.predicateLabel === "Offers" ? "Offered by" : r.predicateLabel}: </span>
                   <a
                     href={`/o/${encodeURIComponent(r.neighborId)}`}
                     style={{ color: "#1a1a1a", fontWeight: 600 }}
@@ -333,19 +342,24 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
           data-testid="overlay-evidence"
           data-provenance-ref={object.provenance?.ref}
         >
-          <div style={sectionLabel}>Evidence</div>
+          {!visitor && <div style={sectionLabel}>Evidence</div>}
           {whySteps.length > 0 ? (
             <WhyThis claim={object.title} steps={whySteps} />
           ) : null}
+          {correctionsWhyThisFor(object).map(c => <WhyThis key={c.fact} claim={c.ownerSays} steps={[
+            ...c.chain,
+            ...(c.sourceDrifted ? [{step:"Source drift",detail:"The source changed; your correction still applies."}] : []),
+          ]} />)}
         </div>
 
         {/* Capabilities / actions */}
         <div style={{ marginBottom: "8px" }} data-testid="overlay-actions">
-          <div style={sectionLabel}>Do more with this object</div>
+          {!visitor && <div style={sectionLabel}>Do more with this object</div>}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "4px" }}>
-          <a
+          {(!visitor || onAsk) && <a
             href={askHref}
+            onClick={visitor ? onAsk : undefined}
             style={{
               display: "block",
               textAlign: "center",
@@ -357,14 +371,16 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
               fontWeight: 600,
             }}
           >
-            Ask FYD about this
-          </a>
+            {visitor ? "Ask about this" : "Ask FYD about this"}
+          </a>}
           {/* data-fyd-open-full: bypasses the site client's /o/ interception
               so this really navigates to the node route. Neighbor links
               above intentionally stay intercepted: they swap the open
               object, which IS the traversal surface. */}
-          <a
-            href={detailHref}
+          {(!visitor || sourceLink.kind === "safe") && <a
+            href={visitor && sourceLink.kind === "safe" ? sourceLink.href : detailHref}
+            target={visitor ? "_blank" : undefined}
+            rel={visitor ? "noreferrer" : undefined}
             data-fyd-open-full="true"
             style={{
               display: "block",
@@ -378,8 +394,8 @@ export function ObjectOverlay({ object, graph, siteId, onClose }: ObjectOverlayP
               fontWeight: 600,
             }}
           >
-            Open full object
-          </a>
+            {visitor ? "View service details" : "Open full object"}
+          </a>}
         </div>
       </div>
       <style>{`

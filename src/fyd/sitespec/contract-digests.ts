@@ -12,7 +12,7 @@
  * drift. Regenerate with: node scripts/fyd-contract-digests.mjs
  */
 export const COMPONENT_CATALOG_DIGEST = "df967e6f3fd17d7a87fbe1cb5201712eec5614449f311c38b1c4d314d700cfbb";
-export const THEME_TOKENS_DIGEST = "821c658c14dd3c2eea6ab4bc66f94269c16b2dd280f822ddbc0997cf4d6995cb";
+export const THEME_TOKENS_DIGEST = "1754d81fc6add25e8babc65ffcdfa6b785cd52e18c7cedf8e7cd97b35b95236a";
 export const CONTRACT_DIGEST_SOURCES = {
   registry: "src/fyd/components/registry.ts",
   types: "src/fyd/sitespec/types.ts",

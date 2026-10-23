@@ -38,6 +38,7 @@ import {
 import { EvidenceStateLabel } from "./evidence-state";
 import { WhyThis } from "./why-this";
 import { FollowButton } from "./follow-button";
+import { askFydQuestion } from "../ask/ask-client";
 import type {
   ObjectProjection,
   RelatedRef,
@@ -265,16 +266,16 @@ function AskInline({
     setCitations([]);
     setUnknowns([]);
     try {
-      const res = await fetch("/api/fyd/ask/" + encodeURIComponent(siteId), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ question: query, objectId, mode: "visitor" }),
+      const data = await askFydQuestion({
+        siteId,
+        objectId,
+        question: query,
+        mode: "visitor",
       });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data || data.ok === false) {
-        throw new Error((data && data.error) || "Ask failed");
+      if (!data.ok) {
+        throw new Error(data.error || "Ask failed");
       }
-      setAnswer(typeof data.answer === "string" ? data.answer : "");
+      setAnswer(data.answer ?? "");
       setRefusal(data.refusal === true);
       setCitations(Array.isArray(data.citations) ? data.citations : []);
       setUnknowns(Array.isArray(data.unknowns) ? data.unknowns : []);

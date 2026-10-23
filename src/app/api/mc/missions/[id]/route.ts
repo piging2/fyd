@@ -8,9 +8,14 @@
  * cross-tenant request gets a typed 403 with the requested mission_id only
  * (no tenant field, no metadata, no hint about the owning tenant). No header
  * means the operator view and is unchanged.
+ *
+ * Feed wiring (2026-10-07): also checks the PING journal (brain-postgres
+ * ping_missions) when the FYD journal has no match. Source is attributed
+ * in the response.
  */
 
 import { loadJournalEvents, nowIso, projectMissions } from '../../_lib/mc-dispatch';
+import { listAllPingMissions, PING_JOURNAL_SOURCE } from '../../_lib/mc-ping-journal';
 import { callerScope } from '../../_lib/mc-tenant-gate';
 
 export const runtime = 'nodejs';
@@ -31,14 +36,33 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     return Response.json({ ok: false, error: 'projection_failed', detail: String(e).slice(0, 300) }, { status: 500 });
   }
   const m = missions.find((x) => x.mission_id === id);
-  if (!m) {
-    // Honest miss: the id is unknown, not a failed mission.
-    return Response.json({ ok: false, error: 'unknown_mission', mission_id: id }, { status: 404 });
+  if (m) {
+    if (scope.kind === 'tenant' && m.tenant !== scope.tenant) {
+      // Typed deny, zero disclosure: only the requested id, never the
+      // mission's tenant or any of its metadata.
+      return Response.json({ ok: false, error: 'cross_tenant_denied', mission_id: id }, { status: 403 });
+    }
+    return Response.json({ ok: true, as_of: nowIso(), mission: m, source: 'fyd_journal' });
   }
-  if (scope.kind === 'tenant' && m.tenant !== scope.tenant) {
-    // Typed deny, zero disclosure: only the requested id, never the
-    // mission's tenant or any of its metadata.
-    return Response.json({ ok: false, error: 'cross_tenant_denied', mission_id: id }, { status: 403 });
+  // Feed wiring: check PING journal when FYD journal has no match.
+  try {
+    const pingMissions = await listAllPingMissions(1000);
+    const pm = pingMissions.find((x) => x.mission_id === id);
+    if (pm) {
+      if (scope.kind === 'tenant' && pm.tenant_id !== scope.tenant) {
+        return Response.json({ ok: false, error: 'cross_tenant_denied', mission_id: id }, { status: 403 });
+      }
+      return Response.json({
+        ok: true,
+        as_of: nowIso(),
+        mission: pm,
+        source: 'ping_journal',
+        ping_source: PING_JOURNAL_SOURCE,
+      });
+    }
+  } catch {
+    // PING journal unavailable; fall through to honest miss.
   }
-  return Response.json({ ok: true, as_of: nowIso(), mission: m });
+  // Honest miss: the id is unknown in both journals, not a failed mission.
+  return Response.json({ ok: false, error: 'unknown_mission', mission_id: id }, { status: 404 });
 }

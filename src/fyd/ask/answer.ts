@@ -19,6 +19,8 @@ import {
   sitePatchRefusal,
 } from "./site-patch";
 import type { AskFydAnswer, AskFydContext } from "./types";
+import { answerConciergeQuestion, toAskFydAnswer } from "./concierge";
+import { answerVisitorConcierge } from "./visitor-concierge";
 
 const SITE_PATCH_ACTION_KINDS = new Set([
   "follow",
@@ -31,6 +33,16 @@ const SITE_PATCH_ACTION_KINDS = new Set([
   "reply",
   "propose_update",
   "propose_site_patch",
+]);
+
+const SERVICE_QUESTIONS = new Set([
+  "what services do they offer",
+  "what services do you offer",
+  "what services do you provide",
+  "what do they offer",
+  "what do you offer",
+  "what services does this business offer",
+  "what services does this business offer and how do you know",
 ]);
 
 function baseFields(
@@ -79,6 +91,22 @@ export function composeAskFyd(ctx: AskFydContext, question: string): AskFydAnswe
       proposal,
       partial: false,
       sitePatchCard: buildSitePatchCard(ctx, proposal),
+    };
+  }
+  const visitorAnswer = answerVisitorConcierge(ctx, question);
+  if (visitorAnswer) return visitorAnswer;
+  // Reuse the existing concierge for the service enumeration. Specific
+  // topic questions stay with the existing relevance/refusal machinery.
+  const normalized = question.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  if (ctx.base.target && SERVICE_QUESTIONS.has(normalized) && ctx.fieldConflicts.length === 0) {
+    const concierge = answerConciergeQuestion({
+      siteId: ctx.siteSpec?.siteId ?? "", target: ctx.base.target,
+      objects: [ctx.base.target, ...ctx.base.relatedObjects],
+      relationships: ctx.base.relationships, question: "What services do they offer?",
+    });
+    if (concierge) return {
+      ...baseFields(ctx), ...toAskFydAnswer(concierge),
+      proposal: null, partial: concierge.refused, sitePatchCard: null,
     };
   }
   // FYD-Q1: register both evidence chains for every unresolved conflict

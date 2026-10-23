@@ -30,6 +30,7 @@ import {
   type FieldVisibilityDecision,
 } from "../sitespec/field-visibility";
 import { resolveSafeLink, type SafeLinkResult } from "../sitespec/safe-link";
+import { resolveThemeRoles } from "../sitespec/theme-roles";
 import {
   contactMethodFor,
   type ClaimEvidence,
@@ -74,149 +75,8 @@ import type {
 // first with id as tie-break. Never by insertion or database order.
 // ---------------------------------------------------------------------------
 
-export function resolveQuery(
-  query: FYDQuery,
-  graph: ObjectGraph,
-  ownerId: string,
-): PingObject[] {
-  const objects = new Map(graph.objects.map((o) => [o.id, o]));
-  const pub = (o: PingObject) => o.visibility === "public";
-  switch (query.kind) {
-    case "static":
-      return [];
-    case "owner": {
-      const owner = objects.get(ownerId);
-      return owner && pub(owner) ? [owner] : [];
-    }
-    case "reference": {
-      return query.objectIds
-        .map((id) => objects.get(id))
-        .filter((o): o is PingObject => !!o && pub(o));
-    }
-    case "related": {
-      // Direction-agnostic: the bound object is whichever endpoint of the
-      // relationship is not the query anchor (usually the owner). Inverse
-      // predicates (works_for, provided_by, published_by) bind exactly
-      // like their forward twins. Deduped by id: a pair linked by both
-      // employs and member_of still renders one card.
-      const seen = new Set<string>();
-      const out: PingObject[] = [];
-      const predicates = query.predicates ?? [query.predicate];
-      for (const r of graph.relationships) {
-        if (!predicates.includes(r.predicate)) continue;
-        const memberId = ownerRelationshipTarget(r, query.from);
-        if (memberId === null || seen.has(memberId)) continue;
-        const target = objects.get(memberId);
-        const schemaOk =
-          !query.schema && !query.schemas
-            ? true
-            : query.schema
-              ? target?.schema === query.schema
-              : query.schemas?.includes(target?.schema ?? "");
-        if (target && pub(target) && schemaOk) {
-          seen.add(memberId);
-          out.push(target);
-        }
-      }
-      out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-      return query.limit ? out.slice(0, query.limit) : out;
-    }
-    case "all": {
-      // Mirrors the "related" case: a bare "all" resolves everything public;
-      // query.schema or query.schemas narrows to the listed schemas.
-      const schemaOk = (o: PingObject) =>
-        !query.schema && !query.schemas
-          ? true
-          : query.schema
-            ? o.schema === query.schema
-            : (query.schemas ?? []).includes(o.schema);
-      const out = graph.objects.filter((o) => pub(o) && schemaOk(o));
-      out.sort((a, b) =>
-        a.updatedAt !== b.updatedAt
-          ? b.updatedAt.localeCompare(a.updatedAt)
-          : a.id < b.id
-            ? -1
-            : 1,
-      );
-      return query.limit ? out.slice(0, query.limit) : out;
-    }
-  }
-}
-
-/**
- * Owner-approved object ordering (PRESENTATION INTENT layer). Pure and
- * deterministic: ids listed in objectOrder come first, in that order;
- * resolved objects not listed keep their relative query order after
- * them. Unknown ids are ignored, never rendered. Zero customer-specific
- * conditionals: every section component shares this seam.
- */
-export function applyObjectOrder(
-  objects: PingObject[],
-  objectOrder: readonly string[] | undefined,
-): PingObject[] {
-  if (!objectOrder || objectOrder.length === 0) return objects;
-  const byId = new Map(objects.map((o) => [o.id, o]));
-  const seen = new Set<string>();
-  const out: PingObject[] = [];
-  for (const id of objectOrder) {
-    const o = byId.get(id);
-    if (o && !seen.has(id)) {
-      seen.add(id);
-      out.push(o);
-    }
-  }
-  for (const o of objects) {
-    if (!seen.has(o.id)) out.push(o);
-  }
-  return out;
-}
-
-/**
- * Owner-approved object deactivation (PRESENTATION INTENT layer). Pure and
- * deterministic: objects whose id is listed in hiddenObjectIds are removed;
- * every other object keeps its relative order. Unknown ids are ignored,
- * never rendered. Zero customer-specific conditionals: every section
- * component shares this seam.
- */
-export function applyHiddenObjects(
-  objects: PingObject[],
-  hiddenObjectIds: readonly string[] | undefined,
-): PingObject[] {
-  if (!hiddenObjectIds || hiddenObjectIds.length === 0) return objects;
-  const hidden = new Set(hiddenObjectIds);
-  return objects.filter((o) => !hidden.has(o.id));
-}
-
-
-/**
- * Site-wide owner deactivation set (PRESENTATION INTENT layer). Pure and
- * deterministic: the union of every section's hiddenObjectIds, in spec
- * order, deduplicated. An object the owner hid in one section must not be
- * promoted anywhere else on the public surface: the Featured Object rail,
- * mobile in-flow composition, and every other section resolve through
- * renderSection, so they all share this exclusion set. Source observations
- * and the canonical graph are untouched; owner/internal tooling still sees
- * the hidden objects. Zero customer-specific conditionals.
- */
-export function siteDeactivatedObjectIds(
-  spec: FYDSiteSpec,
-): readonly string[] | undefined {
-  const seen = new Set<string>();
-  const ids: string[] = [];
-  for (const page of spec.pages) {
-    for (const section of page.sections) {
-      const hidden = section.presentation.hiddenObjectIds;
-      if (!hidden) continue;
-      for (const id of hidden) {
-        if (!seen.has(id)) {
-          seen.add(id);
-          ids.push(id);
-        }
-      }
-    }
-  }
-  return ids.length > 0 ? ids : undefined;
-}
+export { resolveQuery, applyObjectOrder, applyHiddenObjects, siteDeactivatedObjectIds } from "./query";
+import { resolveQuery, applyObjectOrder, applyHiddenObjects, siteDeactivatedObjectIds } from "./query";
 
 // ---------------------------------------------------------------------------
 // Section rendering.
@@ -237,6 +97,7 @@ export interface RenderContext {
    * fine without it, but Ask FYD shows an honest unavailable state.
    */
   siteId?: string;
+  projectionCheckpoint?: string;
   /**
    * Hero media for the spec owner, resolved once at the server render seam
    * via the canonical media selector (heroMediaFor in src/fyd/media/select).
@@ -384,8 +245,11 @@ function CorrectionNote({
   correction: OwnerFieldCorrection;
   theme: FYDThemeTokens;
 }) {
+  // Item 4: muted copy binds the mutedForeground role, never opacity-faded
+  // ink (fading drops contrast unpredictably).
+  const roles = resolveThemeRoles(theme);
   return (
-    <p className="mt-1 text-xs" style={{ color: theme.ink, opacity: 0.65 }}>
+    <p className="mt-1 text-xs" style={{ color: roles.mutedForeground }}>
       Owner-corrected: the owner says this is the {correction.label.toLowerCase()}
       {correction.sourceValue
         ? ` (the site lists ${correction.sourceValue})`
@@ -709,6 +573,8 @@ function FydObjectCard({
 }) {
   const title = boundTitle(ctx, o);
   const description = boundDescription(ctx, o);
+  // Item 4: text positions bind token roles, never raw accent/ink.
+  const roles = resolveThemeRoles(theme);
   const motion = motionTokensForTheme(theme);
   const character = characterOf(theme);
   const char = CHARACTER_PRESENTATION[character];
@@ -777,7 +643,7 @@ function FydObjectCard({
         </h3>
       ) : null}
       {kicker ? (
-        <p className="text-sm font-medium" style={{ color: theme.accent }}>
+        <p className="text-sm font-medium" style={{ color: roles.accentText }}>
           {kicker}
         </p>
       ) : null}
@@ -846,6 +712,8 @@ export function ObjectDoorway({
 }) {
   const title = boundTitle(ctx, o);
   if (!title) return null;
+  // Item 4: the doorway binds roles (decorative border, text foreground).
+  const roles = resolveThemeRoles(theme);
   const detailHref = `/o/${encodeURIComponent(o.id)}`;
   const kindLabel = friendlySchemaLabel(o.schema);
   const dark = tone === "onDark";
@@ -867,8 +735,8 @@ export function ObjectDoorway({
         padding: "0.5rem 0.9rem",
         borderRadius: 9999,
         border: "1px solid",
-        borderColor: dark ? "rgba(255,255,255,0.35)" : theme.accent,
-        color: dark ? "#fff" : theme.ink,
+        borderColor: dark ? "rgba(255,255,255,0.35)" : roles.accentDecorative,
+        color: dark ? "#fff" : roles.foreground,
         background: dark ? "rgba(255,255,255,0.08)" : "transparent",
         fontSize: "0.875rem",
         fontWeight: 600,
@@ -1191,6 +1059,8 @@ function SectionShell({
 function Hero({ objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
+  // Item 4: accent buttons bind the validated onAccent/accent pairing.
+  const roles = resolveThemeRoles(theme);
   const website = safeWebsite(ctx);
   const heading = presentation.heading ?? boundTitle(ctx, o);
   const copy = presentation.copy ?? boundDescription(ctx, o);
@@ -1254,7 +1124,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
               className="rounded px-6 py-3 font-semibold"
               style={{
                 background: theme.accent,
-                color: theme.accentForeground,
+                color: roles.onAccent,
                 borderRadius: theme.radius === "full" ? 9999 : 8,
               }}
             >
@@ -1395,6 +1265,8 @@ function MobileInFlowObjects({
 
 function ServicesSection(props: SectionProps) {
   const { section, objects, presentation, theme, ctx, motionIndex } = props;
+  // Item 4: accent buttons bind the validated onAccent/accent pairing.
+  const roles = resolveThemeRoles(theme);
   const featured = presentation.featuredIds?.length
     ? objects.filter((o) => presentation.featuredIds!.includes(o.id))
     : objects;
@@ -1419,7 +1291,7 @@ function ServicesSection(props: SectionProps) {
             className="inline-flex min-h-[44px] items-center rounded px-6 py-3 font-semibold"
             style={{
               background: theme.accent,
-              color: theme.accentForeground,
+              color: roles.onAccent,
               borderRadius: theme.radius === "full" ? 9999 : 8,
             }}
           >
@@ -1490,6 +1362,8 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
 
 function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
   if (objects.length === 0) return null;
+  // Item 4: role text binds the accentText role, never raw accent.
+  const roles = resolveThemeRoles(theme);
   // Structural differentiation from the graph: when person objects have
   // photographic media, they render as a people strip (portrait-led);
   // otherwise the honest card grid. No hand-built sections either way.
@@ -1570,7 +1444,7 @@ function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex
                   </h3>
                 ) : null}
                 {role ? (
-                  <p className="mt-0.5 text-sm font-medium" style={{ color: theme.accent }}>
+                  <p className="mt-0.5 text-sm font-medium" style={{ color: roles.accentText }}>
                     {role}
                   </p>
                 ) : null}
@@ -1972,7 +1846,7 @@ function AskFYDSection({ presentation, theme, ctx }: SectionProps) {
           {presentation.copy ?? "Questions go to Ask FYD. Answers come only from this site's published information, with sources shown."}
         </p>
         <div className="text-left">
-          <AskFydWidget siteId={ctx.siteId} theme={theme} />
+          <AskFydWidget pageCheckpoint={ctx.projectionCheckpoint} siteId={ctx.siteId} theme={theme} />
         </div>
       </div>
     </section>
@@ -2003,6 +1877,8 @@ function boundOwnerTitle(ctx: RenderContext): string {
  * features: no binding, no factual output.
  */
 function ObjectRailSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
+  // Item 4: muted copy binds the mutedForeground role, never opacity-faded ink.
+  const roles = resolveThemeRoles(theme);
   const bound = objects.filter((o) => boundTitle(ctx, o) !== undefined);
   const featured = richestObject(bound, ctx.spec.ownerObjectId);
   if (!featured) return null;
@@ -2022,7 +1898,7 @@ function ObjectRailSection({ section, objects, presentation, theme, ctx, motionI
           {summary.trim()}
         </p>
       ) : null}
-      <p className="text-xs" style={{ color: theme.ink, opacity: 0.6 }}>
+      <p className="text-xs" style={{ color: roles.mutedForeground }}>
         {featuredView.provenance.label}
       </p>
     </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTenant } from "@/lib/tenant-config";
 import { FydNav } from "./_components/fyd-nav";
 import { FydHero } from "./_components/fyd-hero";
 import { FydUnderstand } from "./_components/fyd-understand";
@@ -14,11 +15,30 @@ import { FydPrivacy } from "./_components/fyd-privacy";
 import { FydWhatIsReal } from "./_components/fyd-what-is-real";
 import { FydTryIt } from "./_components/fyd-try-it";
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://ping.vercel.app");
+
 export const metadata: Metadata = {
   title: "FYD: your business, understood",
   description:
     "FYD learns your business as connected things, builds your digital presence from that understanding, answers customers from evidence, and keeps you in control. Try it: paste your URL.",
   alternates: { canonical: "/fyd" },
+  openGraph: {
+    type: "website",
+    title: "FYD: your business, understood",
+    description: "FYD learns your business as connected things, builds your digital presence from that understanding, answers customers from evidence, and keeps you in control. Try it: paste your URL.",
+    url: siteUrl + "/fyd",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/brand/og-card.png"],
+    title: "FYD: your business, understood",
+    description: "FYD learns your business as connected things, builds your digital presence from that understanding, answers customers from evidence, and keeps you in control. Try it: paste your URL.",
+  },
 };
 
 /**

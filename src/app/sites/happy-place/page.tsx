@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 /**
  * FYD Social generated-site demo: Happy Place Carpentry.
  *
@@ -17,6 +19,7 @@ import {
   generateSiteMetadata,
   resolveSiteDisplayName,
 } from "../_shared/site-metadata";
+import { SiteJsonLd } from "../_shared/site-jsonld";
 import { galleryMediaFor, heroMediaFor } from "@/fyd/media/select";
 import {
   auditSitesRenderClaims,
@@ -37,7 +40,7 @@ export default async function HappyPlaceDemoPage() {
   // with the approved presentation intent applied over it.
   // Verified public projection (Q-C-01): the graph below already passed
   // the single public projection boundary; no separate publicGraph step.
-  const { graph, spec, findings, renderable } =
+  const { projection, graph, spec, findings, renderable } =
     await compilePublicSite(SITE_ID);
   // Hero media, resolved once per page load at the server render
   // seam. Null when the owner has no acquired media.
@@ -66,12 +69,14 @@ export default async function HappyPlaceDemoPage() {
   // first <h1> is the binding-verified business name.
   return (
     <main className="min-h-screen bg-background">
+      <SiteJsonLd projection={projection} />
       <SiteClient
         spec={spec}
         graph={graph}
         findings={findings}
         renderable={renderable}
         siteId={SITE_ID}
+        projectionCheckpoint={projection.provenance.checkpoint}
         heroMedia={heroMedia}
         galleryMedia={galleryMedia}
         siteName={resolveSiteDisplayName(graph)}

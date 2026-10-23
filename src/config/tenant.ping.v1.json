@@ -7,7 +7,7 @@
     "slug": "ping",
     "siteName": "PING",
     "tagline": "Continuity infrastructure for AI agents and the businesses they serve.",
-    "description": "PING is an evolving intelligence system. It turns information into reliable understanding, understanding into useful action, and action into evidence that can be trusted and replayed. PING Social, the consultancy, applies that infrastructure to real home service businesses.",
+    "description": "PING is an evolving intelligence system that turns information into reliable understanding and useful action. PING Social applies it to home service businesses.",
     "domain": null,
     "operator": {
       "name": "Nolan Geske",
@@ -39,6 +39,7 @@
     ],
     "contact": {
       "facebook": "https://www.facebook.com/profile.php?id=61594275542163",
+      "phone": "(970) 589-3309",
       "email": null,
       "note": "Email intentionally unset. Add a real address when one exists; never invent one."
     },

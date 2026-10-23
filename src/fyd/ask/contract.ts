@@ -31,6 +31,7 @@ import {
   type AskFydSuccess,
 } from "./visitor-answer";
 import type { AskClaimClassification, AskProposal } from "../../lib/ping/types";
+import { isObligationCovered } from "./obligations";
 
 /** The six contract inputs Ask FYD reasons under. */
 export interface AskFydQueryInput {
@@ -59,6 +60,8 @@ export interface AskFydClaim {
   claimClass: AskClaimClass;
   /** Ids into the answer's evidence references supporting this claim. */
   evidenceRefIds: string[];
+  bindings?: import("../sitespec/graph").PresentationBinding[];
+  relationshipIds?: string[];
 }
 
 /** The five contract outputs of one served Ask FYD answer. */
@@ -92,6 +95,7 @@ export function contractClaimsFor(
     claim: cc.claim,
     claimClass: claimClassFor(cc.classification),
     evidenceRefIds: [...cc.evidenceRefIds],
+    ...(cc.bindings ? { bindings: cc.bindings, relationshipIds: cc.relationshipIds ?? [] } : {}),
   }));
 }
 
@@ -127,6 +131,13 @@ export function assertAskAnswerContract(args: {
   answerClass: AskAnswerClass;
   answerState: AskAnswerState;
   claims: AskFydClaim[];
+  /**
+   * Item 7: the question's obligations. When provided, every obligation's
+   * topic must be addressed by the served answer text, a claim, or an
+   * unknown: the final response cannot silently omit an obligation. This
+   * is the same seam that already enforces "no invented claims".
+   */
+  obligations?: { id: string; kind: string; topic: string; keywords: string[] }[];
 }): void {
   const { outcome, answerClass, answerState, claims } = args;
   if (outcome.answer.trim() === "") {
@@ -186,9 +197,43 @@ export function assertAskAnswerContract(args: {
         );
       }
     }
+    if (outcome.bindingVerification) {
+      if (!claim.bindings?.length) throw new AskContractError("verified answer claim has no factual bindings");
+      if (!claim.evidenceRefIds.length) throw new AskContractError("verified answer claim has no evidence references");
+      for (const binding of claim.bindings) {
+        const verified = outcome.bindingVerification.atoms.some(atom =>
+          atom.id.startsWith(`${binding.objectId}#${binding.field}#`) && atom.classification !== "UNKNOWN",
+        );
+        if (!verified) throw new AskContractError("claim binding absent from shared verifier receipt");
+      }
+      const relationshipsCited = (claim.relationshipIds ?? []).every(id =>
+        claim.evidenceRefIds.includes(id) && outcome.evidenceRefs.some(ref => ref.id === id && ref.kind === "relationship"),
+      );
+      if (!relationshipsCited) throw new AskContractError("claim relationship is not served as evidence for this claim");
+    }
   }
   if (!Array.isArray(outcome.unknowns)) {
     throw new AskContractError("uncertainties (unknowns) is not an array");
+  }
+  // Item 7: obligation coverage. Every obligation of the question must be
+  // addressed by the answer text, a claim, or an unknown. A served answer
+  // that silently drops an obligation is a contract violation, same as an
+  // invented claim. (Refusals return above: an honest unknown stands alone.)
+  if (args.obligations) {
+    const claimTexts = claims.map((c) => c.claim);
+    for (const ob of args.obligations) {
+      if (
+        !isObligationCovered(ob, {
+          answer: outcome.answer,
+          unknowns: outcome.unknowns,
+          claimTexts,
+        })
+      ) {
+        throw new AskContractError(
+          `obligation "${ob.id}" (${ob.topic}) is not covered by the served answer`,
+        );
+      }
+    }
   }
 }
 

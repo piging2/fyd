@@ -55,7 +55,7 @@ const FALLBACK: TenantManifest = {
       { label: "Products", href: "/products" },
       { label: "About", href: "/about" },
     ],
-    contact: { facebook: null, email: null, note: "" },
+    contact: { facebook: null, phone: null, email: null, note: "" },
     provenance: { note: "" },
   },
 };
@@ -72,6 +72,18 @@ export function loadTenantManifest(): TenantManifest {
 /** Get the tenant record (identity, brand, contact). */
 export function getTenant(): Tenant {
   return loadTenantManifest().tenant;
+}
+
+/**
+ * tel: href for the tenant's published phone, or null when no phone is
+ * configured. The display string lives in tenant config; components
+ * never hardcode the number. US numbers are normalized to +1 form.
+ */
+export function getTenantPhoneHref(): string | null {
+  const phone = getTenant().contact.phone;
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, "").replace(/^1/, "");
+  return digits ? `tel:+1${digits}` : null;
 }
 
 /** Get tenant navigation items for the header/footer. */

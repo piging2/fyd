@@ -14,6 +14,9 @@
 
 import { buildAskFydContext } from "../context-builder";
 import { composeAskFyd } from "../answer";
+import { answerAskFyd } from "../visitor-answer";
+import { assertAskAnswerContract, contractClaimsFor } from "../contract";
+import type { SiteBundle } from "../../media/site-bundle";
 import type { AskFydContextInput } from "../types";
 import type {
   FydGrant,
@@ -127,5 +130,82 @@ describe("Ask FYD services question: evidence-grounded answers (FYD-007)", () =>
     expect(
       ans.sourceUrls.some((u) => u.includes("happy-place-platform.vercel.app")),
     ).toBe(true);
+  });
+
+  test("named service and derived count carry the renderer's shared verifier receipt", () => {
+    const target = businessObject();
+    const svc = serviceObject("svc-deck", "Deck Building Services");
+    const ans = composeAskFyd(ctxFor(target, [svc], [providesRel("rel-1", target.id, svc.id)]), QUESTION);
+    expect(ans.bindingVerification?.version).toBe("fyd-verified-render-model@1");
+    expect(ans.bindingVerification?.atoms.map(a => a.value).sort()).toEqual([svc.title, target.title].sort());
+    expect(ans.bindingVerification?.atoms.every(a => a.classification !== "UNKNOWN" && !!a.evidenceRef)).toBe(true);
+    expect(ans.claimClassifications).toHaveLength(2);
+    for (const claim of ans.claimClassifications) {
+      expect(claim.bindings).toEqual(expect.arrayContaining([
+        expect.objectContaining({ objectId: target.id, field: "title" }),
+        expect.objectContaining({ objectId: svc.id, field: "title" }),
+      ]));
+      expect(claim.relationshipIds).toEqual(["rel-1"]);
+      expect(claim.evidenceRefIds).toContain("rel-1");
+    }
+    expect(ans.answer).not.toContain("Evidence\n");
+    expect(ans.answer).not.toContain("[SUPPORTED]");
+    expect(ans.answer).not.toContain("[DERIVED]");
+  });
+
+  test.each(["stale", "missing"])("%s source evidence withholds the service name", mode => {
+    const target = businessObject();
+    const svc = serviceObject("svc-deck", "Unsupported Secret Service");
+    svc.provenance = { ...svc.provenance!, ...(mode === "stale" ? { derivedAt: "2020-01-01T00:00:00Z" } : { ref: "" }) };
+    const ans = composeAskFyd(ctxFor(target, [svc], [providesRel("rel-1", target.id, svc.id)]), QUESTION);
+    expect(ans.partial).toBe(true);
+    expect(ans.answer).not.toContain(svc.title);
+    expect(ans.unknowns.join(" ")).toContain("unknown");
+    expect(ans.claimClassifications).toHaveLength(0);
+    expect(ans.bindingVerification?.atoms).toHaveLength(0);
+  });
+
+  test.each(["inverse", "unrelated", "inactive"])("%s relationship cannot assert that this business offers a service", mode => {
+    const target = businessObject();
+    const svc = serviceObject("svc-deck", "Unrelated Service");
+    const rel = providesRel("rel-1", target.id, svc.id);
+    if (mode === "inverse") { rel.subject = svc.id; rel.object = target.id; }
+    if (mode === "unrelated") rel.subject = "another-business";
+    if (mode === "inactive") rel.status = "inactive";
+    const ans = composeAskFyd(ctxFor(target, [svc], [rel]), QUESTION);
+    expect(ans.answer).not.toContain(svc.title);
+    expect(ans.claimClassifications).toHaveLength(0);
+  });
+
+  function bundleWithService(visibility: PingObject["visibility"] = "public"): SiteBundle {
+    const target = businessObject();
+    const svc = { ...serviceObject("svc-deck", "Deck Building Services"), visibility };
+    return {
+      siteId: "demo-test", businessName: target.title,
+      graph: { objects: [target, svc], relationships: [providesRel("rel-1", target.id, svc.id)] },
+      spec: { ownerObjectId: target.id, pages: [] } as unknown as SiteBundle["spec"],
+      findings: [], renderable: true, mediaManifest: null,
+    };
+  }
+
+  test("visitor scope removes a private service before the shared verifier receives it", () => {
+    const ans = answerAskFyd({ siteId: "demo-test", mode: "visitor", question: QUESTION }, { loadBundle: () => bundleWithService("private") });
+    expect(ans.ok).toBe(true);
+    if (!ans.ok) throw new Error("expected an honest refusal");
+    expect(ans.refusal).toBe(true);
+    expect(ans.answer).not.toContain("Deck Building Services");
+    expect(ans.citations).toHaveLength(0);
+    expect(ans.bindingVerification?.atoms).toHaveLength(0);
+  });
+
+  test("the output contract rejects an absent binding or a relationship not cited for that claim", () => {
+    const outcome = answerAskFyd({ siteId: "demo-test", mode: "visitor", question: QUESTION }, { loadBundle: () => bundleWithService() });
+    if (!outcome.ok) throw new Error("expected an answer");
+    const claims = contractClaimsFor(outcome.claimClassifications);
+    const args = { outcome, answerClass: "DERIVED" as const, answerState: "KNOWN" as const, claims };
+    expect(() => assertAskAnswerContract(args)).not.toThrow();
+    expect(() => assertAskAnswerContract({ ...args, outcome: { ...outcome, bindingVerification: { ...outcome.bindingVerification!, atoms: [] } } })).toThrow(/absent from shared verifier/);
+    expect(() => assertAskAnswerContract({ ...args, claims: claims.map(c => ({ ...c, evidenceRefIds: c.evidenceRefIds.filter(id => id !== "rel-1") })) })).toThrow(/relationship is not served/);
+    expect(() => assertAskAnswerContract({ ...args, claims: claims.map(c => ({ ...c, bindings: [] })) })).toThrow(/no factual bindings/);
   });
 });
