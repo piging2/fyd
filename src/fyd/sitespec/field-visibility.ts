@@ -211,7 +211,18 @@ export function applyFieldVisibility(
         fields[key] = value;
       }
     }
-    return { ...o, fields };
+    const visiblePseudo = (key: "title" | "description") => {
+      const value = o[key];
+      const {policy} = resolveFieldVisibility(o.id, key, decisions, value);
+      if (policy === "hide" || valueIsHidden(value)) return "";
+      return policy === "coarse" ? coarsenAddress(value) : value;
+    };
+    return { ...o, fields, title:visiblePseudo("title"), description:visiblePseudo("description"),
+      ...(o.ownerFieldCorrections ? {ownerFieldCorrections:o.ownerFieldCorrections.filter(c => {
+        const value = c.field === "description" ? visiblePseudo("description") : fields[c.field];
+        return typeof value === "string" && value === c.ownerValue;
+      })} : {}),
+    };
   });
   return { objects, relationships: graph.relationships };
 }

@@ -191,6 +191,30 @@ describe("emitOverlayEvent stale guard (integration, fake gateway)", () => {
     expect(posts).toHaveLength(0);
   });
 
+  test("authorization revoked while queued -> zero external writes", async () => {
+    let authorized = true;
+    const resolveCurrent = jest.fn(async () => { if (!authorized) throw new Error("authorization revoked"); });
+    // Authorization at queue time exists; the source read models the wait
+    // before consequential execution, during which the grant is revoked.
+    await resolveCurrent();
+    const opts = {
+      staleGuard: precondition(),
+      staleGuardReadBaseState: async () => { authorized = false; return readerFor(BASE_AT_APPROVAL)(); },
+      revalidateAuthorization: resolveCurrent,
+    };
+    await expect(emitOverlayEvent("synthetic-site",[setOp()],opts)).rejects.toThrow("authorization revoked");
+    expect(posts).toHaveLength(0);
+    expect(resolveCurrent).toHaveBeenCalledTimes(2);
+  });
+
+  test("authorization still valid -> execute once without another approval", async () => {
+    const resolveCurrent = jest.fn(async () => {});
+    const opts = {staleGuard:precondition(),staleGuardReadBaseState:readerFor(BASE_AT_APPROVAL),revalidateAuthorization:resolveCurrent};
+    await emitOverlayEvent("synthetic-site",[setOp()],opts);
+    expect(resolveCurrent).toHaveBeenCalledTimes(1);
+    expect(posts).toHaveLength(1);
+  });
+
   test("no drift -> executes normally", async () => {
     const result = await emitOverlayEvent("synthetic-site", [setOp()], {
       timeoutMs: 5000,
