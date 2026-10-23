@@ -281,17 +281,22 @@ class GatewayPingObjectReader implements PingObjectReader {
    * deployments (e.g. Vercel) where the FYD journal gateway is unreachable.
    * FYD_OVERLAY_SNAPSHOT points at a JSON file shaped like the journal
    * response ({ events: [...] }) exported from the real journal at deploy
-   * time. The events are real (event_ids, timestamps, ops preserved), so
-   * provenance and citations stay truthful; the data is a deploy-time
-   * snapshot, exactly like the statically generated site pages. When the
-   * gateway is reachable the snapshot is never consulted.
+   * time. When FYD_OVERLAY_SNAPSHOT is unset or blank, it defaults to the
+   * bundled path "fyd-projections/fyd-overlay-snapshot.json", refreshed at
+   * deploy time by scripts/export-fyd-overlay-snapshot.mjs; the env var
+   * still wins when set. The events are real (event_ids, timestamps, ops
+   * preserved), so provenance and citations stay truthful; the data is a
+   * deploy-time snapshot, exactly like the statically generated site
+   * pages. When the gateway is reachable the snapshot is never consulted.
+   * Any failure (missing file, bad JSON, wrong shape) returns null, so
+   * the gateway error is rethrown and the call stays fail-closed.
    */
   private readOverlaySnapshotList(siteId: string): unknown[] | null {
     const raw = process.env.FYD_OVERLAY_SNAPSHOT;
-    if (!raw || !raw.trim()) return null;
+    const configured =
+      raw && raw.trim() ? raw.trim() : "fyd-projections/fyd-overlay-snapshot.json";
     try {
-      const p = raw.trim();
-      const abs = p.startsWith("/") ? p : join(process.cwd(), p);
+      const abs = configured.startsWith("/") ? configured : join(process.cwd(), configured);
       const parsed: unknown = JSON.parse(readFileSync(abs, "utf8"));
       const rec = asRecord(parsed);
       const list = Array.isArray(parsed) ? parsed : (rec?.events ?? rec?.items ?? rec?.data);

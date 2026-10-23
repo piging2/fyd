@@ -1,0 +1,1 @@
+{"events":[{"event_data":{"ops":[{"intentId":"pi-custom","op":"clear_presentation_intent"}],"siteId":"happy-place"},"event_id":"snap-ev-custom","event_type":"FYD_SITE_OVERLAY","tenant_id":"happy-place","timestamp":"2026-09-19T18:33:00.000Z"}]}
