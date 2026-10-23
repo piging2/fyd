@@ -1,6 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { flushSync } from "react-dom";
+import dynamic from "next/dynamic";
+import { RefreshCw, Sun, Moon, Link2 } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
+import { WorkspaceCommand } from "@/components/mission-control/workspace-command";
+import { OperationalOverview } from "@/components/mission-control/operational-overview";
+import "./workspace.css";
+
+const EvidenceWorkspace = dynamic(() => import("@/components/mission-control/evidence-workspace").then(m => m.EvidenceWorkspace), {
+  loading: () => <div role="status" className="mc-panel">Loading the evidence workspace…</div>,
+});
+const ObjectWorkspace = dynamic(() => import("@/components/mission-control/object-workspace").then(m => m.ObjectWorkspace), {
+  loading: () => <div role="status" className="mc-panel">Loading the object workspace…</div>,
+});
 
 /**
  * Mission Control navigation shell (99-hour convergence, block 0-10).
@@ -94,16 +108,8 @@ type Prov = {
 
 function ProvLine({ p }: { p: Prov }) {
   return (
-    <div
-      style={{
-        fontSize: 11,
-        color: "#9a97b5",
-        marginBottom: 10,
-        lineHeight: 1.8,
-        borderLeft: "2px solid #3a3a4e",
-        paddingLeft: 8,
-      }}
-    >
+    <details className="mc-provenance">
+      <summary>Source &amp; authority · {p.truth.toLowerCase()}</summary>
       <div>
         From: {p.source} | Owner: {p.owner} | <TruthBadge t={p.truth} />
       </div>
@@ -111,7 +117,7 @@ function ProvLine({ p }: { p: Prov }) {
         Can do: {p.canDo} | Needs approval: {p.approval}
       </div>
       <div>What happened: {p.happened}</div>
-    </div>
+    </details>
   );
 }
 
@@ -128,6 +134,7 @@ function Card({
 }) {
   return (
     <section
+      className="mc-card"
       style={{
         border: "1px solid #2c2c3a",
         borderRadius: 10,
@@ -150,20 +157,11 @@ function Card({
 }
 
 function J({ v }: { v: unknown }) {
+  const [copy, setCopy] = useState("Copy JSON");
   return (
-    <pre
-      style={{
-        fontSize: 11,
-        overflowX: "auto",
-        background: "#0c0c12",
-        padding: 8,
-        borderRadius: 6,
-        maxHeight: 340,
-        overflowY: "auto",
-      }}
-    >
-      {JSON.stringify(v, null, 2)}
-    </pre>
+    <details className="mc-raw"><summary>Inspect returned record</summary><pre>{JSON.stringify(v, null, 2) ?? "No value returned"}</pre>
+      <button onClick={async () => { try { await navigator.clipboard.writeText(JSON.stringify(v, null, 2) ?? "null"); setCopy("Copied"); } catch { setCopy("Copy unavailable"); } }} aria-live="polite">{copy}</button>
+    </details>
   );
 }
 
@@ -409,18 +407,8 @@ const OP_FIELDS = [
   "authorityRequirement",
 ] as const;
 
-const btn = (active: boolean): React.CSSProperties => ({
-  padding: "6px 12px",
-  borderRadius: 8,
-  border: "1px solid #3a3a4e",
-  background: active ? "#2b2140" : "#14141c",
-  color: "#eceaf6",
-  cursor: "pointer",
-  fontSize: 12,
-  textAlign: "left",
-  width: "100%",
-});
 export default function MissionControlPage() {
+  const { theme, setTheme } = useTheme();
   const [section, setSection] = useState("home");
   const [item, setItem] = useState("overview");
   const [today, setToday] = useState<Record<string, unknown> | null>(null);
@@ -437,47 +425,65 @@ export default function MissionControlPage() {
   const [crmPeople, setCrmPeople] = useState<Record<string, unknown> | null>(null);
   const [crmLeads, setCrmLeads] = useState<Record<string, unknown> | null>(null);
   const [crmOpps, setCrmOpps] = useState<Record<string, unknown> | null>(null);
+  const [refreshing, setRefreshing] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [copyStatus, setCopyStatus] = useState("");
 
   useEffect(() => {
-    fetch("/api/mc/today", { cache: "no-store" })
-      .then((r) => r.json())
-      .then(setToday)
-      .catch(() => setToday({ ok: false, status: "DEGRADED" }));
-    fetch("/api/mc/agents", { cache: "no-store" })
-      .then((r) => r.json())
-      .then(setAgents)
-      .catch(() => setAgents({ ok: false, status: "DEGRADED" }));
-    fetch("/api/mc/crm?view=companies", { cache: "no-store" })
-      .then((r) => r.json())
-      .then(setCrmCompanies)
-      .catch(() => setCrmCompanies({ ok: false, error: "projection unreachable" }));
-    fetch("/api/mc/crm?view=people", { cache: "no-store" })
-      .then((r) => r.json())
-      .then(setCrmPeople)
-      .catch(() => setCrmPeople({ ok: false, error: "projection unreachable" }));
-    fetch("/api/mc/crm?view=leads", { cache: "no-store" })
-      .then((r) => r.json())
-      .then(setCrmLeads)
-      .catch(() => setCrmLeads({ ok: false, error: "projection unreachable" }));
-    fetch("/api/mc/crm?view=opportunities", { cache: "no-store" })
-      .then((r) => r.json())
-      .then(setCrmOpps)
-      .catch(() => setCrmOpps({ ok: false, error: "projection unreachable" }));
+    function restore() {
+      const params = new URLSearchParams(window.location.search);
+      const nextSection = NAV.find(s => s.id === params.get("section"));
+      const nextItem = nextSection?.items.find(i => i.id === params.get("view"));
+      setSection(nextSection?.id ?? "home");
+      setItem(nextItem?.id ?? nextSection?.items[0].id ?? "overview");
+      const site = params.get("site");
+      if (site && /^[a-z0-9-]{1,80}$/.test(site)) setSiteId(site);
+    }
+    restore(); window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
   }, []);
 
-  const loadGraph = useCallback(() => {
-    fetch(`/api/mc/graph?siteId=${siteId}`, { cache: "no-store" })
-      .then((r) => r.json())
-      .then((g) => {
-        setGraph(g);
-        setTrace(null);
-        setForward(null);
-      });
-  }, [siteId]);
+  const navigate = useCallback((nextSection: string, nextItem: string) => {
+    const update = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.set("section", nextSection); url.searchParams.set("view", nextItem);
+      for (const param of ["event", "stage", "q", "status", "trace", "inspect", "field", "relation", "perspective", "executor", "capability", "tenant", "from", "to"]) url.searchParams.delete(param);
+      if (nextSection === "missions" && nextItem === "failures") url.searchParams.set("status", "FAILED_OR_DENIED");
+      if (nextSection === "missions" && nextItem === "results") url.searchParams.set("status", "SUCCEEDED");
+      window.history.pushState(window.history.state, "", url);
+      flushSync(() => window.dispatchEvent(new PopStateEvent("popstate")));
+    };
+    const doc = document as Document & { startViewTransition?: (update: () => void) => unknown };
+    if (doc.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) doc.startViewTransition(update);
+    else update();
+  }, []);
 
   useEffect(() => {
-    loadGraph();
-  }, [loadGraph]);
+    const controller = new AbortController(); let running = false;
+    const read = async (url: string, receive: (value: Record<string, unknown>) => void) => {
+      try { const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+        if (!response.ok) throw new Error(`Source returned HTTP ${response.status}`);
+        const value = await response.json(); if (!controller.signal.aborted) receive(value);
+      } catch (error) { if (!controller.signal.aborted) receive({ ok: false, status: "DEGRADED", error: error instanceof Error ? error.message : "Source unavailable" }); }
+    };
+    const refresh = async () => {
+      if (running) return; running = true; setRefreshing(true);
+      await Promise.all([read("/api/mc/today", setToday), read("/api/mc/agents", setAgents)]);
+      running = false; if (!controller.signal.aborted) setRefreshing(false);
+    };
+    void refresh();
+    for (const [view, setter] of [["companies", setCrmCompanies], ["people", setCrmPeople], ["leads", setCrmLeads], ["opportunities", setCrmOpps]] as const) void read(`/api/mc/crm?view=${view}`, setter);
+    const timer = window.setInterval(() => { if (!document.hidden) void refresh(); }, 30000);
+    return () => { controller.abort(); window.clearInterval(timer); };
+  }, [refreshKey]);
+
+  useEffect(() => {
+    const controller = new AbortController(); setGraph(null); setTrace(null); setForward(null);
+    fetch(`/api/mc/graph?siteId=${encodeURIComponent(siteId)}`, { cache: "no-store", signal: controller.signal })
+      .then(r => r.json()).then(value => { if (!controller.signal.aborted) setGraph(value); })
+      .catch(error => { if (!controller.signal.aborted) setGraph({ ok: false, error: error instanceof Error ? error.message : "Graph source unavailable" }); });
+    return () => controller.abort();
+  }, [siteId, refreshKey]);
 
   const ask = useCallback(() => {
     if (!q.trim()) return;
@@ -515,68 +521,33 @@ export default function MissionControlPage() {
   });
 
   const view = `${section}/${item}`;
+  const sectionLabel = NAV.find(s => s.id === section)?.label ?? "HOME";
+  const viewLabel = NAV.find(s => s.id === section)?.items.find(i => i.id === item)?.label ?? "Overview";
+  const commands = NAV.flatMap(s => s.items.map(i => ({ id: `${s.id}/${i.id}`, label: i.label, group: s.label, keywords: [s.id, i.id], run: () => navigate(s.id, i.id) })));
+  const evidenceMode = view === "knowledge/evidence" ? "evidence" : view === "system/replay" ? "replay" : view === "system/event-history" ? "events" : section === "missions" && item !== "agents" ? "missions" : null;
 
   return (
-    <main
-      style={{
-        color: "#eceaf6",
-        background: "#0a0a10",
-        minHeight: "100vh",
-        fontFamily: "system-ui, sans-serif",
-        display: "flex",
-      }}
-    >
-      <aside
-        style={{
-          width: 230,
-          minWidth: 230,
-          borderRight: "1px solid #2c2c3a",
-          padding: "14px 10px",
-          background: "#0d0d14",
-          overflowY: "auto",
-          maxHeight: "100vh",
-          position: "sticky",
-          top: 0,
-        }}
-      >
-        <div style={{ padding: "0 6px 12px" }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>Mission Control</div>
-          <div style={{ fontSize: 11, color: "#9a97b5", marginTop: 4 }}>
-            Projection over proven backend state. Badges say how each fact was
-            produced. UNKNOWN means no live source, never a guess.
-          </div>
-        </div>
+    <div className="mc-workspace">
+      <aside className="mc-sidebar" aria-label="Workspace navigation">
+        <a href="/" className="mc-brand"><span className="mc-brand-mark">P</span><span>PING<small>Mission control</small></span></a>
         {NAV.map((s) => (
-          <div key={s.id} style={{ marginBottom: 8 }}>
+          <div key={s.id} className="mc-nav-group">
             <button
-              onClick={() => {
-                setSection(s.id);
-                setItem(s.items[0].id);
-              }}
-              style={{
-                ...btn(section === s.id && s.items.length === 1),
-                fontWeight: 800,
-                border: "none",
-                background: "none",
-                color: "#b9b9d6",
-                letterSpacing: 1,
-                fontSize: 11,
-                cursor: "pointer",
-              }}
+              onClick={() => navigate(s.id, s.items[0].id)}
+              className="mc-nav-heading"
             >
               {s.label}
             </button>
             {s.items.length > 1 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 2 }}>
+              <div className="mc-nav-items">
                 {s.items.map((it) => (
                   <button
                     key={it.id}
-                    onClick={() => {
-                      setSection(s.id);
-                      setItem(it.id);
-                    }}
-                    style={btn(section === s.id && item === it.id)}
+                    onClick={() => navigate(s.id, it.id)}
+                    className="mc-nav-link"
+                    aria-current={section === s.id && item === it.id ? "page" : undefined}
                   >
+                    <span className="mc-nav-marker" aria-hidden="true" />
                     {it.label}
                   </button>
                 ))}
@@ -584,9 +555,25 @@ export default function MissionControlPage() {
             )}
           </div>
         ))}
+        <div className="mc-sidebar-foot">Read the evidence.<br />Authority stays with PING.</div>
       </aside>
 
-      <div style={{ flex: 1, maxWidth: 1100, padding: "18px 16px 60px" }}>
+      <div className="mc-body">
+        <header className="mc-toolbar"><div><h1>{viewLabel}</h1><p>{sectionLabel} / Mission Control</p></div>
+          <div className="mc-tools">
+            <select className="mc-mobile-select" aria-label="Workspace view" value={view} onChange={e => { const [s, i] = e.target.value.split("/"); navigate(s, i); }}>{NAV.map(s => <optgroup key={s.id} label={s.label}>{s.items.map(i => <option key={i.id} value={`${s.id}/${i.id}`}>{i.label}</option>)}</optgroup>)}</select>
+            <WorkspaceCommand commands={commands} />
+            <button className={`mc-icon-button ${refreshing ? "mc-refreshing" : ""}`} aria-label="Refresh source snapshots" title="Refresh source snapshots" disabled={refreshing} onClick={() => setRefreshKey(k => k + 1)}><RefreshCw size={16} /></button>
+            <button className="mc-icon-button" aria-label="Copy workspace link" title="Copy workspace link" onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); setCopyStatus("Link copied"); } catch { setCopyStatus("Copy unavailable"); } }}><Link2 size={16} /></button>
+            <button className="mc-icon-button" aria-label={theme === "dark" ? "Use light theme" : "Use dark theme"} title="Switch theme" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}</button>
+            <span className="mc-screen-status" role="status">{copyStatus || (refreshing ? "Reading sources…" : "Sources checked every 30s")}</span>
+          </div>
+        </header>
+        {view === "home/overview" && <OperationalOverview today={today} agents={agents} navigate={navigate} />}
+        {evidenceMode && <EvidenceWorkspace key={`evidence-${view}`} mode={evidenceMode} refreshSignal={refreshKey} />}
+        {(view === "fyd/objects" || view === "fyd/sources") && <><div className="mc-tenant-tabs" aria-label="FYD tenant selection">{["happy-place", "coppersmith-plumbing", "ping-fyd"].map(id => <button key={id} type="button" aria-pressed={siteId === id} onClick={() => { const url = new URL(window.location.href); url.searchParams.set("site", id); url.searchParams.delete("object"); window.history.pushState(window.history.state, "", url); setSiteId(id); }}>{id}</button>)}</div><ObjectWorkspace siteId={siteId} graph={graph} refreshSignal={refreshKey} /></>}
+        <details className="mc-source-details" open={view === "home/overview" || evidenceMode || view === "fyd/objects" || view === "fyd/sources" ? undefined : true} key={view}>
+          <summary>{view === "home/overview" || evidenceMode || view === "fyd/objects" || view === "fyd/sources" ? "Additional source records & existing controls" : "Workspace records"}</summary>
         {/* ============ HOME ============ */}
         {view === "home/overview" && (
           <>
@@ -714,7 +701,7 @@ export default function MissionControlPage() {
               {(graph?.tenants as string[] | undefined)?.map((x) => (
                 <button
                   key={x}
-                  onClick={() => setSiteId(x)}
+                  onClick={() => { const url = new URL(window.location.href); url.searchParams.set("site", x); window.history.pushState(window.history.state, "", url); setSiteId(x); }}
                   style={{
                     padding: "8px 14px",
                     borderRadius: 8,
@@ -1721,10 +1708,11 @@ export default function MissionControlPage() {
           </>
         )}
         {view === "system/replay" && (
-          <EmptyState lane="Replay" owner="PING replay machinery (not exposed over HTTP yet)" />
+          <EmptyState lane="Replay receipts" owner="Authenticated PING replay APIs exist; a frontend read adapter is not wired yet." />
         )}
+        </details>
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -1784,20 +1772,11 @@ function CompanyCard({ c }: { c: Record<string, unknown> }) {
         happened: `company projected from tenant graph ${String(c.siteId ?? "?")}`,
       }}
     >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "180px 1fr",
-          gap: 4,
-          fontSize: 12,
-        }}
-      >
+      <div className="mc-field-grid">
         {COMPANY_ROWS.map((r) => (
-          <div key={r.label} style={{ display: "contents" }}>
-            <div style={{ color: "#9a97b5", fontWeight: 600 }}>{r.label}</div>
-            <div style={{ wordBreak: "break-word" }}>
-              {fieldView(c, r.keys).text}
-            </div>
+          <div key={r.label} className="mc-field-row">
+            <span>{r.label}</span>
+            <details><summary>{fieldView(c, r.keys).text}</summary><p>Source: company projection · {String(c.siteId ?? "site not returned")} · {truth.toLowerCase()}. Field-level author and observation time are not returned by this endpoint.</p></details>
           </div>
         ))}
       </div>
