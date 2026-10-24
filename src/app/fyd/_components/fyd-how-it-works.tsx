@@ -89,7 +89,7 @@ export function FydHowItWorks() {
               <ScrollReveal key={s.n}>
                 <div className="flex h-full flex-col rounded-lg border border-border-soft bg-surface p-6">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="font-mono text-xs font-bold text-honey">{s.n}</span>
+                    <span className="font-mono text-xs font-bold text-honey-text">{s.n}</span>
                     <FydCopyClassLabel kind={s.copy} />
                   </div>
                   <h3 className="mt-3 text-base font-bold uppercase tracking-wide text-text">
@@ -102,7 +102,7 @@ export function FydHowItWorks() {
             ))}
             <ScrollReveal>
               <div className="flex h-full flex-col justify-center rounded-lg border border-dashed border-honey/40 bg-honey/5 p-6">
-                <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">
                   Learn → Observe
                 </p>
                 <h3 className="mt-2 text-lg font-bold uppercase tracking-wide text-text">

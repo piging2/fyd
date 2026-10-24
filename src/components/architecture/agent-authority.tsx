@@ -93,14 +93,14 @@ export function AgentAuthority() {
           {FLOW.map((step, i) => (
             <li key={step.label} className={cn("rounded-lg border p-4 transition-colors", i === activeStep ? "border-honey bg-honey/5" : "border-border-soft bg-surface")}>
               <p className="text-sm font-bold uppercase tracking-wide text-text">
-                <span className="mr-2 text-honey">{String(i + 1).padStart(2, "0")}</span>
+                <span className="mr-2 text-honey-text">{String(i + 1).padStart(2, "0")}</span>
                 {step.label}
               </p>
               <p className="mt-1 text-sm text-text-muted">{step.detail}</p>
               {step.label === "CAPABILITY AUTHORITY" && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {CAPABILITIES.map((cap) => (
-                    <span key={cap.id} className="rounded-full px-3 py-1 text-xs font-semibold uppercase" style={{ backgroundColor: cap.color + "1A", color: cap.color, border: "1px solid " + cap.color }}>
+                    <span key={cap.id} className="rounded-full px-3 py-1 text-xs font-semibold uppercase" style={{ backgroundColor: cap.color + "1A", color: cap.id === "code" ? "var(--color-honey-text)" : cap.color, border: "1px solid " + cap.color }}>
                       {cap.label}: {cap.status}
                     </span>
                   ))}

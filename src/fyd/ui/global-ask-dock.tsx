@@ -204,7 +204,7 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
           <div className="border-b border-border-soft/60 px-4 pb-3 pt-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold uppercase tracking-widest text-accent">
-                Ask <span className="text-honey">FYD</span>
+                Ask <span className="text-honey-text">FYD</span>
               </h2>
               <button
                 type="button"

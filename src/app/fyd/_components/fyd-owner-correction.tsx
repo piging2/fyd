@@ -57,7 +57,7 @@ export function FydOwnerCorrection() {
             {STEPS.map((s) => (
               <ScrollReveal key={s.n}>
                 <div className="h-full rounded-lg border border-border-soft bg-surface p-6">
-                  <p className="font-mono text-xs font-bold text-honey">{s.n}</p>
+                  <p className="font-mono text-xs font-bold text-honey-text">{s.n}</p>
                   <h3 className="mt-2 text-lg font-bold text-text">{s.title}</h3>
                   <p className="mt-2 text-text-muted">{s.detail}</p>
                 </div>
@@ -73,7 +73,7 @@ export function FydOwnerCorrection() {
             <div className="mt-4">
               <Link
                 href="/build-my-fyd"
-                className="font-semibold text-honey hover:underline"
+                className="font-semibold text-honey-text hover:underline"
               >
                 Try the fresh-URL intake →
               </Link>

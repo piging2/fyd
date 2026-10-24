@@ -41,8 +41,8 @@ export default function NewsletterThankYouPage() {
 
             <h3>Explore more:</h3>
             <p>
-              Read <Link href="/technology" className="text-honey hover:underline">how PING works</Link>, or
-              browse the <Link href="/blog" className="text-honey hover:underline">blog</Link> for
+              Read <Link href="/technology" className="text-honey-text hover:underline">how PING works</Link>, or
+              browse the <Link href="/blog" className="text-honey-text hover:underline">blog</Link> for
               implementation notes.
             </p>
 

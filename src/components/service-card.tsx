@@ -50,7 +50,7 @@ export function ServiceCard({ service, runtimeCardMediaObject, href }: { service
   // Card text colors - always light register (cards are always light surfaces)
   const headingColor = "text-text";
   const bodyColor = "text-text-muted";
-  const linkColor = "text-text hover:text-honey";
+  const linkColor = "text-text hover:text-honey-text";
 
   // Use provided href if available, otherwise default to estimate page
   const cardHref = href || `/estimate?service=${service.slug}`;

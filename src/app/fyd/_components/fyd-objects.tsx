@@ -283,7 +283,7 @@ export function FydObjects() {
                       : "border-border-soft"
                   )}
                 >
-                  <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-honey">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-honey-text">
                     {o.type}
                   </p>
                   <p className="mt-2 text-base font-bold text-text">{o.name}</p>
@@ -291,7 +291,7 @@ export function FydObjects() {
                   <p className="mt-3 break-all font-mono text-[11px] text-text-subtle">
                     {o.id}
                   </p>
-                  <p className="mt-3 text-xs font-semibold text-honey">
+                  <p className="mt-3 text-xs font-semibold text-honey-text">
                     Tap to open
                   </p>
                 </button>
@@ -321,7 +321,7 @@ export function FydObjects() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-honey">
+                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-honey-text">
                   {open.type} · expanded projection
                 </p>
                 <h3 className="mt-2 text-2xl font-bold text-text">{open.name}</h3>
@@ -422,7 +422,7 @@ export function FydObjects() {
             <div className="mt-6 border-t border-border-soft pt-4">
               <button
                 onClick={() => setShowWhy((v) => !v)}
-                className="text-sm font-semibold text-honey hover:underline"
+                className="text-sm font-semibold text-honey-text hover:underline"
                 aria-expanded={showWhy}
               >
                 {showWhy ? "Hide the lineage" : "Why this?"}

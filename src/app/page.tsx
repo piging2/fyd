@@ -254,7 +254,7 @@ export default function HomePage() {
       {/* 01b OFFERS AND PATHS: the offer architecture, compact and honest */}
       <Section size="minor" className="bg-surface-2">
         <Container className="max-w-5xl">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey">/offers</p>
+          <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey-text">/offers</p>
           <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
             What PING offers
           </h2>
@@ -262,32 +262,32 @@ export default function HomePage() {
             <div className="rounded-lg border border-border-soft bg-surface p-5">
               <h3 className="font-bold text-text">Business Spotlight</h3>
               <p className="mt-2 text-sm text-text-muted">Exceptional Western Colorado businesses, featured in the Top Ranked groups and on PING&apos;s pages. Free to apply.</p>
-              <Link href="/apply" className="mt-3 inline-block font-medium text-honey hover:underline">Apply to be considered for a feature.</Link>
+              <Link href="/apply" className="mt-3 inline-block font-medium text-honey-text hover:underline">Apply to be considered for a feature.</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
               <h3 className="font-bold text-text">Practical technology and operations assessment</h3>
               <p className="mt-2 text-sm text-text-muted">A scoped introductory assessment: what is wasting time or money, the root cause, and what would genuinely improve it.</p>
-              <Link href="/assessment" className="mt-3 inline-block font-medium text-honey hover:underline">Explore a practical technology and operations assessment.</Link>
+              <Link href="/assessment" className="mt-3 inline-block font-medium text-honey-text hover:underline">Explore a practical technology and operations assessment.</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
               <h3 className="font-bold text-text">Digital Concierge and business websites</h3>
               <p className="mt-2 text-sm text-text-muted">An always-on front desk for your business, and a website built from your business understanding. Delivered today as bespoke PING Social engagements.</p>
-              <Link href="/products" className="mt-3 inline-block font-medium text-honey hover:underline">See it in Products</Link>
+              <Link href="/products" className="mt-3 inline-block font-medium text-honey-text hover:underline">See it in Products</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
               <h3 className="font-bold text-text">Operational Memory and Automation</h3>
               <p className="mt-2 text-sm text-text-muted">Systems that remember how your business works and automate the repetitive parts. In development, applied incrementally through engagements.</p>
-              <Link href="/products" className="mt-3 inline-block font-medium text-honey hover:underline">See it in Products</Link>
+              <Link href="/products" className="mt-3 inline-block font-medium text-honey-text hover:underline">See it in Products</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
               <h3 className="font-bold text-text">Ongoing Improvement partnership</h3>
               <p className="mt-2 text-sm text-text-muted">A partnership posture, not a packaged product: keep improving what is working, and measure the difference over time.</p>
-              <Link href="/contact" className="mt-3 inline-block font-medium text-honey hover:underline">Start a conversation</Link>
+              <Link href="/contact" className="mt-3 inline-block font-medium text-honey-text hover:underline">Start a conversation</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
               <h3 className="font-bold text-text">The PING Platform</h3>
               <p className="mt-2 text-sm text-text-muted">The intelligence system underneath everything. Its ambitions are labelled as ambitions: documented, in development, or direction.</p>
-              <Link href="/technology" className="mt-3 inline-block font-medium text-honey hover:underline">Read the technology</Link>
+              <Link href="/technology" className="mt-3 inline-block font-medium text-honey-text hover:underline">Read the technology</Link>
             </div>
           </div>
           <div className="mt-10">
@@ -310,7 +310,7 @@ export default function HomePage() {
       {/* 02 THE CONTINUITY PROBLEM, compressed */}
       <div id="problem"><Section size="minor">
         <Container className="max-w-4xl">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey">/truth</p>
+          <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey-text">/truth</p>
           <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
             Most AI starts from zero every session. PING starts from everything that happened before.
           </h2>
@@ -336,7 +336,7 @@ export default function HomePage() {
             {LOOP_BEATS.map((beat) => (
               <ScrollReveal key={beat.verb}>
                 <div className="flex h-full flex-col rounded-lg border border-border-soft bg-surface p-6">
-                  <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey">{beat.eyebrow}</p>
+                  <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">{beat.eyebrow}</p>
                   <h3 className="mt-2 text-lg font-bold uppercase tracking-wide text-text">{beat.verb}</h3>
                   <p className="mt-1 text-sm font-semibold text-text">{beat.line}</p>
                   <ul className="mt-3 flex-1 space-y-2">
@@ -354,7 +354,7 @@ export default function HomePage() {
             ))}
             <ScrollReveal>
               <div className="flex h-full flex-col justify-center rounded-lg border border-dashed border-honey/40 bg-honey/5 p-6">
-                <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey">/prove → /observe</p>
+                <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">/prove → /observe</p>
                 <h3 className="mt-2 text-lg font-bold uppercase tracking-wide text-text">THE LOOP CLOSES</h3>
                 <p className="mt-1 text-sm font-semibold text-text">New evidence feeds the next cycle.</p>
                 <p className="mt-3 text-sm text-text-muted">
@@ -372,7 +372,7 @@ export default function HomePage() {
           </div>
           <div className="mt-12 rounded-xl border border-border-soft bg-surface p-6 sm:p-10">
             <div className="mb-6 text-center">
-              <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey">/connect, rendered</p>
+              <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">/connect, rendered</p>
               <h3 className="mt-2 text-2xl font-bold text-text">See your business</h3>
               <p className="mx-auto mt-2 max-w-2xl text-text-muted">
                 The Connect beat as a canvas. A customer called. That created an event, which created a lead,
@@ -400,7 +400,7 @@ export default function HomePage() {
               <ScrollReveal key={layer.n}>
                 <div className="h-full rounded-lg border border-border-soft bg-surface p-6">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-honey">{layer.n}</span>
+                    <span className="font-mono text-xs font-bold text-honey-text">{layer.n}</span>
                     <MaturityLabel status={layer.status} />
                   </div>
                   <h3 className="mt-3 text-base font-bold uppercase tracking-wide text-text">{layer.title}</h3>
@@ -427,7 +427,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-12 rounded-lg border border-border-soft bg-surface-2 p-6 sm:p-8">
-            <p className="text-center font-mono text-[11px] font-bold uppercase tracking-widest text-honey">/govern · the tenancy frame</p>
+            <p className="text-center font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">/govern · the tenancy frame</p>
             <h3 className="mt-2 text-center text-xl font-bold text-text">One authority per tenant</h3>
             <p className="mx-auto mt-2 max-w-2xl text-center text-sm text-text-muted">
               The tenant namespace is the authority boundary&apos;s primitive: identity, knowledge, and
@@ -440,14 +440,14 @@ export default function HomePage() {
             <div className="mt-6 text-center">
               <MaturityLabel status="Built" />
               <span className="ml-3">
-                <Link href="/technology/tenantos" className="inline-block min-h-[44px] py-2 font-medium text-honey hover:underline">
+                <Link href="/technology/tenantos" className="inline-block min-h-[44px] py-2 font-medium text-honey-text hover:underline">
                   Read the TenantOS architecture →
                 </Link>
               </span>
             </div>
           </div>
           <div className="mt-8 text-center">
-            <Link href="/technology/agents" className="inline-block min-h-[44px] py-2 font-medium text-honey hover:underline">
+            <Link href="/technology/agents" className="inline-block min-h-[44px] py-2 font-medium text-honey-text hover:underline">
               Read the agent infrastructure →
             </Link>
           </div>
@@ -527,7 +527,7 @@ export default function HomePage() {
             <ReplayEvidence />
           </div>
           <div className="mt-8 text-center">
-            <Link href="/technology/replay" className="inline-block min-h-[44px] py-2 font-medium text-honey hover:underline">
+            <Link href="/technology/replay" className="inline-block min-h-[44px] py-2 font-medium text-honey-text hover:underline">
               Read about replay →
             </Link>
           </div>

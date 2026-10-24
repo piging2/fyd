@@ -49,14 +49,14 @@ export default async function BlogPostPage({
     <>
       <Section className="bg-deep">
         <Container className="max-w-4xl">
-          <Link href="/blog" className="text-honey hover:underline text-sm font-semibold">
+          <Link href="/blog" className="text-honey-text hover:underline text-sm font-semibold">
             Back to all articles
           </Link>
           <div className="mt-4 mb-4 flex flex-wrap items-center gap-3">
             {post.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-block px-3 py-1 bg-honey/10 text-honey rounded text-sm font-semibold"
+                className="inline-block px-3 py-1 bg-honey/10 text-honey-text rounded text-sm font-semibold"
               >
                 {tag}
               </span>

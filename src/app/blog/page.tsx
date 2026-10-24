@@ -45,7 +45,7 @@ export default function BlogPage() {
       <Section size="minor" className="bg-surface-muted/40">
         <Container>
           <SectionHeading
-            eyebrow={<span className="text-honey">Watch</span>}
+            eyebrow={<span className="text-honey-text">Watch</span>}
             title="The Long Ping, on film"
             description="Every episode is a full-length film on YouTube, an audio edition on Spotify, and a written transcript series on Substack. Start with the newest film, then take the Shorts as trailers for the arguments."
           />
@@ -84,7 +84,7 @@ export default function BlogPage() {
                   {post.tags.slice(0, 3).map((tag) => (
                     <span
                       key={tag}
-                      className="inline-block px-3 py-1 bg-honey/10 text-honey rounded text-sm font-semibold"
+                      className="inline-block px-3 py-1 bg-honey/10 text-honey-text rounded text-sm font-semibold"
                     >
                       {tag}
                     </span>
@@ -92,14 +92,14 @@ export default function BlogPage() {
                   <span className="text-sm text-text-muted">{formatDate(post.date)}</span>
                 </div>
                 <Link href={`/blog/${post.slug}`}>
-                  <h2 className="text-2xl font-bold text-text hover:text-honey transition-colors">
+                  <h2 className="text-2xl font-bold text-text hover:text-honey-text transition-colors">
                     {post.title}
                   </h2>
                 </Link>
                 <p className="mt-2 text-text-muted">{post.excerpt}</p>
                 <Link
                   href={`/blog/${post.slug}`}
-                  className="mt-4 inline-block font-semibold text-honey hover:underline"
+                  className="mt-4 inline-block font-semibold text-honey-text hover:underline"
                 >
                   Read article
                 </Link>

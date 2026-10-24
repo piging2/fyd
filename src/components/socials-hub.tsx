@@ -43,10 +43,10 @@ export function SocialsHub() {
             className="group rounded-lg border border-border-soft bg-background p-4 transition-shadow hover:shadow-md"
           >
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-bold text-text transition-colors group-hover:text-honey">
+              <span className="font-bold text-text transition-colors group-hover:text-honey-text">
                 {dest.platform}
               </span>
-              <span className="text-sm font-semibold text-honey">{dest.label}</span>
+              <span className="text-sm font-semibold text-honey-text">{dest.label}</span>
             </div>
             <p className="mt-1.5 text-sm text-text-muted">{dest.blurb}</p>
           </a>

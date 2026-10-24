@@ -73,7 +73,7 @@ export default function AboutPage() {
                 action, action becomes evidence. Continuity, agent infrastructure, evidence and
                 provenance, deterministic replay. Built in the open, documented on this site.
               </p>
-              <Link href="/technology" className="mt-4 inline-block font-medium text-honey hover:underline">
+              <Link href="/technology" className="mt-4 inline-block font-medium text-honey-text hover:underline">
                 Read the architecture →
               </Link>
             </article>
@@ -84,7 +84,7 @@ export default function AboutPage() {
                 put AI to practical use: capture more opportunities, reduce administrative drag,
                 respond faster, operate more consistently. Consultative, not one-size-fits-all.
               </p>
-              <Link href="/contact" className="mt-4 inline-block font-medium text-honey hover:underline">
+              <Link href="/contact" className="mt-4 inline-block font-medium text-honey-text hover:underline">
                 Work with us →
               </Link>
             </article>

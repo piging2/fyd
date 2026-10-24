@@ -23,6 +23,8 @@
   --color-honey: #C9A227;
   --color-honey-hover: #DDBB4A;
   --color-honey-foreground: #1c1917;
+  --color-honey-text: #6E5610;       /* darker gold for TEXT on light surfaces only (5:1+); dark panels keep --color-honey */
+  --color-honey-text-hover: #7A5E14; /* hover pair for honey-text; still 4.5:1+ on light surfaces */
 
   /* PING brand — violet signal accent (pig purple) */
   --color-ping-violet: #7C5CD6;
@@ -171,6 +173,8 @@
   --color-text-subtle: #8B8983;
   --color-primary: #2A2540;
   --color-primary-hover: #2E2A44;
+  --color-honey-text: #C9A227;
+  --color-honey-text-hover: #DDBB4A;
 }
 
 /*

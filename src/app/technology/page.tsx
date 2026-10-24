@@ -92,7 +92,7 @@ export default function TechnologyPage() {
             <TenantModel />
           </div>
           <div className="mt-8 text-center">
-            <Link href="/technology/tenantos" className="font-medium text-honey hover:underline">
+            <Link href="/technology/tenantos" className="font-medium text-honey-text hover:underline">
               Read the TenantOS specification →
             </Link>
           </div>
@@ -112,7 +112,7 @@ export default function TechnologyPage() {
             <KnowledgeLoop />
           </div>
           <div className="mt-8 text-center">
-            <Link href="/technology/events" className="font-medium text-honey hover:underline">
+            <Link href="/technology/events" className="font-medium text-honey-text hover:underline">
               Read about events →
             </Link>
           </div>
@@ -148,7 +148,7 @@ export default function TechnologyPage() {
             <AgentAuthority />
           </div>
           <div className="mt-8 text-center">
-            <Link href="/technology/agents" className="font-medium text-honey hover:underline">
+            <Link href="/technology/agents" className="font-medium text-honey-text hover:underline">
               Read about agents →
             </Link>
           </div>
@@ -168,7 +168,7 @@ export default function TechnologyPage() {
             <ReplayEvidence />
           </div>
           <div className="mt-8 text-center">
-            <Link href="/technology/replay" className="font-medium text-honey hover:underline">
+            <Link href="/technology/replay" className="font-medium text-honey-text hover:underline">
               Read about replay →
             </Link>
           </div>
@@ -188,7 +188,7 @@ export default function TechnologyPage() {
             <MultiRuntime />
           </div>
           <div className="mt-8 text-center">
-            <Link href="/technology/integrations" className="font-medium text-honey hover:underline">
+            <Link href="/technology/integrations" className="font-medium text-honey-text hover:underline">
               Read about integrations →
             </Link>
           </div>

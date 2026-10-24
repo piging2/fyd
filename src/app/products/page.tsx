@@ -47,7 +47,7 @@ const STATUS_DESCRIPTIONS: Record<ProductStatus, string> = {
 function StatusBadge({ status }: { status: ProductStatus }) {
   const styles: Record<ProductStatus, string> = {
     available: "bg-green-500/10 text-green-600",
-    "in-development": "bg-honey/10 text-honey",
+    "in-development": "bg-honey/10 text-honey-text",
     future: "bg-surface-muted text-text-muted",
   };
   return (
@@ -112,7 +112,7 @@ function ProductCard({ product }: { product: Product }) {
 
       <Link
         href={product.cta.href}
-        className="mt-5 font-semibold text-honey hover:underline"
+        className="mt-5 font-semibold text-honey-text hover:underline"
       >
         {product.cta.label} →
       </Link>

@@ -60,7 +60,7 @@ export function FydDemoSites() {
             {SITES.map((s) => (
               <ScrollReveal key={s.href}>
                 <div className="flex h-full flex-col rounded-2xl border border-border-soft bg-surface p-8">
-                  <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey">
+                  <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">
                     {s.kind}
                   </p>
                   <h3 className="mt-2 text-2xl font-bold text-text">{s.name}</h3>

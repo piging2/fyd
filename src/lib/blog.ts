@@ -98,7 +98,7 @@ function renderInline(s: string): string {
   out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   out = out.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
   out = out.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, "<img src=\"$2\" alt=\"$1\" loading=\"lazy\" class=\"mt-6 w-full rounded-lg border border-border-soft\" />");
-  out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "<a href=\"$2\" class=\"text-honey hover:underline\">$1</a>");
+  out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "<a href=\"$2\" class=\"text-honey-text hover:underline\">$1</a>");
   return out;
 }
 

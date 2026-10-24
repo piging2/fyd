@@ -46,7 +46,7 @@ export function RouterLink({ children, className, href, ...props }: RouterLinkPr
       ref={linkRef}
       href={href}
       className={cn(
-        "relative inline-flex items-center gap-1 font-semibold text-primary hover:text-honey transition-colors duration-200",
+        "relative inline-flex items-center gap-1 font-semibold text-primary hover:text-honey-text transition-colors duration-200",
         className
       )}
       onMouseEnter={() => setIsHovered(true)}

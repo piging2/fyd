@@ -73,7 +73,7 @@ export function FydUnderstand() {
             {COMPREHENSION.map((c) => (
               <ScrollReveal key={c.when}>
                 <div className="h-full rounded-lg border border-border-soft bg-surface p-6">
-                  <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey">
+                  <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">
                     {c.when}
                   </p>
                   <p className="mt-3 text-base font-medium text-text">{c.line}</p>

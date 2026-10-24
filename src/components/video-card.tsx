@@ -44,8 +44,8 @@ export function VideoCard({ video, large = false }: { video: FeaturedVideo; larg
         <h3
           className={
             large
-              ? "text-2xl font-bold text-text transition-colors group-hover:text-honey"
-              : "text-lg font-bold text-text transition-colors group-hover:text-honey"
+              ? "text-2xl font-bold text-text transition-colors group-hover:text-honey-text"
+              : "text-lg font-bold text-text transition-colors group-hover:text-honey-text"
           }
         >
           {video.title}

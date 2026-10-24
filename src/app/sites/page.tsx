@@ -65,7 +65,7 @@ export default async function SitesIndexPage() {
               >
                 <p className="text-2xl font-bold text-primary">{name}</p>
                 <p className="mt-2 text-sm text-text-muted">{`/sites/${siteId}`}</p>
-                <p className="mt-6 text-sm font-semibold text-honey group-hover:text-honey-hover">
+                <p className="mt-6 text-sm font-semibold text-honey-text group-hover:text-honey-text-hover">
                   Open demo site &rarr;
                 </p>
               </Link>

@@ -57,7 +57,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-bold text-text">Contact</h2>
             <p className="mt-2">
               Questions about your data? Reach {tenant.operator.business} through the{" "}
-              <a href="/contact" className="text-honey hover:underline">contact page</a>.
+              <a href="/contact" className="text-honey-text hover:underline">contact page</a>.
             </p>
           </section>
         </div>

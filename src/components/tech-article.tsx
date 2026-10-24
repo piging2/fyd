@@ -52,7 +52,7 @@ export function TechArticle({ eyebrow, title, lede, status, sections, related }:
             <ul className="mt-3 space-y-2">
               {related.map((r) => (
                 <li key={r.href}>
-                  <Link href={r.href} className="font-medium text-honey hover:underline">{r.label} →</Link>
+                  <Link href={r.href} className="font-medium text-honey-text hover:underline">{r.label} →</Link>
                 </li>
               ))}
             </ul>
