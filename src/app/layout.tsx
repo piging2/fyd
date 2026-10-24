@@ -49,6 +49,9 @@ export const metadata: Metadata = {
     description: seo.description,
     images: ["/brand/og-card.png"],
   },
+  verification: {
+    google: "9GfJhTOKiF4Qb9JXQFPkHOFU_y6aVaE780foNAYCY_o",
+  },
   alternates: { canonical: siteUrl },
   icons: { icon: "/brand/favicon.svg", apple: "/brand/favicon.svg" },
 };
