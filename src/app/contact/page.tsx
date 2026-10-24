@@ -68,13 +68,13 @@ export default function ContactPage() {
             </dl>
           </div>
           <div className="rounded-2xl border border-border bg-surface-muted p-8">
-            <h2 className="text-xl font-bold text-text-on-dark" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>Start with the newsletter</h2>
-            <p className="measure mt-2 text-text-on-dark" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}>
+            <h2 className="text-xl font-bold text-text" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>Start with the newsletter</h2>
+            <p className="measure mt-2 text-text" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}>
               The PING newsletter covers continuity, agents, and practical business automation. One email when there is something worth saying.
             </p>
             <a
               href="/newsletter"
-              className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 font-semibold text-text transition-colors hover:bg-primary-hover"
+              className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
             >
               Subscribe
             </a>
