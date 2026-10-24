@@ -67,7 +67,7 @@ describe.each(SITES)("hydration-failure survival ($siteId)", ({ siteId, graph })
     } else {
       // No safe phone: the contact block must still offer website/email.
       const email = resolveSafeLink(plan!.emailValue, "email");
-      const website = resolveSafeLink(plan!.websiteValue, "navigate");
+      const website = plan!.website;
       expect(email.kind === "safe" || website.kind === "safe").toBe(true);
     }
   });
