@@ -130,7 +130,7 @@ export default function TechnologyPage() {
             descriptionColor="text-text-on-dark/80"
           />
           <div className="mt-10 rounded-xl border border-text-on-dark/10 bg-deep-2/50 p-6 sm:p-10">
-            <BusinessGraph />
+            <BusinessGraph dark />
           </div>
         </Container>
       </Section>

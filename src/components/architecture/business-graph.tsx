@@ -45,7 +45,7 @@ const EDGES: GraphEdge[] = [
   { from: "job", to: "review", label: "rated" },
 ];
 
-export function BusinessGraph() {
+export function BusinessGraph({ dark = false }: { dark?: boolean } = {}) {
   const [selected, setSelected] = useState<string | null>(null);
   const selectedNode = NODES.find((n) => n.id === selected);
 
@@ -66,13 +66,13 @@ export function BusinessGraph() {
                   stroke="currentColor"
                   strokeOpacity={isHighlighted ? 0.6 : 0.25}
                   strokeWidth={isHighlighted ? 2 : 1}
-                  className="text-text"
+                  className={dark ? "text-text-on-dark" : "text-text"}
                 />
                 <text
                   x={(from.x + to.x) / 2}
                   y={(from.y + to.y) / 2 - 6}
                   textAnchor="middle"
-                  className="fill-text-muted text-[9px] uppercase tracking-wide"
+                  className={cn(dark ? "fill-text-on-dark/60" : "fill-text-muted", "text-[9px] uppercase tracking-wide")}
                 >
                   {edge.label}
                 </text>
@@ -108,7 +108,7 @@ export function BusinessGraph() {
                   textAnchor="middle"
                   className={cn(
                     "text-[11px] font-bold uppercase tracking-wide",
-                    selected === node.id ? "fill-text" : "fill-text"
+                    dark ? "fill-text-on-dark" : "fill-text"
                   )}
                 >
                   {node.label}
@@ -126,11 +126,11 @@ export function BusinessGraph() {
           </div>
         )}
         {!selectedNode && (
-          <p className="mt-4 text-center text-sm text-text-muted">
+          <p className={cn("mt-4 text-center text-sm", dark ? "text-text-on-dark/70" : "text-text-muted")}>
             Hover or tap a node to see what PING knows about it.
           </p>
         )}
-        <p className="mt-6 text-center text-xs text-text-muted">
+        <p className={cn("mt-6 text-center text-xs", dark ? "text-text-on-dark/70" : "text-text-muted")}>
           Illustrative model of business relationships, not live data. The generic knowledge
           graph is built; a business-domain graph is a direction.
         </p>
@@ -157,10 +157,10 @@ export function BusinessGraph() {
             </li>
           ))}
         </ol>
-        <p className="mt-4 text-sm text-text-muted">
+        <p className={cn("mt-4 text-sm", dark ? "text-text-on-dark/70" : "text-text-muted")}>
           On desktop this renders as an interactive graph. The relationships: customer called (event), owns (property); event created (lead); lead became (project), assigned (person); project needs (service); service priced (estimate); estimate approved (job); job rated (review).
         </p>
-        <p className="mt-3 text-xs text-text-muted">
+        <p className={cn("mt-3 text-xs", dark ? "text-text-on-dark/70" : "text-text-muted")}>
           Illustrative model, not live data. The generic knowledge graph is built;
           a business-domain graph is a direction.
         </p>
