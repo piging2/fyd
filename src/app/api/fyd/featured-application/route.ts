@@ -19,7 +19,14 @@
  * inquiry intake itself is catalog and tenant bound (a service id
  * from a published catalog, admitted site ids, visitor name / contact
  * / message only), so it cannot carry the featured application fields.
- * No external sends, ever.
+ *
+ * Delivery (2026-10-23 fix): the file store alone lost every
+ * production application (Vercel's filesystem is read-only, the
+ * store write threw, the route 500'd). Acceptance now runs through
+ * acceptSubmission: the record is emailed to the operator inbox
+ * (nolangesk@gmail.com) when a sending credential is configured,
+ * and the file store is a best-effort secondary record whose
+ * failure can never fail the submission again.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -33,6 +40,7 @@ import {
   type FeaturedCollar,
   type FeaturedContactChannel,
 } from "@/fyd/owner-mode/featured-application-store";
+import { acceptSubmission } from "@/fyd/owner-mode/submission-mailer";
 
 export const dynamic = "force-dynamic";
 
@@ -162,10 +170,31 @@ export async function POST(req: NextRequest) {
     receivedAt: new Date().toISOString(),
   };
 
-  try {
-    saveFeaturedApplicationRecord(record);
-  } catch {
-    // Fail closed, no receipt, and no raw error leakage to the visitor.
+  const outcome = await acceptSubmission({
+    kind: "featured-application",
+    headline: businessName,
+    fields: [
+      ["Business name", businessName],
+      ["Category", collar === "blue" ? "Skilled tradespeople" : "Knowledge workers"],
+      ["Trade or profession", trade],
+      ["Contact name", contactName],
+      ["Service area", serviceArea],
+      ["Website", website],
+      ["Social links", socialLinks],
+      ["What makes this business exceptional", exceptional],
+      ["Photos or portfolio link", portfolioLink],
+      ["Preferred follow-up channel", contactChannel],
+      ["Contact detail", contactDetail],
+      ["Follow-up permission", "yes"],
+    ],
+    receiptId,
+    receivedAt: record.receivedAt,
+    ...(contactChannel === "email" ? { replyTo: contactDetail } : {}),
+    store: () => saveFeaturedApplicationRecord(record),
+  });
+  if (!outcome.accepted) {
+    // Neither the store nor email delivery succeeded: no receipt,
+    // and no raw error leakage to the visitor.
     return NextResponse.json(
       {
         ok: false,
