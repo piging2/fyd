@@ -24,6 +24,12 @@
  * (nolangesk@gmail.com) when a sending credential is configured,
  * and the file store is a best-effort secondary record whose
  * failure can never fail the submission again.
+ *
+ * Relay amendment (2026-10-25): in production the durable capture is
+ * the submission outbox (private Blob store); the Pig mail worker
+ * delivers the email over the proven Yahoo route, because SMTP from
+ * Vercel's serverless egress is refused. Dedupe replay consults the
+ * outbox as well as the file store.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -34,10 +40,15 @@ import {
   nominationDedupeKey,
   nominationReceiptForRecord,
   saveNominationRecord,
+  NOMINATION_SITE_ID,
   type NominationCategory,
   type NominationRecord,
 } from "@/fyd/owner-mode/nomination-store";
 import { acceptSubmission } from "@/fyd/owner-mode/submission-mailer";
+import {
+  findOutboxRecord,
+  persistToOutbox,
+} from "@/fyd/owner-mode/submission-outbox";
 
 export const dynamic = "force-dynamic";
 
@@ -117,6 +128,25 @@ export async function POST(req: NextRequest) {
         receipt: nominationReceiptForRecord(existing),
       });
     }
+    // The production-durable dedupe record lives in the outbox (the
+    // file store above is empty on Vercel's read-only filesystem).
+    const outboxExisting = await findOutboxRecord(
+      NOMINATION_SITE_ID,
+      "nomination",
+      dedupeKey,
+    );
+    if (outboxExisting) {
+      return NextResponse.json({
+        ok: true,
+        replayed: true,
+        receipt: {
+          receiptId: outboxExisting.receipt.receiptId,
+          nominationRef: outboxExisting.receipt.refId,
+          businessName: outboxExisting.receipt.businessName,
+          receivedAt: outboxExisting.receipt.receivedAt,
+        },
+      });
+    }
   }
 
   const { nominationRef, receiptId } = makeNominationRefs();
@@ -152,6 +182,23 @@ export async function POST(req: NextRequest) {
     ...(nominatorContact.includes("@")
       ? { replyTo: nominatorContact }
       : {}),
+    outbox: (mail) =>
+      persistToOutbox({
+        tenantId: NOMINATION_SITE_ID,
+        kind: "nomination",
+        // The dedupe key makes a repeat submission a replay; an
+        // anonymous nomination (null dedupe key) is always a new
+        // countable record, keyed by its unique receipt id.
+        key: dedupeKey ?? receiptId,
+        receipt: {
+          receiptId,
+          refId: nominationRef,
+          businessName,
+          receivedAt: record.receivedAt,
+        },
+        payload: { ...record },
+        mail,
+      }),
     store: () => saveNominationRecord(record),
   });
   if (!outcome.accepted) {

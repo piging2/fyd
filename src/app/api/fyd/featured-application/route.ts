@@ -27,6 +27,12 @@
  * (nolangesk@gmail.com) when a sending credential is configured,
  * and the file store is a best-effort secondary record whose
  * failure can never fail the submission again.
+ *
+ * Relay amendment (2026-10-25): in production the durable capture is
+ * the submission outbox (private Blob store); the Pig mail worker
+ * delivers the email over the proven Yahoo route, because SMTP from
+ * Vercel's serverless egress is refused. Dedupe replay consults the
+ * outbox as well as the file store.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -36,11 +42,16 @@ import {
   findFeaturedApplicationByDedupeKey,
   makeFeaturedApplicationRefs,
   saveFeaturedApplicationRecord,
+  FEATURED_APPLICATION_SITE_ID,
   type FeaturedApplicationRecord,
   type FeaturedCollar,
   type FeaturedContactChannel,
 } from "@/fyd/owner-mode/featured-application-store";
 import { acceptSubmission } from "@/fyd/owner-mode/submission-mailer";
+import {
+  findOutboxRecord,
+  persistToOutbox,
+} from "@/fyd/owner-mode/submission-outbox";
 
 export const dynamic = "force-dynamic";
 
@@ -149,6 +160,25 @@ export async function POST(req: NextRequest) {
       receipt: featuredReceiptForRecord(existing),
     });
   }
+  // The production-durable dedupe record lives in the outbox (the
+  // file store above is empty on Vercel's read-only filesystem).
+  const outboxExisting = await findOutboxRecord(
+    FEATURED_APPLICATION_SITE_ID,
+    "featured-application",
+    dedupeKey,
+  );
+  if (outboxExisting) {
+    return NextResponse.json({
+      ok: true,
+      replayed: true,
+      receipt: {
+        receiptId: outboxExisting.receipt.receiptId,
+        applicationRef: outboxExisting.receipt.refId,
+        businessName: outboxExisting.receipt.businessName,
+        receivedAt: outboxExisting.receipt.receivedAt,
+      },
+    });
+  }
 
   const { applicationRef, receiptId } = makeFeaturedApplicationRefs();
   const record: FeaturedApplicationRecord = {
@@ -190,6 +220,20 @@ export async function POST(req: NextRequest) {
     receiptId,
     receivedAt: record.receivedAt,
     ...(contactChannel === "email" ? { replyTo: contactDetail } : {}),
+    outbox: (mail) =>
+      persistToOutbox({
+        tenantId: FEATURED_APPLICATION_SITE_ID,
+        kind: "featured-application",
+        key: dedupeKey,
+        receipt: {
+          receiptId,
+          refId: applicationRef,
+          businessName,
+          receivedAt: record.receivedAt,
+        },
+        payload: { ...record },
+        mail,
+      }),
     store: () => saveFeaturedApplicationRecord(record),
   });
   if (!outcome.accepted) {

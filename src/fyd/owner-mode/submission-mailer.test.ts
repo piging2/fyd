@@ -130,6 +130,9 @@ describe("acceptSubmission", () => {
       accepted: true,
       stored: true,
       emailed: false,
+      // Relay amendment (2026-10-25): the outcome now reports the
+      // outbox path explicitly; unconfigured here, so false.
+      outboxed: false,
       mailConfigured: false,
     });
   });
