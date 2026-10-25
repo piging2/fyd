@@ -236,6 +236,7 @@ describe("acceptSubmission relay policy", () => {
     >,
     receiptId: RECEIPT.receiptId,
     receivedAt: RECEIPT.receivedAt,
+    replyTo: "customer@example.com",
   };
 
   it("accepts via the outbox and never attempts in-request SMTP", async () => {
@@ -253,6 +254,10 @@ describe("acceptSubmission relay policy", () => {
       outbox: async (mail) => {
         expect(mail?.to).toBe("nolangesk@gmail.com");
         expect(mail?.from).toBe("nolan.geske@yahoo.com");
+        // Yahoo refuses an external Reply-To header (550, bisected
+        // live 2026-10-25), so the record mail must not carry one
+        // even when the submission supplied a reply address.
+        expect(mail?.replyTo).toBeUndefined();
         return { configured: true, persisted: true };
       },
       store: () => {
