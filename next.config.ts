@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // nodemailer must be required at runtime in route handlers, not
+  // webpack-bundled: the bundled copy cannot load its transport in
+  // the serverless function (submission-mailer delivery path).
+  serverExternalPackages: ["nodemailer"],
   // SHARP_IGNORE_GLOBAL_LIBVIPS is configured in vercel.json for Vercel runtime
   // Sharp native binary loading requires this environment variable at Node.js runtime
   // It is NOT a build-time configuration

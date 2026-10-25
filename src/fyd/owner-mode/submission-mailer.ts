@@ -163,6 +163,13 @@ export async function smtpTransport(
     port: config.port,
     secure: config.port === 465,
     auth: { user: config.user, pass: config.pass },
+    // Serverless egress hardening: force IPv4 (Yahoo's IPv6 SMTP
+    // endpoints refuse silently) and bound every wait so a dead
+    // connection fails the delivery attempt instead of the request.
+    family: 4,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000,
   });
   return async (mail: SubmissionMail) => {
     const info = await transporter.sendMail(mail);
