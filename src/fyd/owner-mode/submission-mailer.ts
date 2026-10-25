@@ -16,6 +16,13 @@
  * again, and a mail failure can never fail a submission that the
  * store accepted.
  *
+ * Relay amendment (2026-10-25, submission-outbox.ts): production
+ * proved SMTP egress from Vercel serverless to Yahoo is refused, so
+ * acceptance now prefers a durable outbox record when one is
+ * configured: capture first, and the Pig mail worker delivers the
+ * email from an egress that works. The direct SMTP path below
+ * remains the fallback for planes without the outbox.
+ *
  * Credential interface (env names only; values are set in the Vercel
  * project, never in code):
  *   FYD_SUBMISSION_EMAIL_TO  destination inbox
@@ -44,7 +51,8 @@ export type SubmissionKind =
   | "featured-application"
   | "assessment-request"
   | "quote-inquiry"
-  | "contact";
+  | "contact"
+  | "newsletter-signup";
 
 const KIND_LABEL: Record<SubmissionKind, string> = {
   nomination: "Nomination",
@@ -52,6 +60,7 @@ const KIND_LABEL: Record<SubmissionKind, string> = {
   "assessment-request": "Assessment request",
   "quote-inquiry": "Quote request",
   contact: "Contact message",
+  "newsletter-signup": "Newsletter signup",
 };
 
 export interface SubmissionMail {
@@ -112,10 +121,11 @@ export interface SubmissionFields {
   replyTo?: string;
 }
 
-/** Build the exact email payload for a submission. Pure. */
-export function buildSubmissionMail(
+function buildMail(
   submission: SubmissionFields,
-  config: SubmissionMailConfig,
+  from: string,
+  to: string,
+  footer: string[],
 ): SubmissionMail {
   const label = KIND_LABEL[submission.kind];
   const lines: string[] = [
@@ -131,20 +141,71 @@ export function buildSubmissionMail(
     if (!v) continue;
     lines.push(fieldLabel + ": " + v);
   }
-  lines.push(
-    "",
-    "This submission was delivered by email because the website's",
-    "server-local file store is not durable in production. Keep this",
-    "email as the retrievable record of the submission.",
-  );
+  lines.push("", ...footer);
   const mail: SubmissionMail = {
-    from: config.from,
-    to: config.to,
+    from,
+    to,
     subject: "[PING FYD] New " + label + ": " + submission.headline,
     text: lines.join("\n") + "\n",
   };
   if (submission.replyTo) mail.replyTo = submission.replyTo;
   return mail;
+}
+
+/** Build the exact email payload for a submission. Pure. */
+export function buildSubmissionMail(
+  submission: SubmissionFields,
+  config: SubmissionMailConfig,
+): SubmissionMail {
+  return buildMail(submission, config.from, config.to, [
+    "This submission was delivered by email because the website's",
+    "server-local file store is not durable in production. Keep this",
+    "email as the retrievable record of the submission.",
+  ]);
+}
+
+/**
+ * The sender identity for a submission email, WITHOUT any sending
+ * credential: a From address and the operator inbox. Building an
+ * email needs only the identity; the credential that actually sends
+ * it lives wherever the sending happens (in production, only on the
+ * Pig mail worker). Returns null when no From address is configured
+ * (FYD_SMTP_FROM, falling back to FYD_SMTP_USER).
+ */
+export interface SubmissionMailIdentity {
+  from: string;
+  to: string;
+}
+
+export function submissionMailIdentity(
+  env: Record<string, string | undefined> = process.env,
+): SubmissionMailIdentity | null {
+  const from =
+    (env.FYD_SMTP_FROM ?? "").trim() || (env.FYD_SMTP_USER ?? "").trim();
+  if (!from) return null;
+  return {
+    from,
+    to:
+      (env.FYD_SUBMISSION_EMAIL_TO ?? "").trim() ||
+      DEFAULT_SUBMISSION_EMAIL_TO,
+  };
+}
+
+/**
+ * Build the email payload for an outbox record (Pig relay delivery):
+ * same shape as buildSubmissionMail, but the footer names the
+ * durable outbox record as the retrievable record, and no sending
+ * credential is involved. Pure.
+ */
+export function buildSubmissionMailWithIdentity(
+  submission: SubmissionFields,
+  identity: SubmissionMailIdentity,
+): SubmissionMail {
+  return buildMail(submission, identity.from, identity.to, [
+    "This submission was captured durably in the PING submission",
+    "outbox and delivered by the Pig mail relay. The outbox record",
+    "(receipt above) is the retrievable record of the submission.",
+  ]);
 }
 
 interface NodemailerLike {
@@ -208,6 +269,18 @@ export interface AcceptSubmissionArgs extends SubmissionFields {
    * Omit for forms with no store (contact).
    */
   store?: () => void;
+  /**
+   * Durable outbox capture (the Pig relay path). Receives the built
+   * operator email (or null when no sender identity is configured)
+   * and persists the submission record; delivery then belongs to
+   * the relay worker, never to this request. Returns whether the
+   * outbox is configured at all and whether the record persisted.
+   * May throw; a throw is logged and never fails the submission by
+   * itself.
+   */
+  outbox?: (
+    mail: SubmissionMail | null,
+  ) => Promise<{ configured: boolean; persisted: boolean }>;
   env?: Record<string, string | undefined>;
   transport?: MailTransport;
   log?: (message: string) => void;
@@ -218,18 +291,27 @@ export interface AcceptSubmissionOutcome {
   accepted: boolean;
   stored: boolean;
   emailed: boolean;
+  /** True when the durable outbox holds the record (relay delivery). */
+  outboxed: boolean;
   mailConfigured: boolean;
 }
 
 /**
  * The acceptance policy for every public form:
- *   1. Try the file store (best effort; failure is logged only).
- *   2. When a sending credential is configured, email the submission
- *      to the operator inbox (failure is logged only).
- *   3. The submission is accepted when EITHER path succeeded, so a
+ *   1. When an outbox callback is supplied and the outbox is
+ *      configured, persist the submission record durably there
+ *      (failure is logged only). A persisted outbox record means
+ *      delivery belongs to the relay worker: in-request SMTP is NOT
+ *      attempted, so a broken serverless mail egress can never fail
+ *      or delay a captured submission.
+ *   2. Try the file store (best effort; failure is logged only).
+ *   3. When no outbox record holds the submission and a sending
+ *      credential is configured, email the submission to the
+ *      operator inbox (failure is logged only).
+ *   4. The submission is accepted when ANY path succeeded, so a
  *      filesystem failure can never 500 a submission again, and on
- *      planes without mail configured the legacy store-only behavior
- *      is preserved exactly.
+ *      planes without the outbox configured the legacy behavior is
+ *      preserved exactly.
  */
 export async function acceptSubmission(
   args: AcceptSubmissionArgs,
@@ -240,6 +322,44 @@ export async function acceptSubmission(
       // Server-side only; never surfaced to the visitor.
       console.error("[submission-mailer] " + message);
     });
+
+  const config = submissionMailConfig(args.env);
+  const identity = submissionMailIdentity(args.env);
+  // The operator email for the durable record: built from the bare
+  // identity when possible (no credential needed to build it), else
+  // from the full sending config, else null.
+  const recordMail = identity
+    ? buildSubmissionMailWithIdentity(args, identity)
+    : config
+      ? buildSubmissionMail(args, config)
+      : null;
+
+  let outboxed = false;
+  if (args.outbox) {
+    try {
+      const result = await args.outbox(recordMail);
+      outboxed = result.persisted;
+      if (result.configured && !result.persisted) {
+        log(
+          "outbox persist failed for " +
+            args.kind +
+            " receipt " +
+            args.receiptId +
+            " (continuing to fallback paths)",
+        );
+      }
+    } catch (e) {
+      log(
+        "outbox persist threw for " +
+          args.kind +
+          " receipt " +
+          args.receiptId +
+          ": " +
+          (e instanceof Error ? e.message : "unknown outbox error") +
+          " (continuing to fallback paths)",
+      );
+    }
+  }
 
   let stored = false;
   if (args.store) {
@@ -259,9 +379,8 @@ export async function acceptSubmission(
     }
   }
 
-  const config = submissionMailConfig(args.env);
   let emailed = false;
-  if (config) {
+  if (!outboxed && config) {
     const mail = buildSubmissionMail(args, config);
     const outcome = await deliverSubmissionMail(mail, config, args.transport);
     emailed = outcome.delivered;
@@ -278,9 +397,10 @@ export async function acceptSubmission(
   }
 
   return {
-    accepted: stored || emailed,
+    accepted: outboxed || stored || emailed,
     stored,
     emailed,
+    outboxed,
     mailConfigured: config !== null,
   };
 }
