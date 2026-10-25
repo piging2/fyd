@@ -15,8 +15,15 @@
  * stored receipt; different nominators count separately.
  *
  * Nominations are counted privately by PING. Nothing about a business
- * is published without that business's own consent. No external
- * sends, ever.
+ * is published without that business's own consent.
+ *
+ * Delivery (2026-10-23 fix): the file store alone lost every
+ * production submission (Vercel's filesystem is read-only, the store
+ * write threw, the route 500'd). Acceptance now runs through
+ * acceptSubmission: the record is emailed to the operator inbox
+ * (nolangesk@gmail.com) when a sending credential is configured,
+ * and the file store is a best-effort secondary record whose
+ * failure can never fail the submission again.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -30,6 +37,7 @@ import {
   type NominationCategory,
   type NominationRecord,
 } from "@/fyd/owner-mode/nomination-store";
+import { acceptSubmission } from "@/fyd/owner-mode/submission-mailer";
 
 export const dynamic = "force-dynamic";
 
@@ -127,10 +135,28 @@ export async function POST(req: NextRequest) {
     receivedAt: new Date().toISOString(),
   };
 
-  try {
-    saveNominationRecord(record);
-  } catch {
-    // Fail closed, no receipt, and no raw error leakage to the visitor.
+  const outcome = await acceptSubmission({
+    kind: "nomination",
+    headline: businessName,
+    fields: [
+      ["Business name", businessName],
+      ["Category", category === "skilled" ? "Skilled tradespeople" : "Knowledge workers"],
+      ["City or service area", city],
+      ["What makes them exceptional", exceptional],
+      ["Nominator name", nominatorName],
+      ["Nominator contact", nominatorContact],
+      ["Follow-up permission", permissionFollowUp ? "yes" : "no"],
+    ],
+    receiptId,
+    receivedAt: record.receivedAt,
+    ...(nominatorContact.includes("@")
+      ? { replyTo: nominatorContact }
+      : {}),
+    store: () => saveNominationRecord(record),
+  });
+  if (!outcome.accepted) {
+    // Neither the store nor email delivery succeeded: no receipt,
+    // and no raw error leakage to the visitor.
     return NextResponse.json(
       {
         ok: false,
