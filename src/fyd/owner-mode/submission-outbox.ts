@@ -131,7 +131,7 @@ interface VercelBlobLike {
   head(pathname: string): Promise<unknown>;
   get(
     pathname: string,
-    opts: { access: "private" },
+    opts: { access: "private"; useCache: boolean },
   ): Promise<{ stream: ReadableStream } | null>;
   put(
     pathname: string,
@@ -160,7 +160,13 @@ export async function vercelOutboxClient(): Promise<OutboxBlobClient> {
       }
     },
     async getJson(pathname: string): Promise<OutboxRecord | null> {
-      const result = await sdk.get(pathname, { access: "private" });
+      // useCache: false matters: a cached read can return a stale
+      // record (the relay worker once skipped a send that way), and
+      // dedupe replay must see the record that is actually stored.
+      const result = await sdk.get(pathname, {
+        access: "private",
+        useCache: false,
+      });
       if (!result) return null;
       const text = await new Response(result.stream).text();
       return JSON.parse(text) as OutboxRecord;

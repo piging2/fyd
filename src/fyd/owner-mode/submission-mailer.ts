@@ -328,11 +328,21 @@ export async function acceptSubmission(
   // The operator email for the durable record: built from the bare
   // identity when possible (no credential needed to build it), else
   // from the full sending config, else null.
-  const recordMail = identity
+  const builtRecordMail = identity
     ? buildSubmissionMailWithIdentity(args, identity)
     : config
       ? buildSubmissionMail(args, config)
       : null;
+  // Yahoo SMTP refuses mail whose Reply-To header names an external
+  // mailbox (550 "Mailbox unavailable", bisected live 2026-10-25:
+  // header present -> refused, absent -> delivered), so the outbox
+  // record mail never carries one. The submitter's contact is a
+  // labeled field in the body and the operator replies manually.
+  // The direct-SMTP fallback below builds its own mail and keeps its
+  // legacy behavior.
+  const recordMail = builtRecordMail
+    ? { ...builtRecordMail, replyTo: undefined }
+    : null;
 
   let outboxed = false;
   if (args.outbox) {
