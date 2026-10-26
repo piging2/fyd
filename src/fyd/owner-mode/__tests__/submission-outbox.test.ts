@@ -18,7 +18,7 @@
 import {
   acceptSubmission,
   type SubmissionMail,
-} from "./submission-mailer";
+} from "../submission-mailer";
 import {
   findOutboxRecord,
   newsletterOutboxKey,
@@ -27,7 +27,7 @@ import {
   PING_FYD_TENANT_ID,
   type OutboxBlobClient,
   type OutboxRecord,
-} from "./submission-outbox";
+} from "../submission-outbox";
 
 function memoryClient() {
   const blobs = new Map<string, OutboxRecord>();

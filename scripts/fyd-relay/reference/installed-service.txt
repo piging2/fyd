@@ -1,0 +1,15 @@
+[Unit]
+Description=FYD submission outbox relay worker (Blob outbox to Yahoo to Gmail)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/nolan/fyd-relay-worker
+ExecStart=/usr/local/bin/node /home/nolan/fyd-relay-worker/worker.mjs
+Restart=always
+RestartSec=15
+Nice=10
+
+[Install]
+WantedBy=default.target

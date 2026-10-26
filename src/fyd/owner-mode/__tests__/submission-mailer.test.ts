@@ -14,7 +14,7 @@ import {
   buildSubmissionMail,
   submissionMailConfig,
   type SubmissionMail,
-} from "./submission-mailer";
+} from "../submission-mailer";
 
 const CONFIGURED_ENV = {
   FYD_SMTP_USER: "nolan.geske@yahoo.com",

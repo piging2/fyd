@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
+    "test:relay:p0": "node scripts/fyd-relay/p0/run.mjs",
     "test:compiler": "jest --testPathPattern=compiler",
     "test:media-invariant": "tsx scripts/test-media-invariant.ts",
     "test:oauth": "jest --testPathPatterns=oauth",
