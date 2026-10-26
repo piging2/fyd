@@ -105,12 +105,13 @@ describe("loadObjectView", () => {
     expect(kinds).toContain("follow");
     // "view" is demoted: the full customer page is no longer a capability.
     expect(kinds).not.toContain("view");
-    // Happy Place's homepage exposes no acquirable business imagery
-    // (fyd-media@2 ingest: the only observed image is an off-origin Google
-    // logo, classified unclear-reference-only). The read model shows no
-    // media rather than inventing any: missing data is honest, never
-    // plausible demo content.
-    expect(view!.media).toEqual([]);
+    // The off-origin Google logo is rejected, but the manifest also
+    // contains demo-authorized gallery photos observed on the business
+    // site. The shared selector exposes only those acquired assets as
+    // same-origin derivatives.
+    expect(view!.media.length).toBeGreaterThan(0);
+    expect(view!.media.every((m) => m.rightsSource === "public-demo-source")).toBe(true);
+    expect(view!.media.every((m) => m.src.startsWith("/fyd-media/"))).toBe(true);
     expect(view!.provenance.label).toContain("happyplacecarpentry.com");
   });
 

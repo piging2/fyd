@@ -1,7 +1,7 @@
 ---
 title: "What Survives 10,000 Years: The Long Ping, Episode 1"
 date: "2026-10-07"
-excerpt: "Episode 1 of The Long Ping is live on YouTube, with its full five-part transcript series on Substack: five hours on the hardest preservation question there is. If everyone maintaining your world disappeared tonight, what would still be true in ten thousand years?"
+excerpt: "Episode 1 of The Long Ping, live on YouTube with its five-part transcript on Substack: if everyone maintaining your world vanished tonight, what survives?"
 tags: ["the-long-ping", "episodes", "preservation"]
 status: "published"
 ---

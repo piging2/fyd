@@ -1,7 +1,7 @@
 ---
 title: "The Grid Problem: The Long Ping, Episode 3"
 date: "2026-10-22"
-excerpt: "Episode 3 of The Long Ping is live everywhere at once: a three-hour-and-forty-three-minute film about how power grids fail, why they fail the way they do, and what every other system we depend on can learn from the wreckage. Watch it, hear it, or read it, starting here."
+excerpt: "Episode 3 of The Long Ping is live: a three-hour-and-forty-three-minute film about how power grids fail, why they fail that way, and what every system learns."
 tags: ["the-long-ping", "episodes", "the-grid-problem"]
 status: "published"
 ---

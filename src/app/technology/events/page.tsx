@@ -3,8 +3,21 @@ import { TechArticle } from "@/components/tech-article";
 
 export const metadata: Metadata = {
   title: "Events",
-  description: "The event plane: how things that happen become canonical, queryable, and replayable records.",
+  description: "The event plane: how things that happen become canonical, queryable, and replayable records, and why projections never get to silently become the source.",
   alternates: { canonical: "/technology/events" },
+  openGraph: {
+    type: "website",
+    title: "Events · PING",
+    description: "The event plane: how things that happen become canonical, queryable, and replayable records, and why projections never get to silently become the source.",
+    url: "/technology/events",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Events · PING",
+    description: "The event plane: how things that happen become canonical, queryable, and replayable records, and why projections never get to silently become the source.",
+    images: ["/brand/og-card.png"],
+  },
 };
 
 export default function EventsPage() {

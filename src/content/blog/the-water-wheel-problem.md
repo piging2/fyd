@@ -1,7 +1,7 @@
 ---
 title: "The Water Wheel Problem: The Long Ping, Episode 2 (Chapters 1-10)"
 date: "2026-10-16"
-excerpt: "Episode 2 of The Long Ping, chapters 1 to 10, is live on YouTube and Rumble: the water wheel, the grid it built, and the long argument between centralised and distributed power that we are still having today."
+excerpt: "Episode 2 of The Long Ping, chapters 1 to 10, live on YouTube and Rumble: the water wheel, the grid it built, and the long argument over centralised power."
 tags: ["the-long-ping", "episodes", "the-water-wheel-problem"]
 status: "published"
 ---

@@ -8,6 +8,7 @@ import BuildMyFydClient from "./build-my-fyd-client";
 export const metadata = {
   title: "Build My FYD",
   description: "Give us your website. FYD builds your presence from real evidence.",
+  alternates: { canonical: "/build-my-fyd" },
 };
 
 export default function BuildMyFydPage() {

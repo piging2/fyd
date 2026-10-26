@@ -3,8 +3,8 @@
  *
  * - coppersmith-plumbing resolves an image background: it has authorized
  *   site media, so the circle uses the smallest (blur) derivative.
- * - happy-place resolves a deterministic gradient: its only manifest asset
- *   is external_reference, so no site media qualifies.
+ * - happy-place resolves an image background from demo-authorized gallery
+ *   media, using the smallest (blur) derivative.
  * - The projection never emits "view"; "follow" and "ask" are always there.
  * - Unknown ids return null.
  * Run from the repo root so manifests resolve via process.cwd().
@@ -61,27 +61,27 @@ describe("resolveCircleBackground", () => {
     expect(bg.observedAt).not.toBe("");
   });
 
-  test("happy-place resolves a deterministic gradient", () => {
+  test("happy-place resolves a deterministic image background", () => {
     const first = resolveCircleBackground("happy-place");
     const second = resolveCircleBackground("happy-place");
     expect(first).toEqual(second);
-    expect(first.kind).toBe("gradient");
-    if (first.kind !== "gradient") return;
-    expect(first.css).toMatch(
-      /^radial-gradient\(circle at 35% 30%, hsl\(\d+ 45% 62%\), hsl\(\d+ 50% 38%\)\)$/,
-    );
-    // Warm artisan palette: leading hue 18..42.
-    const hue = Number(/hsl\((\d+)/.exec(first.css)![1]);
-    expect(hue).toBeGreaterThanOrEqual(18);
-    expect(hue).toBeLessThanOrEqual(42);
-    expect(first.basis).toBe("Deterministic fallback, no authorized site media");
+    expect(first.kind).toBe("image");
+    if (first.kind !== "image") return;
+    expect(first.src.startsWith("/fyd-media/")).toBe(true);
+    expect(manifestBytesForSrc("happy-place", first.src)).toBeLessThan(1000);
+    expect(first.basis).toBe("Website photo, tiny optimized derivative");
+    expect(first.digest).not.toBe("");
     expect(first.observedAt).not.toBe("");
   });
 
   test("the two objects look visually distinct", () => {
     const copper = resolveCircleBackground("coppersmith-plumbing");
     const happy = resolveCircleBackground("happy-place");
-    expect(copper.kind).not.toBe(happy.kind);
+    expect(copper.kind).toBe("image");
+    expect(happy.kind).toBe("image");
+    if (copper.kind !== "image" || happy.kind !== "image") return;
+    expect(copper.src).not.toBe(happy.src);
+    expect(copper.digest).not.toBe(happy.digest);
   });
 });
 
@@ -106,10 +106,10 @@ describe("loadCircleProjection", () => {
     expect(circle!.provenanceDetail).not.toBe("");
   });
 
-  test("happy-place circle: gradient background, word-boundary tagline", () => {
+  test("happy-place circle: image background, word-boundary tagline", () => {
     const circle = loadCircleProjection(proj("happy-place"), "happy-place");
     expect(circle).not.toBeNull();
-    expect(circle!.background.kind).toBe("gradient");
+    expect(circle!.background.kind).toBe("image");
     expect(circle!.tagline.length).toBeLessThanOrEqual(90);
     expect(circle!.topFacts.length).toBeLessThanOrEqual(3);
     // Happy Place's only structured service (PING journal overlay) is the fact.

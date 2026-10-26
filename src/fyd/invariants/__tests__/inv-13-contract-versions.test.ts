@@ -37,7 +37,7 @@ describe("Q-C-03 public response contract versions", () => {
     expect(PUBLIC_PROJECTION_VERSION).toBe("fyd.public-projection@1");
         expect(ASK_RESPONSE_CONTRACT_VERSION).toBe("fyd.ask-response@2");
     expect(CIRCLE_PROJECTION_CONTRACT_VERSION).toBe("fyd.circle-projection@1");
-    expect(SITEMAP_CONTRACT_VERSION).toBe("fyd.sitemap@1");
+    expect(SITEMAP_CONTRACT_VERSION).toBe("fyd.sitemap@2");
   });
 
   test("GET /api/fyd/circle serves its contract version", async () => {

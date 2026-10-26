@@ -3,8 +3,21 @@ import { TechArticle } from "@/components/tech-article";
 
 export const metadata: Metadata = {
   title: "Replay",
-  description: "Deterministic replay: what happened, why, which version decided, and whether the replay matches.",
+  description: "Deterministic replay: what happened, why it happened, which version decided, and whether the replay matches, so a system can explain its own decisions.",
   alternates: { canonical: "/technology/replay" },
+  openGraph: {
+    type: "website",
+    title: "Replay · PING",
+    description: "Deterministic replay: what happened, why it happened, which version decided, and whether the replay matches, so a system can explain its own decisions.",
+    url: "/technology/replay",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Replay · PING",
+    description: "Deterministic replay: what happened, why it happened, which version decided, and whether the replay matches, so a system can explain its own decisions.",
+    images: ["/brand/og-card.png"],
+  },
 };
 
 export default function ReplayPage() {

@@ -6,11 +6,26 @@ import { episodeVideos, featuredFilm, shortVideos } from "@/lib/longping-media";
 import { VideoCard } from "@/components/video-card";
 import { SocialsHub } from "@/components/socials-hub";
 
+const DESCRIPTION =
+  "PING build notes and The Long Ping on film: architecture, implementation, and the reasoning behind both, plus every episode with its Shorts and transcripts.";
+
 export const metadata: Metadata = {
   title: "Blog",
-  description:
-    "PING build notes and The Long Ping on film: architecture, implementation, the reasoning behind both, and every episode with its Shorts, transcripts, and listening links in one place.",
+  description: DESCRIPTION,
   alternates: { canonical: "/blog" },
+  openGraph: {
+    type: "website",
+    title: "Blog · PING",
+    description: DESCRIPTION,
+    url: "/blog",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog · PING",
+    description: DESCRIPTION,
+    images: ["/brand/og-card.png"],
+  },
 };
 
 function formatDate(d: string) {
@@ -29,6 +44,7 @@ export default function BlogPage() {
       <Section className="bg-deep">
         <Container className="max-w-4xl">
           <SectionHeading
+            headingLevel="h1"
             eyebrow={<span className="text-honey">Blog</span>}
             title={<span className="text-text-on-dark">Build notes</span>}
             description={

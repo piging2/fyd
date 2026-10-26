@@ -3,8 +3,21 @@ import { TechArticle } from "@/components/tech-article";
 
 export const metadata: Metadata = {
   title: "TenantOS",
-  description: "The platform direction this site proves: one codebase, many tenants, configuration over forking.",
+  description: "The platform direction this site proves: one codebase, many tenants, configuration over forking. This website is the first tenant and the proof of concept.",
   alternates: { canonical: "/technology/tenantos" },
+  openGraph: {
+    type: "website",
+    title: "TenantOS · PING",
+    description: "The platform direction this site proves: one codebase, many tenants, configuration over forking. This website is the first tenant and the proof of concept.",
+    url: "/technology/tenantos",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TenantOS · PING",
+    description: "The platform direction this site proves: one codebase, many tenants, configuration over forking. This website is the first tenant and the proof of concept.",
+    images: ["/brand/og-card.png"],
+  },
 };
 
 export default function TenantOSPage() {

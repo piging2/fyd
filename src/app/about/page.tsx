@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/about" },
   openGraph: {
     type: "website",
-    title: "About",
+    title: "About · PING",
     description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses.",
     url: siteUrl + "/about",
     images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.png"],
-    title: "About",
+    title: "About · PING",
     description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses.",
   },
 };
@@ -55,6 +55,7 @@ export default function AboutPage() {
       <Section className="bg-deep">
         <Container className="max-w-4xl">
           <SectionHeading
+            headingLevel="h1"
             eyebrow={<span className="text-honey">About</span>}
             title={<span className="text-text-on-dark">PING is infrastructure for systems that remember</span>}
             description={<span className="text-text-on-dark/90">{tenant.description}</span>}

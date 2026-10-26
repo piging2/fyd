@@ -3,8 +3,21 @@ import { TechArticle } from "@/components/tech-article";
 
 export const metadata: Metadata = {
   title: "Agents",
-  description: "Agent infrastructure with explicit capability boundaries: what an agent may touch, change, and where it must stop.",
+  description: "Agent infrastructure with explicit capability boundaries: what an agent may touch, what it may change, where it must stop and ask, and how actions are recorded.",
   alternates: { canonical: "/technology/agents" },
+  openGraph: {
+    type: "website",
+    title: "Agents · PING",
+    description: "Agent infrastructure with explicit capability boundaries: what an agent may touch, what it may change, where it must stop and ask, and how actions are recorded.",
+    url: "/technology/agents",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Agents · PING",
+    description: "Agent infrastructure with explicit capability boundaries: what an agent may touch, what it may change, where it must stop and ask, and how actions are recorded.",
+    images: ["/brand/og-card.png"],
+  },
 };
 
 export default function AgentsPage() {

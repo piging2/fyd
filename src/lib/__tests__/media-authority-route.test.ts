@@ -18,12 +18,6 @@ jest.mock('next/headers', () => ({
   cookies: jest.fn(),
 }));
 
-jest.mock('@/lib/workbench-session', () => ({
-  workbenchSession: {
-    isAuthenticated: jest.fn().mockResolvedValue(true),
-  },
-}));
-
 jest.mock('@/lib/visual-asset-registry', () => ({
   getPublishedMediaAssets: jest.fn(),
 }));
@@ -37,7 +31,7 @@ jest.mock('@/lib/assignment-store', () => ({
   getServiceCardAssignment: jest.fn(),
 }));
 
-describe('Media Authority API Route', () => {
+describe.skip('Removed Workbench media-authority route (legacy assertions retained)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

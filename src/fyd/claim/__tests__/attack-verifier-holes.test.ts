@@ -235,19 +235,22 @@ describe("H4: the render path enforces the owner-assertion rule at its seam", ()
 });
 
 describe("H5: per-field evidence is unrepresentable (two sources, one object)", () => {
-  test("a binding's own evidenceRef is honored, not silently replaced", () => {
+  test("a binding cannot claim evidence outside the object's ref lineage", () => {
     const binding: PresentationBinding = {
       objectId: "biz-trade",
       field: "title",
       classification: "direct",
-      // Field-level source B; the object's provenance is source A.
+      // Source B is not present in the graph; the object carries source A.
       evidenceRef: "google-business-profile:acme-123",
     };
     const atom = classifyRenderAtom(binding, GRAPH, []);
-    // Silently substituting the object-level ref misattributes source B's
-    // claim to source A. The verifier must honor the carrier or refuse.
-    expect(atom.classification).toBe("DIRECT_EVIDENCE");
-    expect(atom.evidenceRef).toBe("google-business-profile:acme-123");
+    // The carrier cannot establish provenance by itself, nor may the
+    // verifier silently substitute source A for the missing source B.
+    expect(atom.classification).toBe("UNKNOWN");
+    expect(atom.unknownReason).toBe(
+      "carrier evidence ref is not in the object's ref lineage",
+    );
+    expect(atom.evidenceRef).toBeUndefined();
   });
 });
 

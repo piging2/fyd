@@ -6,6 +6,7 @@ import { FeedClient } from "./feed-client";
 export const metadata: Metadata = {
   title: "Discovery feed | PING",
   description: "Deterministically ranked objects, relationships, and website content from PING.",
+  alternates: { canonical: "/feed" },
 };
 
 export default async function FeedPage() {

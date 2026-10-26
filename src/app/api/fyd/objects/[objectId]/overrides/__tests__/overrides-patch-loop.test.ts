@@ -23,6 +23,7 @@ import type { NextRequest } from "next/server";
 import { POST } from "../route";
 import { buildPatchPreview } from "../patch-loop";
 import { readOverrides } from "@/fyd/object/owner-store";
+import { invalidateSiteBundle } from "@/fyd/media/site-bundle";
 
 jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: async () => null }));
 
@@ -62,6 +63,7 @@ const ORIGINAL_DEMO_MODE = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE;
 
 beforeEach(() => {
   process.env.FYD_OWNER_DIR = mkdtempSync(join(tmpdir(), "fyd-owner-test-"));
+  invalidateSiteBundle("happy-place");
   // The approve stage is DEVELOPMENT OWNER MODE only (P0 2026-10-03):
   // the mock carries a localhost host so these tests exercise the
   // approve logic behind the gate.

@@ -25,7 +25,7 @@ Each lane keeps its own scoped config for local runs, e.g.:
 npx jest --config src/fyd/customize/jest.config.cjs
 ```
 
-All 26 per-area configs are functionally identical (same ts-jest transform and
+All 30 per-area configs are functionally identical (same ts-jest transform and
 inline tsconfig, same `@/` mapping); they differ only in testMatch scope and
 the CSS-stub variant. The root config is the standard entry point; the
 per-area configs remain for lane-local iteration.

@@ -12,20 +12,20 @@ const siteUrl =
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Contact PING Social about AI concierge and business automation for your business.",
+  description: "Contact PING Social about AI concierge and business automation for your business: ask about FYD, book a working session, or nominate a business for a feature.",
   alternates: { canonical: "/contact" },
   openGraph: {
     type: "website",
-    title: "Contact",
-    description: "Contact PING Social about AI concierge and business automation for your business.",
+    title: "Contact · PING",
+    description: "Contact PING Social about AI concierge and business automation for your business: ask about FYD, book a working session, or nominate a business for a feature.",
     url: siteUrl + "/contact",
     images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.png"],
-    title: "Contact",
-    description: "Contact PING Social about AI concierge and business automation for your business.",
+    title: "Contact · PING",
+    description: "Contact PING Social about AI concierge and business automation for your business: ask about FYD, book a working session, or nominate a business for a feature.",
   },
 };
 
@@ -41,6 +41,7 @@ export default function ContactPage() {
               <PingWordmark />
             </div>
             <SectionHeading
+              headingLevel="h1"
               eyebrow={<span className="text-honey">Contact</span>}
               title={<span className="text-text-on-dark">Let&apos;s talk about your business</span>}
               description={<span className="text-text-on-dark/90">PING Social is a consultancy, not a software signup. Tell us how your business runs and we will tell you honestly whether AI can help, and where.</span>}

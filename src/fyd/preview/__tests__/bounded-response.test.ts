@@ -61,7 +61,7 @@ describe("live preview route with bounded upstream transport", () => {
     }));
     const response = await request();
     expect(await response.text()).toContain('<base href="https://example.com/">');
-    expect(response.headers.get("content-security-policy")).toBe("default-src 'self'");
+    expect(response.headers.get("content-security-policy")).toBe("default-src 'self'; sandbox allow-scripts allow-forms allow-popups");
     expect(global.fetch).toHaveBeenCalledWith("https://example.com/", expect.objectContaining({ redirect: "manual" }));
   });
 

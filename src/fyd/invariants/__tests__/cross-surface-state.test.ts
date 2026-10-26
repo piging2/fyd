@@ -6,7 +6,7 @@ import { GET as getOwner, POST as postOwner } from "@/app/api/fyd/objects/[objec
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { getSiteBundle } from '@/fyd/media/site-bundle';
+import { getSiteBundle, invalidateSiteBundle } from '@/fyd/media/site-bundle';
 import { handleAskRequest } from '@/app/api/fyd/ask/ask-pipeline';
 import { NextRequest } from 'next/server';
 import * as bundles from '@/fyd/media/site-bundle';
@@ -33,6 +33,7 @@ const originalOwnerDir = process.env.FYD_OWNER_DIR;
 const originalDemoMode = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE;
 beforeEach(async () => {
   process.env.FYD_OWNER_DIR = mkdtempSync(join(tmpdir(), 'fyd-state-'));
+  invalidateSiteBundle(siteId);
   process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE = "1";
   journal = await startStubJournal([]);
 });
@@ -115,6 +116,7 @@ test('Coppersmith correction, source refresh and revert agree across page, Ask a
   expect(corrected.view?.fieldCorrections[0]?.sourceValue).toBe(sourceValue);
   await journal.close();
   journal = await startStubJournal([{id:'state-refresh-1',ts:'2026-10-07T12:00:00Z',siteId,ops:[{op:'set_field',objectId:service.id,field:'description',value:refreshedValue}]}]);
+  invalidateSiteBundle(siteId);
   const drifted = await surfaces(correctedValue);
   const explained = fieldExplanation(drifted.page.graph.objects.find(o=>o.id===service.id)!, 'description');
   const why = renderToStaticMarkup(createElement(SourceDisclosure,{object:drifted.page.graph.objects.find(o=>o.id===service.id)!,checkpoint:drifted.page.projection.provenance.checkpoint}));
@@ -152,6 +154,7 @@ test('a failed required conflict read is unavailable, never a zero-conflict proj
 });
 test('an unreadable correction log serves no public value', async () => {
   writeFileSync(join(process.env.FYD_OWNER_DIR!,siteId+'.json'),'{broken');
+  invalidateSiteBundle(siteId);
   await expect(compilePublicSite(siteId)).rejects.toThrow();
   const response = await handleAskRequest(siteId,askRequest());
   expect(response.status).toBe(503);

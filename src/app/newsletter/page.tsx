@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/newsletter" },
   openGraph: {
     type: "website",
-    title: "Newsletter",
+    title: "Newsletter · PING",
     description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.",
     url: siteUrl + "/newsletter",
     images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.png"],
-    title: "Newsletter",
+    title: "Newsletter · PING",
     description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.",
   },
 };

@@ -3,8 +3,21 @@ import { TechArticle } from "@/components/tech-article";
 
 export const metadata: Metadata = {
   title: "Continuity",
-  description: "Why AI systems need to remember: continuity as the core architectural concept behind PING.",
+  description: "Why AI systems need to remember: continuity as the core architectural concept behind PING, where events, evidence, and context survive across sessions.",
   alternates: { canonical: "/technology/continuity" },
+  openGraph: {
+    type: "website",
+    title: "Continuity · PING",
+    description: "Why AI systems need to remember: continuity as the core architectural concept behind PING, where events, evidence, and context survive across sessions.",
+    url: "/technology/continuity",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Continuity · PING",
+    description: "Why AI systems need to remember: continuity as the core architectural concept behind PING, where events, evidence, and context survive across sessions.",
+    images: ["/brand/og-card.png"],
+  },
 };
 
 export default function ContinuityPage() {

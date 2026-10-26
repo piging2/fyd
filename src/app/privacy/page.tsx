@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
   openGraph: {
     type: "website",
-    title: "Privacy Policy",
+    title: "Privacy Policy · PING",
     description: "How PING collects and uses your information when you subscribe or contact us, sends the newsletter you asked for, and never sells your information.",
     url: siteUrl + "/privacy",
     images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.png"],
-    title: "Privacy Policy",
+    title: "Privacy Policy · PING",
     description: "How PING collects and uses your information when you subscribe or contact us, sends the newsletter you asked for, and never sells your information.",
   },
 };

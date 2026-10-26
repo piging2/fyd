@@ -64,6 +64,7 @@ describe('assignment-store KV credential resolution', () => {
       get: jest.fn().mockResolvedValue(null),
       set: jest.fn().mockResolvedValue('OK'),
       del: jest.fn().mockResolvedValue(1),
+      eval: jest.fn().mockResolvedValue(1), // Current atomic CAS returns the admitted revision.
     }));
 
     process.env = { ...ORIGINAL_ENV };
@@ -86,7 +87,7 @@ describe('assignment-store KV credential resolution', () => {
     process.env.KV_REST_API_URL = 'https://manual.upstash.io';
     process.env.KV_REST_API_TOKEN = 'manual-token';
 
-    await store.storeServiceCardAssignment(validAssignment());
+    await store.storeServiceCardAssignment(validAssignment(), 0);
 
     expect(upstashMock.Redis).toHaveBeenCalledTimes(1);
     expect(upstashMock.Redis).toHaveBeenCalledWith({
@@ -99,7 +100,7 @@ describe('assignment-store KV credential resolution', () => {
     process.env.KV_REST_API__KV_REST_API_URL = 'https://integration.upstash.io';
     process.env.KV_REST_API__KV_REST_API_TOKEN = 'integration-token';
 
-    await store.storeServiceCardAssignment(validAssignment());
+    await store.storeServiceCardAssignment(validAssignment(), 0);
 
     expect(upstashMock.Redis).toHaveBeenCalledTimes(1);
     expect(upstashMock.Redis).toHaveBeenCalledWith({
@@ -114,7 +115,7 @@ describe('assignment-store KV credential resolution', () => {
     process.env.KV_REST_API__KV_REST_API_URL = 'https://integration.upstash.io';
     process.env.KV_REST_API__KV_REST_API_TOKEN = 'integration-token';
 
-    await store.storeServiceCardAssignment(validAssignment());
+    await store.storeServiceCardAssignment(validAssignment(), 0);
 
     expect(upstashMock.Redis).toHaveBeenCalledWith({
       url: 'https://manual.upstash.io',
@@ -123,7 +124,7 @@ describe('assignment-store KV credential resolution', () => {
   });
 
   it('rejects (fail-closed) when neither credential source is present', async () => {
-    await expect(store.storeServiceCardAssignment(validAssignment())).rejects.toThrow(
+    await expect(store.storeServiceCardAssignment(validAssignment(), 0)).rejects.toThrow(
       /Missing required environment variables/,
     );
     expect(upstashMock.Redis).not.toHaveBeenCalled();

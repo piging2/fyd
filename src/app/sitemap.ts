@@ -8,7 +8,7 @@ import { getAllPosts } from "@/lib/blog";
  * Bump when the entry shape or the covered route set changes; inv-13
  * pins the current value so a contract change without a bump fails.
  */
-export const SITEMAP_CONTRACT_VERSION = "fyd.sitemap@1";
+export const SITEMAP_CONTRACT_VERSION = "fyd.sitemap@2";
 
 /**
  * Site URL resolves from the tenant config. Falls back to the current Vercel
@@ -41,6 +41,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: r === "" ? "weekly" : "monthly",
     priority: r === "" ? 1 : 0.7,
   }));
+
+  // Conversion routes linked from the homepage and the FYD funnel. They were
+  // crawlable but missing from the sitemap until the 2026-10-26 pass.
+  const conversionRoutes: { path: string; priority: number }[] = [
+    { path: "/fyd", priority: 0.8 },
+    { path: "/apply", priority: 0.8 },
+    { path: "/nominate", priority: 0.8 },
+    { path: "/assessment", priority: 0.7 },
+    { path: "/build-my-fyd", priority: 0.7 },
+  ];
+  for (const c of conversionRoutes) {
+    entries.push({
+      url: `${siteUrl}${c.path}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: c.priority,
+    });
+  }
 
   for (const t of TECH_PAGES) {
     entries.push({

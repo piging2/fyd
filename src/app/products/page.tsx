@@ -19,20 +19,20 @@ const siteUrl =
 export const metadata: Metadata = {
   title: "Products",
   description:
-    "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware.",
+    "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware: every product carries its real status.",
   alternates: { canonical: "/products" },
   openGraph: {
     type: "website",
-    title: "Products",
-    description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware.",
+    title: "Products · PING",
+    description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware: every product carries its real status.",
     url: siteUrl + "/products",
     images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.png"],
-    title: "Products",
-    description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware.",
+    title: "Products · PING",
+    description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware: every product carries its real status.",
   },
 };
 

@@ -28,6 +28,7 @@ import {
 } from "../owner-context";
 import type { OwnerActor } from "../patch-loop";
 import { projectOwnerState } from "@/fyd/object/owner-events";
+import { invalidateSiteBundle } from "@/fyd/media/site-bundle";
 
 jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: async () => null }));
 
@@ -51,6 +52,7 @@ const ORIGINAL_DEMO_MODE = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE;
 
 beforeEach(() => {
   process.env.FYD_OWNER_DIR = mkdtempSync(join(tmpdir(), "fyd-seam-test-"));
+  invalidateSiteBundle("happy-place");
   // The approve stage is DEVELOPMENT OWNER MODE only (P0 2026-10-03).
   process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE = "1";
 });

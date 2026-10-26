@@ -119,9 +119,11 @@ describe("loadObjectViewById", () => {
     expect(view!.summary).toContain("Licensed Oregon carpentry contractor");
     expect(view!.services.map((s) => s.name)).toEqual(["Pergola Design Consultations"]);
     expect(view!.services[0].basis).toBe("structured");
-    // Happy Place's homepage exposes no acquirable business imagery: the
-    // read model shows no media rather than inventing any.
-    expect(view!.media).toEqual([]);
+    // The current manifest contains acquired, demo-authorized gallery
+    // photos; the shared semantic selector attaches them to the business.
+    expect(view!.media).toHaveLength(5);
+    expect(view!.media.every((m) => m.role === "gallery")).toBe(true);
+    expect(view!.media.every((m) => m.rightsSource === "public-demo-source")).toBe(true);
   });
 
   test("loads the location object by id", () => {
@@ -214,7 +216,7 @@ describe("loadCircleProjectionById", () => {
         (hue - 12) +
         " 50% 38%))",
       digest: hash.toString("hex"),
-      observedAt: "",
+      observedAt: "2026-09-25T17:55:06.761Z",
       basis: "Deterministic fallback, no authorized site media",
     });
   });

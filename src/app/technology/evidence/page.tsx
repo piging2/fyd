@@ -3,8 +3,21 @@ import { TechArticle } from "@/components/tech-article";
 
 export const metadata: Metadata = {
   title: "Evidence",
-  description: "Evidence and provenance for autonomous systems: every claim traces to its source.",
+  description: "Evidence and provenance for autonomous systems: every claim traces to its source, carries a confidence grade, and keeps its verification status on the record.",
   alternates: { canonical: "/technology/evidence" },
+  openGraph: {
+    type: "website",
+    title: "Evidence · PING",
+    description: "Evidence and provenance for autonomous systems: every claim traces to its source, carries a confidence grade, and keeps its verification status on the record.",
+    url: "/technology/evidence",
+    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Evidence · PING",
+    description: "Evidence and provenance for autonomous systems: every claim traces to its source, carries a confidence grade, and keeps its verification status on the record.",
+    images: ["/brand/og-card.png"],
+  },
 };
 
 export default function EvidencePage() {

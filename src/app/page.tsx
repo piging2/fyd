@@ -19,6 +19,8 @@ import {
   HeroEvidenceCard,
 } from "@/components/architecture";
 import { getTenant } from "@/lib/tenant-config";
+import { featuredFilm, socialDestinations } from "@/lib/longping-media";
+import { VideoCard } from "@/components/video-card";
 
 const siteUrl =
   getTenant().domain ??
@@ -680,6 +682,38 @@ export default function HomePage() {
         </Container>
       </Section>
       </div>
+
+      {/* 08b THE LONG PING: episode discovery from the homepage */}
+      <Section size="minor">
+        <Container>
+          <SectionHeading
+            eyebrow="/watch · The Long Ping"
+            title="The Long Ping: the show that tests the thesis"
+            description="Long-form films about the systems everything else depends on: how they fail, why they fail that way, and what remembering changes. Watch the newest film, or take an episode as audio or as a written transcript series."
+          />
+          <div className="mt-10">
+            <VideoCard video={featuredFilm} large />
+          </div>
+          <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 font-medium">
+            <Link href="/blog" className="text-accent hover:underline">
+              All episodes, Shorts, and transcripts →
+            </Link>
+            {socialDestinations
+              .filter((d) => d.platform === "Spotify" || d.platform === "Substack")
+              .map((d) => (
+                <a
+                  key={d.platform}
+                  href={d.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  {d.platform === "Spotify" ? "Listen on Spotify →" : "Read on Substack →"}
+                </a>
+              ))}
+          </div>
+        </Container>
+      </Section>
 
       {/* 09 FOLLOW THE BUILD */}
       <Section className="bg-deep" size="minor">

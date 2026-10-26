@@ -18,7 +18,7 @@ const transport: Transport = { read: readObjectRelationship, set: setObjectRelat
 
 /** Small testable async boundary: retain confirmed state and retry exact intent. */
 export function createRelationshipController(objectId: string, kind: RelationshipKind, api: Transport = transport) {
-  let snapshot: RelationshipSnapshot = { state: null, status: "loading", scope: null, message: "Loading your demo preference…" };
+  let snapshot: RelationshipSnapshot = { state: null, status: "loading", scope: null, message: "Loading your preference…" };
   const listeners = new Set<() => void>();
   let busy = false, generation = 0;
   let lastIntent: { desired?: boolean } | null = null;
@@ -28,7 +28,7 @@ export function createRelationshipController(objectId: string, kind: Relationshi
     busy = true;
     const version = ++generation;
     lastIntent = intent;
-    update({ ...snapshot, status: intent.desired === undefined ? "loading" : "pending", message: intent.desired === undefined ? "Loading your demo preference…" : "Saving your demo preference…" });
+    update({ ...snapshot, status: intent.desired === undefined ? "loading" : "pending", message: intent.desired === undefined ? "Loading your preference…" : "Saving your preference…" });
     let result: RelationshipResult;
     try { result = intent.desired === undefined ? await api.read(objectId, kind) : await api.set(objectId, kind, intent.desired); }
     catch { result = { ok: false, code: "NETWORK_UNAVAILABLE", message: "Your choice could not be confirmed. Check your connection and retry.", retryable: true, scope: null }; }
@@ -38,7 +38,7 @@ export function createRelationshipController(objectId: string, kind: Relationshi
       update({ ...snapshot, status: result.retryable ? "retryable-error" : "terminal-error", message: result.message });
       return;
     }
-    update({ state: result.state, scope: result.scope, status: intent.desired === undefined ? "ready" : "success", message: intent.desired === undefined ? "Private demo preference for this browser." : "Saved for this browser’s demo session." });
+    update({ state: result.state, scope: result.scope, status: intent.desired === undefined ? "ready" : "success", message: intent.desired === undefined ? "Private preference for this browser." : "Saved for this browser’s private session." });
   }
   return {
     subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
