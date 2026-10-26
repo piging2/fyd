@@ -39,6 +39,7 @@ import type {
 import { UnknownOutcomeError } from "./write-boundary";
 import { TENANT_ID_PATTERN } from "../tenant/tenant-context";
 import { invalidateSiteBundle } from "@/fyd/media/site-bundle";
+import { loadTenantManifest } from "@/lib/tenant-config";
 import { readFileSync } from "node:fs";
 
 export interface CustomizedSite {
@@ -698,6 +699,117 @@ export async function journalReadiness(): Promise<{ ready: boolean; reason?: str
   } catch (e) {
     return { ready: false, reason: e instanceof Error ? e.message : String(e) };
   }
+}
+
+/** Which readiness contract applies to this deployment. */
+export type ReadinessMode = "journal" | "snapshot";
+
+/**
+ * Mode selection for /readyz. The journal gateway is a localhost sidecar
+ * of the self-hosted demo deployment (its serve script exports
+ * FYD_CUSTOMIZE_GATEWAY_URL explicitly): there, readiness means the
+ * gateway answers with the right journal identity, because owner write
+ * actions POST to it. A Vercel serverless deployment has no such gateway
+ * and does not serve that write path; it serves projections from the
+ * bundled overlay snapshot, so readiness probes the snapshot and the
+ * tenant manifest instead. FYD_READYZ_MODE forces a mode (operator
+ * override for non-Vercel static hosts); otherwise the Vercel runtime
+ * marker decides.
+ */
+export function readinessMode(env: NodeJS.ProcessEnv = process.env): ReadinessMode {
+  const forced = (env.FYD_READYZ_MODE ?? "").trim().toLowerCase();
+  if (forced === "journal" || forced === "snapshot") return forced;
+  if (env.VERCEL) return "snapshot";
+  return "journal";
+}
+
+export interface DeploymentReadiness {
+  ready: boolean;
+  mode: ReadinessMode;
+  reason?: string;
+  checks: {
+    journal: "ready" | "not_ready" | "not_applicable";
+    snapshot:
+      | { available: boolean; path?: string; eventCount?: number }
+      | "not_applicable";
+    tenant: { loaded: boolean; id?: string } | "not_applicable";
+  };
+}
+
+/**
+ * Deployment-aware readiness for /readyz. Journal mode is exactly the
+ * historical journalReadiness probe. Snapshot mode (serverless) requires
+ * the two things that deployment actually serves from: the bundled
+ * overlay snapshot (present and parseable through the reader's own
+ * parser) and the tenant manifest (loads through the authority loader).
+ * Never throws.
+ */
+export async function deploymentReadiness(): Promise<DeploymentReadiness> {
+  if (readinessMode() === "journal") {
+    const probe = await journalReadiness();
+    return {
+      ready: probe.ready,
+      mode: "journal",
+      ...(probe.reason ? { reason: probe.reason } : {}),
+      checks: {
+        journal: probe.ready ? "ready" : "not_ready",
+        snapshot: "not_applicable",
+        tenant: "not_applicable",
+      },
+    };
+  }
+  const snap = getPingObjectReader().bundledOverlaySnapshotStatus();
+  let tenantId: string | undefined;
+  try {
+    const id = loadTenantManifest().tenant.id;
+    if (typeof id === "string" && id.length > 0) tenantId = id;
+  } catch {
+    tenantId = undefined;
+  }
+  const checks: DeploymentReadiness["checks"] = {
+    journal: "not_applicable",
+    snapshot: {
+      available: snap.eventCount !== null,
+      path: snap.path,
+      ...(snap.eventCount !== null ? { eventCount: snap.eventCount } : {}),
+    },
+    tenant: tenantId ? { loaded: true, id: tenantId } : { loaded: false },
+  };
+  if (snap.eventCount === null) {
+    return {
+      ready: false,
+      mode: "snapshot",
+      reason:
+        "customize: bundled overlay snapshot unavailable at " +
+        snap.path +
+        " (FYD_OVERLAY_SNAPSHOT); the serverless deployment cannot serve projections",
+      checks,
+    };
+  }
+  if (!tenantId) {
+    return {
+      ready: false,
+      mode: "snapshot",
+      reason: "customize: tenant manifest failed to load",
+      checks,
+    };
+  }
+  return { ready: true, mode: "snapshot", checks };
+}
+
+/**
+ * Commit identity for the /readyz build attestation. The self-hosted
+ * serve script exports FYD_BUILD_SHA from `git rev-parse HEAD` at launch;
+ * on Vercel the platform provides VERCEL_GIT_COMMIT_SHA for the
+ * deployment. First non-blank wins; null when neither seam can observe
+ * the commit, never a guess.
+ */
+export function buildCommitSha(env: NodeJS.ProcessEnv = process.env): string | null {
+  const fromServe = (env.FYD_BUILD_SHA ?? "").trim();
+  if (fromServe) return fromServe;
+  const fromPlatform = (env.VERCEL_GIT_COMMIT_SHA ?? "").trim();
+  if (fromPlatform) return fromPlatform;
+  return null;
 }
 
 /**

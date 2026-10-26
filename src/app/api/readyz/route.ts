@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { journalReadiness } from "@/fyd/customize/server";
+import { buildCommitSha, deploymentReadiness } from "@/fyd/customize/server";
 
 /**
  * Build identity seam: binds the served bytes to the source commit and the
  * build that produced them. buildId comes from the Next.js build output;
- * commitSha is exported by the serve script (start-3100.sh) from
- * `git rev-parse HEAD` at launch; builtAt is the build output mtime.
- * Nulls mean the seam could not observe the value, never a guess.
+ * commitSha comes from the serve script (FYD_BUILD_SHA, exported by
+ * start-3100.sh from `git rev-parse HEAD` at launch) or, on Vercel, from
+ * the platform's VERCEL_GIT_COMMIT_SHA for the deployment; builtAt is the
+ * build output mtime. Nulls mean the seam could not observe the value,
+ * never a guess.
  */
 async function buildIdentity() {
   const cwd = process.cwd();
@@ -22,18 +24,22 @@ async function buildIdentity() {
   }
   return {
     buildId,
-    commitSha: process.env.FYD_BUILD_SHA ?? null,
+    commitSha: buildCommitSha(),
     builtAt,
   };
 }
 
 /**
- * GET /readyz — readiness. Runs the journal preflight (gateway reachable
- * + live-derived identity marker matches). 200 when the write path can
- * serve owner actions, 503 with the reason when it cannot.
+ * GET /readyz — readiness, deployment-mode aware (see deploymentReadiness
+ * in @/fyd/customize/server). Journal mode (the self-hosted demo
+ * deployment): 200 when the journal write path can serve owner actions.
+ * Snapshot mode (Vercel serverless, where no journal gateway exists):
+ * 200 when the bundled overlay snapshot and the tenant manifest the
+ * deployment serves from are loadable. 503 with the reason when the
+ * applicable checks fail.
  */
 export async function GET() {
-  const probe = await journalReadiness();
+  const probe = await deploymentReadiness();
   const build = await buildIdentity();
   if (probe.ready) {
     return NextResponse.json(
@@ -41,6 +47,8 @@ export async function GET() {
         ok: true,
         ready: true,
         service: "fyd",
+        mode: probe.mode,
+        checks: probe.checks,
         at: new Date().toISOString(),
         build,
       },
@@ -52,7 +60,9 @@ export async function GET() {
       ok: false,
       ready: false,
       service: "fyd",
-      reason: probe.reason ?? "journal not ready",
+      reason: probe.reason ?? "not ready",
+      mode: probe.mode,
+      checks: probe.checks,
       at: new Date().toISOString(),
       build,
     },
