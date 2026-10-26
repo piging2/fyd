@@ -241,11 +241,10 @@ export default function HomePage() {
       <div className="bg-background">
         <Container className="max-w-5xl">
           <p className="py-6 text-base leading-relaxed text-text">
-            The logos shown below are the property of their respective
-            owners and are used solely for identification and free
-            promotional purposes. This website is not affiliated with,
-            endorsed by, sponsored by, or officially connected to any of
-            the businesses displayed.
+            The logos on this page belong to their respective owners,
+            shown for identification and free promotion only. This site
+            is not affiliated with, endorsed by, sponsored by, or
+            officially connected to any business displayed.
           </p>
         </Container>
       </div>
