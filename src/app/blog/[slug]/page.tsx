@@ -185,7 +185,7 @@ export default async function BlogPostPage({
 
           {related.length > 0 && (
             <div className="mt-12">
-              <h3 className="text-xl font-bold text-text mb-4">Keep reading</h3>
+              <h2 className="text-xl font-bold text-text mb-4">Keep reading</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 {related.map((rel) => (
                   <Link

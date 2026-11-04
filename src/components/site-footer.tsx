@@ -22,7 +22,7 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-text-on-dark">Explore</h3>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-text-on-dark">Explore</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {navigation.filter((n) => !n.secondary).map((n) => (
               <li key={n.href}>
@@ -33,7 +33,7 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-text-on-dark">More</h3>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-text-on-dark">More</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {navigation.filter((n) => n.secondary).map((n) => (
               <li key={n.href}>
@@ -56,7 +56,7 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-text-on-dark">Connect</h3>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-text-on-dark">Connect</h2>
           <ul className="mt-3 space-y-3 text-sm">
             {phoneHref && tenant.contact.phone && (
               <li>
