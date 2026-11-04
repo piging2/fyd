@@ -87,7 +87,7 @@ export default async function BlogPostPage({
     tenant.domain ??
     (process.env.VERCEL_URL
       ? "https://" + process.env.VERCEL_URL
-      : "https://ping.vercel.app");
+      : "https://fyd-product.vercel.app");
   const shareImage = episodeImage(slug);
   const jsonLd = {
     "@context": "https://schema.org",

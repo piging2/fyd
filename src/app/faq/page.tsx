@@ -8,7 +8,7 @@ const siteUrl =
   getTenant().domain ??
   (process.env.VERCEL_URL
     ? "https://" + process.env.VERCEL_URL
-    : "https://ping.vercel.app");
+    : "https://fyd-product.vercel.app");
 
 export const metadata: Metadata = {
   title: "FAQ",
