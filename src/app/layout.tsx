@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     url: siteUrl,
     images: [
       {
-        url: "/brand/og-card.png",
+        url: "/brand/og-card.webp",
         width: 1200,
         height: 630,
         alt: "PING Social",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: seo.title,
     description: seo.description,
-    images: ["/brand/og-card.png"],
+    images: ["/brand/og-card.webp"],
   },
   verification: {
     google: "9GfJhTOKiF4Qb9JXQFPkHOFU_y6aVaE780foNAYCY_o",

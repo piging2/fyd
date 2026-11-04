@@ -18,13 +18,13 @@ export const metadata: Metadata = {
     title: "Blog · PING",
     description: DESCRIPTION,
     url: "/blog",
-    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Blog · PING",
     description: DESCRIPTION,
-    images: ["/brand/og-card.png"],
+    images: ["/brand/og-card.webp"],
   },
 };
 

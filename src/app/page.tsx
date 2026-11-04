@@ -39,11 +39,11 @@ export const metadata: Metadata = {
     title: "PING: Continuity infrastructure for AI agents",
     description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve. With receipts.",
     url: siteUrl + "/",
-    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/brand/og-card.png"],
+    images: ["/brand/og-card.webp"],
     title: "PING: Continuity infrastructure for AI agents",
     description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve. With receipts.",
   },

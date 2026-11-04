@@ -19,11 +19,11 @@ export const metadata: Metadata = {
     title: "Contact · PING",
     description: "Contact PING Social about AI concierge and business automation for your business: ask about FYD, book a working session, or nominate a business for a feature.",
     url: siteUrl + "/contact",
-    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/brand/og-card.png"],
+    images: ["/brand/og-card.webp"],
     title: "Contact · PING",
     description: "Contact PING Social about AI concierge and business automation for your business: ask about FYD, book a working session, or nominate a business for a feature.",
   },

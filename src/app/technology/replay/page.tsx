@@ -10,13 +10,13 @@ export const metadata: Metadata = {
     title: "Replay · PING",
     description: "Deterministic replay: what happened, why it happened, which version decided, and whether the replay matches, so a system can explain its own decisions.",
     url: "/technology/replay",
-    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Replay · PING",
     description: "Deterministic replay: what happened, why it happened, which version decided, and whether the replay matches, so a system can explain its own decisions.",
-    images: ["/brand/og-card.png"],
+    images: ["/brand/og-card.webp"],
   },
 };
 

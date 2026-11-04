@@ -19,11 +19,11 @@ export const metadata: Metadata = {
     title: "FAQ · PING",
     description: "Common questions about PING, PING Social, continuity, and the TenantOS direction: what continuity means, how evidence works, and how a business gets started.",
     url: siteUrl + "/faq",
-    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/brand/og-card.png"],
+    images: ["/brand/og-card.webp"],
     title: "FAQ · PING",
     description: "Common questions about PING, PING Social, continuity, and the TenantOS direction: what continuity means, how evidence works, and how a business gets started.",
   },

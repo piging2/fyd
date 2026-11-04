@@ -18,12 +18,12 @@ const EPISODE_ORDER: { slug: string; videoId: string }[] = [
 
 function episodeImage(slug: string): string {
   const entry = EPISODE_ORDER.find((e) => e.slug === slug);
-  if (!entry) return "/brand/og-card.png";
+  if (!entry) return "/brand/og-card.webp";
   const video =
     entry.videoId === featuredFilm.id
       ? featuredFilm
       : episodeVideos.find((v) => v.id === entry.videoId);
-  return video?.thumbnail ?? "/brand/og-card.png";
+  return video?.thumbnail ?? "/brand/og-card.webp";
 }
 
 export async function generateStaticParams() {

@@ -10,13 +10,13 @@ export const metadata: Metadata = {
     title: "Social Objects · PING",
     description: "The shared artifacts that business conversations orbit: posts, pages, and proof that compound over time, treated as infrastructure rather than content.",
     url: "/technology/social-objects",
-    images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Social Objects · PING",
     description: "The shared artifacts that business conversations orbit: posts, pages, and proof that compound over time, treated as infrastructure rather than content.",
-    images: ["/brand/og-card.png"],
+    images: ["/brand/og-card.webp"],
   },
 };
 
