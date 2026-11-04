@@ -7,9 +7,11 @@ import type { FeaturedVideo } from "@/lib/longping-media";
  * A thumbnail card that links out to the video on YouTube.
  * Uses a plain <img> (YouTube's thumbnail CDN is not in next/image
  * remotePatterns) with an hqdefault fallback if the maxres still is absent.
+ * Card-size renders start from thumbnailCard (hqdefault) when present;
+ * the large render keeps the maxres still.
  */
 export function VideoCard({ video, large = false }: { video: FeaturedVideo; large?: boolean }) {
-  const [src, setSrc] = useState(video.thumbnail);
+  const [src, setSrc] = useState(!large && video.thumbnailCard ? video.thumbnailCard : video.thumbnail);
 
   return (
     <a

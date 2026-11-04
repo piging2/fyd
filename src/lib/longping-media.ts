@@ -14,6 +14,8 @@ export interface FeaturedVideo {
   watchUrl: string;
   duration?: string;
   thumbnail: string;
+  /** Card-size variant (hqdefault); large and og usage keeps `thumbnail`. */
+  thumbnailCard?: string;
   thumbnailFallback?: string;
   blurb: string;
 }
@@ -41,6 +43,7 @@ export const episodeVideos: FeaturedVideo[] = [
     kind: "Episode",
     watchUrl: "https://www.youtube.com/watch?v=ibgccWqthsw",
     thumbnail: ytThumb("ibgccWqthsw", "maxresdefault"),
+    thumbnailCard: ytThumb("ibgccWqthsw", "hqdefault"),
     thumbnailFallback: ytThumb("ibgccWqthsw", "hqdefault"),
     blurb:
       "Episode 2, chapters 1-10: the water wheel, the grid it built, and the long argument between centralised and distributed power.",
@@ -51,6 +54,7 @@ export const episodeVideos: FeaturedVideo[] = [
     kind: "Episode",
     watchUrl: "https://www.youtube.com/watch?v=ekJnwDb7ssw",
     thumbnail: ytThumb("ekJnwDb7ssw", "maxresdefault"),
+    thumbnailCard: ytThumb("ekJnwDb7ssw", "hqdefault"),
     thumbnailFallback: ytThumb("ekJnwDb7ssw", "hqdefault"),
     blurb:
       "Episode 1: if everyone maintaining your world disappeared tonight, what would still be true in ten thousand years? Five hours on preservation, memory, and designing for the carrier, not the receiver.",
