@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -494,6 +494,144 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "What did the final investigation test, and what did it conclude?",
       answer:
         "Samsung put roughly 700 researchers and engineers on the problem and tested more than 200,000 fully assembled devices and more than 30,000 batteries. It concluded the phone's hardware and software were exonerated and the fires came from the batteries, plural, with separate causes, plural.",
+    },
+  ],
+  "the-update-everyone-trusted": [
+    {
+      id: "trusted-q1",
+      category: "essay-questions",
+      question: "Why did the signature on the Orion update not protect customers?",
+      answer:
+        "SolarWinds signed the trojanized updates with its legitimate digital signature, because the compromise lived upstream of the signature, in the build system. The signature verified that the package came from SolarWinds' build pipeline, and it said nothing about what was inside.",
+    },
+    {
+      id: "trusted-q2",
+      category: "essay-questions",
+      question: "How did SUNSPOT insert the backdoor without leaving it in the source code?",
+      answer:
+        "SUNSPOT sat on the build host and watched for MSBuild.exe to start, then quietly swapped one source file for a version carrying the SUNBURST backdoor while the build proceeded. Before anyone could notice, it restored the original file, and it checked file hashes first so it would stand down if a developer had legitimately modified that file.",
+    },
+    {
+      id: "trusted-q3",
+      category: "essay-questions",
+      question: "How many organizations installed the poisoned update, and how many were entered in person?",
+      answer:
+        "SolarWinds believed fewer than 18,000 customers may have installed an Orion product containing the vulnerability. Of those, a much smaller number were compromised by follow-on activity: fewer than ten U.S. government agencies were identified at first, and the White House later put the figures at about 100 companies alongside nine federal agencies.",
+    },
+  ],
+  "the-sensor-that-voted-alone": [
+    {
+      id: "sensor-q1",
+      category: "essay-questions",
+      question: "Why did MCAS keep pushing the nose down on the Lion Air flights?",
+      answer:
+        "The replacement left angle of attack sensor carried a 21 degree bias that the installation test did not detect, so the airplane's left side believed the nose was pointed far higher than it was. MCAS read that one sensor and no other, believed it too, and acted on the belief by pushing the nose down.",
+    },
+    {
+      id: "sensor-q2",
+      category: "essay-questions",
+      question: "Why was one sensor reading enough for MCAS to act on?",
+      answer:
+        "MCAS listened to a single angle of attack sensor, alternately assigned, with no vote, no comparison, and no cross-check, even though the airplane carries two sensors. That single-sensor property never changed while its authority grew to 2.5 degrees per activation and it gained the ability to fire, reset, and fire again.",
+    },
+    {
+      id: "sensor-q3",
+      category: "essay-questions",
+      question: "What did the return-to-service fix require MCAS to do differently?",
+      answer:
+        "MCAS now reads both angle of attack sensors and compares them continuously, and if they disagree by more than 5.5 degrees it disables itself for the remainder of the flight and tells the crew. It can activate only once per high angle of attack event, and its authority is limited so pilots can always overpower it with the control column alone.",
+    },
+  ],
+  "the-airline-that-lost-its-planes": [
+    {
+      id: "airline-q1",
+      category: "essay-questions",
+      question: "What actually failed in Southwest's crew scheduling software?",
+      answer:
+        "SkySolver never stopped working; it was overwhelmed by the pace and volume of close-in crew and schedule changes, so individual crew assignments stopped being updated in a timely manner. The schedule said crews were places they were not, and every automated answer the airline generated was partially fictional.",
+    },
+    {
+      id: "airline-q2",
+      category: "essay-questions",
+      question: "Why did the point to point network make the failure worse?",
+      answer:
+        "In a point to point network every link in the chain is load-bearing: cancel one leg and the plane is out of position for the next leg, and the crew is out of position for the leg after that. Planes and crews ended up scattered across dozens of cities, each one a small separate puzzle that only the scheduling system could solve at once.",
+    },
+    {
+      id: "airline-q3",
+      category: "essay-questions",
+      question: "How did Southwest reset its operation, and what was the final count?",
+      answer:
+        "Southwest cut its operation to about one third of its normal schedule for several days while airplanes and crews were repositioned into legal, known configurations. By the Department of Transportation's count, 16,900 flights were cancelled and over two million passengers were stranded across the holiday period.",
+    },
+  ],
+  "one-password-no-second-factor": [
+    {
+      id: "colonial-q1",
+      category: "essay-questions",
+      question: "How did the attackers get into Colonial Pipeline's network?",
+      answer:
+        "They used a legacy VPN profile that was not intended to be in use and that had single-factor authentication only. The password was complicated, but investigators found it had surfaced in a batch of leaked credentials circulating on the dark web, so a strong password that had leaked was no longer a secret.",
+    },
+    {
+      id: "colonial-q2",
+      category: "essay-questions",
+      question: "Did the ransomware itself stop the pipeline?",
+      answer:
+        "No. The ransomware hit Colonial's information technology systems, and the operational technology that physically runs the pipe was not shown to be compromised. Colonial itself shut down all 5,500 miles within roughly an hour of the ransom note being found, because it could not verify the integrity of everything downstream of a breached network.",
+    },
+    {
+      id: "colonial-q3",
+      category: "essay-questions",
+      question: "How much of the ransom did the FBI recover, and how?",
+      answer:
+        "Colonial paid 75 bitcoin, about $4.4 million, and the FBI traced the ransom on Bitcoin's public ledger to an address holding approximately 63.7 of the 75 bitcoin. With a seizure warrant the government seized those 63.7 bitcoin, worth about $2.3 million by then, using a private key the affidavit said the FBI had.",
+    },
+  ],
+  "the-day-the-market-fell-off-a-cliff": [
+    {
+      id: "flashcrash-q1",
+      category: "essay-questions",
+      question: "What instruction did the sell algorithm follow on May 6, 2010?",
+      answer:
+        "The algorithm was handed a sell program of 75,000 E-mini contracts, worth approximately $4.1 billion, with a single instruction: sell at a rate equal to 9 percent of the trading volume over the previous minute. In the joint report's words, it targeted that rate without regard to price or time, and it finished in about twenty minutes.",
+    },
+    {
+      id: "flashcrash-q2",
+      category: "essay-questions",
+      question: "What was the hot-potato volume effect?",
+      answer:
+        "High-frequency firms bought from the sell algorithm and sold to each other, passing the same positions around at machine speed instead of accumulating them. Between 2:45:13 and 2:45:27 p.m. they traded over 27,000 contracts, roughly 49 percent of all the volume in the market, while increasing their net position by about 200 contracts.",
+    },
+    {
+      id: "flashcrash-q3",
+      category: "essay-questions",
+      question: "What stopped the plunge?",
+      answer:
+        "The CME's Stop Logic paused trading in the E-mini contract for five seconds, firing at 2:45:28 p.m. In that pause sell-side pressure partly drained away and buy-side interest crept back, trading resumed at 2:45:33 p.m., and prices stabilized and began to recover.",
+    },
+  ],
+  "the-bank-that-moved-house": [
+    {
+      id: "tsb-q1",
+      category: "essay-questions",
+      question: "What went wrong in the first twenty minutes after TSB reopened?",
+      answer:
+        "Customers reported that savings had vanished from their accounts and that small purchases had been recorded as costing thousands of pounds, and some customers who logged in were presented with somebody else's accounts. TSB later put that last failure at 402 customers, during a 20-minute window that Sunday, who were able to view data that was not theirs.",
+    },
+    {
+      id: "tsb-q2",
+      category: "essay-questions",
+      question: "Why did the big bang cutover make the failure total?",
+      answer:
+        "The customer data moved all at once in one weekend, with no phased rollout by region or customer group, no long period of the two platforms running side by side with real traffic, and no clean way back because the old platform was being vacated. The cutover design converted every ordinary error into a total one.",
+    },
+    {
+      id: "tsb-q3",
+      category: "essay-questions",
+      question: "What did the reviews find about TSB's readiness and defect count?",
+      answer:
+        "IBM said it had not seen evidence of the application of a rigorous set of go-live criteria to prove production readiness. The Slaughter and May review found that only one of TSB's two data centres had been through performance testing before go-live, and reporting on the review put the known defects at go-live at about 2,000, against about 800 the board had been told.",
     },
   ],
 };
