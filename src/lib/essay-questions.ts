@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -80,6 +80,144 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "What three fences does the essay say Knight did not have?",
       answer:
         "The essay lists three: dead code gets deleted instead of left in place with its activation flag wired up, deployments verify mechanically what version every node is running, and a kill switch that is actually a switch.",
+    },
+  ],
+  "airplane-mode-postmortem": [
+    {
+      id: "airplane-q1",
+      category: "essay-questions",
+      question: "Why did the understudy machine stay silent for roughly twenty-three hours?",
+      answer:
+        "The machine was on and healthy, but a human had put it in airplane mode, so its radios were off. It had obeyed that instruction completely, and it stayed silent until the owner physically reached it and flipped the toggle.",
+    },
+    {
+      id: "airplane-q2",
+      category: "essay-questions",
+      question: "What does silent-host triage check first now?",
+      answer:
+        "Triage now starts with a written ladder: power, radios, cable, address, route, service, application, in that order. No rung may be skipped because it feels beneath the incident, and the ladder is short enough to run in ten minutes.",
+    },
+    {
+      id: "airplane-q3",
+      category: "essay-questions",
+      question: "What happened when the toggle was flipped back?",
+      answer:
+        "The understudy came back the moment the toggle flipped, with all services green and no data lost. The only casualty was a day of overflow capacity.",
+    },
+  ],
+  "the-standup-is-a-distributed-system": [
+    {
+      id: "standup-q1",
+      category: "essay-questions",
+      question: "What three fields does each standup participant broadcast?",
+      answer:
+        "Each participant broadcasts what they committed since the last sync, what they plan to commit next, and whether they are blocked. The essay calls that format, yesterday, today, blockers, a heartbeat with a schema.",
+    },
+    {
+      id: "standup-q2",
+      category: "essay-questions",
+      question: "Why does the essay say to write updates down on a board?",
+      answer:
+        "A written board is a shared log that every participant can read, so every node ends up holding approximately the same model of the work. If an update is not on the board, the essay says it did not reach consensus.",
+    },
+    {
+      id: "standup-q3",
+      category: "essay-questions",
+      question: "What quorum rule does the essay give for split-brain standups?",
+      answer:
+        "When the team partitions, each side can reach its own consensus and commit its own work, and the merge later costs more than the partition did. The essay quorum rule is that decisions made without the decision owner in the partition are proposals, not commits.",
+    },
+  ],
+  "what-a-hash-taught-us-about-trust": [
+    {
+      id: "hash-q1",
+      category: "essay-questions",
+      question: "What happens to a hash when a single bit of the input changes?",
+      answer:
+        "Change a single bit anywhere in the input and the fingerprint changes completely. The same input always returns the same fingerprint, on any machine, and a different input returns a different fingerprint.",
+    },
+    {
+      id: "hash-q2",
+      category: "essay-questions",
+      question: "How does the factory use a hash to prove an artifact arrived intact?",
+      answer:
+        "When a worker finishes a unit of work, it records the fingerprint of the artifact, and the receiver computes the fingerprint again when it lands. A match means the thing is the thing, and a mismatch means it is not, regardless of what any report, filename, or timestamp claims.",
+    },
+    {
+      id: "hash-q3",
+      category: "essay-questions",
+      question: "Why is verification different from asking a worker to explain itself?",
+      answer:
+        "An explanation is just more output from the worker, with the same provenance problems as the original output. Verification asks the work to be checkable by a path that does not pass through the worker at all.",
+    },
+  ],
+  "the-space-probe-that-measured-in-pounds": [
+    {
+      id: "orbiter-q1",
+      category: "essay-questions",
+      question: "What unit mismatch destroyed the Mars Climate Orbiter?",
+      answer:
+        "The contractor software reported each thruster nudge in pound-force seconds, while NASA navigation software expected newton-seconds. Every correction was therefore off by a factor of about 4.45, in the same direction, for nine months.",
+    },
+    {
+      id: "orbiter-q2",
+      category: "essay-questions",
+      question: "How close did the orbiter come to Mars, and what happened to it?",
+      answer:
+        "On September 23, 1999, it came around Mars at about 57 kilometers above the surface, below the minimum survivable altitude of somewhere around 80 to 85 kilometers. It either burned up or skipped off into a solar orbit, and it never phoned home again.",
+    },
+    {
+      id: "orbiter-q3",
+      category: "essay-questions",
+      question: "What simple test would have caught the mismatch?",
+      answer:
+        "Push a known value in one side of the interface boundary and check what the other side believes it received. The essay says that test costs an afternoon and would have caught a factor of 4.45 in about nine seconds.",
+    },
+  ],
+  "the-machine-that-trusted-its-software": [
+    {
+      id: "therac-q1",
+      category: "essay-questions",
+      question: "What safety change did the Therac-25 make compared with earlier models?",
+      answer:
+        "Earlier models had hardware interlocks, physical mechanisms that made certain dangerous states impossible no matter what the software believed. The Therac-25 removed most of those interlocks and gave their job to software.",
+    },
+    {
+      id: "therac-q2",
+      category: "essay-questions",
+      question: "Which operators were most likely to trigger the race condition, and why?",
+      answer:
+        "The bug appearance depended on timing, in this case on how quickly a skilled operator typed, so fast, experienced operators were the ones most likely to trigger it. The machine could then report that no dose had been delivered when the electron beam had in fact fired at full power.",
+    },
+    {
+      id: "therac-q3",
+      category: "essay-questions",
+      question: "Why had the reused software not earned its reputation on its own?",
+      answer:
+        "The software was reused and adapted from earlier machines whose hardware had silently covered for its flaws. The investigations also found no independent verification of the safety-critical code.",
+    },
+  ],
+  "the-night-gitlab-deleted-itself": [
+    {
+      id: "gitlab-q1",
+      category: "essay-questions",
+      question: "How did GitLab delete roughly 300 gigabytes of production data?",
+      answer:
+        "An engineer working on a replication problem opened a terminal believed to be on the secondary database server and ran a command to clear out its data directory. The terminal was connected to the primary, so the command deleted roughly 300 gigabytes of live production data.",
+    },
+    {
+      id: "gitlab-q2",
+      category: "essay-questions",
+      question: "Why did the backup and replication methods not save the data?",
+      answer:
+        "The database dumps had been failing silently because of a version mismatch, replication faithfully replicated the deletion, cloud disk snapshotting had not been enabled for that server, and the backup to object storage was an empty bucket. The best recovery source was a manually created backup that was hours old.",
+    },
+    {
+      id: "gitlab-q3",
+      category: "essay-questions",
+      question: "What does the essay say a backup actually is?",
+      answer:
+        "A backup is not a file. A backup is a restore you have actually performed, because GitLab had copies but lacked evidence that the copies could become a database again.",
     },
   ],
 };

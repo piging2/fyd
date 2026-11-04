@@ -6,17 +6,23 @@ import { ESSAY_QUESTIONS, getEssayQuestions } from "@/lib/essay-questions";
 import { getAllPosts } from "@/lib/blog";
 
 /**
- * Wave 31 pilot (regrade defect 7): for a pilot essay, the FAQPage
+ * Wave 31 pilot, Wave 32 batch 2 (regrade defect 7): for an essay with data, the FAQPage
  * JSON-LD must describe exactly the questions the page displays, both
  * generated from the same items in src/lib/essay-questions. For a post
  * with no data, the section must not render at all.
  */
 describe("essay questions pilot data", () => {
-  it("covers exactly the three pilot slugs, each resolving to a real post", () => {
+  it("covers exactly the pilot and batch 2 slugs, each resolving to a real post", () => {
     expect(Object.keys(ESSAY_QUESTIONS).sort()).toEqual([
+      "airplane-mode-postmortem",
       "the-440-million-typo",
+      "the-machine-that-trusted-its-software",
+      "the-night-gitlab-deleted-itself",
       "the-retry-that-charged-twice",
       "the-scheduler-said-it-ran",
+      "the-space-probe-that-measured-in-pounds",
+      "the-standup-is-a-distributed-system",
+      "what-a-hash-taught-us-about-trust",
     ]);
     const published = new Set(getAllPosts().map((p) => p.slug));
     for (const slug of Object.keys(ESSAY_QUESTIONS)) {
@@ -64,6 +70,42 @@ describe("essay questions schema equals display", () => {
     }
     const detailsCount = (html.match(/<details/g) || []).length;
     expect(detailsCount).toBe(items.length);
+  });
+
+  it("batch 2 essays: rendered section shows the same questions as its JSON-LD, exactly once", () => {
+    const batch = [
+      "airplane-mode-postmortem",
+      "the-standup-is-a-distributed-system",
+      "what-a-hash-taught-us-about-trust",
+      "the-space-probe-that-measured-in-pounds",
+      "the-machine-that-trusted-its-software",
+      "the-night-gitlab-deleted-itself",
+    ];
+    for (const batchSlug of batch) {
+      const batchItems = getEssayQuestions(batchSlug);
+      expect(batchItems.length).toBe(3);
+      const html = renderToStaticMarkup(<EssayQuestions slug={batchSlug} />);
+      const scripts = html.match(/<script type="application\/ld\+json">/g) || [];
+      expect(scripts.length).toBe(1);
+      const match = html.match(
+        /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+      );
+      const ld = JSON.parse(match![1]);
+      expect(ld["@type"]).toBe("FAQPage");
+      expect(ld.mainEntity.map((q: { name: string }) => q.name)).toEqual(
+        batchItems.map((i) => i.question),
+      );
+      expect(
+        ld.mainEntity.map(
+          (q: { acceptedAnswer: { text: string } }) => q.acceptedAnswer.text,
+        ),
+      ).toEqual(batchItems.map((i) => i.answer));
+      for (const item of batchItems) {
+        expect(html).toContain(item.question);
+        expect(html).toContain(item.answer);
+      }
+      expect((html.match(/<details/g) || []).length).toBe(3);
+    }
   });
 
   it("renders nothing for a post with no data", () => {
