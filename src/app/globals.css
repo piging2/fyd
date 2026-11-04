@@ -612,6 +612,35 @@ a {
   }
 }
 
+/* Wave 09 living gradient hero: the Stripe transfer rebuilt as CSS only.
+   A decorative field of soft radial gradients in brand tones (light honey,
+   cavern clay copper, PING gold) glows behind the studio hero on deep ink.
+   Transform is the only animated property, on a 36s ease-in-out alternate
+   cycle, and the animation lives under prefers-reduced-motion
+   no-preference, so reduced motion keeps the static field. The layer is
+   oversized and the hero section clips it (overflow-hidden), so it can
+   never create scrollbars or shift layout. */
+.hero-gradient-field {
+  position: absolute;
+  inset: -25%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background:
+    radial-gradient(42% 55% at 22% 28%, rgba(221, 187, 74, 0.5), transparent 70%),
+    radial-gradient(38% 50% at 78% 18%, rgba(172, 107, 83, 0.45), transparent 70%),
+    radial-gradient(55% 62% at 58% 88%, rgba(201, 162, 39, 0.38), transparent 70%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-gradient-field {
+    animation: gradientDrift 36s ease-in-out infinite alternate;
+  }
+  @keyframes gradientDrift {
+    from { transform: translate3d(-2%, -1%, 0) scale(1.02); }
+    to { transform: translate3d(2.5%, 2%, 0) scale(1.1); }
+  }
+}
+
 /* Mobile typography scaling — 80% of desktop values for readability */
 @media (max-width: 768px) {
   :root {
