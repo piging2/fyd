@@ -10,19 +10,19 @@ const DESCRIPTION =
   "PING build notes and The Long Ping on film: architecture, implementation, and the reasoning behind both, plus every episode with its Shorts and transcripts.";
 
 export const metadata: Metadata = {
-  title: "Blog",
+  title: "Blog: Build Notes and Essays From PING",
   description: DESCRIPTION,
   alternates: { canonical: "/blog" },
   openGraph: {
     type: "website",
-    title: "Blog · PING",
+    title: "Blog: Build Notes and Essays From PING · PING",
     description: DESCRIPTION,
     url: "/blog",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Blog · PING",
+    title: "Blog: Build Notes and Essays From PING · PING",
     description: DESCRIPTION,
     images: ["/brand/og-card.webp"],
   },

@@ -11,12 +11,12 @@ const siteUrl =
     : "https://fyd-product.vercel.app");
 
 export const metadata: Metadata = {
-  title: "About",
+  title: "About PING and PING Social",
   description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
   alternates: { canonical: "/about" },
   openGraph: {
     type: "website",
-    title: "About · PING",
+    title: "About PING and PING Social · PING",
     description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
     url: siteUrl + "/about",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
-    title: "About · PING",
+    title: "About PING and PING Social · PING",
     description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
   },
 };

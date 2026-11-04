@@ -22,12 +22,12 @@ const siteUrl =
     : "https://fyd-product.vercel.app");
 
 export const metadata: Metadata = {
-  title: "Technology",
+  title: "Technology: How PING Actually Works",
   description: "How PING actually works: the continuity, evidence, and agent infrastructure that turns business information into reliable understanding and useful action.",
   alternates: { canonical: "/technology" },
   openGraph: {
     type: "website",
-    title: "Technology · PING",
+    title: "Technology: How PING Actually Works · PING",
     description: "How PING actually works: the continuity, evidence, and agent infrastructure that turns business information into reliable understanding and useful action.",
     url: siteUrl + "/technology",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
-    title: "Technology · PING",
+    title: "Technology: How PING Actually Works · PING",
     description: "How PING actually works: the continuity, evidence, and agent infrastructure that turns business information into reliable understanding and useful action.",
   },
 };
