@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, Wave 39 same wave addition, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -908,6 +908,29 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "What were the three points of the Hyper Resilience plan OVHcloud announced two months later?",
       answer:
         "First, a revamped approach to its internal backups, so the copies the company keeps for itself would stop sharing a fate with the originals. Second, a new emphasis on external customer backups, stored outside. Third, failover spread across three data centers. The essay reads all three as the same point, the one behind the 3-2-1 rule: three copies, on two different kinds of media, with one of them off site.",
+    },
+  ],
+  "the-day-github-was-in-two-places-at-once": [
+    {
+      id: "github-q1",
+      category: "essay-questions",
+      question: "How did a 43-second partition turn GitHub into two databases?",
+      answer:
+        "Maintenance to replace failing optical equipment cut connectivity between the East Coast network hub and the primary East Coast data center for 43 seconds. During the partition, Orchestrator, following its Raft consensus rules with the nodes it could still reach, promoted West replicas to primary, while the East had kept writing too. The postmortem says Orchestrator behaved as configured: the configuration assumed unreachable means dead, and for 43 seconds unreachable only meant unreachable.",
+    },
+    {
+      id: "github-q2",
+      category: "essay-questions",
+      question: "Why was failing back to the East unsafe?",
+      answer:
+        "Both sides held writes the other did not have. The East clusters held a few seconds of writes that had never replicated to the West, counted later as 954 unreplicated writes on one of its busiest clusters, while the West had taken nearly forty minutes of live application traffic. Failing back meant discarding or overwriting that West traffic, so GitHub failed forward, paused webhook delivery and GitHub Pages builds at 23:19 UTC, and prioritized data integrity over site usability and time to recovery.",
+    },
+    {
+      id: "github-q3",
+      category: "essay-questions",
+      question: "How did GitHub recover, and what was the final outcome?",
+      answer:
+        "There was no trustworthy merge tool, so GitHub restored the affected MySQL clusters from backups that ran every four hours and were stored in remote blob storage, resynchronized the replicas, and then processed the backlog of over five million webhook events and 80,000 Pages builds. About 200,000 webhook payloads that outlived an internal time limit were dropped, but no user data was lost: the orphaned East writes were reconciled from the binary logs. Status returned to green at 23:03 UTC on October 22, 24 hours and 11 minutes after the blink.",
     },
   ],
 };
