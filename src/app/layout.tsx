@@ -13,8 +13,11 @@ import { LenisProvider } from "@/components/lenis-provider";
 import { MotionProvider } from "@/components/motion-provider";
 import { SpeculationRules } from "@/components/speculation-rules";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+// F-6 (wave 13): Geist and Geist Mono are not preloaded. Their variables
+// are referenced only by mission control styles (mono nowhere), so
+// preloading them cost 52,396 B on every page. Playfair stays preloaded.
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], preload: false });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], preload: false });
 const playfair = Playfair_Display({ variable: "--font-playfair", subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"] });
 
 const tenant = getTenant();

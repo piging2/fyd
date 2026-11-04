@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   // webpack-bundled: the bundled copy cannot load its transport in
   // the serverless function (submission-mailer delivery path).
   serverExternalPackages: ["nodemailer"],
+  // F-4 (wave 13): strip console calls in production builds, keeping
+  // console.error. The form routes use no console calls at all and the
+  // submission mailer logs only through console.error, so the delivery
+  // path keeps its logging. Census and proof in WAVE-13-RECEIPT.
+  compiler: { removeConsole: { exclude: ["error"] } },
   // SHARP_IGNORE_GLOBAL_LIBVIPS is configured in vercel.json for Vercel runtime
   // Sharp native binary loading requires this environment variable at Node.js runtime
   // It is NOT a build-time configuration
