@@ -37,16 +37,16 @@ import {
   auditSitesRenderClaims,
   logSitesRenderAudit,
 } from "@/fyd/sitespec/sites-render-audit";
-import { listSiteIds } from "@/fyd/media/site-bundle";
 
 /**
- * Pre-render the servable sites at build time. New tenants pinned after
- * the build are served dynamically (no rebuild required for the route
- * to exist, though ISR may be needed for full static optimization).
+ * No generateStaticParams (F-5, 2026-11-03): this route is force-dynamic
+ * (line 1) and renders on demand. The pinned tenants each have an
+ * explicit static-segment page that takes routing precedence over this
+ * dynamic segment, so pre-rendering the pinned ids here produced
+ * shadowed copies that never served a production URL, while unknown
+ * slugs are answered by the isServableSiteId 404 gate below either way.
+ * A tenant pinned later renders on demand through the same gate.
  */
-export async function generateStaticParams() {
-  return listSiteIds().map((siteId) => ({ siteId }));
-}
 
 export async function generateMetadata({
   params,
