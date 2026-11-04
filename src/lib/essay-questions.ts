@@ -979,6 +979,29 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
         "SB-327 was signed on September 28, 2018 and took effect on January 1, 2020, becoming the first law in the United States to regulate the security of connected devices directly. If a device can be logged into from outside the local network, then either its preprogrammed password must be unique to that individual device, or the device must force the user to create a new means of authentication the first time it is used. A skeleton key ring stops working when every door has a different lock, and Mirai's recruitment list, applied to a world of unique passwords, gets nothing.",
     },
   ],
+  "the-update-that-was-the-attack": [
+    {
+      id: "update-attack-q1",
+      category: "essay-questions",
+      question: "How did SUNSPOT swap the backdoor into the Orion build without changing the source tree?",
+      answer:
+        "SUNSPOT watched the build machine every second for a running copy of MSBuild.exe and read its command line to learn what was being compiled. If the answer was Orion, it swapped InventoryManager.cs, but only after verifying hashes: if a developer had legitimately edited the file, it stood down. If the hashes matched, it backed up the original with a .bk extension, wrote the trojan version in for the compile, then waited until the build exited, restored the original, and deleted the evidence, so the source tree the developers browsed the next morning was the one they had written.",
+    },
+    {
+      id: "update-attack-q2",
+      category: "essay-questions",
+      question: "Why was SUNBURST so hard to catch in its first weeks?",
+      answer:
+        "Before any network activity, SUNBURST refused to wake until its file was at least twelve to fourteen days old, with the exact threshold chosen at random inside that range. Then it verified it was running inside the genuine SolarWinds host process on a real organizational domain, checking the domain against a blocklist of laboratory and test environments, and inventoried the host for forensic and antivirus tools. Only after that did it phone home, with orders encoded inside DNS lookups under avsvmcloud.com and later traffic dressed as the Orion Improvement Program, the product's own telemetry chatter.",
+    },
+    {
+      id: "update-attack-q3",
+      category: "essay-questions",
+      question: "How did defenders turn SUNBURST's own killswitch against it, and what did it not fix?",
+      answer:
+        "FireEye, Microsoft, and GoDaddy took control of avsvmcloud.com on December 15 and 16, 2020, and GoDaddy set a wildcard record so every subdomain resolved to 20.140.0.1, an address inside the range SUNBURST read as terminate and never run again, so every surviving copy that asked for orders received the same reply: stand down, forever. The sinkhole also handed investigators a census of the infected, because each beacon carried the victim's encoded identity. But the killswitch only terminated copies still beaconing: victims where the operators had already installed other doors stayed compromised.",
+    },
+  ],
 };
 
 export function getEssayQuestions(slug: string): FaqItem[] {
