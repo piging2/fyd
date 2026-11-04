@@ -25,6 +25,7 @@ export default function EvidencePage() {
     <TechArticle
       eyebrow="Technology"
       title="Evidence"
+      slug="evidence"
       lede="An autonomous system will eventually tell you something that matters. Evidence is the discipline that makes the telling trustworthy: every claim traces to its source, every source carries verification status, and uncertainty is explicit rather than laundered into confidence."
       status="Documented"
       sections={[

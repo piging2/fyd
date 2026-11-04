@@ -25,6 +25,7 @@ export default function EventsPage() {
     <TechArticle
       eyebrow="Technology"
       title="Events"
+      slug="events"
       lede="Everything PING knows starts as an event: something happened, and the system wrote it down. The event plane is the recorder. Canonical knowledge, projections, and replay all derive from it, and none of them are allowed to silently become the source."
       status="In development"
       sections={[

@@ -25,6 +25,7 @@ export default function IntegrationsPage() {
     <TechArticle
       eyebrow="Technology"
       title="Integrations"
+      slug="integrations"
       lede="Every integration is a trust decision. PING's rule: one identity per human, capabilities for agents instead of credential piles, and no new secret for every deployment. Integrations should reduce the number of things that can leak, not multiply them."
       status="In development"
       sections={[

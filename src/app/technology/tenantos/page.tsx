@@ -25,6 +25,7 @@ export default function TenantOSPage() {
     <TechArticle
       eyebrow="Technology"
       title="TenantOS"
+      slug="tenantos"
       lede="TenantOS is the platform direction, not a product. The model: one codebase, many tenants, where each tenant is configuration plus content plus brand plus domain, never a fork. This website is the first tenant, and its construction is the proof of concept."
       status="Direction"
       sections={[

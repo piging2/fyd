@@ -25,6 +25,7 @@ export default function ReplayPage() {
     <TechArticle
       eyebrow="Technology"
       title="Replay"
+      slug="replay"
       lede="A system that cannot explain its important decisions becomes increasingly difficult to trust. Replay is PING's answer: the ability to reconstruct what happened, why it happened, and prove that the reconstruction matches the original."
       status="In development"
       sections={[

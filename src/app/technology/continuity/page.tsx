@@ -25,6 +25,7 @@ export default function ContinuityPage() {
     <TechArticle
       eyebrow="Technology"
       title="Continuity"
+      slug="continuity"
       lede="Most AI starts from zero every session. Continuity is the architectural commitment that PING does not: events are recorded, knowledge accumulates, evidence is preserved, and context survives across sessions, agents, and days."
       status="Documented"
       sections={[

@@ -25,6 +25,7 @@ export default function SocialObjectsPage() {
     <TechArticle
       eyebrow="Technology"
       title="Social Objects"
+      slug="social-objects"
       lede="Conversations need something to orbit. A social object is the shared artifact, a post, a page, a review, a piece of proof, that gives a business conversation its center of gravity. PING treats social objects as infrastructure, not content."
       status="Direction"
       sections={[

@@ -5,6 +5,8 @@ import { Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { getTenant } from "@/lib/tenant-config";
 import { seo } from "@/config/seo";
+import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/structured-data";
+import { socialDestinations } from "@/lib/longping-media";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ScrollToTop } from "@/components/scroll-to-top";
@@ -60,22 +62,32 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const orgJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
+  // Structured data comes from the shared builders in
+  // @/lib/structured-data (Wave 17, B-14), the pattern of the FAQ helper
+  // from Wave 15. This replaces the inline Organization object that used
+  // to live here: same fields, plus a real logo, plus a sameAs list that
+  // covers every profile the site already links. Contact facts come from
+  // the tenant authority (tenant.*.v1.json), the same source the visible
+  // contact surfaces render from, so the structured data can never drift
+  // from what visitors see. sameAs is derived from the verified social
+  // inventory (@/lib/longping-media) filtered to profile platforms: the
+  // Spotify episode link, the Rumble video link, and the RSS feed are
+  // linked on the site but are not profiles, so they are excluded. The
+  // logo is the real brand asset served at /brand/logo.png.
+  const profilePlatforms = ["YouTube", "Substack", "Facebook", "Instagram", "Threads", "X"];
+  const sameAs = socialDestinations
+    .filter((d) => profilePlatforms.includes(d.platform))
+    .map((d) => d.href);
+  const orgJsonLd = buildOrganizationJsonLd({
     name: tenant.siteName,
-    description: tenant.description,
     url: siteUrl,
-    // Contact facts come from the tenant authority (tenant.*.v1.json),
-    // the same source the visible contact surfaces render from, so the
-    // structured data can never drift from what visitors see.
-    ...(tenant.contact.phone ? { telephone: tenant.contact.phone } : {}),
-    ...(tenant.contact.facebook ? { sameAs: [tenant.contact.facebook] } : {}),
-    founder: {
-      "@type": "Person",
-      name: tenant.operator.name,
-    },
-  };
+    description: tenant.description ? tenant.description : undefined,
+    logo: siteUrl + "/brand/logo.png",
+    telephone: tenant.contact.phone ?? undefined,
+    sameAs,
+    founderName: tenant.operator.name,
+  });
+  const webSiteJsonLd = buildWebSiteJsonLd({ name: tenant.siteName, url: siteUrl });
 
   // Object routes (/o/*) belong visually to the object, not to PING,
   // generated site routes (/sites/*) belong visually to the customer
@@ -110,10 +122,16 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           }}
         />
         {!chromeless && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
-          />
+          <>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+            />
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
+            />
+          </>
         )}
       </head>
       <body className="min-h-full flex flex-col bg-background">

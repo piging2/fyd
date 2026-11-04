@@ -25,6 +25,7 @@ export default function AgentsPage() {
     <TechArticle
       eyebrow="Technology"
       title="Agents"
+      slug="agents"
       lede="Software that acts on your behalf needs boundaries more than it needs intelligence. PING treats agent infrastructure as a capability problem: what an agent may touch, what it may change, where it must stop and ask, and how every action is recorded."
       status="Documented"
       sections={[

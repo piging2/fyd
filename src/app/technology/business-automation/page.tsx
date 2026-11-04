@@ -25,6 +25,7 @@ export default function BusinessAutomationPage() {
     <TechArticle
       eyebrow="Technology"
       title="Business Automation"
+      slug="business-automation"
       lede="The least glamorous and most valuable part of PING: practical automation for real businesses. Not AI hype, but systems that catch what falls through the cracks: missed calls, slow follow-up, scheduling friction, and the administrative drag that eats a small business alive. PING Social is based in Grand Junction, Colorado, and works with businesses across Western Colorado."
       status="Documented"
       sections={[

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import { Reveal } from "@/components/reveal";
+import { getTenant } from "@/lib/tenant-config";
+import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
 
 export interface TechSection {
   heading: string;
@@ -15,6 +17,7 @@ interface TechArticleProps {
   status: "Documented" | "In development" | "Direction";
   sections: TechSection[];
   related: Array<{ label: string; href: string }>;
+  slug?: string;
 }
 
 const statusStyle: Record<TechArticleProps["status"], string> = {
@@ -23,9 +26,33 @@ const statusStyle: Record<TechArticleProps["status"], string> = {
   "Direction": "bg-surface-muted text-text-muted",
 };
 
-export function TechArticle({ eyebrow, title, lede, status, sections, related }: TechArticleProps) {
+export function TechArticle({ eyebrow, title, lede, status, sections, related, slug }: TechArticleProps) {
+  // BreadcrumbList (Wave 17, B-14): Home / Technology / this page, using
+  // the real page title the article renders as its heading. Pages opt in
+  // by passing their route slug; the shared builders in
+  // @/lib/structured-data generate the JSON-LD.
+  const tenant = getTenant();
+  const siteUrl =
+    tenant.domain ??
+    (process.env.VERCEL_URL
+      ? "https://" + process.env.VERCEL_URL
+      : "https://fyd-product.vercel.app");
+  const breadcrumbJsonLd = slug
+    ? buildBreadcrumbJsonLd([
+        { name: "Home", url: siteUrl },
+        { name: "Technology", url: siteUrl + "/technology" },
+        { name: title, url: siteUrl + "/technology/" + slug },
+      ])
+    : null;
   return (
     <>
+      {breadcrumbJsonLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        />
+      ) : null}
+
       <Section className="bg-deep">
         <Container className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-honey">{eyebrow}</p>
