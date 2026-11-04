@@ -132,7 +132,8 @@ export default function ProductsPage() {
             <h1 className="mt-4 font-display text-4xl font-bold text-primary sm:text-5xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}><span className="text-text-on-dark">What exists, what is being built</span></h1>
             <p className="mt-5 text-lg sm:text-xl text-text-muted" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}><span className="text-text-on-dark/90">
                 Honest labels. Nothing here is vaporware and nothing unfinished
-                is sold as finished.
+                is sold as finished. PING Social is based in Grand Junction,
+                Colorado, and works with businesses across Western Colorado.
               </span></p>
           </div>
         </Container>

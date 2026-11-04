@@ -84,6 +84,8 @@ export default function AboutPage() {
                 The operating business. {tenant.operator.name} works with home service businesses to
                 put AI to practical use: capture more opportunities, reduce administrative drag,
                 respond faster, operate more consistently. Consultative, not one-size-fits-all.
+                PING Social is based in Grand Junction, Colorado, and works with businesses
+                across Western Colorado.
               </p>
               <Link href="/contact" className="mt-4 inline-block font-medium text-honey-text hover:underline">
                 Work with us →

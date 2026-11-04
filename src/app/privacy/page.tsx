@@ -10,12 +10,12 @@ const siteUrl =
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "How PING collects and uses your information when you subscribe or contact us, sends the newsletter you asked for, and never sells your information.",
+  description: "How PING collects and uses information provided through subscriptions, contact, site forms, and FYD build requests, and never sells your information.",
   alternates: { canonical: "/privacy" },
   openGraph: {
     type: "website",
     title: "Privacy Policy · PING",
-    description: "How PING collects and uses your information when you subscribe or contact us, sends the newsletter you asked for, and never sells your information.",
+    description: "How PING collects and uses information provided through subscriptions, contact, site forms, and FYD build requests, and never sells your information.",
     url: siteUrl + "/privacy",
     images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
   },
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/brand/og-card.png"],
     title: "Privacy Policy · PING",
-    description: "How PING collects and uses your information when you subscribe or contact us, sends the newsletter you asked for, and never sells your information.",
+    description: "How PING collects and uses information provided through subscriptions, contact, site forms, and FYD build requests, and never sells your information.",
   },
 };
 
@@ -34,23 +34,25 @@ export default function PrivacyPage() {
     <Section>
       <Container className="max-w-3xl">
         <h1 className="text-3xl font-bold text-text">Privacy Policy</h1>
-        <p className="mt-4 text-sm text-text-subtle">Last updated: {new Date().getFullYear()}</p>
+        <p className="mt-4 text-sm text-text-subtle">Last updated: November 3, 2026</p>
         <div className="mt-8 space-y-6 text-text-muted">
           <section>
             <h2 className="text-xl font-bold text-text">Information we collect</h2>
             <p className="mt-2">
-              When you subscribe to the newsletter or contact {tenant.operator.business}, we collect
-              the information you provide: your name, contact details, and the contents of your
-              message. This site does not run analytics trackers beyond what the hosting platform
+              When you subscribe to the newsletter, contact {tenant.operator.business}, submit a
+              site form, or start a FYD build request, we collect the information you provide:
+              your name, contact details, business and website details, and the contents of your
+              submission. This site does not run analytics trackers beyond what the hosting platform
               provides.
             </p>
           </section>
           <section>
             <h2 className="text-xl font-bold text-text">How we use it</h2>
             <p className="mt-2">
-              We use your information solely to respond to you and to send the newsletter you asked
-              for. We do not sell your information, and we do not share it with third parties except
-              the email service that delivers the newsletter.
+              We use your information to respond to you, review and act on the request you
+              submitted, and send the newsletter you asked for. We do not sell your information.
+              We share it only with the service providers needed to operate this site, process
+              your request, and deliver the newsletter.
             </p>
           </section>
           <section>
