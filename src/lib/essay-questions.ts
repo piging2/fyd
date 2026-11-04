@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -885,6 +885,29 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "How did the team reproduce the failure and fix it?",
       answer:
         "The team ran the same activities that had preceded the failures on a replica of the spacecraft computer, with the trace facility armed, and made the failure happen on Earth in less than 18 hours. The fix was a creation flag that already existed: VxWorks mutexes could be created with priority inheritance switched on, and after extensive ground testing the change was sent to the spacecraft through the mission's specialized patch process.",
+    },
+  ],
+  "the-night-the-backups-burned-too": [
+    {
+      id: "backups-q1",
+      category: "essay-questions",
+      question: "Why did SBG3 and SBG4 go dark even though the fire never touched them?",
+      answer:
+        "Firefighters isolate a smoldering site. At Strasbourg the whole site was cut off, so SBG3 and SBG4 went dark too and SBG1 lost four of its rooms. The machines in the surviving buildings were fine, but nothing could reach them, nothing could power them, and nobody was allowed near them.",
+    },
+    {
+      id: "backups-q2",
+      category: "essay-questions",
+      question: "What happened to the backups Bati Courtage had paid OVHcloud for?",
+      answer:
+        "Bati Courtage had subscribed to the automated backup option for its servers in SBG2. After asking for its backups for about a month, it learned they had been destroyed along with the primary data, because they were stored in the same building as the main server. That was despite contract language describing the backup option as physically isolated from the infrastructure the server was set up on, and the rulings went against OVHcloud.",
+    },
+    {
+      id: "backups-q3",
+      category: "essay-questions",
+      question: "What were the three points of the Hyper Resilience plan OVHcloud announced two months later?",
+      answer:
+        "First, a revamped approach to its internal backups, so the copies the company keeps for itself would stop sharing a fate with the originals. Second, a new emphasis on external customer backups, stored outside. Third, failover spread across three data centers. The essay reads all three as the same point, the one behind the 3-2-1 rule: three copies, on two different kinds of media, with one of them off site.",
     },
   ],
 };

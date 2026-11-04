@@ -6,13 +6,13 @@ import { ESSAY_QUESTIONS, getEssayQuestions } from "@/lib/essay-questions";
 import { getAllPosts } from "@/lib/blog";
 
 /**
- * Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch (regrade defect 7): for an essay with data, the FAQPage
+ * Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch (regrade defect 7), Wave 38 same wave addition: for an essay with data, the FAQPage
  * JSON-LD must describe exactly the questions the page displays, both
  * generated from the same items in src/lib/essay-questions. For a post
  * with no data, the section must not render at all.
  */
 describe("essay questions pilot data", () => {
-  it("covers exactly the pilot, batches 2 to 6 and the final batch slugs, each resolving to a real post", () => {
+  it("covers exactly the pilot, batches 2 to 6, the final batch and the Wave 38 same wave slugs, each resolving to a real post", () => {
     expect(Object.keys(ESSAY_QUESTIONS).sort()).toEqual([
       "airplane-mode-postmortem",
       "building-agent-execution-boundaries",
@@ -35,6 +35,7 @@ describe("essay questions pilot data", () => {
       "the-machine-that-trusted-its-software",
       "the-most-expensive-second-in-history",
       "the-night-gitlab-deleted-itself",
+      "the-night-the-backups-burned-too",
       "the-phone-that-became-a-grenade",
       "the-retry-that-charged-twice",
       "the-rocket-that-overflowed",
@@ -64,9 +65,9 @@ describe("essay questions pilot data", () => {
     expect(getEssayQuestions("no-such-post")).toEqual([]);
   });
 
-  it("covers every published post: full coverage enumeration (Wave 37, defect 7 closed)", () => {
+  it("covers every published post: full coverage enumeration (Wave 37, defect 7 closed; Wave 38 same wave addition)", () => {
     const posts = getAllPosts();
-    expect(posts.length).toBe(38);
+    expect(posts.length).toBe(39);
     for (const post of posts) {
       expect({ slug: post.slug, count: getEssayQuestions(post.slug).length }).toEqual({
         slug: post.slug,
@@ -300,6 +301,37 @@ describe("essay questions schema equals display", () => {
       "the-website-that-launched-to-everyone-at-once",
       "the-biggest-debut-priced-by-a-glitch",
       "the-rover-that-kept-rebooting-itself",
+    ];
+    for (const batchSlug of batch) {
+      const batchItems = getEssayQuestions(batchSlug);
+      expect(batchItems.length).toBe(3);
+      const html = renderToStaticMarkup(<EssayQuestions slug={batchSlug} />);
+      const scripts = html.match(/<script type="application\/ld\+json">/g) || [];
+      expect(scripts.length).toBe(1);
+      const match = html.match(
+        /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+      );
+      const ld = JSON.parse(match![1]);
+      expect(ld["@type"]).toBe("FAQPage");
+      expect(ld.mainEntity.map((q: { name: string }) => q.name)).toEqual(
+        batchItems.map((i) => i.question),
+      );
+      expect(
+        ld.mainEntity.map(
+          (q: { acceptedAnswer: { text: string } }) => q.acceptedAnswer.text,
+        ),
+      ).toEqual(batchItems.map((i) => i.answer));
+      for (const item of batchItems) {
+        expect(html).toContain(item.question);
+        expect(html).toContain(item.answer);
+      }
+      expect((html.match(/<details/g) || []).length).toBe(3);
+    }
+  });
+
+  it("wave 38 essay: rendered section shows the same questions as its JSON-LD, exactly once", () => {
+    const batch = [
+      "the-night-the-backups-burned-too",
     ];
     for (const batchSlug of batch) {
       const batchItems = getEssayQuestions(batchSlug);
