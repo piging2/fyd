@@ -210,12 +210,31 @@ export default function HomePage() {
                 </p>
               </div>
               <h1 className="mt-10 text-4xl font-bold text-text-on-dark sm:text-5xl lg:text-6xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-                Systems that remember,<br />agents you can trust
+                A serious production studio with profoundly unserious ideas.
               </h1>
               <p className="mt-6 max-w-xl text-lg text-text-on-dark/90" style={{ lineHeight: 'var(--leading-body)' }}>
+                PING builds real things with autonomous systems, films what actually happens, and publishes the evidence. Cinematic investigations into the hidden systems shaping our future, where we build, break, test, and explain the technology ourselves.
+              </p>
+              <p className="mt-4 max-w-xl text-base text-text-on-dark/75" style={{ lineHeight: 'var(--leading-body)' }}>
                 PING turns information into reliable understanding, understanding into useful action,
                 and action into evidence that can be trusted and replayed.
               </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <a
+                  href={featuredFilm.watchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full bg-honey px-8 py-2 text-center font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
+                >
+                  Watch the latest film
+                </a>
+                <Link
+                  href="/blog"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 py-2 text-center font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
+                >
+                  Read the engineering breakdown
+                </Link>
+              </div>
               <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
                 <Link href="#architecture" className="font-medium text-text-on-dark/70 underline-offset-4 hover:text-honey hover:underline">
                   Explore the architecture
@@ -251,6 +270,57 @@ export default function HomePage() {
 
       {/* Portal margin: PING circles inhabit unused peripheral space only. Geometry, not breakpoints, decides whether a slot is honest. */}
       <HomeCircles portals={homePortals} />
+
+      {/* 01a WHAT WE MAKE: the studio output, in the copy pack's words */}
+      <Section size="minor">
+        <Container className="max-w-5xl">
+          <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey-text">/make</p>
+          <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+            What we make
+          </h2>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Long-form films</h3>
+              <p className="mt-2 text-sm text-text-muted">Multi-hour documentaries produced by a supervised agent factory, with every finished minute verified before it counts.</p>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Shorts</h3>
+              <p className="mt-2 text-sm text-text-muted">One idea, one proof, one payoff. Clips are cut only from finished, accepted footage.</p>
+            </div>
+            <div className="rounded-lg border border-border-soft bg-surface p-5">
+              <h3 className="font-bold text-text">Investigations</h3>
+              <p className="mt-2 text-sm text-text-muted">The engineering behind the films, published as annotated breakdowns with logs, timestamps, and receipts.</p>
+            </div>
+          </div>
+        </Container>
+      </Section>
+
+      {/* 01a2 HOW WE WORK: the three rules the studio can prove */}
+      <Section size="minor" className="bg-deep">
+        <Container className="max-w-5xl">
+          <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey">/prove</p>
+          <h2 className="mt-4 text-3xl font-bold text-text-on-dark sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+            How we work
+          </h2>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <div className="rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
+              <p className="font-mono text-xs font-bold text-honey">01</p>
+              <h3 className="mt-2 font-bold text-text-on-dark">Activity is not output.</h3>
+              <p className="mt-2 text-sm text-text-on-dark/85">Work counts when a verified artifact lands in the record.</p>
+            </div>
+            <div className="rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
+              <p className="font-mono text-xs font-bold text-honey">02</p>
+              <h3 className="mt-2 font-bold text-text-on-dark">Evidence outranks reports.</h3>
+              <p className="mt-2 text-sm text-text-on-dark/85">If a summary and the disk disagree, the disk wins.</p>
+            </div>
+            <div className="rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
+              <p className="font-mono text-xs font-bold text-honey">03</p>
+              <h3 className="mt-2 font-bold text-text-on-dark">Finished means verified, not rendered.</h3>
+              <p className="mt-2 text-sm text-text-on-dark/85">Every release passes decode, seam, and hash checks, and a human ear, before it ships.</p>
+            </div>
+          </div>
+        </Container>
+      </Section>
 
       {/* 01b OFFERS AND PATHS: the offer architecture, compact and honest */}
       <Section size="minor" className="bg-surface-2">
@@ -686,7 +756,7 @@ export default function HomePage() {
       <Section size="minor">
         <Container>
           <SectionHeading
-            eyebrow="/watch · The Long Ping"
+            eyebrow="/watch · Latest from the studio"
             title="The Long Ping: the show that tests the thesis"
             description="Long-form films about the systems everything else depends on: how they fail, why they fail that way, and what remembering changes. Watch the newest film, or take an episode as audio or as a written transcript series."
           />
@@ -737,6 +807,13 @@ export default function HomePage() {
         subtitle="PING Social helps real businesses put AI to practical use: fewer missed opportunities, less busywork, systems that remember. Currently onboarding Western Colorado home-service businesses."
         showApplyLink
       />
+
+      {/* 11 THE RECEIPTS LINE: the studio footer line for this page */}
+      <div className="bg-deep">
+        <Container className="py-8 text-center">
+          <p className="text-base font-semibold text-text-on-dark">PING. We build it, we break it, we show the receipts.</p>
+        </Container>
+      </div>
     </>
   );
 }

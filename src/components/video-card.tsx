@@ -36,6 +36,11 @@ export function VideoCard({ video, large = false }: { video: FeaturedVideo; larg
         <span className="absolute left-3 top-3 inline-block rounded bg-deep/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-honey">
           {video.kind}
         </span>
+        {video.duration && (
+          <span className="absolute bottom-3 left-3 inline-block rounded bg-deep/85 px-3 py-1 text-xs font-semibold text-text-on-dark">
+            {video.duration}
+          </span>
+        )}
         <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded bg-deep/85 px-3 py-1 text-xs font-semibold text-text-on-dark">
           Watch on YouTube
         </span>

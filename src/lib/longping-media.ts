@@ -12,6 +12,7 @@ export interface FeaturedVideo {
   title: string;
   kind: "Film" | "Episode" | "Short";
   watchUrl: string;
+  duration?: string;
   thumbnail: string;
   thumbnailFallback?: string;
   blurb: string;
@@ -26,6 +27,7 @@ export const featuredFilm: FeaturedVideo = {
   title: "The Grid Problem | The Long Ping",
   kind: "Film",
   watchUrl: "https://www.youtube.com/watch?v=s3Os1RNAmeo",
+  duration: "3h 43m",
   thumbnail: ytThumb("s3Os1RNAmeo", "maxresdefault"),
   thumbnailFallback: ytThumb("s3Os1RNAmeo", "hqdefault"),
   blurb:
