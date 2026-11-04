@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -632,6 +632,167 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "What did the reviews find about TSB's readiness and defect count?",
       answer:
         "IBM said it had not seen evidence of the application of a rigorous set of go-live criteria to prove production readiness. The Slaughter and May review found that only one of TSB's two data centres had been through performance testing before go-live, and reporting on the review put the known defects at go-live at about 2,000, against about 800 the board had been told.",
+    },
+  ],
+  "the-graduate-student-who-counted-the-internet": [
+    {
+      id: "morris-q1",
+      category: "essay-questions",
+      question: "Why did Morris release the worm, and what was it meant to do?",
+      answer:
+        "Morris wanted to measure the internet: the program would quietly copy itself from machine to machine, settle in, and send back a signal, so someone could count the network for the first time. In 1988 there was no registry to query and no census to take, and nobody knew how large the internet was.",
+    },
+    {
+      id: "morris-q2",
+      category: "essay-questions",
+      question: "How did the one in seven override defeat the worm population control?",
+      answer:
+        "Before installing itself, the worm asked whether a copy was already running, and a yes normally made the new arrival die. One time in seven it installed itself anyway, to catch administrators bluffing with a fake yes, so busy machines accumulated copies until the processor spent all of its time running the census.",
+    },
+    {
+      id: "morris-q3",
+      category: "essay-questions",
+      question: "What institution did the worm accidentally create?",
+      answer:
+        "Within days of the worm, DARPA directed the Carnegie Mellon Software Engineering Institute to stand up the CERT Coordination Center, a permanent place to call that could receive reports, verify them, recruit experts, work with vendors, and publish advice. It had no authority to command anyone.",
+    },
+  ],
+  "the-grid-problem": [
+    {
+      id: "grid-q1",
+      category: "essay-questions",
+      question: "What failures does Episode 3 follow?",
+      answer:
+        "The episode follows a winter storm in Texas that forced the grid to choose who goes dark, a solar storm that collapsed the Quebec network in ninety seconds, and an alarm in Ohio that failed silently while a blackout assembled itself around it.",
+    },
+    {
+      id: "grid-q2",
+      category: "essay-questions",
+      question: "Where can Episode 3 be watched, listened to, and read?",
+      answer:
+        "The film is on YouTube, the episode is on Spotify, the full film is on Facebook, and Substack carries the transcripts and companion essays for the whole series, ad-free, in your inbox.",
+    },
+    {
+      id: "grid-q3",
+      category: "essay-questions",
+      question: "What does the post say reliability is?",
+      answer:
+        "Every system has a grid story hiding inside it: a dependency nobody mapped, an alarm nobody tested, a margin that existed only on paper. The post calls reliability the discipline of knowing what your system will do on its worst day, and being able to prove it before that day arrives.",
+    },
+  ],
+  "the-water-wheel-problem": [
+    {
+      id: "waterwheel-q1",
+      category: "essay-questions",
+      question: "What world does Episode 2 trace the trade away from?",
+      answer:
+        "Before the grid, power was made where it was used, by a water wheel its owner could see, touch, and repair. Episode 2 traces the trade for centralised generation and continent-spanning transmission, what was gained, what was quietly lost, and why the argument between the two models never actually ended.",
+    },
+    {
+      id: "waterwheel-q2",
+      category: "essay-questions",
+      question: "Where is Episode 2 live, and how much of it is out?",
+      answer:
+        "Chapters 1 to 10 are live now on YouTube and Rumble. The remaining chapters are in production, and Episode 3, The Grid Problem, is already out in full.",
+    },
+    {
+      id: "waterwheel-q3",
+      category: "essay-questions",
+      question: "Where do the transcripts and companion essays live?",
+      answer:
+        "Transcripts and companion essays for The Long Ping live on PING on Substack, ad-free. The Episode 1 five-part transcript series is there in full, starting with Part 1: The Authority.",
+    },
+  ],
+  "what-survives-10000-years": [
+    {
+      id: "survives-q1",
+      category: "essay-questions",
+      question: "What is the central distinction in Episode 1 and design spec?",
+      answer:
+        "Preserving bits is not preserving meaning. Episode 1 climbs a seven-rung ladder (bits, file, format, meaning, context, authority, civilisation), breaks every rung on purpose, and converts what survives into a design spec: design for the carrier, not the receiver.",
+    },
+    {
+      id: "survives-q2",
+      category: "essay-questions",
+      question: "How is every claim on the show graded?",
+      answer:
+        "Every claim on the show is graded live: receipt, BS, or thought experiment. The grades stick.",
+    },
+    {
+      id: "survives-q3",
+      category: "essay-questions",
+      question: "Where can the full Episode 1 transcript be read?",
+      answer:
+        "The complete Episode 1 transcript is published in five parts on PING on Substack, from Part 1: The Authority to Part 5: The 10,000 Year. The short version in the post is that a system that cannot remember cannot be trusted with anything that matters.",
+    },
+  ],
+  "why-continuity-matters-for-ai-agents": [
+    {
+      id: "continuity-q1",
+      category: "essay-questions",
+      question: "What does a stateless agent lose between sessions?",
+      answer:
+        "A stateless agent loses the reasons behind its decisions: it chose X last Tuesday, but the reasoning is gone, so the next agent starts over and may choose differently for no reason. It also cannot distinguish not found from failed to look when it reports an empty result.",
+    },
+    {
+      id: "continuity-q2",
+      category: "essay-questions",
+      question: "What does continuity require in the PING stack?",
+      answer:
+        "In PING, events are source truth, recorded with identity, timestamp, and provenance in a log that is append-only in spirit, and they distill into canonical knowledge with evidence attached to claims. Replay verifies continuity: given the same causal history, the system reaches the same canonical state.",
+    },
+    {
+      id: "continuity-q3",
+      category: "essay-questions",
+      question: "How does continuity differ from retrieval?",
+      answer:
+        "Retrieval finds similar past text and answers what is similar to this, while continuity records what happened, in what order, what was concluded, and what the evidence was. A system with retrieval can remind you what you talked about; a system with continuity can prove what it did and why.",
+    },
+  ],
+  "building-agent-execution-boundaries": [
+    {
+      id: "boundaries-q1",
+      category: "essay-questions",
+      question: "Why is the quoting problem a silent failure?",
+      answer:
+        "Each layer of a nested shell invocation reinterprets quoting, escaping, and special characters, so a command that works in testing can corrupt in production. The failure is silent: the command runs, it just does not do what was intended.",
+    },
+    {
+      id: "boundaries-q2",
+      category: "essay-questions",
+      question: "How does the stdin boundary solve the quoting problem?",
+      answer:
+        "PING passes the command as script bytes on standard input, never embedded in another shell command line, so no shell interprets it in transit. The receiving bash reads the bytes and executes them exactly once, in exactly one interpretation context.",
+    },
+    {
+      id: "boundaries-q3",
+      category: "essay-questions",
+      question: "Why do agents receive capabilities instead of credentials?",
+      answer:
+        "Agents receive capabilities, not credential piles: humans authenticate as themselves once, there is one OAuth application per platform, and secrets live in exactly one place, resolved at runtime. When something fails, the blast radius is bounded by the capability, not by whatever the credential happened to unlock.",
+    },
+  ],
+  "evidence-and-provenance-for-autonomous-systems": [
+    {
+      id: "provenance-q1",
+      category: "essay-questions",
+      question: "What three questions does every claim in PING answer?",
+      answer:
+        "Every claim in PING answers where it came from, how it was derived, and how confident it is. Confidence is not a vibes-based percentage, but a verification grade from a defined scale.",
+    },
+    {
+      id: "provenance-q2",
+      category: "essay-questions",
+      question: "What is preserved along the evidence lineage?",
+      answer:
+        "The lineage runs from raw artifact to extracted observations, per-observation verification, preserved contradictions, and a verified claim, with nothing discarded along the way. When two observations contradict, both are preserved with their provenance rather than averaged into a false consensus.",
+    },
+    {
+      id: "provenance-q3",
+      category: "essay-questions",
+      question: "What three rules govern evidence in PING?",
+      answer:
+        "Never turn absence of evidence into evidence of absence, never hide a failure behind an empty result, and never let uncertainty look like confidence. Failures get typed semantics: what failed, where, whether it is retryable, and whether state changed.",
     },
   ],
 };
