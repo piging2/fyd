@@ -57,7 +57,12 @@ export const metadata: Metadata = {
   verification: {
     google: "9GfJhTOKiF4Qb9JXQFPkHOFU_y6aVaE780foNAYCY_o",
   },
-  alternates: { canonical: siteUrl },
+  alternates: {
+    canonical: siteUrl,
+    types: {
+      "application/rss+xml": [{ url: siteUrl + "/rss.xml", title: "PING Blog RSS Feed" }],
+    },
+  },
   icons: { icon: "/brand/favicon.svg", apple: "/brand/favicon.svg" },
 };
 
@@ -107,6 +112,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`} style={{ colorScheme: 'dark light' }}>
       <head>
+        <link rel="alternate" type="application/rss+xml" title="PING Blog RSS Feed" href="/rss.xml" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
