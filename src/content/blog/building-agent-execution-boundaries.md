@@ -1,7 +1,7 @@
 ---
 title: "Building agent execution boundaries"
 date: "2026-09-14"
-excerpt: "How agents run commands across machine boundaries without corruption, and why capability separation matters more than clever prompting."
+excerpt: "How agents run commands across machine boundaries without corruption, and why capability separation matters more than clever prompting. Silence is the danger."
 tags: ["agents", "infrastructure", "implementation"]
 status: "published"
 ---

@@ -1,7 +1,7 @@
 ---
 title: "Why continuity matters for AI agents"
 date: "2026-09-15"
-excerpt: "Stateless AI starts from zero every session. Systems that act in the real world need continuity: events, knowledge, evidence, and replay."
+excerpt: "Stateless AI starts from zero every session. Systems that act in the real world need continuity: events, knowledge, evidence, and replay. Memory, not retrieval."
 tags: ["continuity", "agents", "architecture"]
 status: "published"
 ---

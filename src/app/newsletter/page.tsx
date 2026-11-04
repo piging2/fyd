@@ -11,12 +11,12 @@ const siteUrl =
 
 export const metadata: Metadata = {
   title: "Newsletter",
-  description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.",
+  description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff. In your inbox.",
   alternates: { canonical: "/newsletter" },
   openGraph: {
     type: "website",
     title: "Newsletter · PING",
-    description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.",
+    description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff. In your inbox.",
     url: siteUrl + "/newsletter",
     images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
   },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/brand/og-card.png"],
     title: "Newsletter · PING",
-    description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.",
+    description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff. In your inbox.",
   },
 };
 
@@ -36,7 +36,7 @@ export default function NewsletterPage() {
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.12em] text-accent" style={{ letterSpacing: '0.12em' }}><span className="text-honey">Newsletter</span></p>
             <h1 className="mt-4 font-display text-4xl font-bold text-primary sm:text-5xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}><span className="text-text-on-dark">Follow the build</span></h1>
-            <p className="mt-5 text-lg sm:text-xl text-text-muted" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}><span className="text-text-on-dark/90">Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff.</span></p>
+            <p className="mt-5 text-lg sm:text-xl text-text-muted" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}><span className="text-text-on-dark/90">Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff. In your inbox.</span></p>
           </div>
         </Container>
       </Section>

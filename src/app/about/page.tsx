@@ -12,12 +12,12 @@ const siteUrl =
 
 export const metadata: Metadata = {
   title: "About",
-  description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses.",
+  description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
   alternates: { canonical: "/about" },
   openGraph: {
     type: "website",
     title: "About · PING",
-    description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses.",
+    description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
     url: siteUrl + "/about",
     images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
   },
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/brand/og-card.png"],
     title: "About · PING",
-    description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses.",
+    description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
   },
 };
 

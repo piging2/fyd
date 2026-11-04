@@ -30,12 +30,12 @@ const siteUrl =
 
 export const metadata: Metadata = {
   title: "PING: Continuity infrastructure for AI agents",
-  description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve.",
+  description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve. With receipts.",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     title: "PING: Continuity infrastructure for AI agents",
-    description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve.",
+    description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve. With receipts.",
     url: siteUrl + "/",
     images: [{ url: "/brand/og-card.png", width: 1200, height: 630, alt: "PING Social" }],
   },
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/brand/og-card.png"],
     title: "PING: Continuity infrastructure for AI agents",
-    description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve.",
+    description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve. With receipts.",
   },
 };
 

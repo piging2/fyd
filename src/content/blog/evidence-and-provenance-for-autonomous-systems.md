@@ -1,7 +1,7 @@
 ---
 title: "Evidence and provenance for autonomous systems"
 date: "2026-09-13"
-excerpt: "Never claim what you cannot prove: how PING attaches evidence to claims, grades verification, and makes failures visible instead of silent."
+excerpt: "Never claim what you cannot prove: how PING attaches evidence to claims, grades verification, and makes failures visible instead of silent. Show the derivation."
 tags: ["evidence", "agents", "principles"]
 status: "published"
 ---
