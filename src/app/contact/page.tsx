@@ -3,6 +3,7 @@ import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { getTenant } from "@/lib/tenant-config";
+import { buildContactPageJsonLd } from "@/lib/structured-data";
 
 const siteUrl =
   getTenant().domain ??
@@ -31,9 +32,18 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   const tenant = getTenant();
+  const contactPageJsonLd = buildContactPageJsonLd({
+    name: "Contact",
+    url: siteUrl + "/contact",
+    description: typeof metadata.description === "string" ? metadata.description : undefined,
+  });
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactPageJsonLd) }}
+      />
       <Section className="bg-deep">
         <Container className="grid gap-10 lg:grid-cols-2">
           <div>

@@ -63,6 +63,64 @@ export interface BreadcrumbItemInput {
   url: string;
 }
 
+export interface WebPageInput {
+  name: string;
+  url: string;
+  description?: string;
+}
+
+/**
+ * AboutPage and ContactPage are WebPage subtypes in schema.org, used
+ * only on the pages they literally describe: the about page is about
+ * the organisation, and the contact page is the contact page. Name,
+ * url, and description come from the page's own metadata, so the
+ * structured data cannot drift from the page it annotates.
+ */
+export function buildAboutPageJsonLd(input: WebPageInput) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    name: input.name,
+    url: input.url,
+    ...(input.description ? { description: input.description } : {}),
+  };
+}
+
+export function buildContactPageJsonLd(input: WebPageInput) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    name: input.name,
+    url: input.url,
+    ...(input.description ? { description: input.description } : {}),
+  };
+}
+
+export interface ItemListItemInput {
+  name: string;
+  url: string;
+}
+
+/**
+ * ItemList names, in order, exactly the items a page visibly lists.
+ * Entries are plain ListItem values carrying a name and the URL the
+ * page itself links that item to. This is not a Product builder: no
+ * Product type, no Offer, no price, and no rating is emitted, in line
+ * with the honest boundary at the top of this file.
+ */
+export function buildItemListJsonLd(items: ItemListItemInput[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
 export function buildBreadcrumbJsonLd(items: BreadcrumbItemInput[]) {
   return {
     "@context": "https://schema.org",

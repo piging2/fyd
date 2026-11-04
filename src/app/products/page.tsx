@@ -11,6 +11,7 @@ import {
   type Product,
   type ProductStatus,
 } from "@/lib/products";
+import { buildItemListJsonLd } from "@/lib/structured-data";
 
 const siteUrl =
   getTenant().domain ??
@@ -124,9 +125,22 @@ function ProductCard({ product }: { product: Product }) {
 
 export default function ProductsPage() {
   const products = getProducts();
+  // ItemList in the exact order the page renders its groups: each item
+  // is a product visibly listed below, named as the page names it, with
+  // the URL the product's own call to action links to on this page.
+  const orderedProducts = STATUS_ORDER.flatMap((status) =>
+    products.filter((p) => p.status === status),
+  );
+  const itemListJsonLd = buildItemListJsonLd(
+    orderedProducts.map((p) => ({ name: p.name, url: siteUrl + p.cta.href })),
+  );
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
       <Section className="bg-deep">
         <Container className="max-w-4xl">
           <div className="max-w-2xl">

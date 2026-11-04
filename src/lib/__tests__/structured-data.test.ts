@@ -2,6 +2,9 @@ import {
   buildOrganizationJsonLd,
   buildWebSiteJsonLd,
   buildBreadcrumbJsonLd,
+  buildAboutPageJsonLd,
+  buildContactPageJsonLd,
+  buildItemListJsonLd,
 } from "../structured-data";
 
 /**
@@ -71,12 +74,65 @@ describe("buildBreadcrumbJsonLd", () => {
   });
 });
 
+describe("buildAboutPageJsonLd", () => {
+  it("emits AboutPage with the page name, url and description when supplied", () => {
+    const ld = buildAboutPageJsonLd({
+      name: "About Example",
+      url: "https://example.test/about",
+      description: "What the about page says.",
+    });
+    expect(ld).toEqual({
+      "@context": "https://schema.org",
+      "@type": "AboutPage",
+      name: "About Example",
+      url: "https://example.test/about",
+      description: "What the about page says.",
+    });
+  });
+
+  it("omits description when the caller cannot support one", () => {
+    const ld = buildAboutPageJsonLd({ name: "About Example", url: "https://example.test/about" });
+    expect(Object.keys(ld).sort()).toEqual(["@context", "@type", "name", "url"]);
+  });
+});
+
+describe("buildContactPageJsonLd", () => {
+  it("emits ContactPage with the page name, url and description when supplied", () => {
+    const ld = buildContactPageJsonLd({
+      name: "Contact",
+      url: "https://example.test/contact",
+      description: "How to reach the example organisation.",
+    });
+    expect(ld["@type"]).toBe("ContactPage");
+    expect(ld.name).toBe("Contact");
+    expect(ld.url).toBe("https://example.test/contact");
+    expect(ld.description).toBe("How to reach the example organisation.");
+  });
+});
+
+describe("buildItemListJsonLd", () => {
+  it("numbers items from 1 in the order given, with exact names and urls", () => {
+    const ld = buildItemListJsonLd([
+      { name: "First offering", url: "https://example.test/contact" },
+      { name: "Second offering", url: "https://example.test/technology" },
+    ]);
+    expect(ld["@type"]).toBe("ItemList");
+    expect(ld.itemListElement).toEqual([
+      { "@type": "ListItem", position: 1, name: "First offering", item: "https://example.test/contact" },
+      { "@type": "ListItem", position: 2, name: "Second offering", item: "https://example.test/technology" },
+    ]);
+  });
+});
+
 describe("honest boundary", () => {
   it("no builder emits Product, Offer, price, rating, or review fields", () => {
     const all = JSON.stringify([
       buildOrganizationJsonLd({ name: "PING", url: "https://example.test" }),
       buildWebSiteJsonLd({ name: "PING", url: "https://example.test" }),
       buildBreadcrumbJsonLd([{ name: "Home", url: "https://example.test" }]),
+      buildAboutPageJsonLd({ name: "About Example", url: "https://example.test/about" }),
+      buildContactPageJsonLd({ name: "Contact", url: "https://example.test/contact" }),
+      buildItemListJsonLd([{ name: "First offering", url: "https://example.test/contact" }]),
     ]);
     for (const banned of ["Product", "Offer", "price", "rating", "review", "Review"]) {
       expect(all).not.toContain(banned);

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import { getTenant } from "@/lib/tenant-config";
+import { buildAboutPageJsonLd } from "@/lib/structured-data";
 
 const siteUrl =
   getTenant().domain ??
@@ -50,8 +51,17 @@ const principles = [
 
 export default function AboutPage() {
   const tenant = getTenant();
+  const aboutPageJsonLd = buildAboutPageJsonLd({
+    name: "About PING and PING Social",
+    url: siteUrl + "/about",
+    description: typeof metadata.description === "string" ? metadata.description : undefined,
+  });
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
+      />
       <Section className="bg-deep">
         <Container className="max-w-4xl">
           <SectionHeading
