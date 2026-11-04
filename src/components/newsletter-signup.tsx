@@ -70,6 +70,7 @@ export function NewsletterSignup() {
         <div>
           <input
             type="email"
+            aria-label="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email address"
@@ -82,6 +83,7 @@ export function NewsletterSignup() {
         <div>
           <input
             type="text"
+            aria-label="First name (optional)"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             placeholder="First name (optional)"

@@ -150,10 +150,11 @@ export default function BuildMyFydClient() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium">
+          <label htmlFor="fyd-documents" className="block text-sm font-medium">
             Documents <span className="font-normal text-neutral-500">(optional)</span>
           </label>
           <input
+            id="fyd-documents"
             ref={fileRef}
             type="file"
             multiple
