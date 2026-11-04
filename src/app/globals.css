@@ -563,6 +563,42 @@ a {
   }
 }
 
+/* Wave 06 motion slice: load entrance plus JS armed scroll reveals.
+   Transform and opacity only. The entrance is a pure CSS animation gated
+   by prefers-reduced-motion no-preference, so content lands visible with
+   or without JS. Reveal elements are never hidden in server markup: the
+   Reveal component adds reveal-armed from JS only, and only when motion
+   is allowed and IntersectionObserver exists. */
+@media (prefers-reduced-motion: no-preference) {
+  .entrance-rise {
+    animation: entranceRise 0.6s ease-out both;
+  }
+  .entrance-rise-late {
+    animation-delay: 150ms;
+  }
+  @keyframes entranceRise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+.reveal-armed {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-armed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* Mobile typography scaling — 80% of desktop values for readability */
 @media (max-width: 768px) {
   :root {

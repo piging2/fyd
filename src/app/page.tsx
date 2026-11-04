@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { Reveal } from "@/components/reveal";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { BlueprintGrid } from "@/components/blueprint-grid";
@@ -170,7 +171,7 @@ export default function HomePage() {
         <Container className="relative">
           <p className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-honey">/live</p>
           <div className="grid items-center gap-12 lg:grid-cols-2">
-            <ScrollReveal>
+            <div className="entrance-rise">
               <div className="mb-6">
                 <PingWordmark className="scale-125 origin-left" />
               </div>
@@ -210,7 +211,8 @@ export default function HomePage() {
                 </p>
               </div>
               <h1 className="mt-10 text-4xl font-bold text-text-on-dark sm:text-5xl lg:text-6xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-                A serious production studio with profoundly unserious ideas.
+                A serious production studio{" "}
+                <span className="text-text-on-dark/55">with profoundly unserious ideas.</span>
               </h1>
               <p className="mt-6 max-w-xl text-lg text-text-on-dark/90" style={{ lineHeight: 'var(--leading-body)' }}>
                 PING builds real things with autonomous systems, films what actually happens, and publishes the evidence. Cinematic investigations into the hidden systems shaping our future, where we build, break, test, and explain the technology ourselves.
@@ -247,10 +249,10 @@ export default function HomePage() {
                 This site is a live TenantOS tenant. The runtime behind it is under active construction.
                 Maturity labels on this page say what is real.
               </p>
-            </ScrollReveal>
-            <ScrollReveal delay={0.15}>
+            </div>
+            <div className="entrance-rise entrance-rise-late">
               <HeroEvidenceCard />
-            </ScrollReveal>
+            </div>
           </div>
         </Container>
       </Section>
@@ -274,23 +276,31 @@ export default function HomePage() {
       {/* 01a WHAT WE MAKE: the studio output, in the copy pack's words */}
       <Section size="minor">
         <Container className="max-w-5xl">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey-text">/make</p>
-          <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-            What we make
-          </h2>
+          <Reveal>
+            <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey-text">/make</p>
+            <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+              What we make
+            </h2>
+          </Reveal>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-border-soft bg-surface p-5">
-              <h3 className="font-bold text-text">Long-form films</h3>
-              <p className="mt-2 text-sm text-text-muted">Multi-hour documentaries produced by a supervised agent factory, with every finished minute verified before it counts.</p>
-            </div>
-            <div className="rounded-lg border border-border-soft bg-surface p-5">
-              <h3 className="font-bold text-text">Shorts</h3>
-              <p className="mt-2 text-sm text-text-muted">One idea, one proof, one payoff. Clips are cut only from finished, accepted footage.</p>
-            </div>
-            <div className="rounded-lg border border-border-soft bg-surface p-5">
-              <h3 className="font-bold text-text">Investigations</h3>
-              <p className="mt-2 text-sm text-text-muted">The engineering behind the films, published as annotated breakdowns with logs, timestamps, and receipts.</p>
-            </div>
+            <Reveal className="h-full">
+              <div className="h-full rounded-lg border border-border-soft bg-surface p-5">
+                <h3 className="font-bold text-text">Long-form films</h3>
+                <p className="mt-2 text-sm text-text-muted">Multi-hour documentaries produced by a supervised agent factory, with every finished minute verified before it counts.</p>
+              </div>
+            </Reveal>
+            <Reveal delay={90} className="h-full">
+              <div className="h-full rounded-lg border border-border-soft bg-surface p-5">
+                <h3 className="font-bold text-text">Shorts</h3>
+                <p className="mt-2 text-sm text-text-muted">One idea, one proof, one payoff. Clips are cut only from finished, accepted footage.</p>
+              </div>
+            </Reveal>
+            <Reveal delay={180} className="h-full">
+              <div className="h-full rounded-lg border border-border-soft bg-surface p-5">
+                <h3 className="font-bold text-text">Investigations</h3>
+                <p className="mt-2 text-sm text-text-muted">The engineering behind the films, published as annotated breakdowns with logs, timestamps, and receipts.</p>
+              </div>
+            </Reveal>
           </div>
         </Container>
       </Section>
@@ -298,26 +308,34 @@ export default function HomePage() {
       {/* 01a2 HOW WE WORK: the three rules the studio can prove */}
       <Section size="minor" className="bg-deep">
         <Container className="max-w-5xl">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey">/prove</p>
-          <h2 className="mt-4 text-3xl font-bold text-text-on-dark sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-            How we work
-          </h2>
+          <Reveal>
+            <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey">/prove</p>
+            <h2 className="mt-4 text-3xl font-bold text-text-on-dark sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+              How we work
+            </h2>
+          </Reveal>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
-              <p className="font-mono text-xs font-bold text-honey">01</p>
-              <h3 className="mt-2 font-bold text-text-on-dark">Activity is not output.</h3>
-              <p className="mt-2 text-sm text-text-on-dark/85">Work counts when a verified artifact lands in the record.</p>
-            </div>
-            <div className="rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
-              <p className="font-mono text-xs font-bold text-honey">02</p>
-              <h3 className="mt-2 font-bold text-text-on-dark">Evidence outranks reports.</h3>
-              <p className="mt-2 text-sm text-text-on-dark/85">If a summary and the disk disagree, the disk wins.</p>
-            </div>
-            <div className="rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
-              <p className="font-mono text-xs font-bold text-honey">03</p>
-              <h3 className="mt-2 font-bold text-text-on-dark">Finished means verified, not rendered.</h3>
-              <p className="mt-2 text-sm text-text-on-dark/85">Every release passes decode, seam, and hash checks, and a human ear, before it ships.</p>
-            </div>
+            <Reveal className="h-full">
+              <div className="h-full rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
+                <p className="font-mono text-xs font-bold text-honey">01</p>
+                <h3 className="mt-2 font-bold text-text-on-dark">Activity is not output.</h3>
+                <p className="mt-2 text-sm text-text-on-dark/85">Work counts when a verified artifact lands in the record.</p>
+              </div>
+            </Reveal>
+            <Reveal delay={90} className="h-full">
+              <div className="h-full rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
+                <p className="font-mono text-xs font-bold text-honey">02</p>
+                <h3 className="mt-2 font-bold text-text-on-dark">Evidence outranks reports.</h3>
+                <p className="mt-2 text-sm text-text-on-dark/85">If a summary and the disk disagree, the disk wins.</p>
+              </div>
+            </Reveal>
+            <Reveal delay={180} className="h-full">
+              <div className="h-full rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
+                <p className="font-mono text-xs font-bold text-honey">03</p>
+                <h3 className="mt-2 font-bold text-text-on-dark">Finished means verified, not rendered.</h3>
+                <p className="mt-2 text-sm text-text-on-dark/85">Every release passes decode, seam, and hash checks, and a human ear, before it ships.</p>
+              </div>
+            </Reveal>
           </div>
         </Container>
       </Section>
@@ -755,14 +773,16 @@ export default function HomePage() {
       {/* 08b THE LONG PING: episode discovery from the homepage */}
       <Section size="minor">
         <Container>
-          <SectionHeading
-            eyebrow="/watch · Latest from the studio"
-            title="The Long Ping: the show that tests the thesis"
-            description="Long-form films about the systems everything else depends on: how they fail, why they fail that way, and what remembering changes. Watch the newest film, or take an episode as audio or as a written transcript series."
-          />
-          <div className="mt-10">
+          <Reveal>
+            <SectionHeading
+              eyebrow="/watch · Latest from the studio"
+              title="The Long Ping: the show that tests the thesis"
+              description="Long-form films about the systems everything else depends on: how they fail, why they fail that way, and what remembering changes. Watch the newest film, or take an episode as audio or as a written transcript series."
+            />
+          </Reveal>
+          <Reveal className="mt-10">
             <VideoCard video={featuredFilm} large />
-          </div>
+          </Reveal>
           <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 font-medium">
             <Link href="/blog" className="text-accent hover:underline">
               All episodes, Shorts, and transcripts →
