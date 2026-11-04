@@ -4,6 +4,8 @@ import { CTASection } from "@/components/cta-section";
 import { Reveal } from "@/components/reveal";
 import { getTenant } from "@/lib/tenant-config";
 import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
+import { getAllPosts } from "@/lib/blog";
+import { getEssaySlugsForTechPage } from "@/lib/essay-links";
 
 export interface TechSection {
   heading: string;
@@ -44,6 +46,16 @@ export function TechArticle({ eyebrow, title, lede, status, sections, related, s
         { name: title, url: siteUrl + "/technology/" + slug },
       ])
     : null;
+  // From the studio notebook (Wave 18, B-10): reverse internal links to
+  // the essays that genuinely belong with this page. The mapping in
+  // @/lib/essay-links holds slugs only; titles and excerpts come from
+  // the blog data layer, so they cannot drift from the posts. A page
+  // with no mapped essays renders no section at all.
+  const notebookPosts = slug
+    ? getEssaySlugsForTechPage(slug)
+        .map((s) => getAllPosts().find((p) => p.slug === s))
+        .filter((p): p is NonNullable<typeof p> => Boolean(p))
+    : [];
   return (
     <>
       {breadcrumbJsonLd ? (
@@ -85,6 +97,19 @@ export function TechArticle({ eyebrow, title, lede, status, sections, related, s
               ))}
             </ul>
           </div>
+          {notebookPosts.length > 0 ? (
+            <div className="mt-12 border-t border-border-soft pt-8">
+              <Reveal><h3 className="text-sm font-semibold uppercase tracking-wide text-text-subtle">From the studio notebook</h3></Reveal>
+              <ul className="mt-4 space-y-6">
+                {notebookPosts.map((p) => (
+                  <li key={p.slug}>
+                    <Link href={`/blog/${p.slug}`} className="font-medium text-honey-text hover:underline">{p.title}</Link>
+                    <p className="mt-1 text-text-muted" style={{ lineHeight: 'var(--leading-body)' }}>{p.excerpt}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </Container>
       </Section>
       <CTASection />
