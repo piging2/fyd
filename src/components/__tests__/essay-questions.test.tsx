@@ -6,28 +6,34 @@ import { ESSAY_QUESTIONS, getEssayQuestions } from "@/lib/essay-questions";
 import { getAllPosts } from "@/lib/blog";
 
 /**
- * Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3 (regrade defect 7): for an essay with data, the FAQPage
+ * Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4 (regrade defect 7): for an essay with data, the FAQPage
  * JSON-LD must describe exactly the questions the page displays, both
  * generated from the same items in src/lib/essay-questions. For a post
  * with no data, the section must not render at all.
  */
 describe("essay questions pilot data", () => {
-  it("covers exactly the pilot, batch 2 and batch 3 slugs, each resolving to a real post", () => {
+  it("covers exactly the pilot, batch 2, batch 3 and batch 4 slugs, each resolving to a real post", () => {
     expect(Object.keys(ESSAY_QUESTIONS).sort()).toEqual([
       "airplane-mode-postmortem",
       "the-440-million-typo",
       "the-blackout-was-a-software-bug",
       "the-boat-that-stopped-the-world",
       "the-bug-that-didnt-bite",
+      "the-certificate-that-expired",
       "the-day-facebook-deleted-itself",
+      "the-day-the-phone-book-burned",
       "the-machine-that-trusted-its-software",
+      "the-most-expensive-second-in-history",
       "the-night-gitlab-deleted-itself",
+      "the-phone-that-became-a-grenade",
       "the-retry-that-charged-twice",
       "the-rocket-that-overflowed",
       "the-scheduler-said-it-ran",
       "the-space-probe-that-measured-in-pounds",
       "the-standup-is-a-distributed-system",
+      "the-typo-that-emptied-the-shelves",
       "the-update-that-grounded-the-planet",
+      "the-worm-that-ate-the-hospitals",
       "what-a-hash-taught-us-about-trust",
     ]);
     const published = new Set(getAllPosts().map((p) => p.slug));
@@ -122,6 +128,42 @@ describe("essay questions schema equals display", () => {
       "the-bug-that-didnt-bite",
       "the-blackout-was-a-software-bug",
       "the-day-facebook-deleted-itself",
+    ];
+    for (const batchSlug of batch) {
+      const batchItems = getEssayQuestions(batchSlug);
+      expect(batchItems.length).toBe(3);
+      const html = renderToStaticMarkup(<EssayQuestions slug={batchSlug} />);
+      const scripts = html.match(/<script type="application\/ld\+json">/g) || [];
+      expect(scripts.length).toBe(1);
+      const match = html.match(
+        /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+      );
+      const ld = JSON.parse(match![1]);
+      expect(ld["@type"]).toBe("FAQPage");
+      expect(ld.mainEntity.map((q: { name: string }) => q.name)).toEqual(
+        batchItems.map((i) => i.question),
+      );
+      expect(
+        ld.mainEntity.map(
+          (q: { acceptedAnswer: { text: string } }) => q.acceptedAnswer.text,
+        ),
+      ).toEqual(batchItems.map((i) => i.answer));
+      for (const item of batchItems) {
+        expect(html).toContain(item.question);
+        expect(html).toContain(item.answer);
+      }
+      expect((html.match(/<details/g) || []).length).toBe(3);
+    }
+  });
+
+  it("batch 4 essays: rendered section shows the same questions as its JSON-LD, exactly once", () => {
+    const batch = [
+      "the-typo-that-emptied-the-shelves",
+      "the-day-the-phone-book-burned",
+      "the-worm-that-ate-the-hospitals",
+      "the-most-expensive-second-in-history",
+      "the-certificate-that-expired",
+      "the-phone-that-became-a-grenade",
     ];
     for (const batchSlug of batch) {
       const batchItems = getEssayQuestions(batchSlug);

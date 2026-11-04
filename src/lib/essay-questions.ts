@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -356,6 +356,144 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "How does the factory decide whether a safety gate can be trusted?",
       answer:
         "A check is not trusted because it exists, but because a known-bad artifact fails it and a known-good one passes, on the record, repeatedly. A gate that has never demonstrably caught anything is a decoration with a confident name.",
+    },
+  ],
+  "the-typo-that-emptied-the-shelves": [
+    {
+      id: "shelves-q1",
+      category: "essay-questions",
+      question: "What did the mistyped command actually remove?",
+      answer:
+        "One of the inputs was entered incorrectly, so the command removed a larger set of servers than intended, including machines that supported the index and placement subsystems. The command did not fail; it worked perfectly and removed exactly the servers it was told to remove.",
+    },
+    {
+      id: "shelves-q2",
+      category: "essay-questions",
+      question: "Why did losing the index matter if the data itself was safe?",
+      answer:
+        "Billions of objects sat safely on disks in Virginia, intact, checksummed, and unharmed, but the map to the data was being rebuilt. Without the index, S3 in US-EAST-1 could not service requests at all while both subsystems restarted.",
+    },
+    {
+      id: "shelves-q3",
+      category: "essay-questions",
+      question: "What did Amazon change after the outage instead of blaming the engineer?",
+      answer:
+        "The tool was modified to remove capacity more slowly, with safeguards to prevent any subsystem from dropping below its minimum required capacity. Amazon also moved to partition the index into smaller cells and rebuilt the dashboard console to run across multiple regions.",
+    },
+  ],
+  "the-day-the-phone-book-burned": [
+    {
+      id: "phonebook-q1",
+      category: "essay-questions",
+      question: "Why were healthy websites unreachable during the Dyn attack?",
+      answer:
+        "The attack did not break the websites; it broke the directions to them. Dyn's DNS infrastructure drowned in junk traffic, so legitimate questions about where a site lived could not get through, even though the sites' own servers were fine.",
+    },
+    {
+      id: "phonebook-q2",
+      category: "essay-questions",
+      question: "How did Mirai recruit its botnet?",
+      answer:
+        "Mirai scanned for devices with telnet open and tried a built-in list of 62 factory default username and password combinations. If one pair worked, the device quietly joined the botnet and began scanning for the next device.",
+    },
+    {
+      id: "phonebook-q3",
+      category: "essay-questions",
+      question: "What was the revised size of the attacking botnet, and why did the first count mislead?",
+      answer:
+        "Dyn revised its estimate to up to about 100,000 malicious endpoints. The earlier count of tens of millions of IP addresses was inflated by the retry storm, as legitimate resolvers asked again and again because the first answer never came.",
+    },
+  ],
+  "the-worm-that-ate-the-hospitals": [
+    {
+      id: "wannacry-q1",
+      category: "essay-questions",
+      question: "How long had the patch existed before WannaCry struck?",
+      answer:
+        "Microsoft released the patch in Security Bulletin MS17-010 on March 14, 2017, and the outbreak began on May 12. Fifty-nine days separated the patch from the outbreak, and twenty-eight days separated the public release of the exploit from the outbreak.",
+    },
+    {
+      id: "wannacry-q2",
+      category: "essay-questions",
+      question: "Which operating system ran on most infected machines?",
+      answer:
+        "About 98 percent of infected computers were running Windows 7, while fewer than 0.1 percent were running Windows XP. The central failure was that mainstream, supported Windows 7 machines had not received a critical patch that had been available for fifty-nine days.",
+    },
+    {
+      id: "wannacry-q3",
+      category: "essay-questions",
+      question: "How did a $10.69 domain registration stop the worm?",
+      answer:
+        "Marcus Hutchins registered an unregistered domain the malware tried to contact, for $10.69, and WannaCry then stopped encrypting new victims. The logic appears to have been a sandbox check: a program that gets an answer from a nonsense domain may conclude it is inside an analyst's sandbox and shut down.",
+    },
+  ],
+  "the-most-expensive-second-in-history": [
+    {
+      id: "leap-q1",
+      category: "essay-questions",
+      question: "What made the 2012 leap second livelock Linux machines?",
+      answer:
+        "The leap second code set the system clock back one second, but the call to clock_was_set() had been removed in 2007, so the high-resolution timer bases never adjusted. Timers set for less than a second ahead were suddenly in the past, fired immediately, and kept re-arming and expiring in a loop.",
+    },
+    {
+      id: "leap-q2",
+      category: "essay-questions",
+      question: "How does Google's leap smear avoid the problem?",
+      answer:
+        "Google spreads the extra second across a twenty-hour window centered on the event, slowing every clock by roughly fourteen parts per million. No timestamp repeats and no duration goes negative, and Google's one rule is never to mix smeared and unsmeared time sources.",
+    },
+    {
+      id: "leap-q3",
+      category: "essay-questions",
+      question: "Why did Cloudflare's resolver panic in 2017?",
+      answer:
+        "A lookup that straddled the clock step produced a round trip of roughly negative one second, and the smoothed value eventually crossed below zero. That negative number reached Go's rand.Int63n(), which panics when the limit it is given is negative, so RRDNS panicked and CNAME lookups failed.",
+    },
+  ],
+  "the-certificate-that-expired": [
+    {
+      id: "equifax-q1",
+      category: "essay-questions",
+      question: "How long was Equifax's traffic inspector blind, and why?",
+      answer:
+        "Its SSL certificate expired on January 31, 2016, and for 19 months the appliance passed traffic through while inspecting none of it. When the certificate expired, the device failed open instead of stopping traffic or refusing to work.",
+    },
+    {
+      id: "equifax-q2",
+      category: "essay-questions",
+      question: "Why did Equifax's scans miss the vulnerable system?",
+      answer:
+        "The scans came back clean because the scan examined the root directory of the system and not the subdirectory where Apache Struts was actually listed. A mis-aimed check produced output that looked exactly like a passed check, so the clean result was treated as a fact about the world.",
+    },
+    {
+      id: "equifax-q3",
+      category: "essay-questions",
+      question: "What did the attackers reach beyond the dispute portal, and how?",
+      answer:
+        "ACIS was not walled off from the rest of the network, and an unsecured file held administrative usernames and passwords in plain text. With harvested credentials the attackers reached 48 other databases that had nothing to do with consumer disputes, running about 9,000 queries over 76 days.",
+    },
+  ],
+  "the-phone-that-became-a-grenade": [
+    {
+      id: "note7-q1",
+      category: "essay-questions",
+      question: "What was wrong with the first Note 7 battery?",
+      answer:
+        "Battery A's cell pouch provided inadequate volume for the electrode assembly, so the assembly was compressed and the negative electrode deflected in the corner of the cell. Bent electrodes stressed the thin separator, creating paths to an internal short circuit and thermal runaway.",
+    },
+    {
+      id: "note7-q2",
+      category: "essay-questions",
+      question: "Why did the replacement phones catch fire too?",
+      answer:
+        "Battery B was a different battery with a different defect: ultrasonic welding burrs on the positive tab could be driven through the insulation tape and separator into the negative electrode, and some cells had no insulation tape at all. The defect arrived when production ramped up suddenly to supply millions of replacement cells.",
+    },
+    {
+      id: "note7-q3",
+      category: "essay-questions",
+      question: "What did the final investigation test, and what did it conclude?",
+      answer:
+        "Samsung put roughly 700 researchers and engineers on the problem and tested more than 200,000 fully assembled devices and more than 30,000 batteries. It concluded the phone's hardware and software were exonerated and the fires came from the batteries, plural, with separate causes, plural.",
     },
   ],
 };
