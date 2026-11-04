@@ -6,6 +6,7 @@ import { getAllPosts, getAllSlugs, getPost, renderMarkdown } from "@/lib/blog";
 import { episodeVideos, featuredFilm } from "@/lib/longping-media";
 import { getTenant } from "@/lib/tenant-config";
 import { SocialsHub } from "@/components/socials-hub";
+import { EssayQuestions } from "@/components/essay-questions";
 
 /** The Long Ping episodes in series order, for prev/next navigation and
  *  per-episode share images. Video entries come from the verified media
@@ -146,6 +147,8 @@ export default async function BlogPostPage({
       <Section>
         <Container className="max-w-4xl">
           <article dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }} />
+
+          <EssayQuestions slug={slug} />
 
           {(prevEpisode || nextEpisode) && (
             <nav
