@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
+import { Reveal } from "@/components/reveal";
 
 export interface TechSection {
   heading: string;
@@ -40,7 +41,7 @@ export function TechArticle({ eyebrow, title, lede, status, sections, related }:
           <div className="space-y-10">
             {sections.map((s) => (
               <section key={s.heading}>
-                <h2 className="text-2xl font-bold text-text">{s.heading}</h2>
+                <Reveal><h2 className="text-2xl font-bold text-text">{s.heading}</h2></Reveal>
                 <div className="mt-3 space-y-4 text-text-muted" style={{ lineHeight: 'var(--leading-body)' }}>
                   {s.body}
                 </div>
@@ -48,7 +49,7 @@ export function TechArticle({ eyebrow, title, lede, status, sections, related }:
             ))}
           </div>
           <div className="mt-12 border-t border-border-soft pt-8">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-text-subtle">Related</h3>
+            <Reveal><h3 className="text-sm font-semibold uppercase tracking-wide text-text-subtle">Related</h3></Reveal>
             <ul className="mt-3 space-y-2">
               {related.map((r) => (
                 <li key={r.href}>
