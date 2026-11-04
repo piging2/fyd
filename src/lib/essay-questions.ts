@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, Wave 39 same wave addition, Wave 40 same wave addition, Wave 43 same wave addition, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, Wave 39 same wave addition, Wave 40 same wave addition, Wave 43 same wave addition, Wave 44 same wave addition, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -1023,6 +1023,29 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "How did engineers end the collapse without fixing the bug first?",
       answer:
         "Engineers starved the bug. They suspended traffic on the backup signaling links so the fatal pairing of recovery messages could not occur in the same way, reducing the pathways by which one switch return could ambush another mid-recovery, and the ordinary evening decline in call volume added another margin of safety. The last link cleared at 11:30 p.m., about nine hours after the 2:25 p.m. start, with more than 50 million calls blocked and AT&T losing more than $60 million; the actual repair, a rollback followed by weeks of laboratory reproduction, came after.",
+    },
+  ],
+  "the-captain-who-flew-a-computer": [
+    {
+      id: "captain-q1",
+      category: "essay-questions",
+      question: "How did a brief pitot ice blockage turn into a stall?",
+      answer:
+        "Ice crystals blocked the pitot probes, so the speed on the left display fell from about 275 knots to 60 knots even though the airplane itself had not slowed. At 02:10:05 UTC the autopilot and autothrust disconnected and the flight control law stepped down from normal law to alternate law, so the protections the crew had flown behind could no longer be guaranteed. The pilot flying pulled back, pitch rose to 11 degrees in 10 seconds, and the jet climbed to about 38,000 feet, trading its speed for altitude, until it stalled.",
+    },
+    {
+      id: "captain-q2",
+      category: "essay-questions",
+      question: "Why could the pilot not flying not see the fatal sidestick input?",
+      answer:
+        "The Airbus sidesticks are not mechanically linked: each is a small spring loaded stick at the side of a seat, and when both pilots make inputs the computers average them. The pilot not flying could not see or feel the sustained pull the pilot flying was making, so the fatal input stayed invisible. When the pilot not flying did press the takeover button to give one sidestick sole authority, the priority was silently reversed, the averaging resumed, and no alarm announced the reversal.",
+    },
+    {
+      id: "captain-q3",
+      category: "essay-questions",
+      question: "Why did the stall warning teach the pilot the wrong lesson?",
+      answer:
+        "The stall warning depended on computed airspeed, and below a certain computed speed the system judged its own data invalid and suppressed the warning. Pulling back, deeper into the stall, lowered the computed speed and silenced it, while pushing forward, the correct recovery input, raised the computed speed, made the data valid again, and set it screaming. It sounded 75 times, teaching the pilot the completely false lesson that pushing forward makes the screaming start and pulling back makes it stop.",
     },
   ],
 };
