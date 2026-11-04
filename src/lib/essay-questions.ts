@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, Wave 39 same wave addition, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, Wave 39 same wave addition, Wave 40 same wave addition, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -931,6 +931,29 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "How did GitHub recover, and what was the final outcome?",
       answer:
         "There was no trustworthy merge tool, so GitHub restored the affected MySQL clusters from backups that ran every four hours and were stored in remote blob storage, resynchronized the replicas, and then processed the backlog of over five million webhook events and 80,000 Pages builds. About 200,000 webhook payloads that outlived an internal time limit were dropped, but no user data was lost: the orphaned East writes were reconciled from the binary logs. Status returned to green at 23:03 UTC on October 22, 24 hours and 11 minutes after the blink.",
+    },
+  ],
+  "1202-the-alarm-nobody-panicked-about": [
+    {
+      id: "apollo-q1",
+      category: "essay-questions",
+      question: "What did a 1202 alarm actually mean, and what did the computer do when it raised one?",
+      answer:
+        "It was a capacity announcement, not a crash report. If a job requested a core set and none was free, the computer raised 1202; if it requested a VAC area and none was free, it raised 1201. It then restarted itself on purpose, in a controlled way, in milliseconds, threw away the unfinished low priority work, restored the critical jobs from their protected checkpoints, and carried on flying, without rescheduling the bogus radar jobs that had caused the pileup.",
+    },
+    {
+      id: "apollo-q2",
+      category: "essay-questions",
+      question: "Why could guidance officer Steve Bales call Go so quickly on the first 1202?",
+      answer:
+        "He did not decide from memory. Jack Garman, 24, in the back room, had a handwritten list under the plexiglass on his console, made after a final training simulation in which Bales had called an abort on a similar alarm the computer could recover from and Gene Kranz ordered every possible computer alarm written down with its correct response. Garman's note for 1201 and 1202 said the computer was shedding work and recovering: safe to continue if the alarm was occasional, a real problem only if it became continuous.",
+    },
+    {
+      id: "apollo-q3",
+      category: "essay-questions",
+      question: "What caused the overload that produced five alarms in about four minutes?",
+      answer:
+        "The rendezvous radar, powered and warmed in SLEW or AUTO in case of an abort and tracking nothing, fed the computer spurious counter increments through its coupling data units. Two 800 cycle power supplies were not locked in phase, so the units read the stationary antenna as moving impossibly fast and ordered updates at up to 6,400 increments a second on each of two channels, stealing about 15 percent of the computer. The descent software had been tested to tolerate roughly a tenth, so job reservations piled up until the Executive ran out of core sets and VAC areas.",
     },
   ],
 };
