@@ -599,6 +599,19 @@ a {
   }
 }
 
+/* Wave 08 proof rail: the pinned claim swaps with an opacity-only fade
+   when the active rule changes. The enhancement only mounts when motion
+   is allowed; the keyframes live under no-preference as a backstop. */
+@media (prefers-reduced-motion: no-preference) {
+  .proof-claim-in {
+    animation: proofClaimIn 0.3s ease-out both;
+  }
+  @keyframes proofClaimIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
 /* Mobile typography scaling — 80% of desktop values for readability */
 @media (max-width: 768px) {
   :root {

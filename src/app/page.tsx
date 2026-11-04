@@ -4,6 +4,7 @@ import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { Reveal } from "@/components/reveal";
+import { ProofRail } from "@/components/proof-rail";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { BlueprintGrid } from "@/components/blueprint-grid";
@@ -308,35 +309,7 @@ export default function HomePage() {
       {/* 01a2 HOW WE WORK: the three rules the studio can prove */}
       <Section size="minor" className="bg-deep">
         <Container className="max-w-5xl">
-          <Reveal>
-            <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey">/prove</p>
-            <h2 className="mt-4 text-3xl font-bold text-text-on-dark sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-              How we work
-            </h2>
-          </Reveal>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <Reveal className="h-full">
-              <div className="h-full rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
-                <p className="font-mono text-xs font-bold text-honey">01</p>
-                <h3 className="mt-2 font-bold text-text-on-dark">Activity is not output.</h3>
-                <p className="mt-2 text-sm text-text-on-dark/85">Work counts when a verified artifact lands in the record.</p>
-              </div>
-            </Reveal>
-            <Reveal delay={90} className="h-full">
-              <div className="h-full rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
-                <p className="font-mono text-xs font-bold text-honey">02</p>
-                <h3 className="mt-2 font-bold text-text-on-dark">Evidence outranks reports.</h3>
-                <p className="mt-2 text-sm text-text-on-dark/85">If a summary and the disk disagree, the disk wins.</p>
-              </div>
-            </Reveal>
-            <Reveal delay={180} className="h-full">
-              <div className="h-full rounded-lg border border-text-on-dark/15 bg-deep-2/60 p-5">
-                <p className="font-mono text-xs font-bold text-honey">03</p>
-                <h3 className="mt-2 font-bold text-text-on-dark">Finished means verified, not rendered.</h3>
-                <p className="mt-2 text-sm text-text-on-dark/85">Every release passes decode, seam, and hash checks, and a human ear, before it ships.</p>
-              </div>
-            </Reveal>
-          </div>
+          <ProofRail />
         </Container>
       </Section>
 
