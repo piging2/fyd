@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -793,6 +793,98 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "What three rules govern evidence in PING?",
       answer:
         "Never turn absence of evidence into evidence of absence, never hide a failure behind an empty result, and never let uncertainty look like confidence. Failures get typed semantics: what failed, where, whether it is retryable, and whether state changed.",
+    },
+  ],
+  "hpp-to-ping-first-tenant": [
+    {
+      id: "hpp-q1",
+      category: "essay-questions",
+      question: "What is the TenantOS model, as the post states it?",
+      answer:
+        "The model is platform code plus tenant configuration plus content: one codebase, many tenants. Each tenant is identity, brand, navigation, content, domain, and integrations expressed as configuration, never as a fork.",
+    },
+    {
+      id: "hpp-q2",
+      category: "essay-questions",
+      question: "What pattern from the carpentry site was kept, and why?",
+      answer:
+        "The carpentry site had a configuration authority pattern: versioned JSON files loaded through a typed adapter layer, with components forbidden from importing the JSON directly. The transformation promoted that pattern because it is the tenant boundary, and a tenant.ping.v1.json authority now owns PING's identity, tagline, brand colors, navigation, contact info, and provenance note.",
+    },
+    {
+      id: "hpp-q3",
+      category: "essay-questions",
+      question: "What does the post say TenantOS does not yet claim?",
+      answer:
+        "TenantOS is a direction with one proof point, not a product. The site does not yet demonstrate Tenant B onboarding end to end, per-tenant domains at the edge, or per-tenant integrations, and the point of the first tenant is to make the second tenant boring.",
+    },
+  ],
+  "the-website-that-launched-to-everyone-at-once": [
+    {
+      id: "healthcare-q1",
+      category: "essay-questions",
+      question: "How many people visited HealthCare.gov on day one, and how many enrolled?",
+      answer:
+        "The administration's own figure for the day was about 4.7 million unique visitors. The internal war room notes counted the people who actually completed an enrollment on day one, and the number was six.",
+    },
+    {
+      id: "healthcare-q2",
+      category: "essay-questions",
+      question: "Why did account creation become the bottleneck?",
+      answer:
+        "Before a visitor could look at a single insurance plan, they had to create a secure account, because a late decision had removed the option of browsing plans anonymously. Everything depended on the Enterprise Identity Management system, EIDM, the front door, and administration officials acknowledged within weeks that account creation was the bottleneck.",
+    },
+    {
+      id: "healthcare-q3",
+      category: "essay-questions",
+      question: "What role was missing among the contractors?",
+      answer:
+        "The build was divided among 55 contractors, and no contract described the system. The missing role was the lead systems integrator, the one party responsible for making the pieces into a whole, and the HHS inspector general found that CMS did not select one until October 2013, after the launch.",
+    },
+  ],
+  "the-biggest-debut-priced-by-a-glitch": [
+    {
+      id: "debut-q1",
+      category: "essay-questions",
+      question: "Why did the IPO cross keep rechecking instead of opening?",
+      answer:
+        "The cross application ran a validation check against the orders and cancellations in the book before it would commit to a price, but orders and cancellations kept arriving while the check ran. Each new arrival invalidated the check and sent the application back to run it again, so the cross fell 19 minutes behind the live order flow.",
+    },
+    {
+      id: "debut-q2",
+      category: "essay-questions",
+      question: "How many orders were left stuck, and for how long?",
+      answer:
+        "About 8,000 of the orders placed in the gap between 11:11 and 11:30 were released into the open market when continuous trading commenced. The remaining 30,000-plus went nowhere: not executed, not cancelled, not confirmed, and they stayed stuck for more than two hours.",
+    },
+    {
+      id: "debut-q3",
+      category: "essay-questions",
+      question: "What did NASDAQ leadership do mid-incident, and what penalty followed?",
+      answer:
+        "Senior leadership decided not to delay the start of secondary trading, believing they had fixed the design limitation by removing a few lines of code live, mid-incident, without understanding the root cause. In May 2013, NASDAQ agreed to a $10 million penalty, the largest ever imposed on an exchange at that time.",
+    },
+  ],
+  "the-rover-that-kept-rebooting-itself": [
+    {
+      id: "rover-q1",
+      category: "essay-questions",
+      question: "Why did the lander computer keep resetting itself?",
+      answer:
+        "The bc_sched task checked that bc_dist had finished distributing the previous cycle's data, and bc_dist had a hard deadline. If bc_sched woke and found bc_dist still unfinished, the spacecraft declared an error and reset itself, by design, so the resets were the safety system reporting truthfully that a critical job had failed to finish on time.",
+    },
+    {
+      id: "rover-q2",
+      category: "essay-questions",
+      question: "What was the priority inversion at the heart of the bug?",
+      answer:
+        "The low priority weather task held a lock that the high priority bc_dist was waiting on, while medium priority tasks kept running ahead of the weather task, so the lock was never released. Nothing in the system was broken: the highest priority work was effectively running at the priority of the lowest, plus the medium tasks.",
+    },
+    {
+      id: "rover-q3",
+      category: "essay-questions",
+      question: "How did the team reproduce the failure and fix it?",
+      answer:
+        "The team ran the same activities that had preceded the failures on a replica of the spacecraft computer, with the trace facility armed, and made the failure happen on Earth in less than 18 hours. The fix was a creation flag that already existed: VxWorks mutexes could be created with priority inheritance switched on, and after extensive ground testing the change was sent to the spacecraft through the mission's specialized patch process.",
     },
   ],
 };
