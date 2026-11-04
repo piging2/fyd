@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -218,6 +218,144 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "What does the essay say a backup actually is?",
       answer:
         "A backup is not a file. A backup is a restore you have actually performed, because GitLab had copies but lacked evidence that the copies could become a database again.",
+    },
+  ],
+  "the-rocket-that-overflowed": [
+    {
+      id: "rocket-q1",
+      category: "essay-questions",
+      question: "What conversion overflowed and destroyed Ariane 5?",
+      answer:
+        "A 64-bit floating point number representing horizontal velocity was converted into a 16-bit signed integer, and the number was too large, so the conversion overflowed. Thirty-seven seconds into its first flight on June 4, 1996, the rocket veered off course, began breaking apart, and was destroyed by its own range safety system.",
+    },
+    {
+      id: "rocket-q2",
+      category: "essay-questions",
+      question: "Why did redundancy not save the rocket?",
+      answer:
+        "Both inertial reference units ran the same software with the same hidden assumption, so the backup had already failed the same way, for the same reason. Redundancy protected against random hardware failure, but it did not protect against identical software making the identical mistake.",
+    },
+    {
+      id: "rocket-q3",
+      category: "essay-questions",
+      question: "What does reused code carry with it?",
+      answer:
+        "Every reused component carries the border conditions of the world it was born in: ranges, timings, loads, and assumptions packed quietly into the crate. Ariane 4's code was not sloppy; it was fitted to Ariane 4, and Ariane 5 asked it to live in a different physics.",
+    },
+  ],
+  "the-update-that-grounded-the-planet": [
+    {
+      id: "update-q1",
+      category: "essay-questions",
+      question: "How many Windows devices were affected, and what did the update do to them?",
+      answer:
+        "Microsoft later estimated about 8.5 million Windows devices were affected. The sensor read outside the intended bounds, Windows responded to a misbehaving kernel-level driver, and the machine entered a boot loop that, for many organizations, had to be fixed by hand, machine by machine.",
+    },
+    {
+      id: "update-q2",
+      category: "essay-questions",
+      question: "What is a canary deployment, in the essay's terms?",
+      answer:
+        "A canary releases to a tiny slice first, watches, then widens. The essay calls it humility with a pipeline: our confidence is finite, so our exposure should be finite too.",
+    },
+    {
+      id: "update-q3",
+      category: "essay-questions",
+      question: "What does the essay argue about trust and blast radius?",
+      answer:
+        "Trust should be wide, but blast radius should be narrow, with staged rings even for fast channels and an automatic halt when the first ring reports elevated crashes. July 19, 2024 is what happens when only the first half gets engineered.",
+    },
+  ],
+  "the-boat-that-stopped-the-world": [
+    {
+      id: "boat-q1",
+      category: "essay-questions",
+      question: "How long was the Ever Given stuck, and how many vessels waited?",
+      answer:
+        "The Ever Given ran aground in a narrow, single-lane stretch of the canal during a sandstorm with strong winds and sat wedged between the banks for six days. More than 400 vessels waited by the time the ship was refloated on March 29, helped by dredging, tugboats, and a full moon's tide.",
+    },
+    {
+      id: "boat-q2",
+      category: "essay-questions",
+      question: "What property had the supply chain optimized away?",
+      answer:
+        "The system had optimized away margin, the part of a design that looks wasteful on every ordinary day and priceless on the one extraordinary day. The cost of margin is continuous and visible, while the cost of its absence is rare and total.",
+    },
+    {
+      id: "boat-q3",
+      category: "essay-questions",
+      question: "What does the factory keep as its version of margin?",
+      answer:
+        "The factory keeps a protected reserve of free space that normal work may never allocate, enforced before pressure, not apologized for after. On the day a runaway process starts eating the disk, that reserve is where the logs, the tools, and the recovery work live while you fix the thing that is trying to kill the machine.",
+    },
+  ],
+  "the-bug-that-didnt-bite": [
+    {
+      id: "y2k-q1",
+      category: "essay-questions",
+      question: "Why would the year 2000 be mistaken for 1900?",
+      answer:
+        "For decades, software stored years as two digits, because memory was expensive and 19 was the century of everyone who wrote the code. When the calendar rolled to 2000, 00 would be indistinguishable from 1900, and every calculation that depended on dates risked going politely insane.",
+    },
+    {
+      id: "y2k-q2",
+      category: "essay-questions",
+      question: "What did the Y2K remediation actually consist of?",
+      answer:
+        "It was a census: find every system, find every date, decide what breaks, fix it, and test it, ideally by rolling clocks forward in a lab. The essay calls it maintenance as a heroic act, performed at global scale, with a deadline set by the rotation of the Earth.",
+    },
+    {
+      id: "y2k-q3",
+      category: "essay-questions",
+      question: "Why does successful prevention look like hype?",
+      answer:
+        "Prevention that works looks, from the outside, identical to prevention that was never needed, and the budget holder cannot see the counterfactual. The work succeeded, and the success erased the evidence that the work was necessary.",
+    },
+  ],
+  "the-blackout-was-a-software-bug": [
+    {
+      id: "blackout-q1",
+      category: "essay-questions",
+      question: "What triggered the 2003 blackout, and what hid it from operators?",
+      answer:
+        "A sagging power line in northern Ohio brushed against some poorly trimmed trees and shorted out. A race condition in the alarm software then failed silently, so the operators' screens did not show the alarms that would have told them lines were tripping.",
+    },
+    {
+      id: "blackout-q2",
+      category: "essay-questions",
+      question: "What two jobs does every monitoring system have?",
+      answer:
+        "Every monitoring system has two jobs: detect the problem, and detect its own death. The absence of a heartbeat is itself information, if someone built the system to treat silence as a signal rather than as the sound of everything being fine.",
+    },
+    {
+      id: "blackout-q3",
+      category: "essay-questions",
+      question: "How did the factory change its reporting after a worker died mid-job?",
+      answer:
+        "Every claim now carries a heartbeat and a deadline in a journal the worker does not own, and a missed heartbeat is recorded as an event, loudly, by machinery that does not depend on the thing it watches. Absence became data.",
+    },
+  ],
+  "the-day-facebook-deleted-itself": [
+    {
+      id: "facebook-q1",
+      category: "essay-questions",
+      question: "What command made Facebook vanish on October 4, 2021?",
+      answer:
+        "During routine maintenance, a command issued to assess the capacity of the global backbone network withdrew the BGP routes that told the internet where Facebook's DNS servers lived. A bug in the audit tool that was supposed to catch dangerous commands let this one through.",
+    },
+    {
+      id: "facebook-q2",
+      category: "essay-questions",
+      question: "Why was recovery so hard once the routes were withdrawn?",
+      answer:
+        "Facebook's internal systems ran on the same network it had just withdrawn, so the tools engineers needed to fix the problem were unreachable by the problem. Engineers who physically went to the data centers found their access badges did not work, because the badge system also depended on the vanished network.",
+    },
+    {
+      id: "facebook-q3",
+      category: "essay-questions",
+      question: "How does the factory decide whether a safety gate can be trusted?",
+      answer:
+        "A check is not trusted because it exists, but because a known-bad artifact fails it and a known-good one passes, on the record, repeatedly. A gate that has never demonstrably caught anything is a decoration with a confident name.",
     },
   ],
 };
