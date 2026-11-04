@@ -761,6 +761,9 @@ export default function HomePage() {
             <Link href="/blog" className="text-accent hover:underline">
               All episodes, Shorts, and transcripts →
             </Link>
+            <Link href="/episodes" className="text-accent hover:underline">
+              Episode pages →
+            </Link>
             {socialDestinations
               .filter((d) => d.platform === "Spotify" || d.platform === "Substack")
               .map((d) => (

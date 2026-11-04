@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getTenant } from "@/lib/tenant-config";
 import { getAllPosts } from "@/lib/blog";
+import { episodePages } from "@/lib/episodes";
 
 /**
  * Version of the sitemap entry contract (Q-C-03): the URL set plus the
@@ -33,7 +34,7 @@ const TECH_PAGES = [
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = getSiteUrl();
   const now = new Date();
-  const staticRoutes = ["", "/technology", "/blog", "/products", "/about", "/contact", "/faq", "/privacy", "/newsletter"];
+  const staticRoutes = ["", "/technology", "/blog", "/episodes", "/products", "/about", "/contact", "/faq", "/privacy", "/newsletter"];
 
   const entries: MetadataRoute.Sitemap = staticRoutes.map((r) => ({
     url: `${siteUrl}${r}`,
@@ -63,6 +64,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
   for (const t of TECH_PAGES) {
     entries.push({
       url: `${siteUrl}${t}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    });
+  }
+
+  for (const ep of episodePages) {
+    entries.push({
+      url: siteUrl + "/episodes/" + ep.slug,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
