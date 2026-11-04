@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container, Section } from "@/components/section";
+import { getPost } from "@/lib/blog";
 import { durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
 import { getTenant } from "@/lib/tenant-config";
 
@@ -20,19 +21,19 @@ export async function generateMetadata({
   const { video } = entry;
   return {
     title: video.title,
-    description: video.blurb,
+    description: entry.description,
     alternates: { canonical: "/episodes/" + slug },
     openGraph: {
       type: "video.other",
       title: video.title,
-      description: video.blurb,
+      description: entry.description,
       url: "/episodes/" + slug,
       images: [{ url: video.thumbnail, alt: video.title }],
     },
     twitter: {
       card: "summary_large_image",
       title: video.title,
-      description: video.blurb,
+      description: entry.description,
       images: [video.thumbnail],
     },
   };
@@ -49,6 +50,10 @@ export default async function EpisodeLandingPage({
     notFound();
   }
   const { video } = entry;
+  // The engineering breakdown is the published blog post that shares this
+  // episode slug. If that slug ever stops resolving, the section below is
+  // skipped rather than linking to a page that does not exist.
+  const breakdown = getPost(slug);
   const tenant = getTenant();
   const siteUrl =
     tenant.domain ??
@@ -62,7 +67,7 @@ export default async function EpisodeLandingPage({
     "@context": "https://schema.org",
     "@type": "VideoObject",
     name: video.title,
-    description: video.blurb,
+    description: entry.description,
     url: video.watchUrl,
     embedUrl: embedUrlFor(video),
     thumbnailUrl: [video.thumbnail],
@@ -127,6 +132,19 @@ export default async function EpisodeLandingPage({
               {siteUrl.replace("https://", "")}/episodes/{slug}
             </span>
           </div>
+
+          {breakdown && (
+            <div className="mt-12 rounded-lg border border-border-soft p-5">
+              <h2 className="text-2xl font-bold text-text">Read the engineering breakdown</h2>
+              <p className="mt-3 font-bold text-text">{breakdown.title}</p>
+              <p className="mt-2 text-text-muted">{breakdown.excerpt}</p>
+              <p className="mt-4 font-medium">
+                <Link href={"/blog/" + breakdown.slug} className="text-accent hover:underline">
+                  Read the breakdown →
+                </Link>
+              </p>
+            </div>
+          )}
 
           {(prev || next) && (
             <nav aria-label="More episodes of The Long Ping" className="mt-12 grid gap-4 sm:grid-cols-2">

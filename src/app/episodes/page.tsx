@@ -4,7 +4,7 @@ import { Container, Section, SectionHeading } from "@/components/section";
 import { episodePages } from "@/lib/episodes";
 
 const DESCRIPTION =
-  "Every episode of The Long Ping with its own page: the film, its duration where the record has one, and the story it tells, with a direct link to watch on YouTube.";
+  "Every episode of The Long Ping with its own page: the film, its duration where the record has one, and the story it tells, with a link to watch on YouTube.";
 
 export const metadata: Metadata = {
   title: "Episodes",

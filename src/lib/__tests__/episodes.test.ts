@@ -1,3 +1,4 @@
+import { getPost } from "@/lib/blog";
 import { durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
 import { episodeVideos, featuredFilm } from "@/lib/longping-media";
 
@@ -25,6 +26,22 @@ describe("episode landing page data (B-12)", () => {
     expect(durationToIso8601("soon")).toBeNull();
     for (const v of episodeVideos) {
       expect(durationToIso8601(v.duration)).toBeNull();
+    }
+  });
+
+  it("keeps every landing page meta description in the 147 to 160 band", () => {
+    for (const e of episodePages) {
+      expect(e.description.length).toBeGreaterThanOrEqual(147);
+      expect(e.description.length).toBeLessThanOrEqual(160);
+    }
+  });
+
+  it("resolves every episode slug to its published breakdown post", () => {
+    for (const e of episodePages) {
+      const post = getPost(e.slug);
+      expect(post?.slug).toBe(e.slug);
+      expect((post?.title ?? "").length).toBeGreaterThan(0);
+      expect((post?.excerpt ?? "").length).toBeGreaterThan(0);
     }
   });
 

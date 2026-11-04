@@ -17,13 +17,37 @@ import { episodeVideos, featuredFilm, type FeaturedVideo } from "@/lib/longping-
 export interface EpisodePage {
   slug: string;
   video: FeaturedVideo;
+  /**
+   * Meta description for the landing page, in the site 147 to 160
+   * character band. Derived only from the episode own blurb and facts:
+   * the two over band blurbs are trimmed subsets of the blurb, and the
+   * under band blurb is extended with the closing fact of its matching
+   * blog post (the argument never actually ended). The blurb itself is
+   * unchanged, so cards and other surfaces that show it are untouched.
+   */
+  description: string;
 }
 
 /** Series order: Episode 1, Episode 2, then the featured film (Episode 3). */
 export const episodePages: EpisodePage[] = [
-  { slug: "what-survives-10000-years", video: episodeVideos.find((v) => v.id === "ekJnwDb7ssw")! },
-  { slug: "the-water-wheel-problem", video: episodeVideos.find((v) => v.id === "ibgccWqthsw")! },
-  { slug: "the-grid-problem", video: featuredFilm },
+  {
+    slug: "what-survives-10000-years",
+    video: episodeVideos.find((v) => v.id === "ekJnwDb7ssw")!,
+    description:
+      "Episode 1: if everyone maintaining your world disappeared tonight, what would still be true in ten thousand years? Five hours on preservation and memory.",
+  },
+  {
+    slug: "the-water-wheel-problem",
+    video: episodeVideos.find((v) => v.id === "ibgccWqthsw")!,
+    description:
+      "Episode 2, chapters 1-10: the water wheel, the grid it built, and the long argument between centralised and distributed power, an argument that never ended.",
+  },
+  {
+    slug: "the-grid-problem",
+    video: featuredFilm,
+    description:
+      "Episode 3 of The Long Ping, in full: three hours and forty-three minutes on how power grids fail, why they fail the way they do, and what the failures teach.",
+  },
 ];
 
 export function getEpisodePage(slug: string): EpisodePage | null {
