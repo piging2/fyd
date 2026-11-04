@@ -956,6 +956,29 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
         "The rendezvous radar, powered and warmed in SLEW or AUTO in case of an abort and tracking nothing, fed the computer spurious counter increments through its coupling data units. Two 800 cycle power supplies were not locked in phase, so the units read the stationary antenna as moving impossibly fast and ordered updates at up to 6,400 increments a second on each of two channels, stealing about 15 percent of the computer. The descent software had been tested to tolerate roughly a tenth, so job reservations piled up until the Executive ran out of core sets and VAC areas.",
     },
   ],
+  "the-thermostat-that-joined-a-botnet": [
+    {
+      id: "thermostat-q1",
+      category: "essay-questions",
+      question: "How big was the attack on KrebsOnSecurity, and why did Akamai stop defending it even though its network had held?",
+      answer:
+        "The attack arrived at 623 gigabits per second, according to Akamai, aimed at one man's WordPress site. Akamai had been defending Krebs for free and absorbed the first day, but defending one journalist at that scale would cost millions of dollars, and it could not set the precedent of spending that kind of money on a free account, so KrebsOnSecurity went dark. It was not confessing technical defeat: its network had held, and Krebs eventually got back online under Project Shield, a free service run by Jigsaw, a unit of Alphabet, built specifically to protect journalists and human rights organizations from exactly this kind of silencing.",
+    },
+    {
+      id: "thermostat-q2",
+      category: "essay-questions",
+      question: "How did Mirai recruit cameras, DVRs and other gadgets into its botnet?",
+      answer:
+        "Mirai scanned random internet addresses looking for an open Telnet port, the old remote login service that cameras, DVRs, routers and a long tail of forgotten gadgets shipped with switched on. When something answered, it tried logging in with its list of factory default username and password combinations, a little over sixty of them, like admin/admin and root/12345: the password printed in the manual, identical for every unit that ever rolled off the line. If one pair worked, the device was conscripted, kept recording video or routing packets exactly as before, and its owner noticed nothing.",
+    },
+    {
+      id: "thermostat-q3",
+      category: "essay-questions",
+      question: "What did California SB-327 require, and why did it target Mirai's recruitment method?",
+      answer:
+        "SB-327 was signed on September 28, 2018 and took effect on January 1, 2020, becoming the first law in the United States to regulate the security of connected devices directly. If a device can be logged into from outside the local network, then either its preprogrammed password must be unique to that individual device, or the device must force the user to create a new means of authentication the first time it is used. A skeleton key ring stops working when every door has a different lock, and Mirai's recruitment list, applied to a world of unique passwords, gets nothing.",
+    },
+  ],
 };
 
 export function getEssayQuestions(slug: string): FaqItem[] {
