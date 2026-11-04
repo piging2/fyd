@@ -5,6 +5,14 @@ import { getAllPosts } from "@/lib/blog";
 import { episodeVideos, featuredFilm, shortVideos } from "@/lib/longping-media";
 import { VideoCard } from "@/components/video-card";
 import { SocialsHub } from "@/components/socials-hub";
+import { getTenant } from "@/lib/tenant-config";
+import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
+
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://fyd-product.vercel.app");
 
 const DESCRIPTION =
   "PING build notes and The Long Ping on film: architecture, implementation, and the reasoning behind both, plus every episode with its Shorts and transcripts.";
@@ -38,9 +46,17 @@ function formatDate(d: string) {
 
 export default function BlogPage() {
   const posts = getAllPosts();
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Home", url: siteUrl },
+    { name: "Blog", url: siteUrl + "/blog" },
+  ]);
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <Section className="bg-deep">
         <Container className="max-w-4xl">
           <SectionHeading

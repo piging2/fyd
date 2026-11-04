@@ -2,6 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { episodePages } from "@/lib/episodes";
+import { getTenant } from "@/lib/tenant-config";
+import { buildBreadcrumbJsonLd, buildCollectionPageJsonLd } from "@/lib/structured-data";
+
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://fyd-product.vercel.app");
 
 const DESCRIPTION =
   "Every episode of The Long Ping with its own page: the film, its duration where the record has one, and the story it tells, with a link to watch on YouTube.";
@@ -26,8 +34,29 @@ export const metadata: Metadata = {
 };
 
 export default function EpisodesPage() {
+  const collectionJsonLd = buildCollectionPageJsonLd({
+    name: "Episodes",
+    url: siteUrl + "/episodes",
+    description: DESCRIPTION,
+    items: episodePages.map((e) => ({
+      name: e.video.title,
+      url: siteUrl + "/episodes/" + e.slug,
+    })),
+  });
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Home", url: siteUrl },
+    { name: "Episodes", url: siteUrl + "/episodes" },
+  ]);
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <Section className="bg-deep">
         <Container className="max-w-4xl">
           <SectionHeading

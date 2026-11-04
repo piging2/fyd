@@ -1,5 +1,5 @@
 import { getPost } from "@/lib/blog";
-import { buildEpisodeDepth, durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
+import { buildEpisodeDepth, buildEpisodePageTitle, durationToIso8601, embedUrlFor, episodePages, episodeShortTitle, getEpisodePage } from "@/lib/episodes";
 import { episodeVideos, featuredFilm } from "@/lib/longping-media";
 
 describe("episode landing page data (B-12)", () => {
@@ -47,6 +47,27 @@ describe("episode landing page data (B-12)", () => {
 
   it("derives the embed URL from the verified video id", () => {
     expect(embedUrlFor(featuredFilm)).toBe("https://www.youtube.com/embed/" + featuredFilm.id);
+  });
+});
+
+describe("unified episode page titles (Wave 29, regrade defect 8)", () => {
+  it("builds every episode title in the one pattern, with the layout suffix under 75 chars", () => {
+    const built = episodePages.map((e) => buildEpisodePageTitle(e));
+    expect(built).toEqual([
+      "The Long Ping, Episode 1: What Survives 10,000 Years",
+      "The Long Ping, Episode 2: The Water Wheel Problem (Chapters 1-10)",
+      "The Long Ping, Episode 3: The Grid Problem",
+    ]);
+    for (const title of built) {
+      expect(title).toMatch(/^The Long Ping, Episode [123]: .+/);
+      expect((title + " · PING").length).toBeLessThan(75);
+    }
+  });
+
+  it("strips either stored decoration to the short title, and leaves stored titles untouched", () => {
+    expect(episodeShortTitle("The Long Ping, Episode 1: What Survives 10,000 Years")).toBe("What Survives 10,000 Years");
+    expect(episodeShortTitle("The Grid Problem | The Long Ping")).toBe("The Grid Problem");
+    expect(episodePages[2].video.title).toBe("The Grid Problem | The Long Ping");
   });
 });
 

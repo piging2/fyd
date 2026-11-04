@@ -5,6 +5,7 @@ import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { Reveal } from "@/components/reveal";
+import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
 import {
   SystemTopology,
   TenantModel,
@@ -53,8 +54,16 @@ const DEEP_DIVES = [
 ];
 
 export default function TechnologyPage() {
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Home", url: siteUrl },
+    { name: "Technology", url: siteUrl + "/technology" },
+  ]);
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Header */}
       <Section className="bg-deep">
         <Container className="max-w-4xl">

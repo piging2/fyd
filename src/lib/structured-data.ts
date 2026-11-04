@@ -108,16 +108,48 @@ export interface ItemListItemInput {
  * Product type, no Offer, no price, and no rating is emitted, in line
  * with the honest boundary at the top of this file.
  */
+function listItemElements(items: ItemListItemInput[]) {
+  return items.map((item, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: item.name,
+    item: item.url,
+  }));
+}
+
 export function buildItemListJsonLd(items: ItemListItemInput[]) {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    itemListElement: items.map((item, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: item.name,
-      item: item.url,
-    })),
+    itemListElement: listItemElements(items),
+  };
+}
+
+export interface CollectionPageInput {
+  name: string;
+  url: string;
+  description?: string;
+  items: ItemListItemInput[];
+}
+
+/**
+ * CollectionPage carries, as its mainEntity, one ItemList naming, in
+ * order, exactly the items the collection page visibly lists. Used for
+ * index pages whose whole job is the list (the episodes index). No
+ * fields beyond the page own name, url, description, and the listed
+ * items are emitted.
+ */
+export function buildCollectionPageJsonLd(input: CollectionPageInput) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: input.name,
+    url: input.url,
+    ...(input.description ? { description: input.description } : {}),
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: listItemElements(input.items),
+    },
   };
 }
 

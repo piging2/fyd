@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container, Section } from "@/components/section";
 import { getPost } from "@/lib/blog";
-import { buildEpisodeDepth, durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
+import { buildEpisodeDepth, buildEpisodePageTitle, durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
+import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
 import { getTenant } from "@/lib/tenant-config";
 
 export async function generateStaticParams() {
@@ -19,20 +20,21 @@ export async function generateMetadata({
   const entry = getEpisodePage(slug);
   if (!entry) return { title: "Episode Not Found" };
   const { video } = entry;
+  const pageTitle = buildEpisodePageTitle(entry);
   return {
-    title: video.title,
+    title: pageTitle,
     description: entry.description,
     alternates: { canonical: "/episodes/" + slug },
     openGraph: {
       type: "video.other",
-      title: video.title,
+      title: pageTitle + " · PING",
       description: entry.description,
       url: "/episodes/" + slug,
       images: [{ url: video.thumbnail, alt: video.title }],
     },
     twitter: {
       card: "summary_large_image",
-      title: video.title,
+      title: pageTitle + " · PING",
       description: entry.description,
       images: [video.thumbnail],
     },
@@ -84,11 +86,21 @@ export default async function EpisodeLandingPage({
   const prev = idx > 0 ? episodePages[idx - 1] : null;
   const next = idx >= 0 && idx < episodePages.length - 1 ? episodePages[idx + 1] : null;
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Home", url: siteUrl },
+    { name: "Episodes", url: siteUrl + "/episodes" },
+    { name: video.title, url: siteUrl + "/episodes/" + slug },
+  ]);
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <Section className="bg-deep">
         <Container className="max-w-4xl">

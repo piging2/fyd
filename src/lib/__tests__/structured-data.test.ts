@@ -5,6 +5,7 @@ import {
   buildAboutPageJsonLd,
   buildContactPageJsonLd,
   buildItemListJsonLd,
+  buildCollectionPageJsonLd,
 } from "../structured-data";
 
 /**
@@ -124,6 +125,41 @@ describe("buildItemListJsonLd", () => {
   });
 });
 
+describe("buildCollectionPageJsonLd", () => {
+  it("emits a CollectionPage whose mainEntity ItemList numbers items from 1 in order", () => {
+    const ld = buildCollectionPageJsonLd({
+      name: "Episodes",
+      url: "https://example.test/episodes",
+      description: "Every episode, listed.",
+      items: [
+        { name: "Episode One", url: "https://example.test/episodes/one" },
+        { name: "Episode Two", url: "https://example.test/episodes/two" },
+        { name: "Episode Three", url: "https://example.test/episodes/three" },
+      ],
+    });
+    expect(ld["@type"]).toBe("CollectionPage");
+    expect(ld.name).toBe("Episodes");
+    expect(ld.url).toBe("https://example.test/episodes");
+    expect(ld.description).toBe("Every episode, listed.");
+    expect(ld.mainEntity["@type"]).toBe("ItemList");
+    expect(ld.mainEntity.itemListElement).toEqual([
+      { "@type": "ListItem", position: 1, name: "Episode One", item: "https://example.test/episodes/one" },
+      { "@type": "ListItem", position: 2, name: "Episode Two", item: "https://example.test/episodes/two" },
+      { "@type": "ListItem", position: 3, name: "Episode Three", item: "https://example.test/episodes/three" },
+    ]);
+  });
+
+  it("omits description when the caller cannot support one", () => {
+    const ld = buildCollectionPageJsonLd({
+      name: "Episodes",
+      url: "https://example.test/episodes",
+      items: [{ name: "Episode One", url: "https://example.test/episodes/one" }],
+    });
+    expect("description" in ld).toBe(false);
+    expect(ld.mainEntity.itemListElement).toHaveLength(1);
+  });
+});
+
 describe("honest boundary", () => {
   it("no builder emits Product, Offer, price, rating, or review fields", () => {
     const all = JSON.stringify([
@@ -133,6 +169,7 @@ describe("honest boundary", () => {
       buildAboutPageJsonLd({ name: "About Example", url: "https://example.test/about" }),
       buildContactPageJsonLd({ name: "Contact", url: "https://example.test/contact" }),
       buildItemListJsonLd([{ name: "First offering", url: "https://example.test/contact" }]),
+      buildCollectionPageJsonLd({ name: "Episodes", url: "https://example.test/episodes", items: [{ name: "Episode One", url: "https://example.test/episodes/one" }] }),
     ]);
     for (const banned of ["Product", "Offer", "price", "rating", "review", "Review"]) {
       expect(all).not.toContain(banned);

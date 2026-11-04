@@ -50,6 +50,35 @@ export const episodePages: EpisodePage[] = [
   },
 ];
 
+/**
+ * Unified episode page title construction (Wave 29, regrade defect 8).
+ *
+ * The stored video titles in @/lib/longping-media are the verified
+ * YouTube inventory titles and stay untouched: Episodes 1 and 2 store
+ * "The Long Ping, Episode N: Title" while Episode 3 stores
+ * "Title | The Long Ping", so the page titles inherited that split.
+ * The pattern lives here instead: strip either stored decoration to
+ * the episode short title, then rebuild every title as
+ * "The Long Ping, Episode N: Short Title". The root layout template
+ * appends " · PING", giving the same shape as the site other titles
+ * (a descriptive subject followed by the brand suffix, as on the blog
+ * and technology pages), with the episode number every title should
+ * carry. Rendered lengths: 59, 72, and 49 characters, all under 75.
+ */
+export function episodeShortTitle(videoTitle: string): string {
+  return videoTitle
+    .replace(/^The Long Ping, Episode \d+:\s*/, "")
+    .replace(/\s*\| The Long Ping$/, "")
+    .trim();
+}
+
+export function buildEpisodePageTitle(entry: EpisodePage): string {
+  const idx = episodePages.findIndex((e) => e.slug === entry.slug);
+  const short = episodeShortTitle(entry.video.title);
+  if (idx < 0) return short;
+  return "The Long Ping, Episode " + (idx + 1) + ": " + short;
+}
+
 export function getEpisodePage(slug: string): EpisodePage | null {
   return episodePages.find((e) => e.slug === slug) ?? null;
 }
