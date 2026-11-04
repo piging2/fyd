@@ -14,6 +14,8 @@ import { FydPingUnderneath } from "./_components/fyd-ping-underneath";
 import { FydPrivacy } from "./_components/fyd-privacy";
 import { FydWhatIsReal } from "./_components/fyd-what-is-real";
 import { FydTryIt } from "./_components/fyd-try-it";
+import { FaqSection } from "@/components/faq-section";
+import { getFaqsByCategory } from "@/lib/faq";
 
 const siteUrl =
   getTenant().domain ??
@@ -66,6 +68,7 @@ export default function FydProductPage() {
         <FydPingUnderneath />
         <FydPrivacy />
         <FydWhatIsReal />
+        <FaqSection items={getFaqsByCategory("PING Social")} eyebrow="FAQ" title="Questions from business owners" containerClassName="max-w-5xl" align="center" />
         <FydTryIt />
       </main>
     </>

@@ -3,6 +3,8 @@ import { getTenant } from "@/lib/tenant-config";
 import Link from "next/link";
 import { Container, Section } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
+import { FaqSection } from "@/components/faq-section";
+import { getFaqsByCategory } from "@/lib/faq";
 import {
   getProducts,
   statusLabel,
@@ -174,6 +176,7 @@ export default function ProductsPage() {
           </p>
         </Container>
       </Section>
+      <FaqSection items={getFaqsByCategory("PING")} eyebrow="FAQ" title="Questions about the products" containerClassName="max-w-4xl" />
       <CTASection />
     </>
   );
