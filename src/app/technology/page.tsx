@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { Reveal } from "@/components/reveal";
 import {
   SystemTopology,
   TenantModel,
@@ -68,11 +69,13 @@ export default function TechnologyPage() {
       {/* System topology */}
       <Section>
         <Container className="max-w-4xl">
-          <SectionHeading
-            eyebrow="Architecture overview"
-            title="System topology"
-            description="Five layers. How the parts of PING fit together."
-          />
+          <Reveal>
+            <SectionHeading
+              eyebrow="Architecture overview"
+              title="System topology"
+              description="Five layers. How the parts of PING fit together."
+            />
+          </Reveal>
           <div className="mt-10">
             <SystemTopology />
           </div>
@@ -82,12 +85,14 @@ export default function TechnologyPage() {
       {/* TenantOS */}
       <Section className="bg-surface-2">
         <Container className="max-w-5xl">
-          <SectionHeading
-            eyebrow="TenantOS"
-            title="One codebase, many tenants"
-            description="The platform direction this site proves. Each tenant is configuration plus content plus brand plus domain, never a fork."
-            align="center"
-          />
+          <Reveal>
+            <SectionHeading
+              eyebrow="TenantOS"
+              title="One codebase, many tenants"
+              description="The platform direction this site proves. Each tenant is configuration plus content plus brand plus domain, never a fork."
+              align="center"
+            />
+          </Reveal>
           <div className="mt-10">
             <TenantModel />
           </div>
@@ -102,12 +107,14 @@ export default function TechnologyPage() {
       {/* Knowledge loop */}
       <Section>
         <Container className="max-w-5xl">
-          <SectionHeading
-            eyebrow="Canonical events"
-            title="The knowledge compounding loop"
-            description="Everything PING knows starts as an event. The loop turns raw input into institutional memory."
-            align="center"
-          />
+          <Reveal>
+            <SectionHeading
+              eyebrow="Canonical events"
+              title="The knowledge compounding loop"
+              description="Everything PING knows starts as an event. The loop turns raw input into institutional memory."
+              align="center"
+            />
+          </Reveal>
           <div className="mt-10">
             <KnowledgeLoop />
           </div>
@@ -122,13 +129,15 @@ export default function TechnologyPage() {
       {/* Business graph */}
       <Section className="bg-deep">
         <Container className="max-w-5xl">
-          <SectionHeading
-            eyebrow={<span className="text-honey">Knowledge graph</span>}
-            title={<span className="text-text-on-dark">The business graph</span>}
-            description={<span className="text-text-on-dark/80">PING does not merely store documents. It understands relationships between the things a business knows.</span>}
-            align="center"
-            descriptionColor="text-text-on-dark/80"
-          />
+          <Reveal>
+            <SectionHeading
+              eyebrow={<span className="text-honey">Knowledge graph</span>}
+              title={<span className="text-text-on-dark">The business graph</span>}
+              description={<span className="text-text-on-dark/80">PING does not merely store documents. It understands relationships between the things a business knows.</span>}
+              align="center"
+              descriptionColor="text-text-on-dark/80"
+            />
+          </Reveal>
           <div className="mt-10 rounded-xl border border-text-on-dark/10 bg-deep-2/50 p-6 sm:p-10">
             <BusinessGraph dark />
           </div>
@@ -138,12 +147,14 @@ export default function TechnologyPage() {
       {/* Agent authority */}
       <Section>
         <Container className="max-w-4xl">
-          <SectionHeading
-            eyebrow="Missions and capabilities"
-            title="Agent authority"
-            description="Intelligence does not imply authority. Agents receive explicit capability grants. Humans remain decision authorities where required."
-            align="center"
-          />
+          <Reveal>
+            <SectionHeading
+              eyebrow="Missions and capabilities"
+              title="Agent authority"
+              description="Intelligence does not imply authority. Agents receive explicit capability grants. Humans remain decision authorities where required."
+              align="center"
+            />
+          </Reveal>
           <div className="mt-10">
             <AgentAuthority />
           </div>
@@ -158,12 +169,14 @@ export default function TechnologyPage() {
       {/* Evidence and replay */}
       <Section className="bg-surface-2">
         <Container className="max-w-5xl">
-          <SectionHeading
-            eyebrow="Evidence · Witness · Lineage"
-            title="Replayable by design"
-            description="Important automation leaves enough evidence to understand what happened, why, and whether it replays cleanly."
-            align="center"
-          />
+          <Reveal>
+            <SectionHeading
+              eyebrow="Evidence · Witness · Lineage"
+              title="Replayable by design"
+              description="Important automation leaves enough evidence to understand what happened, why, and whether it replays cleanly."
+              align="center"
+            />
+          </Reveal>
           <div className="mt-10">
             <ReplayEvidence />
           </div>
@@ -178,12 +191,14 @@ export default function TechnologyPage() {
       {/* Multi-runtime */}
       <Section>
         <Container className="max-w-5xl">
-          <SectionHeading
-            eyebrow="Workers and execution"
-            title="Multi-runtime convergence"
-            description="Same authority model, different execution environments. Convergence captured 2026-09-16/17 with receipts on the homepage. Status labels reflect evidence, not aspirations."
-            align="center"
-          />
+          <Reveal>
+            <SectionHeading
+              eyebrow="Workers and execution"
+              title="Multi-runtime convergence"
+              description="Same authority model, different execution environments. Convergence captured 2026-09-16/17 with receipts on the homepage. Status labels reflect evidence, not aspirations."
+              align="center"
+            />
+          </Reveal>
           <div className="mt-10">
             <MultiRuntime />
           </div>
@@ -198,23 +213,27 @@ export default function TechnologyPage() {
       {/* Deep dives */}
       <Section className="bg-deep">
         <Container className="max-w-4xl">
-          <SectionHeading
-            eyebrow={<span className="text-honey">Deep dives</span>}
-            title={<span className="text-text-on-dark">Detailed specifications</span>}
-            description={<span className="text-text-on-dark/80">Each topic is a technical article. Status labels are honest.</span>}
-          />
+          <Reveal>
+            <SectionHeading
+              eyebrow={<span className="text-honey">Deep dives</span>}
+              title={<span className="text-text-on-dark">Detailed specifications</span>}
+              description={<span className="text-text-on-dark/80">Each topic is a technical article. Status labels are honest.</span>}
+            />
+          </Reveal>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {DEEP_DIVES.map((t) => (
+            {DEEP_DIVES.map((t, i) => (
               <Link key={t.slug} href={`/technology/${t.slug}`} className="group">
-                <div className="rounded-lg border border-text-on-dark/10 bg-deep-2/60 p-5 transition-colors group-hover:border-honey/40">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-text-on-dark group-hover:text-honey">{t.title}</h3>
-                    <span className="rounded bg-honey/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-honey">
-                      {t.status}
-                    </span>
+                <Reveal delay={(i % 3) * 90}>
+                  <div className="rounded-lg border border-text-on-dark/10 bg-deep-2/60 p-5 transition-colors group-hover:border-honey/40">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-text-on-dark group-hover:text-honey">{t.title}</h3>
+                      <span className="rounded bg-honey/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-honey">
+                        {t.status}
+                      </span>
+                    </div>
+                    <span className="mt-3 inline-block text-sm font-medium text-honey">Read →</span>
                   </div>
-                  <span className="mt-3 inline-block text-sm font-medium text-honey">Read →</span>
-                </div>
+                </Reveal>
               </Link>
             ))}
           </div>
