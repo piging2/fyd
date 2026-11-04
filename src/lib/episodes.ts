@@ -74,3 +74,72 @@ export function durationToIso8601(duration?: string): string | null {
 export function embedUrlFor(video: FeaturedVideo): string {
   return "https://www.youtube.com/embed/" + video.id;
 }
+
+/**
+ * Episode depth sections (Wave 26, regrade defect 1 full prescription).
+ *
+ * The audit prescribed, per episode page: a summary, a chapter or topic
+ * list, and an excerpt. All three are derived here from the matching
+ * published blog post body, which the page passes in from the blog data
+ * layer (@/lib/blog getPost). Nothing is hand copied into this module,
+ * so the sections cannot drift from the posts themselves. A post that
+ * yields no prose paragraph or no section heading returns null, and the
+ * page then renders no depth sections at all (dangling data guard).
+ *
+ * Labeling note: the matching posts are written breakdowns and companion
+ * essays, not transcripts, so the excerpt is labeled From the written
+ * breakdown, never as a transcript excerpt.
+ */
+export interface EpisodeBreakdownDepth {
+  /** The post real opening: its first substantive prose paragraph. */
+  summary: string;
+  /** The post actual section headings, in order. */
+  topics: string[];
+  /** A short excerpt from the post: its closing prose paragraph. */
+  excerpt: string;
+}
+
+function toPlainText(fragment: string): string {
+  return fragment
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function buildEpisodeDepth(body: string): EpisodeBreakdownDepth | null {
+  const topics: string[] = [];
+  for (const line of body.split("\n")) {
+    const h = line.match(/^#{2,3}\s+(.*)$/);
+    if (h) {
+      const topic = toPlainText(h[1]);
+      if (topic) topics.push(topic);
+    }
+  }
+  const paragraphs: string[] = [];
+  for (const block of body.split(/\n\s*\n/)) {
+    const t = block.trim();
+    if (!t) continue;
+    if (
+      t.startsWith("#") ||
+      t.startsWith("!") ||
+      t.startsWith("-") ||
+      t.startsWith("* ") ||
+      t.startsWith(">") ||
+      t.startsWith("```")
+    ) {
+      continue;
+    }
+    const plain = toPlainText(t.replace(/\n/g, " "));
+    if (plain) paragraphs.push(plain);
+  }
+  if (paragraphs.length === 0 || topics.length === 0) return null;
+  return {
+    summary: paragraphs[0],
+    topics,
+    excerpt: paragraphs[paragraphs.length - 1],
+  };
+}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container, Section } from "@/components/section";
 import { getPost } from "@/lib/blog";
-import { durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
+import { buildEpisodeDepth, durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
 import { getTenant } from "@/lib/tenant-config";
 
 export async function generateStaticParams() {
@@ -54,6 +54,10 @@ export default async function EpisodeLandingPage({
   // episode slug. If that slug ever stops resolving, the section below is
   // skipped rather than linking to a page that does not exist.
   const breakdown = getPost(slug);
+  // Depth sections (summary, topics, excerpt) are derived from that same
+  // post body by the episodes data module. A post that stops resolving,
+  // or yields no depth, renders no depth sections (dangling data guard).
+  const depth = breakdown ? buildEpisodeDepth(breakdown.body) : null;
   const tenant = getTenant();
   const siteUrl =
     tenant.domain ??
@@ -143,6 +147,47 @@ export default async function EpisodeLandingPage({
                   Read the breakdown →
                 </Link>
               </p>
+            </div>
+          )}
+
+          {depth && breakdown && (
+            <div className="mt-12 space-y-10">
+              <div>
+                <h2 className="text-2xl font-bold text-text">Episode summary</h2>
+                <p className="mt-2 text-sm font-semibold text-text-muted">
+                  Summary from the written breakdown for this episode.
+                </p>
+                <p className="mt-3 text-text-muted">{depth.summary}</p>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-bold text-text">Topics in this episode</h2>
+                <p className="mt-2 text-sm font-semibold text-text-muted">
+                  The section headings of the written breakdown. The breakdown
+                  renders no heading anchors, so each topic links to the post.
+                </p>
+                <ul className="mt-3 list-disc space-y-2 pl-6 text-text-muted">
+                  {depth.topics.map((topic) => (
+                    <li key={topic}>
+                      <Link href={"/blog/" + breakdown.slug} className="text-accent hover:underline">
+                        {topic}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-bold text-text">From the written breakdown</h2>
+                <blockquote className="mt-3 border-l-4 border-honey pl-4 italic text-text-muted">
+                  {depth.excerpt}
+                </blockquote>
+                <p className="mt-4 font-medium">
+                  <Link href={"/blog/" + breakdown.slug} className="text-accent hover:underline">
+                    Read the full breakdown →
+                  </Link>
+                </p>
+              </div>
             </div>
           )}
 

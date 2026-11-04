@@ -1,5 +1,5 @@
 import { getPost } from "@/lib/blog";
-import { durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
+import { buildEpisodeDepth, durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
 import { episodeVideos, featuredFilm } from "@/lib/longping-media";
 
 describe("episode landing page data (B-12)", () => {
@@ -47,5 +47,73 @@ describe("episode landing page data (B-12)", () => {
 
   it("derives the embed URL from the verified video id", () => {
     expect(embedUrlFor(featuredFilm)).toBe("https://www.youtube.com/embed/" + featuredFilm.id);
+  });
+});
+
+describe("episode depth sections (Wave 26, regrade defect 1)", () => {
+  it("derives summary, topics and excerpt from the real post for every episode", () => {
+    for (const e of episodePages) {
+      const post = getPost(e.slug);
+      expect(post).not.toBeNull();
+      const depth = buildEpisodeDepth(post!.body);
+      expect(depth).not.toBeNull();
+      expect(depth!.summary.length).toBeGreaterThan(100);
+      expect(post!.body).toContain(depth!.summary);
+      const headings = [...post!.body.matchAll(/^##\s+(.*)$/gm)].map((m) =>
+        m[1].replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").trim(),
+      );
+      expect(depth!.topics).toEqual(headings);
+      expect(depth!.topics.length).toBeGreaterThanOrEqual(2);
+      expect(depth!.excerpt.length).toBeGreaterThan(50);
+      expect(depth!.excerpt).not.toBe(depth!.summary);
+    }
+  });
+
+  it("pins the actual headings of the three breakdown posts", () => {
+    const expected: Record<string, string[]> = {
+      "what-survives-10000-years": [
+        "Watch it",
+        "Read the full transcript series on Substack",
+        "The short version",
+      ],
+      "the-water-wheel-problem": ["Watch it", "Read the series"],
+      "the-grid-problem": ["Watch, listen, read", "Start with the Shorts", "Why this episode"],
+    };
+    for (const e of episodePages) {
+      const depth = buildEpisodeDepth(getPost(e.slug)!.body);
+      expect(depth!.topics).toEqual(expected[e.slug]);
+    }
+  });
+
+  it("strips markdown markup and skips images and lists when deriving depth", () => {
+    const body = [
+      "![thumb](https://example.com/x.jpg)",
+      "",
+      "First **real** paragraph with a [link](/blog/x) inside it, long enough to be the opening of a post.",
+      "",
+      "## First topic",
+      "",
+      "- a list item, not prose",
+      "",
+      "## Second topic",
+      "",
+      "Closing paragraph here, also long enough to stand as an excerpt from the written breakdown.",
+    ].join("\n");
+    const depth = buildEpisodeDepth(body);
+    expect(depth).not.toBeNull();
+    expect(depth!.summary).toBe(
+      "First real paragraph with a link inside it, long enough to be the opening of a post.",
+    );
+    expect(depth!.topics).toEqual(["First topic", "Second topic"]);
+    expect(depth!.excerpt).toBe(
+      "Closing paragraph here, also long enough to stand as an excerpt from the written breakdown.",
+    );
+  });
+
+  it("returns null on dangling or empty breakdown data, so pages render no depth sections", () => {
+    expect(buildEpisodeDepth("")).toBeNull();
+    expect(buildEpisodeDepth("![img](https://example.com/x.jpg)\n\n- only a list")).toBeNull();
+    expect(buildEpisodeDepth("Prose with no headings at all, however long it runs on for.")).toBeNull();
+    expect(getPost("no-such-episode")).toBeNull();
   });
 });
