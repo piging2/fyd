@@ -6,18 +6,6 @@ tags: ["essays", "postmortem", "reliability"]
 status: "published"
 ---
 
-## FACT BRIEF
-
-Three load-bearing claims carry this essay. Everything else is scenery, and any figure not listed here does not appear below.
-
-**Claim 1: the trigger.** At 9:37 AM PST on February 28, 2017, an authorized Amazon S3 team member, debugging an S3 billing system that was progressing more slowly than expected, executed a command from an established playbook intended to remove a small number of servers for a billing subsystem. One input was entered incorrectly, a larger set of servers was removed than intended, and the removed servers supported two other subsystems: the index subsystem, which manages the metadata and location information of all S3 objects in the region, and the placement subsystem, which manages allocation of new storage. Allowed figures: 9:37 AM PST, February 28, 2017, US-EAST-1 (Northern Virginia). Source: Amazon's official postmortem, "Summary of the Amazon S3 Service Disruption in the Northern Virginia (US-EAST-1) Region," aws.amazon.com/message/41926.
-
-**Claim 2: the duration.** Removing that capacity forced both subsystems into a full restart, and S3 could not service requests while they restarted. The index subsystem began servicing GET, LIST, and DELETE requests at 12:26 PM PST and was fully recovered at 1:18 PM PST. The placement subsystem finished recovery at 1:54 PM PST, at which point S3 was operating normally. Allowed figures: 3 hours 41 minutes from the command to full GET, LIST, and DELETE recovery; 4 hours 17 minutes from the command to full S3 restoration. Source: the timeline in Amazon's official postmortem, same document as Claim 1.
-
-**Claim 3: the silent dashboard.** From the beginning of the event until 11:37 AM PST, Amazon could not update the individual service statuses on the AWS Service Health Dashboard, because the dashboard's administration console depended on Amazon S3. Amazon communicated through the @AWSCloud Twitter feed and banner text instead, and afterward changed the dashboard administration console to run across multiple AWS regions. Allowed figures: 11:37 AM PST, exactly two hours of dashboard silence. Source: Amazon's official postmortem, same document as Claim 1.
-
-Blast-radius color (Trello, Slack, Quora, GitHub, Nest cameras, connected lightbulbs) is drawn from contemporary reporting by The Register, March 1, 2017, and is cited as reporting, not as Amazon's account. Amazon's own list of impacted AWS services (the S3 console, EC2 new instance launches, EBS volumes needing data from an S3 snapshot, and Lambda) comes from the postmortem itself.
-
 ## The command
 
 At 9:37 on a Tuesday morning, Pacific time, an engineer at Amazon did the most dangerous thing in all of operations: something routine.
