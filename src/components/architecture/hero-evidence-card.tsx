@@ -7,7 +7,7 @@ import { MaturityLabel } from "@/components/maturity-label";
 /**
  * The living system hero card. It shows PING caught mid-work using real
  * captured evidence from PING's own commissioning run (2026-07-28), plus a
- * real live gateway probe (2026-09-16). Captured is labeled captured.
+ * captured gateway probe (2026-09-16). Captured is labeled captured.
  * Live is labeled live. Nothing is presented as live that is not.
  */
 
@@ -131,14 +131,13 @@ export function HeroEvidenceCard() {
       <div className="mt-4 border-t border-text-on-dark/10 pt-4">
         <div className="flex flex-wrap items-center gap-3">
           <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-60" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-text-on-dark/40" />
           </span>
           <p className="font-mono text-xs text-text-on-dark/80">
-            ping-gateway: healthy · constitution 1.0.0 · auth enforced on reads
+            ping-gateway: healthy at capture · constitution 1.0.0 · auth enforced on reads
           </p>
-          <span className="rounded border border-green-500/30 bg-green-500/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-green-400">
-            Live · probed 2026-09-16
+          <span className="rounded border border-text-on-dark/20 bg-text-on-dark/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-text-on-dark/70">
+            Captured · probed 2026-09-16
           </span>
         </div>
       </div>
