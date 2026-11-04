@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, Wave 39 same wave addition, Wave 40 same wave addition, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, Wave 39 same wave addition, Wave 40 same wave addition, Wave 43 same wave addition, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -1000,6 +1000,29 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "How did defenders turn SUNBURST's own killswitch against it, and what did it not fix?",
       answer:
         "FireEye, Microsoft, and GoDaddy took control of avsvmcloud.com on December 15 and 16, 2020, and GoDaddy set a wildcard record so every subdomain resolved to 20.140.0.1, an address inside the range SUNBURST read as terminate and never run again, so every surviving copy that asked for orders received the same reply: stand down, forever. The sinkhole also handed investigators a census of the infected, because each beacon carried the victim's encoded identity. But the killswitch only terminated copies still beaconing: victims where the operators had already installed other doors stayed compromised.",
+    },
+  ],
+  "ninety-seconds-of-silence": [
+    {
+      id: "silence-q1",
+      category: "essay-questions",
+      question: "How did a single switch reset turn into a network wide cascade?",
+      answer:
+        "A switch that encountered a fault reset and, as it returned, sent a message saying it had recovered. A neighboring switch began processing that message, and before the work was complete a second recovery message arrived, less than ten milliseconds after the first. The recovery code followed the defective path, communications data was overwritten, the receiving switch error detection tripped and reset it, and that victim became a broadcaster: it recovered, announced its recovery, and supplied the next machine with the opening ingredient for the same accident.",
+    },
+    {
+      id: "silence-q2",
+      category: "essay-questions",
+      question: "What was wrong with the break statement in the recovery code?",
+      answer:
+        "The December 1989 upgrade placed a C break statement inside an if statement nested inside a switch, in the fault recovery code. An if only controls whether a block runs; it does not provide the enclosing structure a break escapes, so the break belonged to the surrounding switch. Its placement changed the path execution took through the recovery logic, and under the fatal conditions control left the expected sequence and the recovery process overwrote communications data it needed to preserve.",
+    },
+    {
+      id: "silence-q3",
+      category: "essay-questions",
+      question: "How did engineers end the collapse without fixing the bug first?",
+      answer:
+        "Engineers starved the bug. They suspended traffic on the backup signaling links so the fatal pairing of recovery messages could not occur in the same way, reducing the pathways by which one switch return could ambush another mid-recovery, and the ordinary evening decline in call volume added another margin of safety. The last link cleared at 11:30 p.m., about nine hours after the 2:25 p.m. start, with more than 50 million calls blocked and AT&T losing more than $60 million; the actual repair, a rollback followed by weeks of laboratory reproduction, came after.",
     },
   ],
 };
