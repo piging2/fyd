@@ -6,16 +6,16 @@ tags: ["the-long-ping", "episodes", "the-water-wheel-problem"]
 status: "published"
 ---
 
-![The Water Wheel Problem, the Episode 2 film thumbnail](https://i.ytimg.com/vi/ibgccWqthsw/maxresdefault.jpg)
+![The Water Wheel Problem, the Episode 2 film thumbnail](https://i.ytimg.com/vi/7ljMOGuKKv8/maxresdefault.jpg)
 
 Before the grid, there was the water wheel: power made where it was used, by a machine its owner could see, touch, and repair. Episode 2 traces how we traded that world for centralised generation and continent-spanning transmission, what we gained, what we quietly lost, and why the argument between the two models never actually ended. It just changed its vocabulary.
 
 ## Watch it
 
-- **YouTube:** [The Long Ping, Episode 2: The Water Wheel Problem (Chapters 1-10)](https://www.youtube.com/watch?v=ibgccWqthsw)
+- **YouTube:** [The Long Ping, Episode 2: The Water Wheel Problem (Chapters 1-10) Corrected Edition](https://www.youtube.com/watch?v=7ljMOGuKKv8)
 - **Rumble:** [The Long Ping, Episode 2: The Water Wheel Problem (Chapters 1-10)](https://rumble.com/v7gyms6-the-long-ping-episode-2-the-water-wheel-problem-chapters-1-10.html)
 
-Chapters 1 to 10 are live now. The remaining chapters are in production, and Episode 3, [The Grid Problem](/blog/the-grid-problem), is already out in full.
+The full episode is live now in its corrected edition, and Episode 3, [The Grid Problem](/blog/the-grid-problem), is already out in full.
 
 ## Read the series
 

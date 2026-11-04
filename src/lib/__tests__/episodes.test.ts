@@ -25,7 +25,13 @@ describe("episode landing page data (B-12)", () => {
     expect(durationToIso8601(undefined)).toBeNull();
     expect(durationToIso8601("soon")).toBeNull();
     for (const v of episodeVideos) {
-      expect(durationToIso8601(v.duration)).toBeNull();
+      if (v.id === "7ljMOGuKKv8") {
+        // Episode 2 corrected edition: duration verified from the YouTube
+        // player response (lengthSeconds 12446) in the publish record.
+        expect(durationToIso8601(v.duration)).toBe("PT3H27M");
+      } else {
+        expect(durationToIso8601(v.duration)).toBeNull();
+      }
     }
   });
 

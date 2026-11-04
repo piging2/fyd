@@ -38,7 +38,7 @@ export const episodePages: EpisodePage[] = [
   },
   {
     slug: "the-water-wheel-problem",
-    video: episodeVideos.find((v) => v.id === "ibgccWqthsw")!,
+    video: episodeVideos.find((v) => v.id === "7ljMOGuKKv8")!,
     description:
       "Episode 2, chapters 1-10: the water wheel, the grid it built, and the long argument between centralised and distributed power, an argument that never ended.",
   },

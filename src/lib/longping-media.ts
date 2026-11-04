@@ -38,15 +38,16 @@ export const featuredFilm: FeaturedVideo = {
 
 export const episodeVideos: FeaturedVideo[] = [
   {
-    id: "ibgccWqthsw",
+    id: "7ljMOGuKKv8",
     title: "The Long Ping, Episode 2: The Water Wheel Problem (Chapters 1-10)",
     kind: "Episode",
-    watchUrl: "https://www.youtube.com/watch?v=ibgccWqthsw",
-    thumbnail: ytThumb("ibgccWqthsw", "maxresdefault"),
-    thumbnailCard: ytThumb("ibgccWqthsw", "hqdefault"),
-    thumbnailFallback: ytThumb("ibgccWqthsw", "hqdefault"),
+    watchUrl: "https://www.youtube.com/watch?v=7ljMOGuKKv8",
+    duration: "3h 27m",
+    thumbnail: ytThumb("7ljMOGuKKv8", "maxresdefault"),
+    thumbnailCard: ytThumb("7ljMOGuKKv8", "hqdefault"),
+    thumbnailFallback: ytThumb("7ljMOGuKKv8", "hqdefault"),
     blurb:
-      "Episode 2, chapters 1-10: the water wheel, the grid it built, and the long argument between centralised and distributed power.",
+      "Episode 2 in full, the corrected edition: the water wheel, the grid it built, and the long argument between centralised and distributed power.",
   },
   {
     id: "ekJnwDb7ssw",

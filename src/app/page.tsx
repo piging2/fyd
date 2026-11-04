@@ -21,7 +21,8 @@ import {
   HeroEvidenceCard,
 } from "@/components/architecture";
 import { getTenant } from "@/lib/tenant-config";
-import { featuredFilm, socialDestinations } from "@/lib/longping-media";
+import { socialDestinations } from "@/lib/longping-media";
+import { getFeaturedVideo } from "@/lib/latest-video";
 import { VideoCard } from "@/components/video-card";
 
 const siteUrl =
@@ -161,7 +162,10 @@ const CHANGELOG = [
   { date: "2026-09-16", hash: "15d0a9b8", note: "publication transport blocked" },
 ];
 
-export default function HomePage() {
+export const revalidate = 3600;
+
+export default async function HomePage() {
+  const featuredVideo = await getFeaturedVideo();
   const tenant = getTenant();
   const homePortals: HomePortal[] = HOMEPAGE_CIRCLE_SITE_IDS.flatMap((id) => { const pr = buildPortalProjection(id); return pr ? [{ siteId: id, projection: pr }] : []; });
   return (
@@ -225,7 +229,7 @@ export default function HomePage() {
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <a
-                  href={featuredFilm.watchUrl}
+                  href={featuredVideo.watchUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex min-h-12 items-center justify-center rounded-full bg-honey px-8 py-2 text-center font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
@@ -755,7 +759,7 @@ export default function HomePage() {
             />
           </Reveal>
           <Reveal className="mt-10">
-            <VideoCard video={featuredFilm} large />
+            <VideoCard video={featuredVideo} large />
           </Reveal>
           <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 font-medium">
             <Link href="/blog" className="text-accent hover:underline">

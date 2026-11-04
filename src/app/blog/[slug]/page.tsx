@@ -13,7 +13,7 @@ import { EssayQuestions } from "@/components/essay-questions";
  *  inventory in @/lib/longping-media. */
 const EPISODE_ORDER: { slug: string; videoId: string }[] = [
   { slug: "what-survives-10000-years", videoId: "ekJnwDb7ssw" },
-  { slug: "the-water-wheel-problem", videoId: "ibgccWqthsw" },
+  { slug: "the-water-wheel-problem", videoId: "7ljMOGuKKv8" },
   { slug: "the-grid-problem", videoId: "s3Os1RNAmeo" },
 ];
 
