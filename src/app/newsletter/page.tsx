@@ -1,7 +1,17 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getTenant } from "@/lib/tenant-config";
 import { Container, Section } from "@/components/section";
 import { NewsletterSignup } from "@/components/newsletter-signup";
+import { getAllPosts } from "@/lib/blog";
+
+function formatDate(d: string) {
+  return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
 
 const siteUrl =
   getTenant().domain ??
@@ -29,6 +39,8 @@ export const metadata: Metadata = {
 };
 
 export default function NewsletterPage() {
+  const latestPosts = getAllPosts().slice(0, 3);
+
   return (
     <>
       <Section className="bg-deep">
@@ -50,6 +62,47 @@ export default function NewsletterPage() {
             </p>
             <div className="mt-6">
               <NewsletterSignup />
+            </div>
+          </div>
+
+          <div className="mt-8 rounded-lg border border-border-soft bg-surface p-8">
+            <h2 className="text-xl font-bold text-text">What lands in your inbox</h2>
+            <p className="mt-2 text-text-muted">
+              One email when there is something worth saying. No spam, no fluff.
+            </p>
+            <ul className="mt-4 list-disc space-y-2 pl-6 text-text-muted">
+              <li>Notes on continuity, agents, business systems, and building PING in public.</li>
+              <li>
+                Architecture decisions, implementation lessons, and practical automation
+                thinking, straight from the build.
+              </li>
+              <li>No spam, ever, and you can unsubscribe anytime.</li>
+            </ul>
+          </div>
+
+          <div className="mt-8">
+            <h2 className="text-xl font-bold text-text">Latest from the blog</h2>
+            <div className="mt-4 space-y-4">
+              {latestPosts.map((post) => (
+                <article
+                  key={post.slug}
+                  className="rounded-lg border border-border-soft bg-surface p-6"
+                >
+                  <p className="text-sm text-text-muted">{formatDate(post.date)}</p>
+                  <Link href={`/blog/${post.slug}`}>
+                    <h3 className="mt-1 text-lg font-bold text-text hover:text-honey-text transition-colors">
+                      {post.title}
+                    </h3>
+                  </Link>
+                  <p className="mt-2 text-text-muted">{post.excerpt}</p>
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    className="mt-3 inline-block font-semibold text-honey-text hover:underline"
+                  >
+                    Read article
+                  </Link>
+                </article>
+              ))}
             </div>
           </div>
 
