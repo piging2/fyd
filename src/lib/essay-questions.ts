@@ -1,7 +1,7 @@
 import type { FaqItem } from "@/types/faq";
 
 /**
- * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, Wave 39 same wave addition, Wave 40 same wave addition, Wave 43 same wave addition, Wave 44 same wave addition, regrade defect 7).
+ * Per essay questions (Wave 31 pilot, Wave 32 batch 2, Wave 33 batch 3, Wave 34 batch 4, Wave 35 batch 5, Wave 36 batch 6, Wave 37 final batch, Wave 38 same wave addition, Wave 39 same wave addition, Wave 40 same wave addition, Wave 43 same wave addition, Wave 44 same wave addition, Wave 45 same wave addition, regrade defect 7).
  *
  * Each entry answers questions a reader would ask after that essay,
  * written only from the essay's own body text. The claim to essay
@@ -1046,6 +1046,29 @@ export const ESSAY_QUESTIONS: Record<string, FaqItem[]> = {
       question: "Why did the stall warning teach the pilot the wrong lesson?",
       answer:
         "The stall warning depended on computed airspeed, and below a certain computed speed the system judged its own data invalid and suppressed the warning. Pulling back, deeper into the stall, lowered the computed speed and silenced it, while pushing forward, the correct recovery input, raised the computed speed, made the data valid again, and set it screaming. It sounded 75 times, teaching the pilot the completely false lesson that pushing forward makes the screaming start and pulling back makes it stop.",
+    },
+  ],
+  "the-spreadsheet-that-ate-britain": [
+    {
+      id: "spreadsheet-q1",
+      category: "essay-questions",
+      question: "How did a 65,536 row limit end up holding only about 1,400 cases per template?",
+      answer:
+        "Commercial labs sent their results to Public Health England as CSV files, and an automated process pulled them into Excel templates saved in the legacy XLS format, which stops at 65,536 rows. Each test result, once expanded into the template, occupied several rows, not one, so each template could hold only roughly 1,400 cases. Every time a template filled, the remaining results were simply left off, with no alarm, no halt, and no error raised.",
+    },
+    {
+      id: "spreadsheet-q2",
+      category: "essay-questions",
+      question: "Why did nobody notice that 15,841 cases were missing?",
+      answer:
+        "Every person who took a test received their own result and was told to self-isolate, the dashboards updated daily with numbers that rose in a smooth, plausible curve, and the contact tracers traced the cases they were given. The failure lived in the join between parts, in the difference between the number of results the laboratories sent and the number of cases the central system received, and nobody anywhere in the chain was counting both sides of that join.",
+    },
+    {
+      id: "spreadsheet-q3",
+      category: "essay-questions",
+      question: "What did economists estimate the delayed contact tracing cost?",
+      answer:
+        "Thiemo Fetzer and Thomas Graeber could measure the cost because the missing cases were lost in proportion to how full each area's templates happened to be, almost at random, so they compared the places the spreadsheet had eaten with the places it had spared. Their conservative estimate associates the eight day failure with more than 125,000 additional infections and over 1,500 additional deaths, in a pattern that tracked the glitch rather than the underlying behaviour of the populations.",
     },
   ],
 };
