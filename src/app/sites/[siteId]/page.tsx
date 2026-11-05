@@ -104,7 +104,7 @@ export default async function DynamicSitePage({
   // no customize console (ownerConsole defaults off), and the header's
   // first <h1> is the binding-verified business name.
   return (
-    <main className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <SiteJsonLd projection={projection} />
       <SiteClient
         spec={spec}
@@ -117,6 +117,6 @@ export default async function DynamicSitePage({
         galleryMedia={galleryMedia}
         siteName={resolveSiteDisplayName(graph)}
       />
-    </main>
+    </div>
   );
 }

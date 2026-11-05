@@ -65,9 +65,6 @@
   --color-atmosphere-primary: #5E6259; /* Pewter Green — primary drifting atmospheric layer */
   --color-atmosphere-highlight: #858D81; /* Carolina Gull — gentle moving highlights */
 
-  /* Happy Light — warm luminous neutral for interior warmth */
-  --color-happy-light: #F5F0E6;
-
   /* Material Palette — Phase 8 introduction (ready for gradual rollout) */
   --color-shoji-white: #E6DFD3;      /* primary warm surface */
   --color-smokey-taupe: #CDC4B5;     /* secondary surface */
@@ -96,11 +93,9 @@
   --color-warning: #C9A227;
   --color-error: #b4543a;
 
-  /* Cedar tones (subtle accents only, 5-8% usage) */
-  --color-walnut: #5D4037;          /* deep walnut for dividers */
-  --color-burnt-cedar: #8D6E63;     /* burnt cedar for borders */
+  /* Wood and nature tones (subtle accents only) */
+  --color-walnut: #5D4037;          /* deep walnut; consumed by .engraved-corner in this sheet */
   --color-warm-ivory: #FFF8E7;      /* warm ivory for highlights */
-  --color-cedar-dust: #D4C4B8;      /* cedar dust for subtle backgrounds */
   --color-oak: #C4A77D;             /* oak for accents */
   --color-pine: #5D7A5C;             /* pine for grounding */
   --color-moss: #7A9B76;             /* moss for soft accents */
@@ -112,19 +107,10 @@
   --color-aged-bronze: #A1887F;     /* aged bronze for accents */
   --color-charcoal: #432E2D;        /* warm charcoal for text */
 
-  /* Service category accents */
-  --color-accent-decks: #4A90A4;        /* ocean blue */
-  --color-accent-fences: #2E5A4F;      /* forest green */
-  --color-accent-pergolas: #C9A227;     /* cedar gold */
-  --color-accent-remodeling: #5A6A7A;  /* slate blue */
-  --color-accent-repairs: #4A4A4A;      /* graphite */
-  --color-accent-builtins: #5D4037;     /* walnut brown */
-
-  /* Typography — Playfair Display (display) + Georgia (body) + Playball (signature) */
+  /* Typography — Playfair Display (display) + Georgia (body) */
   --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-sans: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-signature: "Playball", cursive;
 
   /* Microtypography — optical alignment and rhythm */
   --leading-display: 1.15;      /* tight leading for display headings */
@@ -236,28 +222,12 @@ body {
 
 /* Display type utility */
 .font-display { font-family: var(--font-display); }
-.font-signature { font-family: var(--font-signature); }
 
 /* Premium tracking refinement for display headings */
 .tracking-display {
   letter-spacing: -0.02em;
 }
 
-
-/* Cedar-grain divider — subtle warm planks (Directive 032). Low-opacity texture
-   so it reads as natural wood, never a stock texture or loud element. */
-.cedar-grain {
-  background-image: repeating-linear-gradient(
-    90deg,
-    #5D4037 0px,
-    #8D6E63 3px,
-    #A1887F 6px,
-    #5D4037 9px
-  );
-  background-size: 18px 100%;
-  opacity: 0.08;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
 
 /* ============================================================================
    P0 VISUAL LANGUAGE — refinement only, no redesign.
@@ -704,40 +674,9 @@ a {
   animation: shimmer-fast 1s ease-in-out;
 }
 
-/* Gold exaggerated version for HappyBrandSignature */
-.happy-gold-shine {
-  background: linear-gradient(
-    100deg,
-    transparent 0%,
-    #d4a84b 20%,        /* brighter gold */
-    #f5d790 35%,        /* lighter honey */
-    #fff8e7 50%,        /* bright champagne peak */
-    #f5d790 65%,
-    #d4a84b 80%,
-    transparent 100%
-  );
-  background-size: 200% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-}
-
-@keyframes happy-gold-sweep {
-  0%, 50% { background-position: 200% 0; opacity: 0; }
-  55% { opacity: 1; }
-  85% { background-position: -100% 0; }
-  90%, 100% { opacity: 0; background-position: -100% 0; }
-}
-
-.animate-happy-gold-idle {
-  animation: happy-gold-sweep 71s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .animate-shimmer-slow,
   .animate-shimmer-fast,
-  .animate-happy-gold-idle,
   .ccb-shimmer {
     animation: none;
   }

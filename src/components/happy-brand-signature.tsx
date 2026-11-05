@@ -2,6 +2,8 @@
 
 import * as React from "react";
 
+import "./happy-brand-signature.css";
+
 interface HappyBrandSignatureProps {
   className?: string;
 }

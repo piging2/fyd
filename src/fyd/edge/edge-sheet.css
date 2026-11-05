@@ -78,7 +78,7 @@ body.fyd-edge-lock { overflow: hidden; }
 .fyd-edge-prov { font-size: 0.75rem; opacity: 0.6; margin: 0 0 0.75rem; overflow-wrap: anywhere; }
 
 .fyd-claim {
-  display: inline-block; font-size: 0.68rem; font-weight: 600;
+  display: inline-block; font-size: 0.75rem; font-weight: 600;
   padding: 0.15rem 0.5rem; border-radius: 999px;
   border: 1px solid currentColor; vertical-align: middle;
   margin-left: 0.35rem; white-space: nowrap;
@@ -129,7 +129,7 @@ button.fyd-edge-action[data-edge-act="reference"] {
 }
 .fyd-edge-item:active { transform: scale(0.99); }
 .fyd-edge-tag {
-  flex: none; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  flex: none; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.04em; padding: 0.2rem 0.5rem; border-radius: 0.35rem;
   background: rgba(201, 162, 39, 0.16); color: #7a6116;
 }

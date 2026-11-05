@@ -23,6 +23,23 @@ describe("FaqSection JSON-LD matches displayed questions", () => {
     expect(ld.mainEntity.map((q) => q.acceptedAnswer.text)).toEqual(items.map((i) => i.answer));
   });
 
+  it("keeps hostile FAQ text inside one JSON-LD script and preserves its facts", () => {
+    const fixture = [{
+      id: "script-termination-fixture",
+      category: "Fixture",
+      question: "Does A < B & C stay intact?",
+      answer: '</ScRiPt><script id="unexpected-script">fixture</script><!--',
+    }];
+    const html = renderToStaticMarkup(<FaqSection items={fixture} title="Questions" />);
+    expect(html.match(/<script\b/gi)).toHaveLength(1);
+    expect(html.match(/<\/script>/gi)).toHaveLength(1);
+    const match = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+    expect(match).not.toBeNull();
+    expect(match![1]).not.toContain("<");
+    expect(JSON.parse(match![1])).toEqual(buildFaqJsonLd(fixture));
+    expect(html).toContain("Does A &lt; B &amp; C stay intact?");
+  });
+
   it("rendered JSON-LD names equal the questions visible in the markup", () => {
     const html = renderToStaticMarkup(<FaqSection items={items} title="Questions about the products" />);
     const match = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);

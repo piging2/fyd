@@ -29,6 +29,7 @@ import * as React from "react";
 import type { PingObject } from "@/lib/ping/types";
 import type { FYDThemeTokens, ObjectPresence } from "../sitespec/types";
 import { resolveCollapseBreakpoint } from "../sitespec/types";
+import { resolveThemeRoles } from "../sitespec/theme-roles";
 import { schemaRole } from "../sitespec/schemas";
 import type { ClaimEvidence, ObjectProjection } from "../object/object-projection";
 import type { ObjectView } from "../object/types";
@@ -145,6 +146,11 @@ export interface ObjectRailProps {
 }
 
 export function ObjectRail({ cards, presence, theme, heading }: ObjectRailProps) {
+  // Item 4 law: text binds semantic roles, never raw tokens. The rail
+  // heading is 12px text, so it takes the derived accentText role
+  // (>=4.5:1 on surface), not the raw accent (tenant audit T1 residual:
+  // the default gold accent measures 2.42:1 as small text).
+  const roles = resolveThemeRoles(theme);
   const [open, setOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const mode = presence?.mode ?? "auto";
@@ -214,7 +220,7 @@ export function ObjectRail({ cards, presence, theme, heading }: ObjectRailProps)
             {heading ? (
               <p
                 className="mb-4 text-xs font-semibold uppercase tracking-widest"
-                style={{ color: theme.accent }}
+                style={{ color: roles.accentText }}
               >
                 {heading}
               </p>

@@ -82,7 +82,7 @@ export default async function CoppersmithDemoPage() {
   // no customize console (ownerConsole defaults off), and the header's
   // first <h1> is the binding-verified business name.
   return (
-    <main className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <SiteJsonLd projection={projection} />
       {/* Utility bar: the two actions a trades visitor comes for,
           reachable from the top of the page instead of only by
@@ -131,6 +131,6 @@ export default async function CoppersmithDemoPage() {
           <span>Powered by FYD Social</span>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }

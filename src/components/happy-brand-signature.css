@@ -1,0 +1,40 @@
+/* HappyBrandSignature — component-scoped styles (T6, Website UI
+   audit 2026-11-01). The gold shine belongs to the Happy Place
+   brand signature component, its only consumer; it moved out of
+   the global stylesheet so one tenant's brand styling no longer
+   ships in the shared sheet. Rules are verbatim from globals.css. */
+
+.happy-gold-shine {
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    #d4a84b 20%,        /* brighter gold */
+    #f5d790 35%,        /* lighter honey */
+    #fff8e7 50%,        /* bright champagne peak */
+    #f5d790 65%,
+    #d4a84b 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes happy-gold-sweep {
+  0%, 50% { background-position: 200% 0; opacity: 0; }
+  55% { opacity: 1; }
+  85% { background-position: -100% 0; }
+  90%, 100% { opacity: 0; background-position: -100% 0; }
+}
+
+.animate-happy-gold-idle {
+  animation: happy-gold-sweep 71s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-happy-gold-idle {
+    animation: none;
+  }
+}

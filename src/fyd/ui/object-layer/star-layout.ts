@@ -13,7 +13,7 @@
  * constellation box's top-left.
  */
 
-export const STAR_MINI_D = 36;
+export const STAR_MINI_D = 44;
 export const STAR_PER_ROW = 3;
 /** Cell pitch (mini diameter + gap): uniform 10px gutters. */
 export const STAR_CELL = STAR_MINI_D + 10;

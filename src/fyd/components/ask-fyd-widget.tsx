@@ -17,7 +17,8 @@
  * in the renderer; this component only owns the interactive Q&A.
  *
  * Mobile: 320px safe, no horizontal overflow; input and button are at least
- * 44px tall, the Why this? toggle at least 24px.
+ * 44px tall, the Why this? toggle also 44px (T9 floor: every
+ * interactive control carries its own explicit 44px minimum).
  */
 import { useEffect, useRef, useState } from "react";
 import type { FYDThemeTokens } from "../sitespec/types";

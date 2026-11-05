@@ -209,7 +209,7 @@ function ClaimBadge({
   return (
     <span
       className={
-        "inline-block rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wide" +
+        "inline-block rounded-full border px-2 py-0.5 text-xs uppercase tracking-wide" +
         (dark ? " text-background" : " border-border-soft text-accent")
       }
       style={dark && theme ? { borderColor: theme.accent } : undefined}
@@ -400,7 +400,7 @@ function FydMotionStyles({ theme }: { theme: FYDThemeTokens }) {
     ".fyd-card h3 a { display: inline-flex; align-items: center; min-height: 44px; }",
     ".fyd-affordance summary { min-height: 44px; display: inline-flex; align-items: center; }",
     "@media (hover: none) {",
-    ".fyd-card .fyd-reln { opacity: .9; }",
+    ".fyd-card .fyd-reln { opacity: 1; }",
     ".fyd-card .fyd-affordance-mark { opacity: .95; }",
     ".fyd-card { transition: none; }",
     "}",
@@ -447,8 +447,8 @@ function FydMotionStyles({ theme }: { theme: FYDThemeTokens }) {
         ".fyd-card:hover { transform: translateY(-4px); }",
         ".fyd-card .fyd-affordance-mark { opacity: .55; transition: opacity 160ms ease; }",
         ".fyd-card:hover .fyd-affordance-mark, .fyd-card:focus-within .fyd-affordance-mark { opacity: 1; }",
-        ".fyd-card .fyd-reln { opacity: .45; transition: opacity 200ms ease; }",
-        ".fyd-card:hover .fyd-reln, .fyd-card:focus-within .fyd-reln { opacity: .9; }",
+        ".fyd-card .fyd-reln { opacity: 1; }",
+        ".fyd-card:hover .fyd-reln, .fyd-card:focus-within .fyd-reln { opacity: 1; }",
         "}",
         ".fyd-affordance-preview { animation: fyd-pop 180ms ease-out both; }",
         "@keyframes fyd-pop { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }",
@@ -495,7 +495,8 @@ const MAKER_PREDICATES = ["published_by", "created_by", "authored_by", "provided
  * card, or "Available in Grand Junction, Fruita" on a service card.
  * No giant graph visualization. Titles go through the binding verifier;
  * an unverified title kills the line instead of guessing. Hovering the
- * card subtly reveals the connection (CSS on .fyd-reln).
+ * card renders the connection at rest in the mutedForeground role
+ * (never opacity-faded: T5, Website UI audit 2026-11-01).
  */
 function relationshipLine(
   ctx: RenderContext,
@@ -633,9 +634,6 @@ function FydObjectCard({
             href={detailHref}
             data-fyd-object-id={o.id}
             style={{ color: "inherit", textDecoration: "none" }}
-            role="button"
-            tabIndex={0}
-            aria-expanded="false"
             aria-label={title}
           >
             {title}
@@ -648,10 +646,10 @@ function FydObjectCard({
         </p>
       ) : null}
       {description ? (
-        <p className="fyd-card-desc mt-2 text-sm text-accent">{description}</p>
+        <p className="fyd-card-desc mt-2 text-sm" style={{ color: roles.mutedForeground }}>{description}</p>
       ) : null}
       {reln ? (
-        <p className="fyd-reln mt-2 text-xs" style={{ color: theme.ink }}>
+        <p className="fyd-reln mt-2 text-xs" style={{ color: roles.mutedForeground }}>
           {reln}
         </p>
       ) : null}
@@ -721,9 +719,6 @@ export function ObjectDoorway({
     <a
       href={detailHref}
       data-fyd-object-id={o.id}
-      role="button"
-      tabIndex={0}
-      aria-expanded="false"
       className={"fyd-object-doorway " + (className ?? "")}
       style={{
         display: "inline-flex",
@@ -1004,6 +999,7 @@ function SectionShell({
   const motion = motionTokensForTheme(theme);
   const character = characterOf(theme);
   const char = CHARACTER_PRESENTATION[character];
+  const roles = resolveThemeRoles(theme);
   const morph =
     motion.objectTransition === "MORPH" && motion.motionIntensity !== "NONE";
   const delay =
@@ -1027,6 +1023,7 @@ function SectionShell({
         {
           ["--fyd-surface" as string]: theme.surface,
           ["--fyd-ink" as string]: theme.ink,
+          fontFamily: theme.fontBody,
           paddingTop: char.sectionRhythmPx,
           paddingBottom: char.sectionRhythmPx,
           animationDelay: delay ? `${delay}ms` : undefined,
@@ -1049,7 +1046,7 @@ function SectionShell({
           {heading}
         </h2>
       )}
-      {copy && <p className="mt-2 max-w-2xl text-base text-accent">{copy}</p>}
+      {copy && <p className="mt-2 max-w-2xl text-base" style={{ color: roles.mutedForeground }}>{copy}</p>}
       <div className="mt-6">{children}</div>
     </section>
   );
@@ -1332,11 +1329,8 @@ function LocationsSection({ section, objects, presentation, theme, ctx, motionIn
               <a
                 href={detailHref}
                 data-fyd-object-id={o.id}
-                className="inline-block rounded-full border border-border-soft px-4 py-2 text-sm transition-colors hover:bg-stone-100"
+                className="inline-flex min-h-[44px] items-center rounded-full border border-border-soft px-4 py-2 text-sm transition-colors hover:bg-stone-100"
                 style={{ color: theme.ink }}
-                role="button"
-                tabIndex={0}
-                aria-expanded="false"
                 aria-label={title}
               >
                 {title}
@@ -1449,7 +1443,7 @@ function PeopleSection({ section, objects, presentation, theme, ctx, motionIndex
                   </p>
                 ) : null}
                 {reln ? (
-                  <p className="fyd-reln mt-1 text-xs" style={{ color: theme.ink }}>
+                  <p className="fyd-reln mt-1 text-xs" style={{ color: roles.mutedForeground }}>
                     {reln}
                   </p>
                 ) : null}
@@ -1601,9 +1595,6 @@ function FeedList({
                         href={detailHref}
                         data-fyd-object-id={o.id}
                         style={{ color: "inherit", textDecoration: "none" }}
-                        role="button"
-                        tabIndex={0}
-                        aria-expanded="false"
                         aria-label={title}
                       >
                         {title}
@@ -1735,7 +1726,7 @@ function LinksSection({ section, objects, presentation, theme, ctx, motionIndex 
           <li key={link.href}>
             <a
               href={link.href}
-              className="inline-block border px-4 py-2 text-sm underline"
+              className="inline-flex min-h-[44px] items-center border px-4 py-2 text-sm underline"
               style={{ borderColor: theme.accent, color: theme.ink, borderRadius: theme.radius === "full" ? 9999 : 8 }}
             >
               {link.label}

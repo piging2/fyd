@@ -89,7 +89,7 @@ const DESKTOP_MIN = 1024;
 const TABLET_MIN = 768;
 
 /** Compact rest diameter for the tablet edge rail. */
-const EDGE_REST_D = 40;
+const EDGE_REST_D = 44;
 
 /**
  * Document-edge offset of the rail per width band (preserves the

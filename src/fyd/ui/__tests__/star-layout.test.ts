@@ -18,10 +18,10 @@ import {
 } from "../object-layer/star-layout";
 
 describe("star-layout constants", () => {
-  test("mini circles are 36px, 3 per row, 10px gutters", () => {
-    expect(STAR_MINI_D).toBe(36);
+  test("mini circles are 44px (T2 floor), 3 per row, 10px gutters", () => {
+    expect(STAR_MINI_D).toBe(44);
     expect(STAR_PER_ROW).toBe(3);
-    expect(STAR_CELL).toBe(46);
+    expect(STAR_CELL).toBe(54);
   });
 });
 
@@ -68,7 +68,7 @@ describe("starLayoutFor", () => {
     expect(l.cells).toHaveLength(6);
     const row1 = l.cells.slice(3);
     // Odd row: half-cell stagger at the centered origin of the wider box.
-    expect(row1.map((c) => c.x)).toEqual([23, 69, 115]);
+    expect(row1.map((c) => c.x)).toEqual([27, 81, 135]);
     for (const c of row1) expect(c.y).toBe(STAR_CELL);
     // The staggered row is wider than a plain row.
     expect(l.width).toBe(3 * STAR_MINI_D + 2 * 10 + STAR_CELL / 2);

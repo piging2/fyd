@@ -19,5 +19,5 @@ export async function generateMetadata() { return generateSiteMetadata(SITE_ID);
 export default async function PingBusinessPage() {
   const {projection,graph,spec,findings,renderable} = await compilePublicSite(SITE_ID);
   const brandedSpec = applyPingBrand(composePingHome(spec));
-  return <main className="min-h-screen"><SiteJsonLd projection={projection} /><SiteClient projectionCheckpoint={projection.provenance.checkpoint} graph={graph} spec={brandedSpec} findings={findings} renderable={renderable} siteId={SITE_ID} siteName={resolveSiteDisplayName(graph)} heroMedia={heroMediaFor(SITE_ID,graph,spec.ownerObjectId)}/><SiteInquirySection siteId={SITE_ID} businessName={resolveSiteDisplayName(graph)} /></main>;
+  return <div className="min-h-screen"><SiteJsonLd projection={projection} /><SiteClient projectionCheckpoint={projection.provenance.checkpoint} graph={graph} spec={brandedSpec} findings={findings} renderable={renderable} siteId={SITE_ID} siteName={resolveSiteDisplayName(graph)} heroMedia={heroMediaFor(SITE_ID,graph,spec.ownerObjectId)}/><SiteInquirySection siteId={SITE_ID} businessName={resolveSiteDisplayName(graph)} /></div>;
 }

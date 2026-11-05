@@ -122,7 +122,7 @@ import { useViewportCapabilities } from "./viewport";
 import { identityTransitionName, transitionViews } from "./view-transitions";
 
 /** Resting diameter: the small quiet glyph. */
-export const REST_D = 40;
+export const REST_D = 48;
 /**
  * PEEK placement footprint: the popover is content-sized up to PEEK_W
  * wide; the layer budgets this height for document-space placement.
@@ -663,7 +663,7 @@ export function FollowButton({
   }, [following]);
 
   const base = light
-    ? "inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold text-[#1A1729] transition-colors border border-[#E5E0D5] bg-white hover:border-[rgba(201,162,39,0.7)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C5CD6]"
+    ? "inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold text-[#1A1729] transition-colors border border-[#E5E0D5] bg-white hover:border-[rgba(201,162,39,0.7)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C5CD6]"
     : `${ACTION_BTN} border border-white/15 bg-white/10`;
   const cls = light ? `${base} w-full` : entry ? `${base} w-full` : base;
 
@@ -673,7 +673,7 @@ export function FollowButton({
         role="status"
         className={
           light
-            ? "inline-flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-full border border-[#E5E0D5] bg-white px-3 text-center text-xs font-bold text-[#1A1729]"
+            ? "inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full border border-[#E5E0D5] bg-white px-3 text-center text-xs font-bold text-[#1A1729]"
             : "inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 text-center text-xs font-bold text-white"
         }
       >
@@ -720,7 +720,7 @@ export function LikeButton({
 }) {
   const { liked, toggleLike, like } = useObjectActions(objectId, websiteUrl);
   const base = light
-    ? "inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold text-[#1A1729] transition-colors border border-[#E5E0D5] bg-white hover:border-[rgba(201,162,39,0.7)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C5CD6]"
+    ? "inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold text-[#1A1729] transition-colors border border-[#E5E0D5] bg-white hover:border-[rgba(201,162,39,0.7)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7C5CD6]"
     : `${ACTION_BTN} border border-white/15 bg-white/10`;
   const cls = light ? `${base} w-full` : entry ? `${base} w-full` : base;
   return (
@@ -1090,7 +1090,7 @@ export function MarginObject({
         <span
           data-testid="object-context-pill"
           aria-hidden="true"
-          className="pointer-events-none absolute whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold"
+          className="pointer-events-none absolute whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold"
           style={{
             top: restD + 6,
             ...(rail === "left" ? { left: -4 } : { right: -4 }),

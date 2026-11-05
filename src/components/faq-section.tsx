@@ -1,4 +1,5 @@
 import { Container, Section, SectionHeading } from "@/components/section";
+import { serializeJsonLd } from "@/lib/json-ld";
 import type { FaqItem } from "@/types/faq";
 
 /**
@@ -45,7 +46,7 @@ export function FaqSection({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
       />
       <Section>
         <Container className={containerClassName}>

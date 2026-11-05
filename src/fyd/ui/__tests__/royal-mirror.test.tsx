@@ -6,7 +6,7 @@
  *   fyd.color.royal, fyd.color.gold, fyd.surface.mirror, fyd.surface.depth,
  *   fyd.border.gold, fyd.radius.circle, fyd.radius.oval, fyd.shadow.mirror,
  *   fyd.motion.expand, fyd.motion.collapse.
- * - Shape facts: circle radius is 50%, oval radius is 999px, REST_D is 40.
+ * - Shape facts: circle radius is 50%, oval radius is 999px, REST_D is 48 (T2 floor: 44px minimum, 2026-11-05).
  * - fydMirrorCard is a non-empty reflective surface string.
  * - Decorative motion (sheen, breathing) is motion-safe by construction:
  *   resolveCircleMotion collapses it under prefers-reduced-motion, so no
@@ -17,7 +17,7 @@
  * 2026-09-22 18:40 redesign (BINDING, supersedes the earlier oval card
  * targets): GLYPH -> PEEK -> WORKSPACE. Geometry follows function; the
  * oval expansion geometry is dead. The surface contract under test:
- * - STATE 1 is the small quiet 40px glyph (REST_D).
+ * - STATE 1 is the small quiet 48px glyph (REST_D; raised from 40px by T2).
  * - STATE 2 PEEK is a compact anchored preview: max width inside the
  *   360-420px directive band, 340px placement budget, never scrolls.
  * - STATE 3 WORKSPACE is a restrained sheet inside the 360-420px band
@@ -72,8 +72,8 @@ describe("frozen shape facts", () => {
     expect(fyd.radius.oval).toBe("999px");
   });
 
-  test("rest circle stays the small quiet 40px", () => {
-    expect(REST_D).toBe(40);
+  test("rest circle stays the small quiet 48px (T2)", () => {
+    expect(REST_D).toBe(48);
   });
 
   test("STATE 2 peek is a compact anchored preview inside the 360-420px directive band", () => {

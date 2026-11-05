@@ -170,8 +170,8 @@ function descriptorFor(objectId: string, name: string, websiteUrl: string | null
 }
 
 describe("surface geometry", () => {
-  test("rest diameter is the small quiet 40px", () => {
-    expect(REST_D).toBe(40);
+  test("rest diameter is the small quiet 48px (T2)", () => {
+    expect(REST_D).toBe(48);
   });
 
   test("STATE 2 peek is compact: max width inside the 360-420px directive band", () => {
