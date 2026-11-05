@@ -51,7 +51,7 @@ export function NewsletterSignup() {
 
   if (isSuccess) {
     return (
-      <div className="rounded-lg bg-honey/10 border border-honey/20 p-6 text-center">
+      <div className="rounded-lg bg-deep border border-honey/20 p-6 text-center">
         <p className="text-honey font-semibold">Subscribing...</p>
       </div>
     );
