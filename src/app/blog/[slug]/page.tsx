@@ -6,6 +6,7 @@ import { getAllPosts, getAllSlugs, getPost, renderMarkdown } from "@/lib/blog";
 import { episodeVideos, featuredFilm } from "@/lib/longping-media";
 import { getTenant } from "@/lib/tenant-config";
 import { SocialsHub } from "@/components/socials-hub";
+import { CrossSell } from "@/components/cross-sell";
 import { EssayQuestions } from "@/components/essay-questions";
 
 /** The Long Ping episodes in series order, for prev/next navigation and
@@ -205,6 +206,10 @@ export default async function BlogPostPage({
               </div>
             </div>
           )}
+
+          <div className="mt-12">
+            <CrossSell />
+          </div>
 
           <div className="mt-12">
             <SocialsHub />

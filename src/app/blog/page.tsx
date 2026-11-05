@@ -5,6 +5,8 @@ import { getAllPosts } from "@/lib/blog";
 import { episodeVideos, featuredFilm, shortVideos } from "@/lib/longping-media";
 import { VideoCard } from "@/components/video-card";
 import { SocialsHub } from "@/components/socials-hub";
+import { CrossSell } from "@/components/cross-sell";
+import { getFeaturedVideo } from "@/lib/latest-video";
 import { getTenant } from "@/lib/tenant-config";
 import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
 
@@ -44,7 +46,10 @@ function formatDate(d: string) {
   });
 }
 
-export default function BlogPage() {
+export const revalidate = 3600;
+
+export default async function BlogPage() {
+  const featuredVideo = await getFeaturedVideo();
   const posts = getAllPosts();
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: "Home", url: siteUrl },
@@ -83,7 +88,7 @@ export default function BlogPage() {
           />
 
           <div className="mt-10">
-            <VideoCard video={featuredFilm} large />
+            <VideoCard video={featuredVideo} large />
           </div>
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -101,6 +106,12 @@ export default function BlogPage() {
               <VideoCard key={video.id} video={video} />
             ))}
           </div>
+        </Container>
+      </Section>
+
+      <Section>
+        <Container className="max-w-5xl">
+          <CrossSell />
         </Container>
       </Section>
 
