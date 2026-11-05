@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: "Continuity · PING",
     description: "Why AI systems need to remember: continuity as the core architectural concept behind PING, where events, evidence, and context survive across sessions.",
     url: "/technology/continuity",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",

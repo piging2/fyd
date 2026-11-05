@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: "Blog: Build Notes and Essays From PING · PING",
     description: DESCRIPTION,
     url: "/blog",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",

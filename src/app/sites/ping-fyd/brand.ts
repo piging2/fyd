@@ -1,5 +1,5 @@
 /**
- * PING Social brand identity for the ping-fyd dogfood site.
+ * PingFyd brand identity for the ping-fyd dogfood site.
  *
  * Presentation tokens ONLY: colors, fonts, radius. No facts, no fields,
  * no private data. Applied in this page's own page.tsx over the compiled

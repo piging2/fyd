@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: "Integrations · PING",
     description: "AI integrations without credential sprawl: one identity per human, capabilities for agents instead of secret piles, and fewer things that can leak.",
     url: "/technology/integrations",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",

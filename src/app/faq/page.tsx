@@ -13,21 +13,21 @@ const siteUrl =
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "FAQ: Questions About PING and PING Social",
-  description: "Common questions about PING, PING Social, continuity, and the TenantOS direction: what continuity means, how evidence works, and how a business gets started.",
+  title: "FAQ: Questions About PING and PingFyd",
+  description: "Common questions about PING, PingFyd, continuity, and the TenantOS direction: what continuity means, how evidence works, and how a business gets started.",
   alternates: { canonical: "/faq" },
   openGraph: {
     type: "website",
-    title: "FAQ: Questions About PING and PING Social · PING",
-    description: "Common questions about PING, PING Social, continuity, and the TenantOS direction: what continuity means, how evidence works, and how a business gets started.",
+    title: "FAQ: Questions About PING and PingFyd · PING",
+    description: "Common questions about PING, PingFyd, continuity, and the TenantOS direction: what continuity means, how evidence works, and how a business gets started.",
     url: siteUrl + "/faq",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
-    title: "FAQ: Questions About PING and PING Social · PING",
-    description: "Common questions about PING, PING Social, continuity, and the TenantOS direction: what continuity means, how evidence works, and how a business gets started.",
+    title: "FAQ: Questions About PING and PingFyd · PING",
+    description: "Common questions about PING, PingFyd, continuity, and the TenantOS direction: what continuity means, how evidence works, and how a business gets started.",
   },
 };
 

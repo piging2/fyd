@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     title: "Products: What Exists, What Is Being Built · PING",
     description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware: every product carries its real status.",
     url: siteUrl + "/products",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -150,7 +150,7 @@ export default function ProductsPage() {
             <h1 className="mt-4 font-display text-4xl font-bold text-primary sm:text-5xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}><span className="text-text-on-dark">What exists, what is being built</span></h1>
             <p className="mt-5 text-lg sm:text-xl text-text-muted" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}><span className="text-text-on-dark/90">
                 Honest labels. Nothing here is vaporware and nothing unfinished
-                is sold as finished. PING Social is based in Grand Junction,
+                is sold as finished. PingFyd is based in Grand Junction,
                 Colorado, and works with businesses across Western Colorado.
               </span></p>
           </div>
@@ -181,7 +181,7 @@ export default function ProductsPage() {
         <Container className="max-w-4xl">
           <h2 className="text-2xl font-bold text-text">How to read this page</h2>
           <p className="mt-3 text-text-muted" style={{ lineHeight: "var(--leading-body)" }}>
-            PING Social is the consultancy: that is the business, and it is
+            PingFyd is the consultancy: that is the business, and it is
             available now. The PING intelligence system is the infrastructure
             underneath, in active development and documented publicly as it is
             built. The AI concierge is that infrastructure applied to a single

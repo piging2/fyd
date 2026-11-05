@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /practice: the PING Social practice page.
+ * /practice: the PingFyd practice page.
  *
  * Morning flow: pick a dev identity (or create one in seconds), see your
  * PING Circle, follow test users, like posts, edit your bio, multi-select
@@ -278,7 +278,7 @@ export default function PracticePage() {
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-accent">PING Practice</h1>
           <p className="mt-1 text-sm text-accent/60">
-            Your PING Social playground. Pick an identity, follow, like, edit your bio. Everything here is a real
+            Your PingFyd playground. Pick an identity, follow, like, edit your bio. Everything here is a real
             canonical PING action.
           </p>
         </div>

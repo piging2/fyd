@@ -17,7 +17,7 @@ const DESCRIPTION =
 const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61594275542163";
 
 const OG_IMAGES = [
-  { url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" },
+  { url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" },
 ];
 
 export const metadata: Metadata = {

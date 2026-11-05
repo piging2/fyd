@@ -2,7 +2,7 @@ import { featuredFilm, type FeaturedVideo } from "@/lib/longping-media";
 
 /**
  * The homepage featured slot tracks the most recent public video on the
- * Ping Social YouTube channel (@PingSoc). Resolved server-side from the
+ * PingFyd YouTube channel (@PingSoc). Resolved server-side from the
  * channel public RSS feed with hourly revalidation. Any failure falls
  * back to the static featuredFilm entry, so the slot is never blank and
  * never shows an error state.
@@ -40,8 +40,8 @@ export async function getFeaturedVideo(): Promise<FeaturedVideo> {
       thumbnailCard: "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg",
       thumbnailFallback: "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg",
       blurb: isShort
-        ? "The latest Short from The Long Ping, straight from the Ping Social channel on YouTube."
-        : "The latest film from The Long Ping, straight from the Ping Social channel on YouTube.",
+        ? "The latest Short from The Long Ping, straight from the PingFyd channel on YouTube."
+        : "The latest film from The Long Ping, straight from the PingFyd channel on YouTube.",
     };
   } catch {
     return featuredFilm;

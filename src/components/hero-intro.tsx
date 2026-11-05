@@ -69,7 +69,7 @@ export function HeroIntro({ tagline }: { tagline: string }) {
           href="#ping-social"
           className="inline-flex h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
         >
-          PING Social
+          PingFyd
         </Link>
       </motion.div>
       <motion.p

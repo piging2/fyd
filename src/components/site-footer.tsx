@@ -68,7 +68,7 @@ export function SiteFooter() {
             {tenant.contact.facebook && (
               <li>
                 <a href={tenant.contact.facebook} target="_blank" rel="noopener noreferrer" className="inline-block min-h-[44px] py-2 text-text-on-dark hover:text-honey">
-                  PING Social on Facebook
+                  PingFyd on Facebook
                 </a>
               </li>
             )}

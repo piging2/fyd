@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: "Newsletter · PING",
     description: "Notes on continuity, agents, business systems, and building PING in public. One email when there is something worth saying. No spam, no fluff. In your inbox.",
     url: siteUrl + "/newsletter",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",

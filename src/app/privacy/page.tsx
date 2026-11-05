@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     title: "Privacy Policy · PING",
     description: "How PING collects and uses information provided through subscriptions, contact, site forms, and FYD build requests, and never sells your information.",
     url: siteUrl + "/privacy",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",

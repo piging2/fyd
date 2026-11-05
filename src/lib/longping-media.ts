@@ -99,7 +99,7 @@ export interface SocialDestination {
 export const socialDestinations: SocialDestination[] = [
   {
     platform: "YouTube",
-    label: "Ping Social",
+    label: "PingFyd",
     href: "https://www.youtube.com/channel/UCsl7RnATG9bn--EWh2davTQ",
     blurb: "The films and the Shorts. Every episode of The Long Ping, free in full.",
   },
@@ -117,9 +117,9 @@ export const socialDestinations: SocialDestination[] = [
   },
   {
     platform: "Facebook",
-    label: "PING Social",
+    label: "PingFyd",
     href: "https://www.facebook.com/profile.php?id=61594275542163",
-    blurb: "The PING Social page: films, clips, and the Western Colorado business community.",
+    blurb: "The PingFyd page: films, clips, and the Western Colorado business community.",
   },
   {
     platform: "Instagram",

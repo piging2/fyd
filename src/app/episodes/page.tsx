@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     title: "Episodes · PING",
     description: DESCRIPTION,
     url: "/episodes",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",

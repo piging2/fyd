@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     title: "PING: Continuity infrastructure for AI agents",
     description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve. With receipts.",
     url: siteUrl + "/",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -250,7 +250,7 @@ export default async function HomePage() {
                   Explore the architecture
                 </Link>
                 <Link href="#ping-social" className="font-medium text-text-on-dark/70 underline-offset-4 hover:text-honey hover:underline">
-                  PING Social
+                  PingFyd
                 </Link>
               </div>
               <p className="mt-6 text-sm text-text-on-dark/60">
@@ -340,7 +340,7 @@ export default async function HomePage() {
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
               <h3 className="font-bold text-text">Digital Concierge and business websites</h3>
-              <p className="mt-2 text-sm text-text-muted">An always-on front desk for your business, and a website built from your business understanding. Delivered today as bespoke PING Social engagements.</p>
+              <p className="mt-2 text-sm text-text-muted">An always-on front desk for your business, and a website built from your business understanding. Delivered today as bespoke PingFyd engagements.</p>
               <Link href="/products" className="mt-3 inline-block font-medium text-honey-text hover:underline">See it in Products</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
@@ -628,7 +628,7 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow={<span className="text-honey">/applied · {tenant.operator.business}</span>}
             title={<span className="text-text-on-dark">Built on PING</span>}
-            description={<span className="text-text-on-dark/80">(so the infrastructure meets a real business) PING builds the infrastructure. PING Social applies it. Nolan Geske works directly with home service businesses to put AI to practical use on real operational problems.</span>}
+            description={<span className="text-text-on-dark/80">(so the infrastructure meets a real business) PING builds the infrastructure. PingFyd applies it. Nolan Geske works directly with home service businesses to put AI to practical use on real operational problems.</span>}
             align="center"
             descriptionColor="text-text-on-dark/80"
           />
@@ -639,7 +639,7 @@ export default async function HomePage() {
               <span className="text-text-on-dark/40" aria-hidden="true">↓</span>
               <span className="font-mono text-sm font-bold uppercase tracking-wide text-text-on-dark/85">TenantOS</span>
               <span className="text-text-on-dark/40" aria-hidden="true">↓</span>
-              <span className="font-mono text-sm font-bold uppercase tracking-wide text-text-on-dark/85">PING Social</span>
+              <span className="font-mono text-sm font-bold uppercase tracking-wide text-text-on-dark/85">PingFyd</span>
               <span className="text-text-on-dark/40" aria-hidden="true">↓</span>
               <span className="font-mono text-sm font-bold uppercase tracking-wide text-text-on-dark/85">Real Business</span>
             </div>
@@ -807,7 +807,7 @@ export default async function HomePage() {
       {/* 10 CONTACT, with scope note */}
       <CTASection
         title="Talk to us about your business."
-        subtitle="PING Social helps real businesses put AI to practical use: fewer missed opportunities, less busywork, systems that remember. Currently onboarding Western Colorado home-service businesses."
+        subtitle="PingFyd helps real businesses put AI to practical use: fewer missed opportunities, less busywork, systems that remember. Currently onboarding Western Colorado home-service businesses."
         showApplyLink
       />
 

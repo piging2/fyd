@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: "Business Automation · PING",
     description: "Practical automation for home service businesses: capture, follow-up, and consistency for missed calls and slow follow-up, without replacing judgment.",
     url: "/technology/business-automation",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -28,7 +28,7 @@ export default function BusinessAutomationPage() {
       eyebrow="Technology"
       title="Business Automation"
       slug="business-automation"
-      lede="The least glamorous and most valuable part of PING: practical automation for real businesses. Not AI hype, but systems that catch what falls through the cracks: missed calls, slow follow-up, scheduling friction, and the administrative drag that eats a small business alive. PING Social is based in Grand Junction, Colorado, and works with businesses across Western Colorado."
+      lede="The least glamorous and most valuable part of PING: practical automation for real businesses. Not AI hype, but systems that catch what falls through the cracks: missed calls, slow follow-up, scheduling friction, and the administrative drag that eats a small business alive. PingFyd is based in Grand Junction, Colorado, and works with businesses across Western Colorado."
       status="Documented"
       sections={[
         {
@@ -39,7 +39,7 @@ export default function BusinessAutomationPage() {
                 Automation fails when it starts from the technology. It works when it starts from
                 the business&apos;s actual pain: the estimate request that sat unanswered for two
                 days, the review that mentioned &ldquo;nobody called me back,&rdquo; the owner doing
-                paperwork at 10pm instead of being with family. PING Social&apos;s consultancy begins
+                paperwork at 10pm instead of being with family. PingFyd&apos;s consultancy begins
                 with the workflow, not the tool.
               </p>
               <p>
@@ -68,7 +68,7 @@ export default function BusinessAutomationPage() {
           heading: "Consultative, not packaged",
           body: (
             <p>
-              PING Social does not sell a one-size-fits-all package. Each business gets its workflow
+              PingFyd does not sell a one-size-fits-all package. Each business gets its workflow
               understood first, then recommendations for the automation that fits its actual problems.
               Simple systems the owner can understand and trust beat sophisticated systems nobody
               maintains. Measurable value, time saved, leads captured, response speed, or the

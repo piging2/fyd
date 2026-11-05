@@ -6,7 +6,7 @@ import { FydCopyClassLabel } from "./fyd-copy-class";
 /**
  * Running proof sites: the two authorized FYD demo tenants plus PING's
  * own business, all running on this server. The demos are referenced
- * as running proof, not customer sites. PING Social is the operator's
+ * as running proof, not customer sites. PingFyd is the operator's
  * own business running on the same system: not a demo, not a customer
  * testimonial.
  */
@@ -31,8 +31,8 @@ const SITES = [
   {
     href: "/sites/ping-fyd",
     kind: "Operator's own business",
-    cta: "Open PING Social",
-    name: "PING Social",
+    cta: "Open PingFyd",
+    name: "PingFyd",
     proves: "PING's own business running on the same system: the operator's real presence, built from its FYD understanding.",
     ask: "Ask about AI call answering, lead follow-up, scheduling support, and admin automation.",
   },
@@ -52,7 +52,7 @@ export function FydDemoSites() {
             <FydCopyClassLabel kind="live" />
             <p className="text-sm text-text-muted">
               The two demo businesses are for the product test and are not
-              customer sites. PING Social is the operator&apos;s own business,
+              customer sites. PingFyd is the operator&apos;s own business,
               running on the same system.
             </p>
           </div>

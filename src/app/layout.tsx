@@ -44,7 +44,7 @@ export const metadata: Metadata = {
         url: "/brand/og-card.webp",
         width: 1200,
         height: 630,
-        alt: "PING Social",
+        alt: "PingFyd",
       },
     ],
   },

@@ -14,21 +14,21 @@ const siteUrl =
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "About PING and PING Social",
-  description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
+  title: "About PING and PingFyd",
+  description: "About PING: continuity infrastructure for AI agents, and PingFyd, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
   alternates: { canonical: "/about" },
   openGraph: {
     type: "website",
-    title: "About PING and PING Social · PING",
-    description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
+    title: "About PING and PingFyd · PING",
+    description: "About PING: continuity infrastructure for AI agents, and PingFyd, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
     url: siteUrl + "/about",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
-    title: "About PING and PING Social · PING",
-    description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
+    title: "About PING and PingFyd · PING",
+    description: "About PING: continuity infrastructure for AI agents, and PingFyd, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
   },
 };
 
@@ -54,7 +54,7 @@ const principles = [
 export default function AboutPage() {
   const tenant = getTenant();
   const aboutPageJsonLd = buildAboutPageJsonLd({
-    name: "About PING and PING Social",
+    name: "About PING and PingFyd",
     url: siteUrl + "/about",
     description: typeof metadata.description === "string" ? metadata.description : undefined,
   });
@@ -96,7 +96,7 @@ export default function AboutPage() {
                 The operating business. {tenant.operator.name} works with home service businesses to
                 put AI to practical use: capture more opportunities, reduce administrative drag,
                 respond faster, operate more consistently. Consultative, not one-size-fits-all.
-                PING Social is based in Grand Junction, Colorado, and works with businesses
+                PingFyd is based in Grand Junction, Colorado, and works with businesses
                 across Western Colorado.
               </p>
               <Link href="/contact" className="mt-4 inline-block font-medium text-honey-text hover:underline">

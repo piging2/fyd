@@ -7,7 +7,7 @@ import { getTenant, getTenantPhoneHref } from "@/lib/tenant-config";
 /** Reusable call-to-action: drives to contact and technology. */
 export function CTASection({
   title = "Talk to us about your business.",
-  subtitle = "PING Social helps real businesses put AI to practical use: fewer missed opportunities, less busywork, systems that remember.",
+  subtitle = "PingFyd helps real businesses put AI to practical use: fewer missed opportunities, less busywork, systems that remember.",
   showApplyLink = false,
 }: {
   title?: React.ReactNode;

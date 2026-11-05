@@ -4,23 +4,23 @@ import { resolveObjectPresentationIdentity } from "@/fyd/presentation/identity";
 
 interface PingWordmarkProps {
   className?: string;
-  /** @deprecated The official PING Social logo is now used instead of text. Kept for API compatibility. */
+  /** @deprecated The official PingFyd logo is now used instead of text. Kept for API compatibility. */
   wordmark?: string;
 }
 
 /**
- * The same transparent PING Social artwork used by its business object.
+ * The same transparent PingFyd artwork used by its business object.
  * Header and page branding keep the artwork's natural aspect ratio.
  */
 export function PingWordmark({ className }: PingWordmarkProps) {
-  const { mark } = resolveObjectPresentationIdentity({ id: "ping-fyd", name: "PING Social" });
+  const { mark } = resolveObjectPresentationIdentity({ id: "ping-fyd", name: "PingFyd" });
   if (!mark) return null;
   return (
     <span className={cn("relative inline-flex items-center", className)}>
       <img
         src={mark.src}
         srcSet={mark.srcSet}
-        alt="PING Social"
+        alt="PingFyd"
         width={mark.width}
         height={mark.height}
         className="h-10 w-auto object-contain"

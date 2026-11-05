@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: "Replay · PING",
     description: "Deterministic replay: what happened, why it happened, which version decided, and whether the replay matches, so a system can explain its own decisions.",
     url: "/technology/replay",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",

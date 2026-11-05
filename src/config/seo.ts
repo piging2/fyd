@@ -19,5 +19,5 @@ export const seo: {
   siteName: tenant.siteName,
   title: `${tenant.siteName} - ${tenant.tagline}`,
   description: tenant.description,
-  keywords: ["PING", "AI agents", "continuity", "business automation", "agent infrastructure", "PING Social", "TenantOS"],
+  keywords: ["PING", "AI agents", "continuity", "business automation", "agent infrastructure", "PingFyd", "TenantOS"],
 };

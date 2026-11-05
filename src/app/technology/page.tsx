@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     title: "Technology: How PING Actually Works · PING",
     description: "How PING actually works: the continuity, evidence, and agent infrastructure that turns business information into reliable understanding and useful action.",
     url: siteUrl + "/technology",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",

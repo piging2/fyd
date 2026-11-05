@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: "Events · PING",
     description: "The event plane: how things that happen become canonical, queryable, and replayable records, and why projections never get to silently become the source.",
     url: "/technology/events",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",

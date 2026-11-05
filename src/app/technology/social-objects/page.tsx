@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: "Social Objects · PING",
     description: "The shared artifacts that business conversations orbit: posts, pages, and proof that compound over time, treated as infrastructure rather than content.",
     url: "/technology/social-objects",
-    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PING Social" }],
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -55,7 +55,7 @@ export default function SocialObjectsPage() {
             <p>
               In PING&apos;s terms, a social object is presented truth with its evidence attached:
               the claim (&ldquo;we do good work&rdquo;) plus the verifiable artifact (the work
-              itself, documented). This is why the PING Social page, the project documentation, and
+              itself, documented). This is why the PingFyd page, the project documentation, and
               the published engagement all matter more than any pitch: they are objects a prospect
               can inspect, not claims a prospect must take on faith.
             </p>
@@ -81,7 +81,7 @@ export default function SocialObjectsPage() {
           body: (
             <p>
               Social objects are a direction, not a shipped system. The concepts are in use
-              operationally (the PING Social page as home base, published work as proof), but the
+              operationally (the PingFyd page as home base, published work as proof), but the
               systematic machinery, object lifecycle, discovery, compounding measurement, is still
               being designed. This page documents the thinking so the build can be checked against it.
             </p>
