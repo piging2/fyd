@@ -7,6 +7,8 @@ import { buildEpisodeDepth, buildEpisodePageTitle, durationToIso8601, embedUrlFo
 import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
 import { getTenant } from "@/lib/tenant-config";
 
+export const dynamic = "force-static";
+
 export async function generateStaticParams() {
   return episodePages.map((e) => ({ slug: e.slug }));
 }

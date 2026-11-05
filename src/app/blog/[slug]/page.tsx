@@ -28,6 +28,8 @@ function episodeImage(slug: string): string {
   return video?.thumbnail ?? "/brand/og-card.webp";
 }
 
+export const dynamic = "force-static";
+
 export async function generateStaticParams() {
   return getAllSlugs().map((slug) => ({ slug }));
 }

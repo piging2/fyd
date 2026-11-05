@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { TechArticle } from "@/components/tech-article";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Continuity",
   description: "Why AI systems need to remember: continuity as the core architectural concept behind PING, where events, evidence, and context survive across sessions.",

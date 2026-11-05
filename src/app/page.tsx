@@ -31,6 +31,8 @@ const siteUrl =
     ? "https://" + process.env.VERCEL_URL
     : "https://fyd-product.vercel.app");
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "PING: Continuity infrastructure for AI agents",
   description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve. With receipts.",

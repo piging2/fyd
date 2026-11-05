@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { TechArticle } from "@/components/tech-article";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Evidence",
   description: "Evidence and provenance for autonomous systems: every claim traces to its source, carries a confidence grade, and keeps its verification status on the record.",

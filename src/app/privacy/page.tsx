@@ -8,6 +8,8 @@ const siteUrl =
     ? "https://" + process.env.VERCEL_URL
     : "https://fyd-product.vercel.app");
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "How PING collects and uses information provided through subscriptions, contact, site forms, and FYD build requests, and never sells your information.",

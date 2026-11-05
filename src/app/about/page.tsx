@@ -11,6 +11,8 @@ const siteUrl =
     ? "https://" + process.env.VERCEL_URL
     : "https://fyd-product.vercel.app");
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "About PING and PING Social",
   description: "About PING: continuity infrastructure for AI agents, and PING Social, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",

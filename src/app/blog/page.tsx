@@ -19,6 +19,8 @@ const siteUrl =
 const DESCRIPTION =
   "PING build notes and The Long Ping on film: architecture, implementation, and the reasoning behind both, plus every episode with its Shorts and transcripts.";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Blog: Build Notes and Essays From PING",
   description: DESCRIPTION,

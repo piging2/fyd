@@ -14,6 +14,8 @@ const siteUrl =
 const DESCRIPTION =
   "Every episode of The Long Ping with its own page: the film, its duration where the record has one, and the story it tells, with a link to watch on YouTube.";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Episodes",
   description: DESCRIPTION,

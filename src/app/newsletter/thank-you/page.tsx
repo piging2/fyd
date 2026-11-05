@@ -5,6 +5,8 @@ import { CTASection } from "@/components/cta-section";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { getTenant } from "@/lib/tenant-config";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Newsletter Subscription Confirmed",
   description: "You are subscribed to the PING newsletter: continuity, agents, and practical business automation.",

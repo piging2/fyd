@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { TechArticle } from "@/components/tech-article";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Events",
   description: "The event plane: how things that happen become canonical, queryable, and replayable records, and why projections never get to silently become the source.",

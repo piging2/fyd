@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { TechArticle } from "@/components/tech-article";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Replay",
   description: "Deterministic replay: what happened, why it happened, which version decided, and whether the replay matches, so a system can explain its own decisions.",

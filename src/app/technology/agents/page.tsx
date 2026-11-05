@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { TechArticle } from "@/components/tech-article";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Agents",
   description: "Agent infrastructure with explicit capability boundaries: what an agent may touch, what it may change, where it must stop and ask, and how actions are recorded.",

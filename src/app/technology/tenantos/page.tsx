@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { TechArticle } from "@/components/tech-article";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "TenantOS",
   description: "The platform direction this site proves: one codebase, many tenants, configuration over forking. This website is the first tenant and the proof of concept.",

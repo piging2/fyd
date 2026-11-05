@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { TechArticle } from "@/components/tech-article";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Business Automation",
   description: "Practical automation for home service businesses: capture, follow-up, and consistency for missed calls and slow follow-up, without replacing judgment.",

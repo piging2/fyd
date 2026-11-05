@@ -22,6 +22,8 @@ const siteUrl =
     ? "https://" + process.env.VERCEL_URL
     : "https://fyd-product.vercel.app");
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Technology: How PING Actually Works",
   description: "How PING actually works: the continuity, evidence, and agent infrastructure that turns business information into reliable understanding and useful action.",

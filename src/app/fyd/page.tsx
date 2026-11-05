@@ -23,6 +23,9 @@ const siteUrl =
     ? "https://" + process.env.VERCEL_URL
     : "https://fyd-product.vercel.app");
 
+export const dynamic = "force-static";
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "FYD: your business, understood",
   description:

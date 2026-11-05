@@ -10,6 +10,8 @@ const siteUrl =
     ? "https://" + process.env.VERCEL_URL
     : "https://fyd-product.vercel.app");
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "FAQ: Questions About PING and PING Social",
   description: "Common questions about PING, PING Social, continuity, and the TenantOS direction: what continuity means, how evidence works, and how a business gets started.",

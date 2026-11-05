@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { TechArticle } from "@/components/tech-article";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Social Objects",
   description: "The shared artifacts that business conversations orbit: posts, pages, and proof that compound over time, treated as infrastructure rather than content.",

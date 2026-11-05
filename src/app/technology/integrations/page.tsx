@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { TechArticle } from "@/components/tech-article";
 
+export const dynamic = "force-static";
+
 export const metadata: Metadata = {
   title: "Integrations",
   description: "AI integrations without credential sprawl: one identity per human, capabilities for agents instead of secret piles, and fewer things that can leak.",

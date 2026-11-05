@@ -55,6 +55,7 @@ type PageStatus = "loading" | "ready" | "error";
 
 const selKey = (kind: "identity" | "post", id: string) => `${kind}:${id}`;
 
+
 export default function PracticePage() {
   const [status, setStatus] = React.useState<PageStatus>("loading");
   const [pageError, setPageError] = React.useState<PracticeError | null>(null);
