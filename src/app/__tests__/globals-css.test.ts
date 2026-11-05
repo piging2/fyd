@@ -57,6 +57,12 @@ describe("globals.css accessibility floor", () => {
     expect(contrastRatio(focus, tokenHex("color-deep"))).toBeGreaterThanOrEqual(3);
   });
 
+  it("hero parallax stays behind the reduced-motion guard", () => {
+    expect(css).toContain(".hero-parallax");
+    expect(css).toContain("prefers-reduced-motion: no-preference");
+    expect(css).toContain("animation-timeline: view(block)");
+  });
+
   it("offsets anchored content below the 80px sticky header", () => {
     const m = css.match(/scroll-padding-top:\s*([0-9.]+)rem/);
     if (!m) throw new Error("scroll-padding-top (rem) not set in globals.css");

@@ -259,7 +259,9 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="entrance-rise entrance-rise-late">
-              <HeroEvidenceCard />
+              <div className="hero-parallax">
+                <HeroEvidenceCard />
+              </div>
             </div>
           </div>
         </Container>

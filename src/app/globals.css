@@ -926,3 +926,25 @@ a {
   content-visibility: auto;
   contain-intrinsic-size: auto 600px;
 }
+
+/* B-07 hero parallax (Dia teardown): the floating evidence layer drifts a
+   few pixels against the hero gradient field as the hero scrolls away, a
+   spatial-relationship cue in the Cycle 3 motion budget (transform only).
+   Native scroll-driven animation: no JavaScript, no INP cost. Only for
+   users who allow motion; browsers without view timelines stay static. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .hero-parallax {
+      animation: hero-parallax-drift linear both;
+      animation-timeline: view(block);
+    }
+    @keyframes hero-parallax-drift {
+      from {
+        transform: translateY(10px);
+      }
+      to {
+        transform: translateY(-22px);
+      }
+    }
+  }
+}
