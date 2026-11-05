@@ -24,7 +24,7 @@ function NavShimmer({ children, className }: { children: React.ReactNode; classN
       <span
         className={`
           relative z-10
-          bg-gradient-to-br from-[#A67C00] via-[#D99A4E] via-[#E7AD63] to-[#F0C070]
+          bg-gradient-to-br from-[#8A6D1F] via-[#7C6118] via-[#755B12] to-[#6E5610]
           bg-clip-text text-transparent
           transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
           ${isHovered ? 'scale-[1.01]' : 'scale-100'}

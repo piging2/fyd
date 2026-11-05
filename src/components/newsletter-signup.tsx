@@ -7,6 +7,7 @@ import { Mail, Loader2 } from "lucide-react";
 export function NewsletterSignup() {
   const router = useRouter();
   const [email, setEmail] = React.useState("");
+  const uid = React.useId().replace(/:/g, "");
   const [firstName, setFirstName] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -68,9 +69,10 @@ export function NewsletterSignup() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
+          <label htmlFor={uid + "-email"} className="mb-1.5 block text-sm font-medium text-text-on-dark">Email address</label>
           <input
             type="email"
-            aria-label="Email address"
+            id={uid + "-email"}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email address"
@@ -81,9 +83,10 @@ export function NewsletterSignup() {
         </div>
 
         <div>
+          <label htmlFor={uid + "-first-name"} className="mb-1.5 block text-sm font-medium text-text-on-dark">First name (optional)</label>
           <input
             type="text"
-            aria-label="First name (optional)"
+            id={uid + "-first-name"}
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             placeholder="First name (optional)"
