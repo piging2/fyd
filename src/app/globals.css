@@ -26,6 +26,13 @@
   --color-honey-text: #6E5610;       /* darker gold for TEXT on light surfaces only (5:1+); dark panels keep --color-honey */
   --color-honey-text-hover: #7A5E14; /* hover pair for honey-text; still 4.5:1+ on light surfaces */
 
+  /* Focus indicator: darkened gold clearing the WCAG 3:1 non-text floor on
+     the light page background (4.6:1 on #F7F7F9), on surface-2 (4.0:1), and
+     on deep sections (3.6:1 on #1A1729). Plain --color-honey reaches only
+     2.4:1 on the light background, so it must not be the focus colour.
+     Ported from the tested fyd010-fix slice 7f3a1c2 (audit F2/F3/F6). */
+  --color-focus: #8A6D1F;
+
   /* PING brand — violet signal accent (pig purple) */
   --color-ping-violet: #7C5CD6;
   --color-ping-violet-hover: #8F6FE0;
@@ -207,6 +214,8 @@ See: SCROLL_LAG_FIX.md
 */
 
 html {
+  /* Sticky header is h-20 (80px): anchored and keyboard-focused content stays clear of it (WCAG 2.4.11). */
+  scroll-padding-top: 6rem;
   /* scroll-behavior: smooth; */ /* DISABLED - Lenis owns scroll (see SCROLL OWNERSHIP above) */
 }
 
@@ -234,11 +243,6 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Accessible focus ring for keyboard users */
-:focus-visible {
-  outline: 2px solid var(--color-honey);
-  outline-offset: 2px;
-}
 
 /* Cedar-grain divider — subtle warm planks (Directive 032). Low-opacity texture
    so it reads as natural wood, never a stock texture or loud element. */
@@ -440,7 +444,7 @@ body {
 
 /* Refined focus ring (calm, confident) */
 :focus-visible {
-  outline: 2px solid var(--color-honey);
+  outline: 2px solid var(--color-focus);
   outline-offset: 3px;
   border-radius: 4px;
   box-shadow: 0 0 0 4px rgba(217, 154, 78, 0.05);
