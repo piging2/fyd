@@ -556,7 +556,7 @@ export default async function HomePage() {
                 ["executed", "150 worker executions completed in the run", "What the system did with it. Results attach to the same lineage."],
               ].map(([k, v, note]) => (
                 <div key={k} className="rounded-lg border border-text-on-dark/10 bg-deep-2/60 p-4">
-                  <dt className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey">{k}</dt>
+                  <dt className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">{k}</dt>
                   <dd className="mt-1 break-all font-mono text-sm text-text-on-dark">{v}</dd>
                   <dd className="mt-1 text-sm text-text-on-dark/60">{note}</dd>
                 </div>
@@ -578,12 +578,12 @@ export default async function HomePage() {
             </div>
             <dl className="mt-6 space-y-4">
               <div className="rounded-lg border border-text-on-dark/10 bg-deep-2/60 p-4">
-                <dt className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey">python capability</dt>
+                <dt className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">python capability</dt>
                 <dd className="mt-1 break-all font-mono text-sm text-text-on-dark">mission bfe815990337e45d · PYTHON_CAPABILITY_RUN · event 27482dbdabfb57b7190dd9f4ae530bee98ff381c8cc0eebec27349dd04b502a1 · task e694f5787ad45764 · evidence 49a96bff42cb1bdf5bc19dd56901a1955a0fb962a24d498dc36a21d0bd7e180e · result sha 1945b844ac504c8fbd631b668b4ede93291b432c573f7263f631e7f63ae521ab</dd>
                 <dd className="mt-1 text-sm text-text-on-dark/60">A real Python capability executed a PING task against live Oracle Postgres: 44/44 assertions, zero Python-emitted events. Not a fleet yet.</dd>
               </div>
               <div className="rounded-lg border border-text-on-dark/10 bg-deep-2/60 p-4">
-                <dt className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey">exterior agent</dt>
+                <dt className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">exterior agent</dt>
                 <dd className="mt-1 break-all font-mono text-sm text-text-on-dark">Hermes WorkOrder 0d598aef352b9a8a · text.transform · exit 0, independently verified · result sha f0b021848c2ddc7d6e07b8f8e186c78259454a935153804c7b4c574ec5bb1eed · PING events f326ea70d7cf16ce85c4cc56a23bc147ce0273984023c123b8b5467ea6d507de / e91681bfd300389e9c8f10c7c3ad2f9cea352342bfe6aa71f962d14c764bb587 / daaa75fc5b298c5b7fedab679e8bbf8a792099afc779877dd3d8acc7def1bf92</dd>
                 <dd className="mt-1 text-sm text-text-on-dark/60">One scoped execution, not a fleet. Codex was quota-blocked; OpenCode has no headless CLI. Adapter code is uncommitted worktree code, not a live worker runtime.</dd>
               </div>

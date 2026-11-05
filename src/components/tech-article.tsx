@@ -23,7 +23,7 @@ interface TechArticleProps {
 }
 
 const statusStyle: Record<TechArticleProps["status"], string> = {
-  "Documented": "bg-honey/10 text-honey",
+  "Documented": "bg-honey/10 text-honey-text",
   "In development": "bg-ping-violet/10 text-ping-violet",
   "Direction": "bg-surface-muted text-text-muted",
 };
@@ -67,7 +67,7 @@ export function TechArticle({ eyebrow, title, lede, status, sections, related, s
 
       <Section className="bg-deep">
         <Container className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-honey">{eyebrow}</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-honey-text">{eyebrow}</p>
           <h1 className="mt-3 text-4xl font-bold text-text-on-dark" style={{ lineHeight: 'var(--leading-display)' }}>{title}</h1>
           <p className="mt-4 text-lg text-text-on-dark/90" style={{ lineHeight: 'var(--leading-body)' }}>{lede}</p>
           <span className={`mt-6 inline-block rounded px-3 py-1 text-xs font-semibold ${statusStyle[status]}`}>
