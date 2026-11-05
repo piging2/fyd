@@ -5,6 +5,9 @@ import { Container, Section } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import { FaqSection } from "@/components/faq-section";
 import { getFaqsByCategory } from "@/lib/faq";
+import { Check } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   getProducts,
   statusLabel,
@@ -190,6 +193,65 @@ export default function ProductsPage() {
             direction. If you are a home service business, what matters today
             is the first item.
           </p>
+        </Container>
+      </Section>
+      <Section>
+        <Container className="max-w-4xl">
+          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-accent" style={{ letterSpacing: '0.12em' }}><span className="text-honey-text">Engage</span></p>
+          <h2 className="mt-3 text-2xl font-bold text-text sm:text-3xl">Working with PingFyd</h2>
+          <p className="mt-3 max-w-2xl text-text-muted" style={{ lineHeight: "var(--leading-body)" }}>
+            Two steps, in order. The first is free, and it decides whether
+            the second makes sense.
+          </p>
+          <div className="mt-10 grid md:grid-cols-2">
+            <div className="md:pr-10">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-text">The conversation</h3>
+              <p className="mt-4 text-4xl font-bold text-text">Free</p>
+              <p className="mt-1 text-sm text-text-muted">One call about your business. No pitch, no obligation.</p>
+              <ul className="mt-6 space-y-3">
+                {[
+                  "How your business actually runs today",
+                  "Where opportunities get missed and follow-up lags",
+                  "Whether automation honestly fits, and where",
+                  "A clear next step, or a clear no",
+                ].map((item) => (
+                  <li key={item} className="flex gap-2.5 text-[15px] text-text-muted">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-honey-text" aria-hidden="true" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-8">
+                <Link href="/faq" className="font-medium text-honey-text underline-offset-4 hover:underline">
+                  How PingFyd works with a business
+                </Link>
+              </p>
+            </div>
+            <div className="mt-10 border-t border-border pt-10 md:mt-0 md:border-l md:border-t-0 md:pl-10 md:pt-0">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-text">The engagement</h3>
+              <p className="mt-4 text-4xl font-bold text-text">Custom</p>
+              <p className="mt-1 text-sm text-text-muted">Scoped and priced in writing before any work starts.</p>
+              <p className="mt-6 text-sm font-medium text-text">Everything in the conversation, plus:</p>
+              <ul className="mt-3 space-y-3">
+                {[
+                  "Workflow discovery inside your business, before anything is recommended",
+                  "The automations that fit, implemented with you in control",
+                  "Reliable inquiry capture, fast consistent response, follow-up that actually happens",
+                  "Measurable value, or the engagement does not continue",
+                ].map((item) => (
+                  <li key={item} className="flex gap-2.5 text-[15px] text-text-muted">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-honey-text" aria-hidden="true" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-8">
+                <Link href="/contact" className={cn(buttonVariants({ variant: "primary" }), "bg-honey text-honey-foreground shadow-warm hover:bg-honey-hover")}>
+                  Begin with the free conversation
+                </Link>
+              </p>
+            </div>
+          </div>
         </Container>
       </Section>
       <FaqSection items={getFaqsByCategory("PING")} eyebrow="FAQ" title="Questions about the products" containerClassName="max-w-4xl" />
