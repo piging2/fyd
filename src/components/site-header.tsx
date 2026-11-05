@@ -92,8 +92,8 @@ export function SiteHeader() {
   const contact = navigation.find((n) => n.secondary);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-md">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 rounded-[1.4rem] border border-border/70 bg-background/85 px-4 shadow-[0_10px_36px_rgba(16,12,40,0.10)] backdrop-blur-md sm:px-5">
         <Link href="/" className="group flex shrink-0 items-center gap-2.5" aria-label={`${tenant.siteName} home`}>
           <PingWordmark />
           <span className="hidden text-[10px] font-semibold uppercase tracking-[0.22em] text-text-subtle sm:block">
@@ -142,7 +142,7 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <div id="mobile-menu" ref={menuRef} onClick={handleMenuClick} className="border-t border-border/60 bg-[#F8F6F3] dark:bg-surface lg:hidden">
+        <div id="mobile-menu" ref={menuRef} onClick={handleMenuClick} className="mx-auto mt-2 max-w-7xl rounded-[1.4rem] border border-border/70 bg-[#F8F6F3] shadow-[0_10px_36px_rgba(16,12,40,0.10)] dark:bg-surface lg:hidden">
           <nav className="flex flex-col p-3" aria-label="Mobile">
             {navigation.map((item) => (
               <Link

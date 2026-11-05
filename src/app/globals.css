@@ -214,7 +214,7 @@ See: SCROLL_LAG_FIX.md
 */
 
 html {
-  /* Sticky header is h-20 (80px): anchored and keyboard-focused content stays clear of it (WCAG 2.4.11). */
+  /* Floating pill header: 64px bar plus a 12 to 16px top gap (76 to 80px total). The 6rem offset keeps anchored and keyboard-focused content clear of it (WCAG 2.4.11). */
   scroll-padding-top: 6rem;
   /* scroll-behavior: smooth; */ /* DISABLED - Lenis owns scroll (see SCROLL OWNERSHIP above) */
 }
