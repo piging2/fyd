@@ -7,11 +7,11 @@
     "slug": "ping",
     "siteName": "PING",
     "tagline": "Continuity infrastructure for AI agents and the businesses they serve.",
-    "description": "PING is an evolving intelligence system that turns information into reliable understanding and useful action. PING Social applies it to home service businesses.",
+    "description": "PING is an evolving intelligence system that turns information into reliable understanding and useful action. PingFyd applies it to home service businesses.",
     "domain": "https://fyd-product.vercel.app",
     "operator": {
       "name": "Nolan Geske",
-      "business": "PING Social",
+      "business": "PingFyd",
       "role": "Founder and operator"
     },
     "brand": {

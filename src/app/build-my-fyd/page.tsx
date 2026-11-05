@@ -97,7 +97,7 @@ export default function BuildMyFydPage() {
           show you a presence built from unreachable, unreadable, or disallowed sources.
         </p>
       </section>
-      <FaqSection items={getFaqsByCategory("PING Social")} eyebrow="FAQ" title="Questions from business owners" containerClassName="max-w-5xl" align="center" />
+      <FaqSection items={getFaqsByCategory("PingFyd")} eyebrow="FAQ" title="Questions from business owners" containerClassName="max-w-5xl" align="center" />
     </>
   );
 }

@@ -39,19 +39,19 @@ describe("FaqSection JSON-LD matches displayed questions", () => {
 });
 
 /**
- * Wave 23: /build-my-fyd mounts the shared section with the PING Social
+ * Wave 23: /build-my-fyd mounts the shared section with the PingFyd
  * category, exactly as /fyd does. Its JSON-LD must describe exactly the
  * questions that mount displays.
  */
-describe("FaqSection PING Social mount for /build-my-fyd", () => {
-  const socialItems = getFaqsByCategory("PING Social");
+describe("FaqSection PingFyd mount for /build-my-fyd", () => {
+  const socialItems = getFaqsByCategory("PingFyd");
 
-  it("selects a non-empty PING Social category from the shared FAQ data", () => {
+  it("selects a non-empty PingFyd category from the shared FAQ data", () => {
     expect(socialItems.length).toBeGreaterThan(0);
-    expect(socialItems.every((i) => i.category === "PING Social")).toBe(true);
+    expect(socialItems.every((i) => i.category === "PingFyd")).toBe(true);
   });
 
-  it("rendered JSON-LD names equal the visible PING Social questions", () => {
+  it("rendered JSON-LD names equal the visible PingFyd questions", () => {
     const html = renderToStaticMarkup(<FaqSection items={socialItems} title="Questions from business owners" />);
     const match = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
     expect(match).not.toBeNull();

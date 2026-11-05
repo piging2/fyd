@@ -71,7 +71,7 @@ export default function FydProductPage() {
         <FydPingUnderneath />
         <FydPrivacy />
         <FydWhatIsReal />
-        <FaqSection items={getFaqsByCategory("PING Social")} eyebrow="FAQ" title="Questions from business owners" containerClassName="max-w-5xl" align="center" />
+        <FaqSection items={getFaqsByCategory("PingFyd")} eyebrow="FAQ" title="Questions from business owners" containerClassName="max-w-5xl" align="center" />
         <FydTryIt />
       </main>
     </>

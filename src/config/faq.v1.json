@@ -10,14 +10,14 @@
     },
     {
       "id": "f2",
-      "question": "What is PING Social?",
-      "answer": "PING Social is the consultancy that applies PING infrastructure to real businesses, starting with home service companies. It helps owners capture more opportunities, reduce administrative work, respond faster, and operate more consistently, with practical AI rather than hype.",
-      "category": "PING Social"
+      "question": "What is PingFyd?",
+      "answer": "PingFyd is the consultancy that applies PING infrastructure to real businesses, starting with home service companies. It helps owners capture more opportunities, reduce administrative work, respond faster, and operate more consistently, with practical AI rather than hype.",
+      "category": "PingFyd"
     },
     {
       "id": "f3",
       "question": "Is PING a finished product I can buy?",
-      "answer": "Not yet. PING Social, the consultancy, is operating today. The PING intelligence system itself is in active development, and this site documents the architecture as it is built. The products page labels everything honestly: available, in development, or future.",
+      "answer": "Not yet. PingFyd, the consultancy, is operating today. The PING intelligence system itself is in active development, and this site documents the architecture as it is built. The products page labels everything honestly: available, in development, or future.",
       "category": "PING"
     },
     {
@@ -34,15 +34,15 @@
     },
     {
       "id": "f6",
-      "question": "How does PING Social work with a business?",
-      "answer": "It starts with a conversation about how the business actually runs: where opportunities get missed, where follow-up lags, where admin work piles up. Then PING Social recommends practical automation for those specific problems. Consultative, not one-size-fits-all, and the owner stays in control.",
-      "category": "PING Social"
+      "question": "How does PingFyd work with a business?",
+      "answer": "It starts with a conversation about how the business actually runs: where opportunities get missed, where follow-up lags, where admin work piles up. Then PingFyd recommends practical automation for those specific problems. Consultative, not one-size-fits-all, and the owner stays in control.",
+      "category": "PingFyd"
     },
     {
       "id": "f7",
       "question": "Will AI replace my workers?",
       "answer": "No. That is the opposite of the goal. AI handles repetitive communication, organization, and follow-up so owners and skilled workers can focus on customers, jobs, and decisions that need human judgment. Technology should strengthen the worker, not replace them.",
-      "category": "PING Social"
+      "category": "PingFyd"
     },
     {
       "id": "f8",

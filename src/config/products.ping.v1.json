@@ -6,7 +6,7 @@
   "products": [
     {
       "id": "ping-social",
-      "name": "PING Social",
+      "name": "PingFyd",
       "tagline": "AI concierge and business automation consultancy for home service businesses",
       "status": "available",
       "summary": "Practical automation consulting for independent home service businesses. We study how your business actually works, then recommend and implement the automation that fits: reliable inquiry capture, fast consistent response, follow-up that actually happens, review systems, and less administrative drag. Consultative, not packaged. Measurable value or the engagement does not continue.",
@@ -43,7 +43,7 @@
       "name": "AI Concierge",
       "tagline": "An always-on front desk for your business",
       "status": "in-development",
-      "summary": "The applied form of the PING intelligence system for a single business: answers customer questions, captures job details, schedules work, and follows up, with every action recorded and attributable. Currently delivered as bespoke engagements through PING Social rather than as a standalone product.",
+      "summary": "The applied form of the PING intelligence system for a single business: answers customer questions, captures job details, schedules work, and follows up, with every action recorded and attributable. Currently delivered as bespoke engagements through PingFyd rather than as a standalone product.",
       "cta": { "label": "Ask about concierge work", "href": "/contact" }
     },
     {
