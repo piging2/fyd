@@ -59,6 +59,8 @@ describe("globals.css accessibility floor", () => {
 
   it("hero parallax stays behind the reduced-motion guard", () => {
     expect(css).toContain(".hero-parallax");
+    expect(css).toContain(".hero-signal-field");
+    expect(css).toContain("@keyframes signalDrift");
     expect(css).toContain("prefers-reduced-motion: no-preference");
     expect(css).toContain("animation-timeline: view(block)");
   });

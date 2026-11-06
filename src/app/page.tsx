@@ -175,6 +175,7 @@ export default async function HomePage() {
       {/* 01 HERO: the living system moment */}
       <Section size="minor" className="bg-deep relative overflow-hidden">
         <div aria-hidden="true" className="hero-gradient-field" />
+        <div aria-hidden="true" className="hero-signal-field" />
         <BlueprintGrid />
         <Container className="relative">
           <p className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-honey">/live</p>

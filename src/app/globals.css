@@ -615,6 +615,34 @@ a {
   }
 }
 
+/* Wave 57 hero signal field (B-06, the Raycast transfer): where the Wave 09
+   gradient field is amorphous glow, this layer is structure: three diagonal
+   light bars with honey cores and clay shoulders, blurred into falloff,
+   drifting on a slower 44s cycle so the two fields parallax against each
+   other. CSS gradients only, transform is the only animated property, and
+   the animation lives under prefers-reduced-motion no-preference. The
+   layer is oversized and the hero section clips it. */
+.hero-signal-field {
+  position: absolute;
+  inset: -12%;
+  z-index: 0;
+  opacity: 0.5;
+  filter: blur(18px);
+  background:
+    linear-gradient(115deg, transparent 30%, rgba(221, 187, 74, 0.5) 38%, rgba(240, 214, 120, 0.85) 41%, rgba(172, 107, 83, 0.4) 45%, transparent 54%),
+    linear-gradient(115deg, transparent 52%, rgba(172, 107, 83, 0.35) 60%, rgba(221, 187, 74, 0.6) 64%, transparent 72%),
+    linear-gradient(115deg, transparent 68%, rgba(221, 187, 74, 0.35) 76%, rgba(240, 214, 120, 0.55) 79%, transparent 87%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-signal-field {
+    animation: signalDrift 44s ease-in-out infinite alternate;
+  }
+  @keyframes signalDrift {
+    from { transform: translate3d(-1.5%, 0, 0); }
+    to { transform: translate3d(1.5%, 1%, 0); }
+  }
+}
+
 /* Mobile typography scaling — 80% of desktop values for readability */
 @media (max-width: 768px) {
   :root {
