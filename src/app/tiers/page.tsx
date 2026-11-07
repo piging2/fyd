@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   title: "Pricing: Self-Hosted $0, Hosted DIY from $29/mo, Concierge from $2,500 | PingFyd",
   description:
     "Three tiers, priced in the open with the logic published: Self-Hosted free forever, Hosted DIY Launch $29/mo and Growth $59/mo with ticket caps and zero 1:1 owner time, Concierge Builds at $2,500 fixed and Retainers at $1,250/mo with capped owner hours.",
+  alternates: { canonical: "/tiers" },
 };
 
 function List({ items }: { items: string[] }) {

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "Evals and Gates: The Tests Our Work Must Pass | PingFyd Open",
   description:
     "The standing evaluation gates behind PingFyd's work, published: what each gate tests, its current pass state, and its trend, including the failures that created it. Provenance on every entry.",
+  alternates: { canonical: "/open/evals" },
 };
 
 export default function EvalsPage() {

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: "Building in the Open: Live Factory Counters, Evals, and Costs | PingFyd",
   description:
     "PingFyd builds in the open: live factory counters with provenance, the eval gates our work must pass, what the stack costs to run, and the three tiers priced in public. Every number real or labeled.",
+  alternates: { canonical: "/open" },
 };
 
 const cards = [

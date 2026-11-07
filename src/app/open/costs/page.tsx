@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "What It Costs to Run This: DIY Cost Physics and Calculator | PingFyd Open",
   description:
     "The real cost of running a small business web, social, and AI stack yourself, line by line, with an interactive true-cost calculator that prices your own hours. Estimates labeled, unknowns admitted.",
+  alternates: { canonical: "/open/costs" },
 };
 
 export default function CostsPage() {
