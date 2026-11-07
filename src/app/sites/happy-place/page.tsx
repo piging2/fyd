@@ -70,7 +70,7 @@ export default async function HappyPlaceDemoPage() {
   // no customize console (ownerConsole defaults off), and the header's
   // first <h1> is the binding-verified business name.
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background hp-motion">
       <SiteJsonLd projection={projection} />
       <SiteClient
         spec={spec}

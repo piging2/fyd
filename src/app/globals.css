@@ -915,3 +915,31 @@ a {
     }
   }
 }
+
+/* H2 (B-17): Happy Place tenant sections settle as they scroll into
+   view, a spatial-entry cue in the tenant motion budget (transform
+   only, no opacity: content is never hidden, and the hero is excluded
+   so the LCP element never waits on motion). Scoped to the
+   happy-place page wrapper (.hp-motion); no other tenant or
+   marketing surface can match. Native scroll-driven animation: no
+   JavaScript, no INP cost. Only for users who allow motion; browsers
+   without view timelines stay static. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .hp-motion .ve-section,
+    .hp-motion .ve-concierge,
+    .hp-motion .hp-slider {
+      animation: hp-section-settle linear both;
+      animation-timeline: view(block);
+      animation-range: entry 0% entry 40%;
+    }
+    @keyframes hp-section-settle {
+      from {
+        transform: translateY(14px);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+  }
+}

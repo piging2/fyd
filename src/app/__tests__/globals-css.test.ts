@@ -64,6 +64,12 @@ describe("globals.css accessibility floor", () => {
     expect(css).toContain("prefers-reduced-motion: no-preference");
     expect(css).toContain("animation-timeline: view(block)");
   });
+  it("scopes the H2 tenant section settle to the happy-place wrapper, transform only, motion-gated", () => {
+    expect(css).toContain(".hp-motion .ve-section");
+    expect(css).toContain(".hp-motion .hp-slider");
+    expect(css).toContain("@keyframes hp-section-settle");
+    expect(css).toContain("translateY(14px)");
+  });
 
   it("offsets anchored content below the 80px sticky header", () => {
     const m = css.match(/scroll-padding-top:\s*([0-9.]+)rem/);

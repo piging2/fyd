@@ -43,7 +43,7 @@ export function SliderSection() {
     media: { ...base.media, beforeMedia, afterMedia },
   };
   return (
-    <section aria-label="Before and after" className="mx-auto max-w-3xl px-6 py-16">
+    <section aria-label="Before and after" className="hp-slider mx-auto max-w-3xl px-6 py-16">
       <h2 className="mb-6 text-2xl font-semibold">Before and after</h2>
       <BeforeAfterSlider project={project} />
     </section>
