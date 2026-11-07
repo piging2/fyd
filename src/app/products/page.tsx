@@ -252,6 +252,7 @@ export default function ProductsPage() {
               </p>
             </div>
           </div>
+          <p className="mt-10 border-t border-border pt-6 text-text-muted">The engagement now has published shape: three tiers, priced in the open, with the pricing logic next to the prices. <Link href="/tiers" className="font-medium text-honey-text underline-offset-4 hover:underline">See the tiers</Link></p>
         </Container>
       </Section>
       <FaqSection items={getFaqsByCategory("PING")} eyebrow="FAQ" title="Questions about the products" containerClassName="max-w-4xl" />

@@ -34,7 +34,7 @@ const TECH_PAGES = [
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = getSiteUrl();
   const now = new Date();
-  const staticRoutes = ["", "/technology", "/blog", "/episodes", "/products", "/about", "/contact", "/faq", "/privacy", "/newsletter"];
+  const staticRoutes = ["", "/technology", "/blog", "/episodes", "/products", "/about", "/contact", "/faq", "/privacy", "/newsletter", "/open", "/open/evals", "/open/costs", "/tiers"];
 
   const entries: MetadataRoute.Sitemap = staticRoutes.map((r) => ({
     url: `${siteUrl}${r}`,
