@@ -20,6 +20,7 @@ import {
   resolveSiteDisplayName,
 } from "../_shared/site-metadata";
 import { SiteJsonLd } from "../_shared/site-jsonld";
+import { SliderSection } from "./slider-section";
 import { galleryMediaFor, heroMediaFor } from "@/fyd/media/select";
 import {
   auditSitesRenderClaims,
@@ -81,6 +82,7 @@ export default async function HappyPlaceDemoPage() {
         galleryMedia={galleryMedia}
         siteName={resolveSiteDisplayName(graph)}
       />
+      <SliderSection />
     </div>
   );
 }

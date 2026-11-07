@@ -49,6 +49,52 @@
       "storage": "static"
     },
     {
+      "id": "fences-001-before",
+      "driveId": "drive-c266e5096e43",
+      "filename": "FENCE BEFORE.jpg",
+      "type": "image",
+      "orientation": "landscape",
+      "dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "variants": {
+        "original": "/images/projects/fences/FENCE BUILD-1080.webp",
+        "web": "/images/projects/fences/FENCE BUILD-1080.webp",
+        "webp": "/images/projects/fences/FENCE BUILD-1080.webp",
+        "avif": "/images/projects/fences/FENCE BUILD-1080.avif",
+        "thumbnail": "/images/projects/fences/FENCE BUILD-thumb.webp"
+      },
+      "alt": "Before fence installation",
+      "description": "Property before fence construction",
+      "service": "fences",
+      "city": "Corvallis",
+      "county": "Benton",
+      "state": "Oregon",
+      "projectId": "fences-001",
+      "tags": [
+        "fences",
+        "before",
+        "corvallis"
+      ],
+      "roles": [
+        "before"
+      ],
+      "featured": false,
+      "heroEligible": false,
+      "homepageEligible": false,
+      "createdAt": "2026-07-20T00:00:00.000Z",
+      "updatedAt": "2026-07-20T00:00:00.000Z",
+      "uploadedAt": "2026-07-20T00:00:00.000Z",
+      "fileSize": 282546,
+      "format": "WEBP",
+      "colorSpace": "sRGB",
+      "lifecycleState": "published",
+      "source": "local",
+      "contentHash": "802ccc84e0637b56cdf517cc6ca39168e71681d24d523eaa5e7a255b3f10433a",
+      "storage": "static"
+    },
+    {
       "id": "fences-001-after",
       "driveId": "drive-7a4b33c8b2bb",
       "filename": "FENCE AFTER.jpg",
