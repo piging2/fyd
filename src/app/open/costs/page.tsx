@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTenant } from "@/lib/tenant-config";
 import Link from "next/link";
 import { Container, Section } from "@/components/section";
 import { DiyCalculator } from "@/components/diy-calculator";
@@ -7,11 +8,30 @@ import { diyCostLines, ownCostShape } from "@/lib/open-data";
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://fyd-product.vercel.app");
+
 export const metadata: Metadata = {
   title: "What It Costs to Run This: DIY Cost Physics and Calculator | PingFyd Open",
   description:
     "The real cost of running a small business web, social, and AI stack yourself, line by line, with an interactive true-cost calculator that prices your own hours. Estimates labeled, unknowns admitted.",
   alternates: { canonical: "/open/costs" },
+  openGraph: {
+    type: "website",
+    title: "What It Costs to Run This: DIY Cost Physics and Calculator | PingFyd Open",
+    description: "The real cost of running a small business web, social, and AI stack yourself, line by line, with an interactive true-cost calculator that prices your own hours. Estimates labeled, unknowns admitted.",
+    url: siteUrl + "/open/costs",
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/brand/og-card.webp"],
+    title: "What It Costs to Run This: DIY Cost Physics and Calculator | PingFyd Open",
+    description: "The real cost of running a small business web, social, and AI stack yourself, line by line, with an interactive true-cost calculator that prices your own hours. Estimates labeled, unknowns admitted.",
+  },
 };
 
 export default function CostsPage() {

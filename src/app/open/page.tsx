@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTenant } from "@/lib/tenant-config";
 import Link from "next/link";
 import { Container, Section } from "@/components/section";
 import { openCounters } from "@/lib/open-data";
@@ -6,11 +7,30 @@ import { openCounters } from "@/lib/open-data";
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://fyd-product.vercel.app");
+
 export const metadata: Metadata = {
   title: "Building in the Open: Live Factory Counters, Evals, and Costs | PingFyd",
   description:
     "PingFyd builds in the open: live factory counters with provenance, the eval gates our work must pass, what the stack costs to run, and the three tiers priced in public. Every number real or labeled.",
   alternates: { canonical: "/open" },
+  openGraph: {
+    type: "website",
+    title: "Building in the Open: Live Factory Counters, Evals, and Costs | PingFyd",
+    description: "PingFyd builds in the open: live factory counters with provenance, the eval gates our work must pass, what the stack costs to run, and the three tiers priced in public. Every number real or labeled.",
+    url: siteUrl + "/open",
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/brand/og-card.webp"],
+    title: "Building in the Open: Live Factory Counters, Evals, and Costs | PingFyd",
+    description: "PingFyd builds in the open: live factory counters with provenance, the eval gates our work must pass, what the stack costs to run, and the three tiers priced in public. Every number real or labeled.",
+  },
 };
 
 const cards = [

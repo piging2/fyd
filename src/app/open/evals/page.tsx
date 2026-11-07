@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTenant } from "@/lib/tenant-config";
 import Link from "next/link";
 import { Container, Section } from "@/components/section";
 import { evalGates } from "@/lib/open-data";
@@ -6,11 +7,30 @@ import { evalGates } from "@/lib/open-data";
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://fyd-product.vercel.app");
+
 export const metadata: Metadata = {
   title: "Evals and Gates: The Tests Our Work Must Pass | PingFyd Open",
   description:
     "The standing evaluation gates behind PingFyd's work, published: what each gate tests, its current pass state, and its trend, including the failures that created it. Provenance on every entry.",
   alternates: { canonical: "/open/evals" },
+  openGraph: {
+    type: "website",
+    title: "Evals and Gates: The Tests Our Work Must Pass | PingFyd Open",
+    description: "The standing evaluation gates behind PingFyd's work, published: what each gate tests, its current pass state, and its trend, including the failures that created it. Provenance on every entry.",
+    url: siteUrl + "/open/evals",
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/brand/og-card.webp"],
+    title: "Evals and Gates: The Tests Our Work Must Pass | PingFyd Open",
+    description: "The standing evaluation gates behind PingFyd's work, published: what each gate tests, its current pass state, and its trend, including the failures that created it. Provenance on every entry.",
+  },
 };
 
 export default function EvalsPage() {

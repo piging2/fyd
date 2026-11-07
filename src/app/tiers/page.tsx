@@ -10,11 +10,30 @@ import { cn } from "@/lib/utils";
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
+const siteUrl =
+  getTenant().domain ??
+  (process.env.VERCEL_URL
+    ? "https://" + process.env.VERCEL_URL
+    : "https://fyd-product.vercel.app");
+
 export const metadata: Metadata = {
   title: "Pricing: Self-Hosted $0, Hosted DIY from $29/mo, Concierge from $2,500 | PingFyd",
   description:
     "Three tiers, priced in the open with the logic published: Self-Hosted free forever, Hosted DIY Launch $29/mo and Growth $59/mo with ticket caps and zero 1:1 owner time, Concierge Builds at $2,500 fixed and Retainers at $1,250/mo with capped owner hours.",
   alternates: { canonical: "/tiers" },
+  openGraph: {
+    type: "website",
+    title: "Pricing: Self-Hosted $0, Hosted DIY from $29/mo, Concierge from $2,500 | PingFyd",
+    description: "Three tiers, priced in the open with the logic published: Self-Hosted free forever, Hosted DIY Launch $29/mo and Growth $59/mo with ticket caps and zero 1:1 owner time, Concierge Builds at $2,500 fixed and Retainers at $1,250/mo with capped owner hours.",
+    url: siteUrl + "/tiers",
+    images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/brand/og-card.webp"],
+    title: "Pricing: Self-Hosted $0, Hosted DIY from $29/mo, Concierge from $2,500 | PingFyd",
+    description: "Three tiers, priced in the open with the logic published: Self-Hosted free forever, Hosted DIY Launch $29/mo and Growth $59/mo with ticket caps and zero 1:1 owner time, Concierge Builds at $2,500 fixed and Retainers at $1,250/mo with capped owner hours.",
+  },
 };
 
 function List({ items }: { items: string[] }) {
