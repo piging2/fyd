@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 3600;
 
 /**
  * FYD Social generated-site demo: Happy Place Carpentry.
