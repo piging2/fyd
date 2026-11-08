@@ -83,7 +83,7 @@ export default function BuildMyFydPage() {
           {HOW_STEPS.map((s, i) => (
             <li key={s.name} className="rounded border border-neutral-200 p-4">
               <h3 className="font-mono text-sm font-semibold">
-                {String(i + 1).padStart(2, "0")} · {s.name}
+                {i + 1} · {s.name}
               </h3>
               <p className="mt-1 text-sm text-neutral-600">{s.detail}</p>
             </li>
