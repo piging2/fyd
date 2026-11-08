@@ -40,7 +40,7 @@ export function SystemTopology() {
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="font-mono text-sm font-bold uppercase tracking-widest text-text">
-                  <span className="mr-3 text-text-muted">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="mr-3 text-text-muted">{i + 1}</span>
                   {layer.name}
                 </h3>
                 <div className="flex flex-wrap gap-2">
