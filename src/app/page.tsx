@@ -123,19 +123,19 @@ const LOOP_BEATS: LoopBeat[] = [
 
 const AUTHORITY_LAYERS = [
   {
-    n: "01",
+    n: "1",
     title: "DEFAULT DENY",
     detail: "Nothing is permitted unless granted. The gateway answers 401 without credentials, on reads as well as writes.",
     status: "Live" as Maturity,
   },
   {
-    n: "02",
+    n: "2",
     title: "SCOPED GRANTS",
     detail: "Capabilities are explicit: which agent may do what, under which mission. A fail-closed CapabilityAuthority has enforced this on the live gateway since 2026-09-15, and the delegation issuance decision was implemented and tested 18/18 (captured 2026-09-17). Explicit grants, not vibes.",
     status: "Live" as Maturity,
   },
   {
-    n: "03",
+    n: "3",
     title: "AUDIT AND REPLAY",
     detail: "Every grant and action leaves evidence. Important behavior can be re-executed and compared.",
     status: "Experimental" as Maturity,

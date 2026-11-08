@@ -20,17 +20,17 @@ import { cn } from "@/lib/utils";
 
 const RULES = [
   {
-    n: "01",
+    n: "1",
     title: "Activity is not output.",
     body: "Work counts when a verified artifact lands in the record.",
   },
   {
-    n: "02",
+    n: "2",
     title: "Evidence outranks reports.",
     body: "If a summary and the disk disagree, the disk wins.",
   },
   {
-    n: "03",
+    n: "3",
     title: "Finished means verified, not rendered.",
     body: "Every release passes decode, seam, and hash checks, and a human ear, before it ships.",
   },
