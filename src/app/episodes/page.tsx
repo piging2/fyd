@@ -9,7 +9,7 @@ const siteUrl =
   getTenant().domain ??
   (process.env.VERCEL_URL
     ? "https://" + process.env.VERCEL_URL
-    : "https://fyd-product.vercel.app");
+    : "https://pingfyd.com");
 
 const DESCRIPTION =
   "Every episode of The Long Ping with its own page: the film, its duration where the record has one, and the story it tells, with a link to watch on YouTube.";

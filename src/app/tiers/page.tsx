@@ -14,7 +14,7 @@ const siteUrl =
   getTenant().domain ??
   (process.env.VERCEL_URL
     ? "https://" + process.env.VERCEL_URL
-    : "https://fyd-product.vercel.app");
+    : "https://pingfyd.com");
 
 export const metadata: Metadata = {
   title: "Pricing: Self-Hosted $0, Hosted DIY from $29/mo, Concierge from $2,500 | PingFyd",
@@ -51,7 +51,7 @@ function List({ items }: { items: string[] }) {
 
 export default function TiersPage() {
   const tenant = getTenant();
-  const base = tenant.domain ?? "https://fyd-product.vercel.app";
+  const base = tenant.domain ?? "https://pingfyd.com";
   const itemListJsonLd = buildItemListJsonLd([
     { name: "Self-Hosted", url: base + "/tiers#self-hosted" },
     { name: "Hosted DIY", url: base + "/tiers#hosted" },

@@ -14,7 +14,7 @@ const siteUrl =
   tenant.domain ??
   (process.env.VERCEL_URL
     ? "https://" + process.env.VERCEL_URL
-    : "https://fyd-product.vercel.app");
+    : "https://pingfyd.com");
 
 const TITLE = "Build My FYD";
 const DESCRIPTION =

@@ -14,7 +14,7 @@ const siteUrl =
   getTenant().domain ??
   (process.env.VERCEL_URL
     ? "https://" + process.env.VERCEL_URL
-    : "https://fyd-product.vercel.app");
+    : "https://pingfyd.com");
 
 const DESCRIPTION =
   "PING build notes and The Long Ping on film: architecture, implementation, and the reasoning behind both, plus every episode with its Shorts and transcripts.";

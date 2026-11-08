@@ -8,7 +8,7 @@ const siteUrl =
   tenant.domain ??
   (process.env.VERCEL_URL
     ? "https://" + process.env.VERCEL_URL
-    : "https://fyd-product.vercel.app");
+    : "https://pingfyd.com");
 
 const TITLE = "Apply to be considered for a feature";
 const DESCRIPTION =

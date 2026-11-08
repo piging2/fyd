@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const playfair = Playfair_Display({ variable: "--font-playfair", subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"] });
 
 const tenant = getTenant();
-const siteUrl = tenant.domain ?? (process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "https://fyd-product.vercel.app");
+const siteUrl = tenant.domain ?? (process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "https://pingfyd.com");
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

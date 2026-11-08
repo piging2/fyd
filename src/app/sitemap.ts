@@ -16,7 +16,7 @@ export const SITEMAP_CONTRACT_VERSION = "fyd.sitemap@2";
  * deployment URL until a PING domain is assigned. Never hardcode a domain here.
  */
 function getSiteUrl(): string {
-  return getTenant().domain ?? (process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "https://fyd-product.vercel.app");
+  return getTenant().domain ?? (process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "https://pingfyd.com");
 }
 
 const TECH_PAGES = [

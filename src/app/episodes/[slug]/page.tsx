@@ -67,7 +67,7 @@ export default async function EpisodeLandingPage({
     tenant.domain ??
     (process.env.VERCEL_URL
       ? "https://" + process.env.VERCEL_URL
-      : "https://fyd-product.vercel.app");
+      : "https://pingfyd.com");
   const isoDuration = durationToIso8601(video.duration);
 
   // VideoObject carries only fields the media inventory actually supports.

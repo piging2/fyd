@@ -11,7 +11,7 @@ const siteUrl =
   getTenant().domain ??
   (process.env.VERCEL_URL
     ? "https://" + process.env.VERCEL_URL
-    : "https://fyd-product.vercel.app");
+    : "https://pingfyd.com");
 
 export const metadata: Metadata = {
   title: "Evals and Gates: The Tests Our Work Must Pass | PingFyd Open",

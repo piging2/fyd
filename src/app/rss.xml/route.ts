@@ -12,7 +12,7 @@ import { buildRssFeed } from "@/lib/rss";
 export async function GET() {
   const siteUrl =
     getTenant().domain ??
-    (process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "https://fyd-product.vercel.app");
+    (process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "https://pingfyd.com");
   const xml = buildRssFeed(getAllPosts(), siteUrl);
   return new NextResponse(xml, {
     status: 200,

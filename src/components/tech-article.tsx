@@ -38,7 +38,7 @@ export function TechArticle({ eyebrow, title, lede, status, sections, related, s
     tenant.domain ??
     (process.env.VERCEL_URL
       ? "https://" + process.env.VERCEL_URL
-      : "https://fyd-product.vercel.app");
+      : "https://pingfyd.com");
   const breadcrumbJsonLd = slug
     ? buildBreadcrumbJsonLd([
         { name: "Home", url: siteUrl },
