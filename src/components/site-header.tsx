@@ -72,10 +72,23 @@ export function SiteHeader() {
   const tenant = getTenant();
   const menuRef = React.useRef<HTMLDivElement>(null);
   const navRef = React.useRef<HTMLDivElement>(null);
+  const toggleRef = React.useRef<HTMLButtonElement>(null);
 
   React.useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   const handleMenuClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!menuRef.current) return;
@@ -130,6 +143,7 @@ export function SiteHeader() {
         </div>
 
         <button
+          ref={toggleRef}
           type="button"
           className="flex h-11 w-11 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-muted lg:hidden"
           aria-expanded={open}
