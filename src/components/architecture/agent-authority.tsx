@@ -93,7 +93,7 @@ export function AgentAuthority() {
           {FLOW.map((step, i) => (
             <li key={step.label} className={cn("rounded-lg border p-4 transition-colors", i === activeStep ? "border-honey bg-honey/5" : "border-border-soft bg-surface")}>
               <p className="text-sm font-bold uppercase tracking-wide text-text">
-                <span className="mr-2 text-honey-text">{String(i + 1).padStart(2, "0")}</span>
+                <span className="mr-2 text-honey-text">{i + 1}</span>
                 {step.label}
               </p>
               <p className="mt-1 text-sm text-text-muted">{step.detail}</p>

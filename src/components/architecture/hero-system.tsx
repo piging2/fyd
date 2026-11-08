@@ -54,7 +54,7 @@ export function HeroSystem() {
                   className="font-mono text-[10px] text-text-on-dark/40 w-6"
                   aria-hidden="true"
                 >
-                  {String(i + 1).padStart(2, "0")}
+                  {i + 1}
                 </span>
                 <span
                   className={`h-2.5 w-2.5 rounded-full border transition-all duration-500 ${
