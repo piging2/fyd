@@ -153,7 +153,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </a>
             <ScrollToTop />
             {!chromeless && <SiteHeader />}
-            <main id="main-content" className="flex-1">{children}</main>
+            <main id="main-content" tabIndex={-1} className="flex-1">{children}</main>
             {!chromeless && <SiteFooter />}
             </LenisProvider>
           </MotionProvider>
