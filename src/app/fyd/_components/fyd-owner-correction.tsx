@@ -14,25 +14,25 @@ import { FydCopyClassLabel } from "./fyd-copy-class";
 
 const STEPS = [
   {
-    n: "01",
+    n: "1",
     title: "You say it in plain words",
     detail:
       'On the Coppersmith demo, the owner typed: "Move emergency plumbing first." No settings panel, no ticket, no code.',
   },
   {
-    n: "02",
+    n: "2",
     title: "FYD shows the exact change it proposes",
     detail:
       "Before anything changes, you see precisely what will move, what it affects, and what stays the same.",
   },
   {
-    n: "03",
+    n: "3",
     title: "You approve",
     detail:
       "Nothing changes without your approval. Not the wording, not the order, not the site. Approval is the gate.",
   },
   {
-    n: "04",
+    n: "4",
     title: "Your correction survives rebuilds",
     detail:
       "The next time the presence is regenerated, your correction is still there. You correct FYD once, not every time.",
