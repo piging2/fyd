@@ -74,7 +74,7 @@ export default async function BuildMyFydJobPage({ params }: { params: Promise<{ 
   const { report } = job;
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <div className="mx-auto max-w-5xl px-6 py-10">
       <RenderBeacon jobId={jobId} />
       <div className="rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
         <p className="font-semibold">DEMO PREVIEW</p>
@@ -147,6 +147,6 @@ export default async function BuildMyFydJobPage({ params }: { params: Promise<{ 
           />
         </section>
       )}
-    </main>
+    </div>
   );
 }

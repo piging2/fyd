@@ -109,7 +109,7 @@ export default function BuildMyFydClient() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-3xl font-bold tracking-tight">Build My FYD</h1>
       <p className="mt-2 text-neutral-600">
         Give us your website. FYD discovers it, acquires the real page, understands the business,
@@ -211,6 +211,6 @@ export default function BuildMyFydClient() {
           <p className="mt-1">{error}</p>
         </div>
       )}
-    </main>
+    </div>
   );
 }

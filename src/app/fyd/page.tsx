@@ -58,7 +58,7 @@ export default function FydProductPage() {
   return (
     <>
       <FydNav />
-      <main id="top">
+      <div id="top">
         <FydHero />
         <FydUnderstand />
         <FydObjects />
@@ -73,7 +73,7 @@ export default function FydProductPage() {
         <FydWhatIsReal />
         <FaqSection items={getFaqsByCategory("PingFyd")} eyebrow="FAQ" title="Questions from business owners" containerClassName="max-w-5xl" align="center" />
         <FydTryIt />
-      </main>
+      </div>
     </>
   );
 }
