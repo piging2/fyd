@@ -211,7 +211,7 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
             <ObjectTriggerIsland object={object} title={title} description={description ?? ""} className="ve-card-mark-trigger">
               <ObjectIdentityMark object={markFor(object, title)} size={48} />
             </ObjectTriggerIsland>
-            <span className="ve-card-number">{String(i + 1).padStart(2, '0')}</span>
+            <span className="ve-card-number">{i + 1}</span>
             <h3>{plan.parents.has(object.id) && <span className="ve-parent-label">{plan.parents.get(object.id)} / </span>}{title}</h3>{description && <p>{description}</p>}
             <CardActionsIsland object={object} title={title} description={description ?? ""} ask={ask} serviceHref={href.kind === 'safe' ? href.href : null} />
             <SourceDisclosure object={object} checkpoint={ctx.projectionCheckpoint}>{plan.parents.has(object.id) && <p>The source website places this service under {plan.parents.get(object.id)}. This reflects the website navigation.</p>}</SourceDisclosure>
