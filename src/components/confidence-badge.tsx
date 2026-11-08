@@ -46,7 +46,7 @@ export function ConfidenceBadge({ record, className }: ConfidenceBadgeProps) {
     state = "complete";
     label = "We have everything we need";
     bgColor = "bg-green-500/10";
-    textColor = "text-green-600";
+    textColor = "text-green-700";
   }
 
   return (
