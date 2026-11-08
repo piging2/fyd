@@ -55,7 +55,7 @@ export default async function SitesIndexPage() {
   );
 
   return (
-    <main className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <Container>
         <Section size="minor">
           <SectionHeading
@@ -80,6 +80,6 @@ export default async function SitesIndexPage() {
           </div>
         </Section>
       </Container>
-    </main>
+    </div>
   );
 }
