@@ -42,8 +42,15 @@ function ownerName(
 export default async function SitesIndexPage() {
   const sites = await Promise.all(
     DEMO_SITES.map(async (siteId) => {
-      const { graph } = await getVerifiedPublicProjection(siteId, "anonymous");
-      return { siteId, name: ownerName(graph, siteId) };
+      try {
+        const { graph } = await getVerifiedPublicProjection(siteId, "anonymous");
+        return { siteId, name: ownerName(graph, siteId) };
+      } catch {
+        // Isolate each site's read: a graph that fails to load lists the
+        // site under its id (the same fallback ownerName uses) instead of
+        // rejecting the whole index render.
+        return { siteId, name: siteId };
+      }
     }),
   );
 
