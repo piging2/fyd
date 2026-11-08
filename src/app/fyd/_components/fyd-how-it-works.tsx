@@ -16,7 +16,7 @@ const STEPS: {
   copy: FydCopyClass;
 }[] = [
   {
-    n: "01",
+    n: "1",
     name: "Observe",
     line: "FYD reads your public sources.",
     detail:
@@ -24,7 +24,7 @@ const STEPS: {
     copy: "live",
   },
   {
-    n: "02",
+    n: "2",
     name: "Understand",
     line: "Builds a model of your business as connected things.",
     detail:
@@ -32,7 +32,7 @@ const STEPS: {
     copy: "live",
   },
   {
-    n: "03",
+    n: "3",
     name: "Build",
     line: "Generates your presence from that model.",
     detail:
@@ -40,7 +40,7 @@ const STEPS: {
     copy: "live",
   },
   {
-    n: "04",
+    n: "4",
     name: "Keep current",
     line: "Re-reads sources and folds in changes. Your corrections survive.",
     detail:
@@ -48,7 +48,7 @@ const STEPS: {
     copy: "coming",
   },
   {
-    n: "05",
+    n: "5",
     name: "Help",
     line: "Ask FYD answers customers from evidence.",
     detail:
@@ -56,7 +56,7 @@ const STEPS: {
     copy: "live",
   },
   {
-    n: "06",
+    n: "6",
     name: "Act with permission",
     line: "Routine work happens only when you approve it.",
     detail:
@@ -64,7 +64,7 @@ const STEPS: {
     copy: "auth",
   },
   {
-    n: "07",
+    n: "7",
     name: "Learn",
     line: "Outcomes become new evidence.",
     detail:
