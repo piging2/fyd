@@ -44,12 +44,13 @@ export default async function SitesIndexPage() {
     DEMO_SITES.map(async (siteId) => {
       try {
         const { graph } = await getVerifiedPublicProjection(siteId, "anonymous");
-        return { siteId, name: ownerName(graph, siteId) };
+        return { siteId, name: ownerName(graph, siteId), available: true };
       } catch {
         // Isolate each site's read: a graph that fails to load lists the
         // site under its id (the same fallback ownerName uses) instead of
-        // rejecting the whole index render.
-        return { siteId, name: siteId };
+        // rejecting the whole index render. It renders without a link:
+        // the directory never offers a destination it cannot serve.
+        return { siteId, name: siteId, available: false };
       }
     }),
   );
@@ -64,19 +65,32 @@ export default async function SitesIndexPage() {
             description="Available FYD sites, discovered live from the projection directory. Names resolve from each tenant's PING-backed object graph at render time."
           />
           <div className="mt-10 grid gap-6 sm:grid-cols-2">
-            {sites.map(({ siteId, name }) => (
-              <Link
-                key={siteId}
-                href={`/sites/${siteId}`}
-                className="group block rounded-2xl border border-border-soft bg-surface p-8 transition hover:border-honey"
-              >
-                <p className="text-2xl font-bold text-primary">{name}</p>
-                <p className="mt-2 text-sm text-text-muted">{`/sites/${siteId}`}</p>
-                <p className="mt-6 text-sm font-semibold text-honey-text group-hover:text-honey-text-hover">
-                  Open demo site &rarr;
-                </p>
-              </Link>
-            ))}
+            {sites.map(({ siteId, name, available }) =>
+              available ? (
+                <Link
+                  key={siteId}
+                  href={`/sites/${siteId}`}
+                  className="group block rounded-2xl border border-border-soft bg-surface p-8 transition hover:border-honey"
+                >
+                  <p className="text-2xl font-bold text-primary">{name}</p>
+                  <p className="mt-2 text-sm text-text-muted">{`/sites/${siteId}`}</p>
+                  <p className="mt-6 text-sm font-semibold text-honey-text group-hover:text-honey-text-hover">
+                    Open demo site &rarr;
+                  </p>
+                </Link>
+              ) : (
+                <div
+                  key={siteId}
+                  className="block rounded-2xl border border-border-soft bg-surface p-8"
+                >
+                  <p className="text-2xl font-bold text-primary">{name}</p>
+                  <p className="mt-2 text-sm text-text-muted">{`/sites/${siteId}`}</p>
+                  <p className="mt-6 text-sm font-semibold text-text-muted">
+                    Not currently available
+                  </p>
+                </div>
+              ),
+            )}
           </div>
         </Section>
       </Container>
