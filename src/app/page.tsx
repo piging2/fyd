@@ -761,12 +761,12 @@ export default async function HomePage() {
           <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
             {STATUS_STRIP.map((row) => (
               <ScrollReveal key={row.label}>
-                <div className="flex h-full min-w-0 items-start justify-between gap-4 rounded-lg border border-border-soft bg-surface p-5">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-bold uppercase tracking-wide text-text">{row.label}</h3>
-                    <p className="mt-1 break-words text-sm text-text-muted">{row.detail}</p>
+                <div className="flex h-full min-w-0 flex-col items-start justify-start gap-4 rounded-lg border border-border-soft bg-surface p-5 md:flex-row md:justify-between">
+                  <div className="contents md:block md:min-w-0 md:flex-1">
+                    <h3 className="order-1 text-sm font-bold uppercase tracking-wide text-text md:order-none">{row.label}</h3>
+                    <p className="order-3 mt-1 break-words text-sm text-text-muted md:order-none">{row.detail}</p>
                   </div>
-                  <MaturityLabel status={row.status} className="shrink-0" />
+                  <MaturityLabel status={row.status} className="order-2 shrink-0 md:order-none" />
                 </div>
               </ScrollReveal>
             ))}
