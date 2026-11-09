@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
+import PingPigGif from "@/components/ping-pig-gif";
 import { getTenant } from "@/lib/tenant-config";
 import { buildAboutPageJsonLd } from "@/lib/structured-data";
 
@@ -72,6 +73,25 @@ export default function AboutPage() {
             title={<span className="text-text-on-dark">PING is infrastructure for systems that remember</span>}
             description={<span className="text-text-on-dark/90">{tenant.description}</span>}
           />
+        </Container>
+      </Section>
+
+      <Section>
+        <Container className="max-w-4xl">
+          <figure className="mx-auto max-w-xl">
+            <div className="overflow-hidden rounded-2xl border border-border-soft bg-surface">
+              <PingPigGif
+                gif="/brand/ping-pig-call-center-variant1.gif"
+                poster="/brand/ping-pig-call-center-variant1-poster.webp"
+                width={553}
+                height={309}
+                alt="The Ping Pig, a golden pig mascot in a purple suit, juggling two phones and a tablet at a call center desk while the crew works around him, five star reviews and a route map on the wall behind"
+              />
+            </div>
+            <figcaption className="mt-3 text-center text-sm text-text-muted">
+              The front desk, PingFyd style: nothing rings unanswered for long.
+            </figcaption>
+          </figure>
         </Container>
       </Section>
 
