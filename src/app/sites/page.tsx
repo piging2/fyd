@@ -14,6 +14,7 @@ import {
   getVerifiedPublicProjection,
   listPingSiteIdsSync,
 } from "@/fyd/data/ping-object-source";
+import { isServableSiteId } from "@/app/sites/_shared/site-lookup";
 
 export const metadata: Metadata = {
   title: "FYD demo sites | PING",
@@ -40,20 +41,22 @@ function ownerName(
 }
 
 export default async function SitesIndexPage() {
-  const sites = await Promise.all(
-    DEMO_SITES.map(async (siteId) => {
+  // Register F7: the directory offers only destinations it can serve.
+  // Candidates are filtered through the same servable check the dynamic
+  // route uses, and a candidate whose public projection cannot be read
+  // creates no card at all. One bad graph still never rejects the index.
+  const candidates = DEMO_SITES.filter((siteId) => isServableSiteId(siteId));
+  const reads = await Promise.all(
+    candidates.map(async (siteId) => {
       try {
         const { graph } = await getVerifiedPublicProjection(siteId, "anonymous");
-        return { siteId, name: ownerName(graph, siteId), available: true };
+        return { siteId, name: ownerName(graph, siteId) };
       } catch {
-        // Isolate each site's read: a graph that fails to load lists the
-        // site under its id (the same fallback ownerName uses) instead of
-        // rejecting the whole index render. It renders without a link:
-        // the directory never offers a destination it cannot serve.
-        return { siteId, name: siteId, available: false };
+        return null;
       }
     }),
   );
+  const sites = reads.filter((s): s is { siteId: string; name: string } => s !== null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,9 +67,9 @@ export default async function SitesIndexPage() {
             title="FYD demo sites"
             description="Available FYD sites, discovered live from the projection directory. Names resolve from each tenant's PING-backed object graph at render time."
           />
-          <div className="mt-10 grid gap-6 sm:grid-cols-2">
-            {sites.map(({ siteId, name, available }) =>
-              available ? (
+          {sites.length > 0 ? (
+            <div className="mt-10 grid gap-6 sm:grid-cols-2">
+              {sites.map(({ siteId, name }) => (
                 <Link
                   key={siteId}
                   href={`/sites/${siteId}`}
@@ -78,20 +81,16 @@ export default async function SitesIndexPage() {
                     Open demo site &rarr;
                   </p>
                 </Link>
-              ) : (
-                <div
-                  key={siteId}
-                  className="block rounded-2xl border border-border-soft bg-surface p-8"
-                >
-                  <p className="text-2xl font-bold text-primary">{name}</p>
-                  <p className="mt-2 text-sm text-text-muted">{`/sites/${siteId}`}</p>
-                  <p className="mt-6 text-sm font-semibold text-text-muted">
-                    Not currently available
-                  </p>
-                </div>
-              ),
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-10 text-base text-text-muted">
+              No demo sites are available right now.{" "}
+              <Link href="/fyd" className="font-semibold text-honey-text hover:text-honey-text-hover">
+                See how FYD works
+              </Link>
+            </p>
+          )}
         </Section>
       </Container>
     </div>
