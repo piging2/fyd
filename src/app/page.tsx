@@ -758,13 +758,13 @@ export default async function HomePage() {
             description="(so ambition never outruns evidence) Every capability on this page carries its maturity. Stages, not dates. Captured evidence is labeled captured; every number carries its as-of date."
             align="center"
           />
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
             {STATUS_STRIP.map((row) => (
               <ScrollReveal key={row.label}>
-                <div className="flex h-full items-start justify-between gap-4 rounded-lg border border-border-soft bg-surface p-5">
+                <div className="flex h-full min-w-0 items-start justify-between gap-4 rounded-lg border border-border-soft bg-surface p-5">
                   <div className="min-w-0 flex-1">
                     <h3 className="text-sm font-bold uppercase tracking-wide text-text">{row.label}</h3>
-                    <p className="mt-1 text-sm text-text-muted">{row.detail}</p>
+                    <p className="mt-1 break-words text-sm text-text-muted">{row.detail}</p>
                   </div>
                   <MaturityLabel status={row.status} className="shrink-0" />
                 </div>
