@@ -51,6 +51,7 @@ export default function EventsPage() {
           ),
         },
         {
+          id: "the-event-lifecycle",
           heading: "The event lifecycle",
           body: (
             <>

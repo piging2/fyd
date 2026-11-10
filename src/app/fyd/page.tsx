@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTenant } from "@/lib/tenant-config";
-import { FydNav } from "./_components/fyd-nav";
+import { FydChapterIndex, FydNav } from "./_components/fyd-nav";
 import { FydHero } from "./_components/fyd-hero";
 import { FydUnderstand } from "./_components/fyd-understand";
 import { FydObjects } from "./_components/fyd-objects";
@@ -58,8 +58,9 @@ export default function FydProductPage() {
   return (
     <>
       <FydNav />
-      <div id="top">
+      <div id="top" className="md:[&>div[id]]:scroll-mt-16">
         <FydHero />
+        <FydChapterIndex />
         <FydUnderstand />
         <FydObjects />
         <FydDemoSites />

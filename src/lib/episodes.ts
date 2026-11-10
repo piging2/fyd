@@ -12,6 +12,7 @@
  * inventory id next to its slug so the mapping is auditable.
  */
 
+import { renderMarkdown, toPlainText, type BlogHeading } from "@/lib/blog";
 import { episodeVideos, featuredFilm, type FeaturedVideo } from "@/lib/longping-media";
 
 export interface EpisodePage {
@@ -123,31 +124,13 @@ export interface EpisodeBreakdownDepth {
   /** The post real opening: its first substantive prose paragraph. */
   summary: string;
   /** The post actual section headings, in order. */
-  topics: string[];
+  topics: BlogHeading[];
   /** A short excerpt from the post: its closing prose paragraph. */
   excerpt: string;
 }
 
-function toPlainText(fragment: string): string {
-  return fragment
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 export function buildEpisodeDepth(body: string): EpisodeBreakdownDepth | null {
-  const topics: string[] = [];
-  for (const line of body.split("\n")) {
-    const h = line.match(/^#{2,3}\s+(.*)$/);
-    if (h) {
-      const topic = toPlainText(h[1]);
-      if (topic) topics.push(topic);
-    }
-  }
+  const topics = renderMarkdown(body).headings.filter(({ level, label }) => level > 1 && label);
   const paragraphs: string[] = [];
   for (const block of body.split(/\n\s*\n/)) {
     const t = block.trim();

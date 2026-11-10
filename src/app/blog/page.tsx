@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { BlogArchive } from "@/components/blog-archive";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { getAllPosts } from "@/lib/blog";
-import { episodeVideos, featuredFilm, shortVideos } from "@/lib/longping-media";
+import { episodeVideos, shortVideos } from "@/lib/longping-media";
 import { VideoCard } from "@/components/video-card";
 import { SocialsHub } from "@/components/socials-hub";
 import { CrossSell } from "@/components/cross-sell";
@@ -40,14 +40,6 @@ export const metadata: Metadata = {
   },
 };
 
-function formatDate(d: string) {
-  return new Date(d + "T00:00:00").toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 export const revalidate = 3600;
 
 export default async function BlogPage() {
@@ -78,16 +70,26 @@ export default async function BlogPage() {
               </span>
             }
           />
+          <nav aria-label="Browse PING" className="mt-5 flex flex-wrap gap-x-6 gap-y-1">
+            <a href="#long-ping-films" className="inline-flex min-h-11 items-center font-semibold text-honey underline underline-offset-4">
+              Watch The Long Ping
+            </a>
+            <a href="#studio-notebook" className="inline-flex min-h-11 items-center font-semibold text-honey underline underline-offset-4">
+              Browse the notebook
+            </a>
+          </nav>
         </Container>
       </Section>
 
       <Section size="minor" className="bg-surface-muted/40">
         <Container>
-          <SectionHeading
-            eyebrow={<span className="text-honey-text">Watch</span>}
-            title="The Long Ping, on film"
-            description="Every episode is a full-length film on YouTube, an audio edition on Spotify, and a written transcript series on Substack. Start with the newest film, then take the Shorts as trailers for the arguments."
-          />
+          <div id="long-ping-films" tabIndex={-1} data-fragment-focus>
+            <SectionHeading
+              eyebrow={<span className="text-honey-text">Watch</span>}
+              title="The Long Ping, on film"
+              description="Every episode is a full-length film on YouTube, an audio edition on Spotify, and a written transcript series on Substack. Start with the newest film, then take the Shorts as trailers for the arguments."
+            />
+          </div>
 
           <div className="mt-10">
             <VideoCard video={featuredVideo} large />
@@ -119,38 +121,10 @@ export default async function BlogPage() {
 
       <Section>
         <Container className="max-w-4xl">
-          <div className="space-y-8">
-            {posts.map((post) => (
-              <article
-                key={post.slug}
-                className="rounded-lg border border-border-soft bg-surface p-6 transition-shadow hover:shadow-md"
-              >
-                <div className="mb-3 flex flex-wrap items-center gap-3">
-                  {post.tags.slice(0, 3).map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-block px-3 py-1 bg-honey/10 text-honey-text rounded text-sm font-semibold"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                  <span className="text-sm text-text-muted">{formatDate(post.date)}</span>
-                </div>
-                <Link href={`/blog/${post.slug}`}>
-                  <h2 className="text-2xl font-bold text-text hover:text-honey-text transition-colors">
-                    {post.title}
-                  </h2>
-                </Link>
-                <p className="mt-2 text-text-muted">{post.excerpt}</p>
-                <Link
-                  href={`/blog/${post.slug}`}
-                  className="mt-4 inline-block font-semibold text-honey-text hover:underline"
-                >
-                  Read article
-                </Link>
-              </article>
-            ))}
-          </div>
+          <h2 id="studio-notebook" tabIndex={-1} data-fragment-focus className="font-display text-3xl font-bold text-text">
+            Studio notebook
+          </h2>
+          <BlogArchive posts={posts} />
 
           <div className="mt-16">
             <SocialsHub />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 interface GraphNode {
@@ -45,126 +45,117 @@ const EDGES: GraphEdge[] = [
   { from: "job", to: "review", label: "rated" },
 ];
 
+function getNode(id: string) {
+  return NODES.find((node) => node.id === id)!;
+}
+
 export function BusinessGraph({ dark = false }: { dark?: boolean } = {}) {
   const [selected, setSelected] = useState<string | null>(null);
-  const selectedNode = NODES.find((n) => n.id === selected);
-
-  const getNode = (id: string) => NODES.find((n) => n.id === id)!;
+  const selectedNode = selected ? getNode(selected) : null;
+  const relationships = EDGES.filter((edge) => edge.from === selected || edge.to === selected);
 
   return (
     <div className="w-full">
-      <div className="hidden md:block">
-        <svg viewBox="0 0 440 620" className="mx-auto w-full max-w-[560px]" role="img" aria-label="Business graph showing relationships between customer, events, leads, projects, people, services, estimates, jobs, and reviews.">
-          {EDGES.map((edge) => {
-            const from = getNode(edge.from);
-            const to = getNode(edge.to);
-            const isHighlighted = selected && (edge.from === selected || edge.to === selected);
-            return (
-              <g key={`${edge.from}-${edge.to}`} opacity={selected && !isHighlighted ? 0.2 : 1} className="transition-opacity duration-300">
-                <line
-                  x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                  stroke="currentColor"
-                  strokeOpacity={isHighlighted ? 0.6 : 0.25}
-                  strokeWidth={isHighlighted ? 2 : 1}
-                  className={dark ? "text-text-on-dark" : "text-text"}
-                />
-                <text
-                  x={(from.x + to.x) / 2}
-                  y={(from.y + to.y) / 2 - 6}
-                  textAnchor="middle"
-                  className={cn(dark ? "fill-text-on-dark/60" : "fill-text-muted", "text-[9px] uppercase tracking-wide")}
-                >
-                  {edge.label}
-                </text>
-              </g>
-            );
-          })}
+      <p className={cn("mb-4 text-center text-sm", dark ? "text-text-on-dark/70" : "text-text-muted")}>
+        Illustrative model of business relationships, not live data. The generic knowledge
+        graph is built; a business-domain graph is a direction.
+      </p>
+      <div className="mx-auto grid items-start gap-6 xl:max-w-4xl xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <div className="relative mx-auto grid w-full max-w-[560px] grid-cols-2 gap-2 md:block">
+          <svg viewBox="0 0 440 620" className="hidden w-full md:block" aria-hidden="true" focusable="false">
+            {EDGES.map((edge) => {
+              const from = getNode(edge.from);
+              const to = getNode(edge.to);
+              const highlighted = edge.from === selected || edge.to === selected;
+              return (
+                <g key={edge.from + "-" + edge.to} opacity={selected && !highlighted ? 0.2 : 1} className="transition-opacity motion-reduce:transition-none">
+                  <line
+                    x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                    stroke="currentColor"
+                    strokeOpacity={highlighted ? 0.6 : 0.25}
+                    strokeWidth={highlighted ? 2 : 1}
+                    className={dark ? "text-text-on-dark" : "text-text"}
+                  />
+                  <text
+                    x={(from.x + to.x) / 2}
+                    y={(from.y + to.y) / 2 - 9}
+                    textAnchor="middle"
+                    className={cn(dark ? "fill-text-on-dark/70" : "fill-text-muted", "text-[9px] uppercase tracking-wide")}
+                  >
+                    {edge.label}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
           {NODES.map((node) => (
-            <g key={node.id}>
-              <button
-                onClick={() => setSelected(selected === node.id ? null : node.id)}
-                onMouseEnter={() => setSelected(node.id)}
-                onMouseLeave={() => setSelected(null)}
-                onFocus={() => setSelected(node.id)}
-                onBlur={() => setSelected(null)}
-                aria-label={`${node.label}: ${node.detail}`}
-                style={{ cursor: "pointer" }}
-              >
-                <rect
-                  x={node.x - 55}
-                  y={node.y - 18}
-                  width={110}
-                  height={36}
-                  rx={8}
-                  fill={selected === node.id ? node.color : "transparent"}
-                  fillOpacity={selected === node.id ? 0.15 : 0}
-                  stroke={node.color}
-                  strokeWidth={selected === node.id ? 2.5 : 1.5}
-                  className="transition-all duration-300"
-                />
-                <text
-                  x={node.x}
-                  y={node.y + 4}
-                  textAnchor="middle"
-                  className={cn(
-                    "text-[11px] font-bold uppercase tracking-wide",
-                    dark ? "fill-text-on-dark" : "fill-text"
-                  )}
-                >
-                  {node.label}
-                </text>
-              </button>
-            </g>
+            <button
+              key={node.id}
+              type="button"
+              aria-pressed={selected === node.id}
+              onClick={() => setSelected(node.id)}
+              style={{
+                "--node-x": (100 * node.x / 440) + "%",
+                "--node-y": (100 * node.y / 620) + "%",
+                "--node-color": node.color,
+              } as CSSProperties}
+              className={cn(
+                "min-h-11 min-w-0 rounded-lg border border-[color:var(--node-color)] px-1 text-xs font-bold uppercase tracking-wide",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
+                "md:absolute md:top-[var(--node-y)] md:left-[var(--node-x)] md:w-[22%] md:-translate-x-1/2 md:-translate-y-1/2",
+                dark ? "bg-deep-2 text-text-on-dark hover:bg-deep" : "bg-surface text-text hover:bg-surface-muted",
+                selected === node.id && "underline underline-offset-4 ring-2 ring-[color:var(--node-color)]"
+              )}
+            >
+              {node.label}
+            </button>
           ))}
-        </svg>
-        {selectedNode && (
-          <div className="mx-auto mt-4 max-w-md rounded-lg border border-border-soft bg-surface p-4 text-center" aria-live="polite">
-            <p className="text-sm font-bold uppercase tracking-wide" style={{ color: selectedNode.color }}>
-              {selectedNode.label}
+        </div>
+        <div className="min-h-36 rounded-lg border border-border-soft bg-surface p-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-3">
+            <p className="text-sm font-bold text-text" aria-live="polite">
+              {selectedNode ? selectedNode.label + " relationships" : "Explore a relationship"}
             </p>
-            <p className="mt-1 text-sm text-text-muted">{selectedNode.detail}</p>
+            <button
+              type="button"
+              aria-disabled={!selectedNode}
+              className="min-h-11 rounded text-xs font-semibold text-text-muted underline underline-offset-4 focus-visible:outline-2 aria-disabled:no-underline"
+              onClick={() => setSelected(null)}
+            >
+              Clear selection
+            </button>
           </div>
-        )}
-        {!selectedNode && (
-          <p className={cn("mt-4 text-center text-sm", dark ? "text-text-on-dark/70" : "text-text-muted")}>
-            Hover or tap a node to see what PING knows about it.
-          </p>
-        )}
-        <p className={cn("mt-6 text-center text-xs", dark ? "text-text-on-dark/70" : "text-text-muted")}>
-          Illustrative model of business relationships, not live data. The generic knowledge
-          graph is built; a business-domain graph is a direction.
-        </p>
+          {selectedNode ? (
+            <>
+              <p className="mt-1 text-sm text-text-muted">{selectedNode.detail}</p>
+              <ul className="mt-3 space-y-1 text-sm text-text">
+                {relationships.map((edge) => (
+                  <li key={edge.from + "-" + edge.to}>
+                    {getNode(edge.from).label} → {edge.label} → {getNode(edge.to).label}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-text-muted">Choose a node to see what it represents and how it connects.</p>
+          )}
+        </div>
       </div>
-
-      {/* Mobile: ordered list */}
-      <div className="md:hidden">
-        <ol className="space-y-3">
-          {NODES.map((node, i) => (
-            <li key={node.id} className="rounded-lg border border-border-soft bg-surface p-4">
-              <div className="flex items-center gap-3">
-                <span
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                  style={{ backgroundColor: node.color }}
-                  aria-hidden="true"
-                >
-                  {i + 1}
-                </span>
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-wide text-text">{node.label}</p>
-                  <p className="text-sm text-text-muted">{node.detail}</p>
-                </div>
-              </div>
-            </li>
+      <noscript>
+        <dl className="mt-4 space-y-2 text-sm">
+          {NODES.map((node) => (
+            <div key={node.id}>
+              <dt className="font-semibold">{node.label}</dt>
+              <dd>{node.detail}</dd>
+            </div>
           ))}
-        </ol>
-        <p className={cn("mt-4 text-sm", dark ? "text-text-on-dark/70" : "text-text-muted")}>
-          On desktop this renders as an interactive graph. The relationships: customer called (event), owns (property); event created (lead); lead became (project), assigned (person); project needs (service); service priced (estimate); estimate approved (job); job rated (review).
-        </p>
-        <p className={cn("mt-3 text-xs", dark ? "text-text-on-dark/70" : "text-text-muted")}>
-          Illustrative model, not live data. The generic knowledge graph is built;
-          a business-domain graph is a direction.
-        </p>
-      </div>
+        </dl>
+        <ul className="mt-4 space-y-1 text-sm">
+          {EDGES.map((edge) => (
+            <li key={edge.from + "-" + edge.to}>{getNode(edge.from).label} → {edge.label} → {getNode(edge.to).label}</li>
+          ))}
+        </ul>
+      </noscript>
     </div>
   );
 }

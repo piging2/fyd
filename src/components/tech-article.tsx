@@ -4,10 +4,12 @@ import { CTASection } from "@/components/cta-section";
 import { Reveal } from "@/components/reveal";
 import { getTenant } from "@/lib/tenant-config";
 import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
-import { getAllPosts } from "@/lib/blog";
+import { getAllPosts, uniqueHeadingId } from "@/lib/blog";
+import { SectionNavigation } from "@/components/section-navigation";
 import { getEssaySlugsForTechPage } from "@/lib/essay-links";
 
 export interface TechSection {
+  id?: string;
   heading: string;
   body: React.ReactNode;
 }
@@ -56,6 +58,11 @@ export function TechArticle({ eyebrow, title, lede, status, sections, related, s
         .map((s) => getAllPosts().find((p) => p.slug === s))
         .filter((p): p is NonNullable<typeof p> => Boolean(p))
     : [];
+  const usedIds = new Set(sections.flatMap(({ id }) => id ? [id] : []));
+  const articleSections = sections.map((section) => ({
+    ...section,
+    id: section.id ?? uniqueHeadingId(section.heading, usedIds),
+  }));
   return (
     <>
       {breadcrumbJsonLd ? (
@@ -77,10 +84,11 @@ export function TechArticle({ eyebrow, title, lede, status, sections, related, s
       </Section>
       <Section>
         <Container className="max-w-3xl">
+          <SectionNavigation items={articleSections.map(({ id, heading }) => ({ id, label: heading }))} />
           <div className="space-y-10">
-            {sections.map((s) => (
-              <section key={s.heading}>
-                <Reveal><h2 className="text-2xl font-bold text-text">{s.heading}</h2></Reveal>
+            {articleSections.map((s) => (
+              <section key={s.id}>
+                <Reveal><h2 id={s.id} tabIndex={-1} data-fragment-focus className="text-2xl font-bold text-text">{s.heading}</h2></Reveal>
                 <div className="mt-3 space-y-4 text-text-muted" style={{ lineHeight: 'var(--leading-body)' }}>
                   {s.body}
                 </div>

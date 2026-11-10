@@ -32,6 +32,7 @@ export default function ReplayPage() {
       status="In development"
       sections={[
         {
+          id: "what-replay-must-answer",
           heading: "What replay must answer",
           body: (
             <>

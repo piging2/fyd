@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 type PigiGifProps = {
   gif: string;
   poster: string;
@@ -8,25 +12,38 @@ type PigiGifProps = {
   className?: string;
 };
 
-/**
- * Pigi at work: the call-center GIF with its first frame as the still fallback.
- * Readers who prefer reduced motion get the poster frame instead of the
- * animation; everyone else gets the GIF. Width and height are always set,
- * so the frame reserves its space and the layout never shifts.
- */
 export default function PigiGif({ gif, poster, width, height, alt, eager = false, className = "" }: PigiGifProps) {
+  const [playing, setPlaying] = useState(false);
+
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    function handleChange() {
+      if (preference.matches) setPlaying(false);
+    }
+    preference.addEventListener("change", handleChange);
+    return () => preference.removeEventListener("change", handleChange);
+  }, []);
+
   return (
-    <picture>
-      <source media="(prefers-reduced-motion: reduce)" srcSet={poster} type="image/webp" />
+    <>
       <img
-        src={gif}
+        src={playing ? gif : poster}
         width={width}
         height={height}
         alt={alt}
         loading={eager ? "eager" : "lazy"}
         decoding="async"
-        className={`h-auto w-full ${className}`}
+        className={"h-auto w-full " + className}
       />
-    </picture>
+      <div className="flex justify-end border-t border-border-soft px-3">
+        <button
+          type="button"
+          className="min-h-11 rounded px-2 text-sm font-semibold text-text underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
+          onClick={() => setPlaying((value) => !value)}
+        >
+          {playing ? "Show still" : "Play mascot animation"}
+        </button>
+      </div>
+    </>
   );
 }

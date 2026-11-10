@@ -11,7 +11,7 @@
  * Demo owner mode, when enabled, is visibly labeled as demo/testing and is
  * never presented as real authentication.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 interface PageEvidence {
@@ -113,6 +113,9 @@ async function getJson(path: string) {
 export function FydOnboardingTool() {
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
+  const [previewPending, setPreviewPending] = useState(false);
+  const previewInFlight = useRef(false);
+  const resultHeading = useRef<HTMLHeadingElement>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [claim, setClaim] = useState<Claim | null>(null);
   const [identity, setIdentity] = useState<Identity | null | undefined>(undefined);
@@ -139,7 +142,10 @@ export function FydOnboardingTool() {
   }, []);
 
   const runPreview = useCallback(async () => {
-    setBusy(true);
+    if (previewInFlight.current || busy || !url.trim()) return;
+    previewInFlight.current = true;
+    setPreviewPending(true);
+    setOutcome(null);
     setNote(null);
     setClaim(null);
     try {
@@ -151,9 +157,10 @@ export function FydOnboardingTool() {
     } catch {
       setOutcome({ ok: false, code: "fetch-failed", message: "The preview request failed." });
     } finally {
-      setBusy(false);
+      previewInFlight.current = false;
+      setPreviewPending(false);
     }
-  }, [url, refreshClaim]);
+  }, [busy, url, refreshClaim]);
 
   const runClaim = useCallback(async () => {
     const preview = outcome && outcome.ok ? outcome.preview : null;
@@ -213,40 +220,61 @@ export function FydOnboardingTool() {
   const preview = outcome && outcome.ok ? outcome.preview : null;
   const failure = outcome && !outcome.ok ? outcome : null;
 
+  useEffect(() => {
+    if (preview && !previewPending) resultHeading.current?.focus();
+  }, [preview, previewPending]);
+
   return (
     <div style={{ fontFamily: "system-ui, sans-serif" }}>
-      <div style={{ ...panel, marginTop: 8 }}>
-        <label htmlFor="fyd-url" style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
-          Business website URL
-        </label>
+      <form
+        className="max-w-2xl space-y-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void runPreview();
+        }}
+      >
+        <label htmlFor="fyd-url" className="block font-semibold">Business website URL</label>
+        <p id="fyd-url-help" className="text-sm text-text-muted">
+          Enter a public website address to see what FYD reads.
+        </p>
         <input
           id="fyd-url"
-          style={inputStyle}
+          type="url"
+          required
+          autoComplete="url"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-base text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey"
+          aria-describedby={failure ? "fyd-url-help fyd-preview-error" : "fyd-url-help"}
+          aria-invalid={failure?.code === "invalid-url" ? true : undefined}
           placeholder="https://example.com/"
           value={url}
+          readOnly={previewPending}
           onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") runPreview();
-          }}
         />
-        <div style={{ marginTop: 12 }}>
-          <button style={buttonStyle} onClick={runPreview} disabled={busy || !url.trim()}>
-            {busy ? "Reading..." : "Preview what FYD sees"}
-          </button>
-        </div>
+        <button
+          type="submit"
+          className="inline-flex min-h-11 items-center rounded-full bg-honey px-5 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover disabled:opacity-50"
+          disabled={previewPending || busy}
+        >
+          Preview website
+        </button>
+        <p role="status" className="min-h-5 text-sm text-text-muted">
+          {previewPending ? "Reading website…" : ""}
+        </p>
         {failure && (
-          <p style={{ color: "#a00", marginTop: 12 }}>
+          <p id="fyd-preview-error" role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-900">
             {failure.message}
             {failure.code === "rate-limited" && failure.retryAfterMs
               ? " Try again in about " + Math.ceil(failure.retryAfterMs / 1000) + " seconds."
               : null}
           </p>
         )}
-      </div>
+      </form>
 
-      {preview && (
+      {preview && !previewPending && (
         <div style={panel}>
-          <h2 style={{ marginTop: 0 }}>{preview.evidence.title ?? "Untitled page"}</h2>
+          <h2 ref={resultHeading} tabIndex={-1} className="font-semibold focus-visible:outline-2 focus-visible:outline-honey">
+            Preview of {preview.evidence.title ?? "your website"}
+          </h2>
           {preview.evidence.description && <p>{preview.evidence.description}</p>}
           <dl>
             {preview.evidence.phone && (
@@ -291,7 +319,7 @@ export function FydOnboardingTool() {
         </div>
       )}
 
-      {preview && (
+      {preview && !previewPending && (
         <div style={panel}>
           <h2 style={{ marginTop: 0 }}>Claim / Save</h2>
           <p>

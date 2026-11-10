@@ -38,9 +38,12 @@ export default function BuildMyFydClient() {
   const [socials, setSocials] = useState("");
   const [documents, setDocuments] = useState<string[]>([]);
   const [running, setRunning] = useState(false);
+  const [openingReport, setOpeningReport] = useState(false);
   const [stages, setStages] = useState<StageEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const buildInFlight = useRef(false);
+  const busy = running || openingReport;
+  const lastStage = stages.at(-1);
 
   function onFiles(files: FileList | null) {
     if (!files) return;
@@ -49,7 +52,8 @@ export default function BuildMyFydClient() {
 
   async function onBuild(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim() || running) return;
+    if (!url.trim() || buildInFlight.current || openingReport) return;
+    buildInFlight.current = true;
     setRunning(true);
     setStages([]);
     setError(null);
@@ -66,7 +70,6 @@ export default function BuildMyFydClient() {
       if (!res.ok || !res.body) {
         const payload = await res.json().catch(() => null);
         setError((payload as { error?: string } | null)?.error ?? "Build request failed (" + res.status + ").");
-        setRunning(false);
         return;
       }
       const reader = res.body.getReader();
@@ -89,22 +92,23 @@ export default function BuildMyFydClient() {
             if (evt.type === "stage") {
               setStages((prev) => [...prev, evt.stage]);
             } else if (evt.type === "done") {
-              setRunning(false);
+              setOpeningReport(true);
               router.push("/build-my-fyd/" + evt.jobId);
               return;
             } else if (evt.type === "error") {
-              setRunning(false);
               setError(evt.message);
               return;
             }
           }
         }
       }
-      setRunning(false);
       setError("The build stream ended before completing. Try again.");
     } catch (err) {
-      setRunning(false);
+      setOpeningReport(false);
       setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      buildInFlight.current = false;
+      setRunning(false);
     }
   }
 
@@ -112,9 +116,8 @@ export default function BuildMyFydClient() {
     <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-3xl font-bold tracking-tight">Build My FYD</h1>
       <p className="mt-2 text-neutral-600">
-        Give us your website. FYD discovers it, acquires the real page, understands the business,
-        resolves it into a verified object graph, and generates your presence. No templates, no
-        fonts, no page-picking.
+        FYD uses your public website and any social profiles you include to build a preview of
+        your business presence. You can review the build report when it finishes.
       </p>
 
       <form onSubmit={onBuild} className="mt-8 space-y-6">
@@ -129,8 +132,8 @@ export default function BuildMyFydClient() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://www.example.com"
-            disabled={running}
-            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 disabled:opacity-60"
+            disabled={busy}
+            className="mt-1 w-full rounded border border-border bg-background px-3 py-2 text-base disabled:opacity-60"
           />
         </div>
 
@@ -144,8 +147,8 @@ export default function BuildMyFydClient() {
             value={socials}
             onChange={(e) => setSocials(e.target.value)}
             placeholder={"https://www.facebook.com/yourbusiness\nhttps://www.instagram.com/yourbusiness"}
-            disabled={running}
-            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 disabled:opacity-60"
+            disabled={busy}
+            className="mt-1 w-full rounded border border-border bg-background px-3 py-2 text-base disabled:opacity-60"
           />
         </div>
 
@@ -153,34 +156,44 @@ export default function BuildMyFydClient() {
           <label htmlFor="fyd-documents" className="block text-sm font-medium">
             Documents <span className="font-normal text-neutral-500">(optional)</span>
           </label>
+          <p id="fyd-documents-help" className="mt-1 text-sm text-text-muted">
+            FYD records selected filenames. This build uses your website and socials only.
+          </p>
           <input
             id="fyd-documents"
-            ref={fileRef}
+            aria-describedby="fyd-documents-help"
             type="file"
             multiple
             onChange={(e) => onFiles(e.target.files)}
-            disabled={running}
-            className="mt-1 block text-sm disabled:opacity-60"
+            disabled={busy}
+            className="mt-1 block w-full min-w-0 text-sm disabled:opacity-60"
           />
           {documents.length > 0 && (
-            <p className="mt-1 text-xs text-neutral-500">
-              Recorded at intake: {documents.join(", ")}. Document parsing is not wired in this
-              build; the build uses your website and socials only.
+            <p className="mt-1 break-words text-sm text-text-muted">
+              Selected filenames: {documents.join(", ")}.
             </p>
           )}
         </div>
 
         <button
           type="submit"
-          disabled={running || !url.trim()}
-          className="rounded bg-black px-6 py-3 font-semibold text-white disabled:opacity-50"
+          disabled={busy}
+          className="inline-flex min-h-11 items-center rounded-full bg-honey px-5 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover disabled:opacity-50"
         >
-          {running ? "Building..." : "Build my FYD"}
+          Build a FYD site
         </button>
       </form>
 
+      <p role="status" className="mt-3 min-h-5 text-sm text-text-muted">
+        {openingReport
+          ? "Opening the build report…"
+          : running && (lastStage
+            ? `${STAGE_LABELS[lastStage.stage] ?? lastStage.stage} · ${lastStage.status === "ok" ? "complete" : lastStage.status}`
+            : "Starting build…")}
+      </p>
+
       {stages.length > 0 && (
-        <section className="mt-8 rounded border border-neutral-200 p-4" aria-live="polite">
+        <section className="mt-5 rounded border border-neutral-200 p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">Build progress</h2>
           <ul className="mt-3 space-y-2">
             {stages.map((s, i) => (

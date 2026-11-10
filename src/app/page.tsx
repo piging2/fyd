@@ -729,21 +729,21 @@ export default async function HomePage() {
               </ul>
             </div>
             <div className="mt-8 grid gap-6 md:grid-cols-3">
-              <Link href="/blog" className="group">
+              <Link href="/blog/hpp-to-ping-first-tenant" className="group">
                 <article className="h-full rounded-lg border border-text-on-dark/10 bg-deep-2/60 p-6 transition-shadow group-hover:shadow-md">
                   <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-honey">TenantOS</p>
                   <h3 className="mt-2 text-lg font-bold text-text-on-dark group-hover:text-honey">From HPP to PING</h3>
                   <p className="mt-2 text-sm text-text-on-dark/70">This site was rebuilt from a trades-company website into the first TenantOS tenant. The transformation is the proof of concept.</p>
                 </article>
               </Link>
-              <Link href="/blog" className="group">
+              <Link href="/blog/building-agent-execution-boundaries" className="group">
                 <article className="h-full rounded-lg border border-text-on-dark/10 bg-deep-2/60 p-6 transition-shadow group-hover:shadow-md">
                   <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-honey">Agents</p>
                   <h3 className="mt-2 text-lg font-bold text-text-on-dark group-hover:text-honey">Execution boundaries for agents</h3>
                   <p className="mt-2 text-sm text-text-on-dark/70">How agents run commands across machine boundaries without corrupting them, and why capability separation beats clever prompting.</p>
                 </article>
               </Link>
-              <Link href="/blog" className="group">
+              <Link href="/blog/evidence-and-provenance-for-autonomous-systems" className="group">
                 <article className="h-full rounded-lg border border-text-on-dark/10 bg-deep-2/60 p-6 transition-shadow group-hover:shadow-md">
                   <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-honey">Evidence</p>
                   <h3 className="mt-2 text-lg font-bold text-text-on-dark group-hover:text-honey">Evidence before eloquence</h3>

@@ -11,7 +11,8 @@
  * contact page.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { PublicFormError } from "@/components/public-form-error";
 
 interface Receipt {
   receiptId: string;
@@ -21,6 +22,17 @@ interface Receipt {
 }
 
 type Errors = Partial<Record<string, string>>;
+
+const errorFields = {
+  businessName: "as-business",
+  contactName: "as-contact-name",
+  contactChannel: "as-contact-channel",
+  contactDetail: "as-contact-detail",
+  businessType: "as-business-type",
+  serviceArea: "as-service-area",
+  stuck: "as-stuck",
+  permissionFollowUp: "as-permission",
+};
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-4 py-3 text-text focus:border-honey focus:outline-none focus:ring-2 focus:ring-honey/40";
@@ -44,6 +56,12 @@ export function AssessmentForm() {
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [replayed, setReplayed] = useState(false);
 
+  const receiptHeading = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (receipt) receiptHeading.current?.focus();
+  }, [receipt]);
+
   function validate(): Errors {
     const e: Errors = {};
     if (businessName.trim().length < 2) e.businessName = "Please give the business name.";
@@ -63,10 +81,11 @@ export function AssessmentForm() {
 
   async function onSubmit(ev: React.FormEvent) {
     ev.preventDefault();
+    if (busy) return;
     const e = validate();
     setErrors(e);
     if (Object.keys(e).length > 0) {
-      setFormError("A few fields need attention. They are marked below, and everything you entered is still here.");
+      setFormError("A few fields need attention. Your entries are still on the form.");
       return;
     }
     setBusy(true);
@@ -116,8 +135,8 @@ export function AssessmentForm() {
 
   if (receipt) {
     return (
-      <div role="status" className="rounded-2xl border border-border-soft bg-surface p-8">
-        <h2 className="text-2xl font-bold text-text">Thank you. Your request is in.</h2>
+      <div className="rounded-2xl border border-border-soft bg-surface p-8">
+        <h2 ref={receiptHeading} tabIndex={-1} className="scroll-mt-24 text-2xl font-bold text-text">Thank you. Your request is in.</h2>
         <p className="mt-3 text-text-muted" style={{ lineHeight: "var(--leading-body)" }}>
           PING reviews every request. If it is a fit, PING follows up using the
           contact preference you gave, and the first step is a conversation
@@ -171,7 +190,25 @@ export function AssessmentForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="rounded-2xl border border-border-soft bg-surface p-6 sm:p-8">
-      <div className="grid gap-6">
+      <noscript>
+        <p className="mb-4 text-sm text-text">
+          This form requires JavaScript. You can also <a href="/contact" className="font-semibold underline">contact PING</a>.
+        </p>
+      </noscript>
+      <p role="status" className="sr-only">{busy ? "Submitting your request…" : ""}</p>
+      <div className="grid gap-6" aria-busy={busy}>
+        {formError && (
+          <PublicFormError message={formError} errors={errors} fields={errorFields}>
+            <p className="mt-2">
+              You can also reach PING through the{" "}
+              <a href="/contact" className="font-semibold underline">
+                contact page
+              </a>{" "}
+              instead.
+            </p>
+          </PublicFormError>
+        )}
+
         <div>
           <label htmlFor="as-business" className={labelClass}>
             Business name (required)
@@ -229,14 +266,17 @@ export function AssessmentForm() {
                 ["phone", "Phone"],
                 ["email", "Email"],
               ] as const
-            ).map(([value, label]) => (
+            ).map(([value, label], index) => (
               <label
                 key={value}
                 className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-text"
               >
                 <input
                   type="radio"
+                  id={index === 0 ? "as-contact-channel" : undefined}
                   name="as-contact-channel"
+                  aria-invalid={errors.contactChannel ? true : undefined}
+                  aria-describedby={errors.contactChannel ? "as-contact-channel-error" : undefined}
                   value={value}
                   checked={contactChannel === value}
                   onChange={(e) => setContactChannel(e.target.value)}
@@ -349,6 +389,7 @@ export function AssessmentForm() {
         <div>
           <label className="flex cursor-pointer items-start gap-3 text-sm text-text">
             <input
+              id="as-permission"
               type="checkbox"
               checked={permissionFollowUp}
               onChange={(e) => setPermissionFollowUp(e.target.checked)}
@@ -365,19 +406,6 @@ export function AssessmentForm() {
             </p>
           )}
         </div>
-
-        {formError && (
-          <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-            <p>{formError}</p>
-            <p className="mt-2">
-              You can also reach PING through the{" "}
-              <a href="/contact" className="font-semibold underline">
-                contact page
-              </a>{" "}
-              instead.
-            </p>
-          </div>
-        )}
 
         <div>
           <button

@@ -177,15 +177,14 @@ export default async function EpisodeLandingPage({
               <div>
                 <h2 className="text-2xl font-bold text-text">Topics in this episode</h2>
                 <p className="mt-2 text-sm font-semibold text-text-muted">
-                  The section headings of the written breakdown. The breakdown
-                  renders no heading anchors, so each topic links to the post.
+                  Jump to a section of the written breakdown.
                 </p>
                 <ul className="mt-3 list-disc space-y-2 pl-6 text-text-muted">
                   {depth.topics.map((topic) => (
-                    <li key={topic}>
-                      <Link href={"/blog/" + breakdown.slug} className="text-accent hover:underline">
-                        {topic}
-                      </Link>
+                    <li key={topic.id}>
+                      <a href={"/blog/" + breakdown.slug + "#" + topic.id} className="inline-flex min-h-11 items-center py-2 font-medium text-honey-text underline underline-offset-4">
+                        {topic.label}
+                      </a>
                     </li>
                   ))}
                 </ul>

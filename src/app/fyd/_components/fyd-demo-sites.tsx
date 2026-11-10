@@ -15,26 +15,23 @@ const SITES = [
   {
     href: "/sites/happy-place",
     kind: "Demo tenant",
-    cta: "Open the demo",
+    cta: "Explore Happy Place",
     name: "Happy Place",
-    proves: "A complete business presence generated from its FYD understanding.",
-    ask: "Ask about its services, hours, and offers.",
+    proves: "Browse carpentry services and a before-and-after project view.",
   },
   {
     href: "/sites/coppersmith-plumbing",
     kind: "Demo tenant",
-    cta: "Open the demo",
+    cta: "Explore Coppersmith Plumbing",
     name: "Coppersmith Plumbing",
-    proves: "A trades business presence, including conversational customization proven on this demo.",
-    ask: "Ask about emergency plumbing and services.",
+    proves: "Explore plumbing and HVAC services, and open the source information behind a service.",
   },
   {
     href: "/sites/ping-fyd",
     kind: "Operator's own business",
     cta: "Open PingFyd",
     name: "PingFyd",
-    proves: "PING's own business running on the same system: the operator's real presence, built from its FYD understanding.",
-    ask: "Ask about AI call answering, lead follow-up, scheduling support, and admin automation.",
+    proves: "Explore the operator’s AI call answering, lead follow-up and scheduling services.",
   },
 ];
 
@@ -65,20 +62,13 @@ export function FydDemoSites() {
                   </p>
                   <h3 className="mt-2 text-2xl font-bold text-text">{s.name}</h3>
                   <p className="mt-3 flex-1 text-text-muted">{s.proves}</p>
-                  <p className="mt-2 text-sm text-text-subtle">{s.ask}</p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     <Link
                       href={s.href}
-                      className="inline-flex h-11 items-center justify-center rounded-full bg-honey px-6 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
+                      className="inline-flex min-h-11 items-center justify-center rounded-full bg-honey px-6 font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
                     >
                       {s.cta}
                     </Link>
-                    <a
-                      href="#fyd-ask"
-                      className="inline-flex h-11 items-center justify-center rounded-full border border-border px-6 font-semibold text-text transition-colors hover:bg-surface-2"
-                    >
-                      Ask about it below
-                    </a>
                   </div>
                 </div>
               </ScrollReveal>

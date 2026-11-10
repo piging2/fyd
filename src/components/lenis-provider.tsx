@@ -83,9 +83,9 @@ export function performFragmentScroll(
 
 function readChromeTopPx(): number {
   if (typeof document === "undefined") return 0;
-  const raw = getComputedStyle(document.documentElement).getPropertyValue("--fyd-chrome-top");
-  const n = parseFloat(raw);
-  return Number.isFinite(n) ? Math.max(0, n) : 0;
+  const styles = getComputedStyle(document.documentElement);
+  const measured = parseFloat(styles.getPropertyValue("--fyd-chrome-top"));
+  return Math.max(0, Number.isFinite(measured) ? measured : parseFloat(styles.scrollPaddingTop) || 0);
 }
 
 /**
@@ -183,6 +183,12 @@ function HashRouter() {
       window.history.pushState(null, "", href);
       noteFragmentEntry(href);
       applyHash(href);
+      if (action.kind === "scroll-to-target") {
+        const heading = document.getElementById(action.id);
+        if (heading?.hasAttribute("data-fragment-focus")) {
+          heading.focus({ preventScroll: true });
+        }
+      }
     };
 
     const prevRestoration = window.history.scrollRestoration;

@@ -15,12 +15,11 @@ export function FydTryIt() {
         <Container className="max-w-4xl">
           <SectionHeading
             eyebrow={<span className="text-honey">/try</span>}
-            title={<span className="text-text-on-dark">Try it: paste your URL</span>}
+            title={<span className="text-text-on-dark">Preview public website information</span>}
             description={
               <span className="text-text-on-dark/80">
-                No account. FYD reads only what is public about the business
-                and shows you what it understood. Value first, registration
-                never before value.
+                No account is required. FYD reads the public business website you
+                enter and shows the information it finds.
               </span>
             }
             align="center"

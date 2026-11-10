@@ -50,6 +50,7 @@ export default function EvidencePage() {
           ),
         },
         {
+          id: "the-evidence-contract",
           heading: "The evidence contract",
           body: (
             <>

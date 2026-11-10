@@ -1,4 +1,4 @@
-import { getPost } from "@/lib/blog";
+import { getPost, renderMarkdown } from "@/lib/blog";
 import { buildEpisodeDepth, buildEpisodePageTitle, durationToIso8601, embedUrlFor, episodePages, episodeShortTitle, getEpisodePage } from "@/lib/episodes";
 import { episodeVideos, featuredFilm } from "@/lib/longping-media";
 
@@ -89,7 +89,11 @@ describe("episode depth sections (Wave 26, regrade defect 1)", () => {
       const headings = [...post!.body.matchAll(/^##\s+(.*)$/gm)].map((m) =>
         m[1].replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").trim(),
       );
-      expect(depth!.topics).toEqual(headings);
+      expect(depth!.topics.map(({ label }) => label)).toEqual(headings);
+      const { html } = renderMarkdown(post!.body);
+      for (const topic of depth!.topics) {
+        expect(html).toContain('id="' + topic.id + '"');
+      }
       expect(depth!.topics.length).toBeGreaterThanOrEqual(2);
       expect(depth!.excerpt.length).toBeGreaterThan(50);
       expect(depth!.excerpt).not.toBe(depth!.summary);
@@ -108,7 +112,7 @@ describe("episode depth sections (Wave 26, regrade defect 1)", () => {
     };
     for (const e of episodePages) {
       const depth = buildEpisodeDepth(getPost(e.slug)!.body);
-      expect(depth!.topics).toEqual(expected[e.slug]);
+      expect(depth!.topics.map(({ label }) => label)).toEqual(expected[e.slug]);
     }
   });
 
@@ -131,10 +135,35 @@ describe("episode depth sections (Wave 26, regrade defect 1)", () => {
     expect(depth!.summary).toBe(
       "First real paragraph with a link inside it, long enough to be the opening of a post.",
     );
-    expect(depth!.topics).toEqual(["First topic", "Second topic"]);
+    expect(depth!.topics.map(({ label }) => label)).toEqual(["First topic", "Second topic"]);
     expect(depth!.excerpt).toBe(
       "Closing paragraph here, also long enough to stand as an excerpt from the written breakdown.",
     );
+  });
+
+  it("uses unique shared anchors and skips headings inside code fences", () => {
+    const body = [
+      "Opening prose.",
+      "",
+      "## Same **topic**",
+      "",
+      "```md",
+      "## Fake topic",
+      "```",
+      "",
+      "### [Same topic](/blog/other)",
+      "",
+      "Closing prose.",
+    ].join("\n");
+    const topics = buildEpisodeDepth(body)?.topics;
+    expect(topics).toEqual([
+      { id: "same-topic", label: "Same topic", level: 2 },
+      { id: "same-topic-2", label: "Same topic", level: 3 },
+    ]);
+    const { html } = renderMarkdown(body);
+    expect(html).toContain('<h2 id="same-topic" tabindex="-1"');
+    expect(html).toContain('<h3 id="same-topic-2" tabindex="-1"');
+    expect(html).not.toContain('id="fake-topic"');
   });
 
   it("returns null on dangling or empty breakdown data, so pages render no depth sections", () => {

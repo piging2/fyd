@@ -130,9 +130,9 @@ export default function TechnologyPage() {
             <KnowledgeLoop />
           </div>
           <div className="mt-8 text-center">
-            <Link href="/technology/events" className="font-medium text-honey-text hover:underline">
-              Read about events →
-            </Link>
+            <a href="/technology/events#the-event-lifecycle" className="font-medium text-honey-text underline underline-offset-4">
+              Read the event lifecycle →
+            </a>
           </div>
         </Container>
       </Section>
@@ -191,10 +191,13 @@ export default function TechnologyPage() {
           <div className="mt-10">
             <ReplayEvidence />
           </div>
-          <div className="mt-8 text-center">
-            <Link href="/technology/replay" className="font-medium text-honey-text hover:underline">
-              Read about replay →
-            </Link>
+          <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-3">
+            <a href="/technology/evidence#the-evidence-contract" className="font-medium text-honey-text underline underline-offset-4">
+              Read the evidence contract →
+            </a>
+            <a href="/technology/replay#what-replay-must-answer" className="font-medium text-honey-text underline underline-offset-4">
+              Read what replay must answer →
+            </a>
           </div>
         </Container>
       </Section>

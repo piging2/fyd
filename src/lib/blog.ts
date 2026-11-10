@@ -102,9 +102,46 @@ function renderInline(s: string): string {
   return out;
 }
 
-export function renderMarkdown(md: string): string {
+export interface BlogHeading {
+  id: string;
+  label: string;
+  level: number;
+}
+
+export function toPlainText(fragment: string): string {
+  return fragment
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function uniqueHeadingId(label: string, used: Set<string>): string {
+  const base = label.normalize("NFKD").toLowerCase()
+    .replace(/[\u0300-\u036f'’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "section";
+  let id = base;
+  for (let suffix = 2; used.has(id); suffix += 1) {
+    id = base + "-" + suffix;
+  }
+  used.add(id);
+  return id;
+}
+
+export function renderMarkdown(md: string) {
   const lines = md.split("\n");
   const html: string[] = [];
+  const headings: BlogHeading[] = [];
+  const usedIds = new Set<string>();
+  const headingClasses = {
+    1: "mt-6 text-3xl",
+    2: "mt-10 text-2xl",
+    3: "mt-8 text-xl",
+  } as const;
   let inCode = false;
   let codeBuf: string[] = [];
   let inList = false;
@@ -137,22 +174,14 @@ export function renderMarkdown(md: string): string {
       closeList();
       continue;
     }
-    const h3 = trimmed.match(/^###\s+(.*)/);
-    const h2 = trimmed.match(/^##\s+(.*)/);
-    const h1 = trimmed.match(/^#\s+(.*)/);
-    if (h3) {
+    const heading = trimmed.match(/^(#{1,3})\s+(.*)/);
+    if (heading) {
       closeList();
-      html.push(`<h3 class="mt-8 text-xl font-bold text-text">${renderInline(h3[1])}</h3>`);
-      continue;
-    }
-    if (h2) {
-      closeList();
-      html.push(`<h2 class="mt-10 text-2xl font-bold text-text">${renderInline(h2[1])}</h2>`);
-      continue;
-    }
-    if (h1) {
-      closeList();
-      html.push(`<h1 class="mt-6 text-3xl font-bold text-text">${renderInline(h1[1])}</h1>`);
+      const level = heading[1].length as 1 | 2 | 3;
+      const label = toPlainText(heading[2]);
+      const id = uniqueHeadingId(label, usedIds);
+      headings.push({ id, label, level });
+      html.push(`<h${level} id="${id}" tabindex="-1" data-fragment-focus class="font-bold text-text ${headingClasses[level]}">${renderInline(heading[2])}</h${level}>`);
       continue;
     }
     if (trimmed.startsWith("> ")) {
@@ -176,5 +205,5 @@ export function renderMarkdown(md: string): string {
   if (inCode) {
     html.push(`<pre class="overflow-x-auto rounded-lg bg-deep p-4 text-sm text-text-on-dark"><code>${escapeHtml(codeBuf.join("\n"))}</code></pre>`);
   }
-  return html.join("\n");
+  return { html: html.join("\n"), headings };
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container, Section } from "@/components/section";
+import { SectionNavigation } from "@/components/section-navigation";
 import { getAllPosts, getAllSlugs, getPost, renderMarkdown } from "@/lib/blog";
 import { episodeVideos, featuredFilm } from "@/lib/longping-media";
 import { getTenant } from "@/lib/tenant-config";
@@ -105,6 +106,8 @@ export default async function BlogPostPage({
     publisher: { "@type": "Organization", name: tenant.siteName, url: siteUrl },
   };
 
+  const { html, headings } = renderMarkdown(post.body);
+  const sectionHeadings = headings.filter(({ level, label }) => level > 1 && label);
   const episodeIndex = EPISODE_ORDER.findIndex((e) => e.slug === slug);
   const prevEpisode =
     episodeIndex > 0 ? getPost(EPISODE_ORDER[episodeIndex - 1].slug) : null;
@@ -144,12 +147,18 @@ export default async function BlogPostPage({
             {post.title}
           </h1>
           <div className="mt-4 text-text-on-dark/80">{formatDate(post.date)}</div>
+          {episodeIndex >= 0 && (
+            <Link href={"/episodes/" + slug} className="mt-2 inline-flex min-h-11 items-center font-semibold text-honey underline underline-offset-4">
+              Watch the episode
+            </Link>
+          )}
         </Container>
       </Section>
 
       <Section>
         <Container className="max-w-4xl">
-          <article dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }} />
+          {sectionHeadings.length >= 3 && <SectionNavigation items={sectionHeadings} />}
+          <article className="max-w-[72ch]" dangerouslySetInnerHTML={{ __html: html }} />
 
           <EssayQuestions slug={slug} />
 
