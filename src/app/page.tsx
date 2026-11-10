@@ -174,62 +174,24 @@ export default async function HomePage() {
   return (
     <>
       {/* 01 HERO: the living system moment */}
-      <Section size="minor" className="bg-deep relative overflow-hidden">
+      <Section size="minor" className="relative overflow-hidden bg-deep py-8 sm:py-20">
         <div aria-hidden="true" className="hero-gradient-field" />
         <div aria-hidden="true" className="hero-signal-field" />
         <BlueprintGrid />
         <Container className="relative">
           <p className="mb-4 font-mono text-xs font-bold uppercase tracking-widest text-honey">/live</p>
           <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div className="entrance-rise">
+            <div className="min-w-0">
               <div className="mb-6">
                 <PingWordmark className="scale-125 origin-left" />
               </div>
               <p className="text-lg font-medium text-honey">{tenant.tagline}</p>
-              <div className="mt-6 rounded-2xl border border-text-on-dark/15 bg-deep-2/60 p-6">
-                <h2 className="text-2xl font-bold text-text-on-dark sm:text-3xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-                  Inspired by the best of the best.
-                </h2>
-                <p className="mt-3 text-text-on-dark/85" style={{ lineHeight: 'var(--leading-body)' }}>
-                  PING helps exceptional people and businesses get recognized, work smarter and put technology to practical use. We start by listening, understanding how things really work and finding improvements that make a measurable difference.
-                </p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Link
-                    href="/nominate"
-                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 py-2 text-center font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
-                  >
-                    Nominate a business for a PING feature.
-                  </Link>
-                  <Link
-                    href="/apply"
-                    className="inline-flex min-h-12 items-center justify-center rounded-full bg-honey px-8 py-2 text-center font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
-                  >
-                    Apply to be considered for a feature.
-                  </Link>
-                  <Link
-                    href="/assessment"
-                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 py-2 text-center font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
-                  >
-                    Explore a practical technology and operations assessment.
-                  </Link>
-                </div>
-                <p className="mt-4 text-sm text-text-on-dark/70">
-                  Applying covers your own business. Nominating is how you point
-                  us to a business you admire: message PING on Facebook and tell
-                  us its name. Featuring is free to apply for, and selection is
-                  not promised.
-                </p>
-              </div>
-              <h1 className="mt-10 text-4xl font-bold text-text-on-dark sm:text-5xl lg:text-6xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+              <h1 className="mt-4 text-4xl font-bold text-text-on-dark sm:text-5xl lg:text-6xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
                 A serious production studio{" "}
                 <span className="text-text-on-dark/55">with profoundly unserious ideas.</span>
               </h1>
               <p className="mt-6 max-w-xl text-lg text-text-on-dark/90" style={{ lineHeight: 'var(--leading-body)' }}>
                 PING builds real things with autonomous systems, films what actually happens, and publishes the evidence. Cinematic investigations into the hidden systems shaping our future, where we build, break, test, and explain the technology ourselves.
-              </p>
-              <p className="mt-4 max-w-xl text-base text-text-on-dark/75" style={{ lineHeight: 'var(--leading-body)' }}>
-                PING turns information into reliable understanding, understanding into useful action,
-                and action into evidence that can be trusted and replayed.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <a
@@ -244,7 +206,7 @@ export default async function HomePage() {
                   href="/blog"
                   className="inline-flex min-h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 py-2 text-center font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
                 >
-                  Read the engineering breakdown
+                  Browse engineering notes
                 </Link>
               </div>
               <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
@@ -255,6 +217,10 @@ export default async function HomePage() {
                   PingFyd
                 </Link>
               </div>
+              <p className="mt-4 max-w-xl text-base text-text-on-dark/75" style={{ lineHeight: 'var(--leading-body)' }}>
+                PING turns information into reliable understanding, understanding into useful action,
+                and action into evidence that can be trusted and replayed.
+              </p>
               <p className="mt-6 text-sm text-text-on-dark/60">
                 This site is a live TenantOS tenant. The runtime behind it is under active construction.
                 Maturity labels on this page say what is real.
@@ -266,19 +232,63 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+          <section aria-labelledby="business-spotlight" className="mt-8 rounded-2xl border border-text-on-dark/15 bg-deep-2/60 p-6">
+            <h2 id="business-spotlight" className="text-2xl font-bold text-text-on-dark sm:text-3xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+              Inspired by the best of the best.
+            </h2>
+            <p className="mt-3 text-text-on-dark/85" style={{ lineHeight: 'var(--leading-body)' }}>
+              PING helps exceptional people and businesses get recognized, work smarter and put technology to practical use. We start by listening, understanding how things really work and finding improvements that make a measurable difference.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/nominate"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 py-2 text-center font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
+              >
+                Nominate a business
+              </Link>
+              <Link
+                href="/apply"
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-honey px-8 py-2 text-center font-semibold text-honey-foreground transition-colors hover:bg-honey-hover"
+              >
+                Apply for a feature
+              </Link>
+              <Link
+                href="/assessment"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-text-on-dark/30 px-8 py-2 text-center font-semibold text-text-on-dark transition-colors hover:bg-text-on-dark/10"
+              >
+                Explore an assessment
+              </Link>
+            </div>
+            <p className="mt-4 text-sm text-text-on-dark/70">
+              Applying covers your own business. Nominating is how you point
+              us to a business you admire: message PING on Facebook and tell
+              us its name. Featuring is free to apply for, and selection is
+              not promised.
+            </p>
+          </section>
         </Container>
       </Section>
 
       {/* Trademark disclaimer: placed directly above the portal
           circles, whose faces are the logos of the displayed businesses. */}
-      <div className="bg-background">
-        <Container className="max-w-5xl">
-          <p className="py-6 text-base leading-relaxed text-text">
+      <div
+        id="featured-business-disclosure"
+        className={homePortals.length ? "relative min-h-[13rem] bg-background sm:min-h-0" : "relative bg-background"}
+      >
+        <Container className={homePortals.length ? "max-w-5xl py-6 pr-20 sm:pr-6" : "max-w-5xl py-6"}>
+          <p className="text-base leading-relaxed text-text">
             The logos on this page belong to their respective owners,
             shown for identification and free promotion only. This site
             is not affiliated with, endorsed by, sponsored by, or
             officially connected to any business displayed.
           </p>
+          <Link
+            id="featured-business-demos"
+            href="/fyd#see"
+            className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-honey-text underline-offset-4 hover:underline focus-visible:underline"
+          >
+            Explore business demos
+          </Link>
         </Container>
       </div>
 
@@ -763,13 +773,11 @@ export default async function HomePage() {
           />
           <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
             {STATUS_STRIP.map((row) => (
-              <ScrollReveal key={row.label}>
-                <div className="flex h-full min-w-0 flex-col items-start justify-start gap-4 rounded-lg border border-border-soft bg-surface p-5 md:flex-row md:justify-between">
-                  <div className="contents md:block md:min-w-0 md:flex-1">
-                    <h3 className="order-1 text-sm font-bold uppercase tracking-wide text-text md:order-none">{row.label}</h3>
-                    <p className="order-3 mt-1 break-words text-sm text-text-muted md:order-none">{row.detail}</p>
-                  </div>
-                  <MaturityLabel status={row.status} className="order-2 shrink-0 md:order-none" />
+              <ScrollReveal key={row.label} className="min-w-0">
+                <div className="grid h-full min-w-0 content-start items-start gap-x-4 gap-y-1 rounded-lg border border-border-soft bg-surface p-5 lg:grid-cols-[minmax(0,1fr)_auto]">
+                  <h3 className="min-w-0 text-sm font-bold uppercase tracking-wide text-text">{row.label}</h3>
+                  <MaturityLabel status={row.status} className="justify-self-start whitespace-normal lg:justify-self-end" />
+                  <p className="min-w-0 text-sm text-text-muted lg:col-start-1">{row.detail}</p>
                 </div>
               </ScrollReveal>
             ))}

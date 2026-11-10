@@ -75,6 +75,8 @@ interface PortalCircleProps {
    * spatial expansion because no safe footprint exists.
    */
   peek?: boolean;
+  /** Diameter of a trigger that must stay within a measured edge rail. */
+  restDiameter?: number;
   aware: boolean;
   engaged: boolean;
   onAware: (id: string) => void;
@@ -307,8 +309,12 @@ function PortalCircleContent(props: PortalCircleProps) {
     </span>
   );
 
-  const D = props.peek ? PEEK_D : COLLAPSED_D;
-  const scale = aware && !engaged ? (ownerLogo ? 1.18 : AWARE_D / D) : 1;
+  const D = props.restDiameter ?? (props.peek ? PEEK_D : COLLAPSED_D);
+  const bounded = props.restDiameter !== undefined;
+  const atLeftEdge = slot?.side === "left";
+  const awareScale = ownerLogo ? 1.18 : AWARE_D / D;
+  const railScale = !props.peek && slot ? Math.max(1, (slot.rect.width - 12) / D) : 1;
+  const scale = aware && !engaged ? Math.min(awareScale, bounded ? railScale : Infinity) : 1;
 
   return (
     <>
@@ -331,6 +337,7 @@ function PortalCircleContent(props: PortalCircleProps) {
       `}</style>
       <motion.button
         ref={buttonRef}
+        data-fyd-portal-id={bounded ? id : undefined}
         type="button"
         aria-label={`${portal.circle.name}, ${portal.circle.category ?? "business"}${following ? ", followed in this demo" : ""}. Activate to expand.`}
         aria-expanded={engaged}
@@ -357,6 +364,7 @@ function PortalCircleContent(props: PortalCircleProps) {
         style={{
           width: D,
           height: D,
+          transformOrigin: bounded ? (atLeftEdge ? "left center" : "right center") : undefined,
           boxShadow: ownerLogo ? "none" : aware ? rimAware : rimRest,
           cursor: "pointer",
           pointerEvents: engaged ? "none" : "auto",
@@ -387,7 +395,7 @@ function PortalCircleContent(props: PortalCircleProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={reduceMotion ? instant : { duration: 0.18 }}
-            className="pointer-events-none absolute left-1/2 top-full z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/80 px-3 py-1 text-xs font-medium text-white backdrop-blur"
+            className={`pointer-events-none absolute top-full z-10 w-max max-w-56 rounded-2xl bg-black/80 px-3 py-1 text-xs font-medium text-white backdrop-blur ${bounded ? (atLeftEdge ? "left-0" : "right-0") : "left-1/2 -translate-x-1/2"}`}
             style={{ marginTop: props.displayContext?.sponsorship ? 30 : 8 }}
           >
             {portal.circle.name}

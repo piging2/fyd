@@ -63,7 +63,7 @@ interface Assignment {
   x: number;
   /** Document-space Y inside the anchor region: scrolls with the page. */
   y: number;
-  /** Collapsed circle diameter for this placement (64 band, 56 peek). */
+  /** Collapsed diameter within the usable rail. */
   d: number;
   /** True when the circle is an edge peek (narrow band or mobile overlay). */
   peek: boolean;
@@ -73,6 +73,10 @@ interface PortalHostProps {
   portals: PortalProjection[];
   /** A circle's Ask FYD control was pressed: route to the ONE global assistant. */
   onAskRequest?: (id: string) => void;
+  /** Page link to focus if resizing removes the engaged portal's opener. */
+  fallbackFocusId?: string;
+  /** Element with a reserved mobile rail for the portaled touch launchers. */
+  mobileAnchorId: string;
   /** The aware-or-engaged circle changed (null = no circle holds attention). */
   onContextChange?: (id: string | null) => void;
   /**
@@ -85,18 +89,12 @@ interface PortalHostProps {
   anchorSelector?: string;
 }
 
-export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelector }: PortalHostProps) {
+export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelector, fallbackFocusId, mobileAnchorId }: PortalHostProps) {
   const [mounted, setMounted] = React.useState(false);
   const [slots, setSlots] = React.useState<PeripheralSlot[]>([]);
   const [awareId, setAwareId] = React.useState<string | null>(null);
   const [engagedId, setEngagedId] = React.useState<string | null>(null);
   const [followed, setFollowed] = React.useState<Record<string, boolean>>({});
-  // Mobile overlay anchor: 30% of the initial viewport height, document
-  // relative. The overlay is absolute in the document (not fixed), so it
-  // scrolls away naturally with the page.
-  const [overlayY] = React.useState(() =>
-    Math.round((typeof window !== "undefined" ? window.innerHeight : 800) * 0.3),
-  );
   const controllerRef = React.useRef<AttentionController | null>(null);
   if (!controllerRef.current) controllerRef.current = new AttentionController();
   // Zero-height marker at the host's mount point: the anchor region is
@@ -156,7 +154,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
       source: "fallback" as const,
     };
     const usable = anchorSlotsToRegion(slots, region)
-      .filter((s) => s.capacity > 0)
+      .filter((s) => s.capacity > 0 && s.rect.width >= 44 && s.rect.height >= 44)
       .sort((a, b) =>
         a.side === b.side ? 0 : a.side === "right" ? -1 : 1,
       );
@@ -211,26 +209,14 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
         let d = 64;
         let peek = false;
         if (slot.kind === "peek") {
-          // Nolan 2026-09-25 margin directive, round 3: narrow desktop
-          // bands (28..72px) host a 56px circle CENTERED ON THE SCREEN
-          // EDGE. Only the in-band sliver shows (vis <= band width), so
-          // host content is never overlapped. No inline strip on desktop.
-          d = PEEK_D;
+          // Keep the whole target within the measured rail, including
+          // narrow rails that can fit a 44px button but not a full 56px mark.
+          d = Math.min(PEEK_D, Math.floor(slot.rect.width), Math.floor(slot.rect.height));
           peek = true;
-          // Anchor the right peek to the LAYOUT width (excludes the classic
-          // scrollbar), not the visual viewport: otherwise the scrollbar
-          // covers the outer half of the sliver and the tappable target
-          // shrinks to ~13px. The full 28px sliver stays clickable and the
-          // circle stays inside the measured band.
-          const layoutW =
-            typeof document !== "undefined"
-              ? document.documentElement.clientWidth
-              : 1280;
-          const vis = Math.min(PEEK_D / 2, slot.rect.width);
-          x = slot.side === "left" ? vis - PEEK_D : layoutW - vis;
+          x = slot.side === "left" ? slot.rect.x : slot.rect.x + slot.rect.width - d;
           y = Math.min(
-            slot.rect.y + slot.rect.height * 0.26 + k * (PEEK_D + 14),
-            slot.rect.y + Math.max(0, slot.rect.height - PEEK_D),
+            slot.rect.y + slot.rect.height * 0.26 + k * (d + 14),
+            slot.rect.y + Math.max(0, slot.rect.height - d),
           );
         } else {
           // Pin the collapsed 64px circle to the EXTREME outer edge of its
@@ -319,8 +305,9 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
   // instead of leaving a stale or invisible surface behind. Engagement
   // moving between Circles is a user action, not a geometry event, and is
   // never released here.
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
   const engagedSlotMode = engagedId
-    ? (slotted.find((a) => a.portal.circle.id === engagedId)?.slot?.id ?? "none")
+    ? (isMobile ? "mobile-edge" : slotted.find((a) => a.portal.circle.id === engagedId)?.slot?.id ?? "none")
     : null;
   const prevPlacementRef = React.useRef<{
     engagedId: string;
@@ -331,8 +318,15 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
       engagedId && engagedSlotMode ? { engagedId, mode: engagedSlotMode } : null;
     const decision = reconcileEngagementOnModeChange(prevPlacementRef.current, next);
     prevPlacementRef.current = next;
-    if (decision.releaseEngagedId) handleRelease(decision.releaseEngagedId);
-  }, [engagedId, engagedSlotMode, handleRelease]);
+    const released = decision.releaseEngagedId;
+    if (!released) return;
+    handleRelease(released);
+    requestAnimationFrame(() => {
+      const opener = document.querySelector<HTMLButtonElement>(`[data-fyd-portal-id="${CSS.escape(released)}"]`);
+      if (opener) opener.focus({ preventScroll: true });
+      else if (fallbackFocusId) document.getElementById(fallbackFocusId)?.focus();
+    });
+  }, [engagedId, engagedSlotMode, fallbackFocusId, handleRelease]);
 
   // Zero-height marker at the host's mount point. The anchor region is
   // discovered from this marker's position in the document, so the host
@@ -349,16 +343,11 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
 
   if (!mounted) return mountMarker;
 
-  const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
-  const isMobile = vw < 640;
-
-  // Nolan 2026-09-25 margin directive, round 3: NO INLINE STRIP anywhere.
-  // Mobile renders a floating edge overlay instead: a peek of each circle
-  // at the right screen edge. The overlay is absolute in the document
-  // (portaled to body), so it scrolls away naturally with the page: not
-  // fixed chrome, not in-flow layout. Tap opens the sheet. This behavior
-  // is provisionally accepted and MUST NOT REGRESS.
-  if (isMobile && portals.length > 0 && typeof document !== "undefined") {
+  // Keep mobile touch launchers in the page's reserved rail. The dialog
+  // still renders in its existing body portal above this local plane.
+  if (isMobile) {
+    const mobileAnchor = document.getElementById(mobileAnchorId);
+    if (!mobileAnchor || portals.length === 0) return mountMarker;
     return (
       <>
         {mountMarker}
@@ -378,12 +367,6 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
               pointerEvents: "none",
             }}
           >
-        {/* Mobile edge overlay clamp (2026-10-19): the wrapper is anchored
-            to the right edge (right: 0), never offset past it. The old
-            -(PEEK_D - 28) offset pushed the 56px trigger 28px beyond the
-            layout width, widening the document (+13px overflow at
-            430/390/375/320). Desktop peek geometry is a separate path
-            (slot assignments above) and is unchanged. */}
         {portals.map((portal, i) => (
           <div
             key={portal.circle.id}
@@ -391,7 +374,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
             data-ping-slot="mobile-edge"
             style={{
               position: "absolute",
-              top: overlayY + i * (PEEK_D + 14),
+              top: 8 + i * (PEEK_D + 14),
               right: 0,
               width: PEEK_D,
               height: PEEK_D,
@@ -402,6 +385,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
               portal={portal}
               displayContext={{ surface: "ping-margin", selectionReason: "Included in this page’s featured businesses" }}
               slot={null}
+              restDiameter={PEEK_D}
               peek
               aware={awareId === portal.circle.id}
               engaged={engagedId === portal.circle.id}
@@ -414,7 +398,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
           </div>
             ))}
           </div>,
-          document.body,
+          mobileAnchor,
         )}
       </>
     );
@@ -470,6 +454,7 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
                   portal={a.portal}
                   displayContext={{ surface: "ping-margin", rankReasons: a.rankReasons }}
                   slot={a.slot}
+                  restDiameter={a.d}
                   peek={a.peek}
                   aware={awareId === a.portal.circle.id}
                   engaged={engagedId === a.portal.circle.id}

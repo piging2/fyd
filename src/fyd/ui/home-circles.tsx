@@ -69,6 +69,8 @@ export function HomeCircles({ portals }: { portals: HomePortal[] }) {
     <>
       <PortalHost
         portals={projections}
+        fallbackFocusId="featured-business-demos"
+        mobileAnchorId="featured-business-disclosure"
         onAskRequest={handleAskRequest}
         onContextChange={handleContextChange}
       />
