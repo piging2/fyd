@@ -5,7 +5,7 @@ import { CTASection } from "@/components/cta-section";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { Reveal } from "@/components/reveal";
 import { ProofRail } from "@/components/proof-rail";
-import PingPigGif from "@/components/ping-pig-gif";
+import MascotGif from "@/components/mascot-gif";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { BlueprintGrid } from "@/components/blueprint-grid";
@@ -285,26 +285,29 @@ export default async function HomePage() {
       {/* Portal margin: PING circles inhabit unused peripheral space only. Geometry, not breakpoints, decides whether a slot is honest. */}
       <HomeCircles portals={homePortals} />
 
-      {/* Brand beat: the Ping Pig at work, directly under the hero */}
-      <Section size="minor">
+      {/* Brand beat: the mascot at work, directly under the hero. A compact
+          band, not a full section: the figure sits in the page rhythm
+          between the portal circles and What We Make (owner order
+          2026-11-10, GIF whitespace). */}
+      <div className="pb-10 pt-2">
         <Container className="max-w-5xl">
           <figure className="mx-auto max-w-xl">
             <div className="overflow-hidden rounded-2xl border border-border-soft bg-surface">
-              <PingPigGif
-                gif="/brand/ping-pig-call-center-variant2.gif"
-                poster="/brand/ping-pig-call-center-variant2-poster.webp"
+              <MascotGif
+                gif="/brand/call-center-variant2.gif"
+                poster="/brand/call-center-variant2-poster.webp"
                 width={414}
                 height={231}
                 eager
-                alt="The Ping Pig, a golden pig mascot in a purple suit, working a busy call center desk with a phone at each ear and a tablet in hand, five star reviews and a service map on the wall behind"
+                alt="A golden mascot in a purple suit working a busy call center desk with a phone at each ear and a tablet in hand, five star reviews and a service map on the wall behind"
               />
             </div>
-            <figcaption className="mt-3 text-center text-sm text-text-muted">
-              The Ping Pig on the phones. Every call answered, every job on the board.
+            <figcaption className="mt-2 text-center text-sm text-text-muted">
+              On the phones. Every call answered, every job on the board.
             </figcaption>
           </figure>
         </Container>
-      </Section>
+      </div>
 
       {/* 01a WHAT WE MAKE: the studio output, in the copy pack's words */}
       <Section size="minor">

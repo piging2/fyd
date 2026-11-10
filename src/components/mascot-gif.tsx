@@ -1,4 +1,4 @@
-type PingPigGifProps = {
+type MascotGifProps = {
   gif: string;
   poster: string;
   width: number;
@@ -9,12 +9,12 @@ type PingPigGifProps = {
 };
 
 /**
- * The Ping Pig call-center GIF with its first frame as the still fallback.
+ * The call-center GIF with its first frame as the still fallback.
  * Readers who prefer reduced motion get the poster frame instead of the
  * animation; everyone else gets the GIF. Width and height are always set,
  * so the frame reserves its space and the layout never shifts.
  */
-export default function PingPigGif({ gif, poster, width, height, alt, eager = false, className = "" }: PingPigGifProps) {
+export default function MascotGif({ gif, poster, width, height, alt, eager = false, className = "" }: MascotGifProps) {
   return (
     <picture>
       <source media="(prefers-reduced-motion: reduce)" srcSet={poster} type="image/webp" />
