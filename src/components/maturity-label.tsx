@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 export type Maturity = "Live" | "Built" | "Experimental" | "Direction" | "Unproven";
 
 const STYLES: Record<Maturity, string> = {
-  Live: "bg-green-500/10 text-green-700 border-green-500/30",
+  Live: "bg-green-500/10 text-green-800 border-green-500/30",
   Built: "bg-sky-500/10 text-sky-700 border-sky-500/30",
   Experimental: "bg-violet-500/10 text-violet-700 border-violet-500/30",
   Direction: "bg-surface-muted text-text-muted border-border-soft",
