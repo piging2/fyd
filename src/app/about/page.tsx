@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
-import MascotGif from "@/components/mascot-gif";
+import PigiGif from "@/components/pigi-gif";
 import { getTenant } from "@/lib/tenant-config";
 import { buildAboutPageJsonLd } from "@/lib/structured-data";
 
@@ -80,12 +80,12 @@ export default function AboutPage() {
         <Container className="max-w-4xl">
           <figure className="mx-auto max-w-xl">
             <div className="overflow-hidden rounded-2xl border border-border-soft bg-surface">
-              <MascotGif
-                gif="/brand/call-center-variant1.gif"
-                poster="/brand/call-center-variant1-poster.webp"
+              <PigiGif
+                gif="/brand/pigi-call-center-variant1.gif"
+                poster="/brand/pigi-call-center-variant1-poster.webp"
                 width={553}
                 height={309}
-                alt="A golden mascot in a purple suit juggling two phones and a tablet at a call center desk while the crew works around him, five star reviews and a route map on the wall behind"
+                alt="Pigi, a golden mascot in a purple suit, juggling two phones and a tablet at a call center desk while the crew works around him, five star reviews and a route map on the wall behind"
               />
             </div>
             <figcaption className="mt-2 text-center text-sm text-text-muted">

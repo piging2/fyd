@@ -1,4 +1,4 @@
-type MascotGifProps = {
+type PigiGifProps = {
   gif: string;
   poster: string;
   width: number;
@@ -9,12 +9,12 @@ type MascotGifProps = {
 };
 
 /**
- * The call-center GIF with its first frame as the still fallback.
+ * Pigi at work: the call-center GIF with its first frame as the still fallback.
  * Readers who prefer reduced motion get the poster frame instead of the
  * animation; everyone else gets the GIF. Width and height are always set,
  * so the frame reserves its space and the layout never shifts.
  */
-export default function MascotGif({ gif, poster, width, height, alt, eager = false, className = "" }: MascotGifProps) {
+export default function PigiGif({ gif, poster, width, height, alt, eager = false, className = "" }: PigiGifProps) {
   return (
     <picture>
       <source media="(prefers-reduced-motion: reduce)" srcSet={poster} type="image/webp" />
