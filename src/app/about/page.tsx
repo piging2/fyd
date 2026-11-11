@@ -16,12 +16,12 @@ export const dynamic = "force-static";
 
 export const metadata: Metadata = {
   title: "About PING and PingFyd",
-  description: "About PING: continuity infrastructure for AI agents, and PingFyd, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
+  description: "PingFyd helps Western Colorado businesses get found, followed up with, and remembered. PING is the system underneath it all. From Grand Junction, Colorado.",
   alternates: { canonical: "/about" },
   openGraph: {
     type: "website",
     title: "About PING and PingFyd · PING",
-    description: "About PING: continuity infrastructure for AI agents, and PingFyd, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
+    description: "PingFyd helps Western Colorado businesses get found, followed up with, and remembered. PING is the system underneath it all. From Grand Junction, Colorado.",
     url: siteUrl + "/about",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
     title: "About PING and PingFyd · PING",
-    description: "About PING: continuity infrastructure for AI agents, and PingFyd, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
+    description: "PingFyd helps Western Colorado businesses get found, followed up with, and remembered. PING is the system underneath it all. From Grand Junction, Colorado.",
   },
 };
 
@@ -70,7 +70,7 @@ export default function AboutPage() {
           <SectionHeading
             headingLevel="h1"
             eyebrow={<span className="text-honey">About</span>}
-            title={<span className="text-text-on-dark">PING is infrastructure for systems that remember</span>}
+            title={<span className="text-text-on-dark">A system that remembers, built for businesses that cannot afford to forget</span>}
             description={<span className="text-text-on-dark/90">{tenant.description}</span>}
           />
         </Container>
