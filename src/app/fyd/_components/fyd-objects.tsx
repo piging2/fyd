@@ -250,8 +250,8 @@ export function FydObjects() {
         <Container className="max-w-6xl">
           <SectionHeading
             eyebrow="/explore"
-            title="The margins are the graph"
-            description="The center stays an excellent, normal business experience. The edges expose real objects. Tap one: it opens, shows its work, and lets you act. Every object proves the same chain, every time. This page is itself an FYD presence: explore the product through the product's own interaction grammar."
+            title="Your business, as things a customer can open"
+            description="The middle of the page stays an excellent, normal business experience. Around it sit the real things: a service, a project, a person. Tap one and it opens, shows where its information came from, and lets you act. Every object proves the same chain, every time. This page is itself an FYD presence: explore the product through the product's own interaction grammar."
             align="center"
           />
           <div className="mt-6 flex justify-center">
