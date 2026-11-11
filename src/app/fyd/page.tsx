@@ -29,12 +29,12 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "FYD: your business, understood",
   description:
-    "FYD learns your business as connected things, builds your digital presence from that understanding, answers customers from evidence, and keeps you in control.",
+    "FYD learns your business once, builds your website from that understanding, and answers your customers from it. You stay in control. Try it with your own URL.",
   alternates: { canonical: "/fyd" },
   openGraph: {
     type: "website",
     title: "FYD: your business, understood · PING",
-    description: "FYD learns your business as connected things, builds your digital presence from that understanding, answers customers from evidence, and keeps you in control.",
+    description: "FYD learns your business once, builds your website from that understanding, and answers your customers from it. You stay in control. Try it with your own URL.",
     url: siteUrl + "/fyd",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
     title: "FYD: your business, understood · PING",
-    description: "FYD learns your business as connected things, builds your digital presence from that understanding, answers customers from evidence, and keeps you in control.",
+    description: "FYD learns your business once, builds your website from that understanding, and answers your customers from it. You stay in control. Try it with your own URL.",
   },
 };
 

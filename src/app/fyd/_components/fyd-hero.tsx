@@ -23,19 +23,19 @@ export function FydHero() {
               letterSpacing: "var(--tracking-display)",
             }}
           >
-            Give FYD your business.
+            Give FYD your business once.
             <br />
-            It keeps your whole digital presence.
+            It keeps your presence current and answers your customers.
           </h1>
           <p
             className="mt-6 max-w-2xl text-lg text-text-on-dark/90"
             style={{ lineHeight: "var(--leading-body)" }}
           >
-            FYD learns your business as connected things: services, locations,
-            projects, people, offers. It builds your website and answers your
-            customers from that understanding. You can see what it knows, ask
-            why it believes it, and correct it in plain words. You stay in
-            control.
+            FYD learns your business properly: your services, locations,
+            projects, people, and offers. It builds your website from that
+            understanding and answers your customers from it. You can see
+            what it knows, ask why it believes it, and correct it in plain
+            words. You stay in control.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
@@ -54,8 +54,8 @@ export function FydHero() {
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <FydCopyClassLabel kind="live" />
             <p className="text-sm text-text-on-dark/60">
-              Running proof on this server: two demo businesses, built from
-              their FYD understanding.
+              Live proof, below: two real demo businesses, built from what
+              FYD learned about them.
             </p>
           </div>
           <div className="mt-6 rounded-lg border border-text-on-dark/10 bg-deep-2/60 p-5">
@@ -63,9 +63,9 @@ export function FydHero() {
               The 10-second version
             </p>
             <p className="mt-2 text-sm text-text-on-dark/80">
-              This understands my business and keeps my digital presence. Not a
+              FYD understands my business and keeps my presence current. Not a
               website builder: the site is built from the understanding, and
-              the understanding answers my customers.
+              the same understanding answers my customers.
             </p>
           </div>
         </ScrollReveal>
