@@ -39,6 +39,8 @@ import {
   type SnapshotInfo,
 } from "./center-portal";
 import { SpatialNodeButton } from "./spatial-node";
+import { ContactFacts, EvidenceView } from "./center-portal";
+import { SpatialAskPanel } from "./spatial-ask-panel";
 
 const HOME_ID = "happy-place";
 
@@ -92,11 +94,19 @@ export function SpatialCanvas({
   const [coarse, setCoarse] = React.useState(false);
   const [stage, setStage] = React.useState({ w: 960, h: 620 });
   const [roving, setRoving] = React.useState(0);
+  const [view, setView] = React.useState<"orbit" | "list">("orbit");
+  const [narrow, setNarrow] = React.useState(false);
+  const listView = Boolean(reducedMotion || narrow || view === "list");
 
   const stageRef = React.useRef<HTMLDivElement>(null);
   const collapsedBtnRef = React.useRef<HTMLButtonElement>(null);
   const engagedRef = React.useRef<HTMLDivElement>(null);
   const satRefs = React.useRef<Map<string, HTMLButtonElement>>(new Map());
+  const contextHeadingRef = React.useRef<HTMLHeadingElement>(null);
+  const requestRef = React.useRef<AbortController | null>(null);
+  const returnNodeIdRef = React.useRef<string | null>(null);
+  const focusIntentRef = React.useRef<string | null>(null);
+  const retryNodeRef = React.useRef<SpatialNode | null>(null);
 
   const focusedId = spec.focusedObjectId;
   const focus = projections[focusedId] ?? initialProjection;
@@ -130,15 +140,48 @@ export function SpatialCanvas({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [listView]);
 
   // Pointer capabilities.
   React.useEffect(() => {
-    setCanHover(
-      window.matchMedia("(hover: hover) and (pointer: fine)").matches,
-    );
-    setCoarse(window.matchMedia("(pointer: coarse)").matches);
+    const narrowViewport = window.matchMedia("(max-width: 639px)");
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => {
+      const active = document.activeElement;
+      const selectedSatellite = [...satRefs.current].find(([, element]) => element === active);
+      if (selectedSatellite) focusIntentRef.current = selectedSatellite[0];
+      else if (active === collapsedBtnRef.current || engagedRef.current?.contains(active)) {
+        focusIntentRef.current = "heading";
+      }
+      setNarrow(narrowViewport.matches);
+      setCanHover(window.matchMedia("(hover: hover) and (pointer: fine)").matches);
+      setCoarse(window.matchMedia("(pointer: coarse)").matches);
+    };
+    update();
+    narrowViewport.addEventListener("change", update);
+    motionPreference.addEventListener("change", update);
+    return () => {
+      narrowViewport.removeEventListener("change", update);
+      motionPreference.removeEventListener("change", update);
+      requestRef.current?.abort();
+    };
   }, []);
+
+  React.useLayoutEffect(() => {
+    const target = focusIntentRef.current;
+    if (!target) return;
+    const element = target === "heading"
+      ? contextHeadingRef.current
+      : target === "details"
+        ? engagedRef.current
+        : target === "center"
+          ? (listView ? contextHeadingRef.current : collapsedBtnRef.current)
+          : satRefs.current.get(target);
+    if (element) {
+      focusIntentRef.current = null;
+      element.focus({ preventScroll: true });
+    }
+  }, [focusedId, listView, machine, contactOpen]);
 
   // Mirror availability is resolved server-side from the capture manifest;
   // the client only renders what the server verified. No client probing.
@@ -147,23 +190,36 @@ export function SpatialCanvas({
     setMachine((s) => circleReducer(s, e));
   }, []);
 
+  const cancelPending = React.useCallback(() => {
+    requestRef.current?.abort();
+    requestRef.current = null;
+    setPendingId(null);
+  }, []);
+
   const goHome = React.useCallback(() => {
+    cancelPending();
+    focusIntentRef.current = returnNodeIdRef.current ?? "heading";
     const next = deriveSpatialSpec({ focus: home });
     if (!next) return;
     setSpec(next);
     setMachine(INITIAL_CIRCLE_STATE);
     setContactOpen(false);
     setFetchError(null);
-    setRoving(0);
-  }, [home]);
+    const originIndex = keyboardOrder(next)
+      .filter(node => node.role !== "center")
+      .findIndex(node => node.objectId === returnNodeIdRef.current);
+    setRoving(Math.max(0, originIndex));
+  }, [cancelPending, home]);
 
   const refocus = React.useCallback(
     (projection: ObjectProjection, parent?: ObjectProjection) => {
       const next = deriveSpatialSpec({ focus: projection, parent });
       if (!next) {
+        setPendingId(null);
         setFetchError("That object has no spatial view right now.");
-        return;
+        return false;
       }
+      focusIntentRef.current = "heading";
       setProjections((p) => ({ ...p, [projection.id]: projection }));
       setSpec(next);
       setMachine({ state: "expanded", evidence: false, closePending: false });
@@ -171,31 +227,33 @@ export function SpatialCanvas({
       setFetchError(null);
       setPendingId(null);
       setRoving(0);
+      return true;
     },
     [],
   );
 
   const activateNode = React.useCallback(
     (node: SpatialNode) => {
+      cancelPending();
+      retryNodeRef.current = null;
       setFetchError(null);
       if (node.role === "ask") {
         setMachine({ state: "expanded", evidence: false, closePending: false });
         setContactOpen(false);
         dispatch({ type: "askOpen" });
-        engagedRef.current?.focus({ preventScroll: true });
+        focusIntentRef.current = "details";
         return;
       }
       if (node.role === "evidence") {
-        setMachine({ state: "expanded", evidence: false, closePending: false });
+        setMachine(current => ({ state: "expanded", evidence: !current.evidence, closePending: false }));
         setContactOpen(false);
-        dispatch({ type: "evidenceToggle" });
-        engagedRef.current?.focus({ preventScroll: true });
+        focusIntentRef.current = "details";
         return;
       }
       if (node.role === "contact") {
         setMachine({ state: "expanded", evidence: false, closePending: false });
         setContactOpen(true);
-        engagedRef.current?.focus({ preventScroll: true });
+        focusIntentRef.current = "details";
         return;
       }
       if (node.role === "parent") {
@@ -203,12 +261,15 @@ export function SpatialCanvas({
         return;
       }
       // Real object satellite: fetch its projection, then refocus.
+      returnNodeIdRef.current = node.objectId;
       if (projections[node.objectId]) {
         refocus(projections[node.objectId], home);
         return;
       }
+      const request = new AbortController();
+      requestRef.current = request;
       setPendingId(node.objectId);
-      fetch(`/api/fyd/objects/${encodeURIComponent(node.objectId)}`)
+      fetch(`/api/fyd/objects/${encodeURIComponent(node.objectId)}`, { signal: request.signal })
         .then(async (res) => {
           let data: RelatedPayload | null = null;
           try {
@@ -216,36 +277,47 @@ export function SpatialCanvas({
           } catch {
             data = null;
           }
+          if (requestRef.current !== request) return;
           if (!res.ok || !data || !data.ok || !data.projection) {
+            retryNodeRef.current = node;
             setFetchError(
               "Could not load that object. Please try again.",
             );
             setPendingId(null);
             return;
           }
-          refocus(data.projection, home);
+          if (!refocus(data.projection, home)) retryNodeRef.current = node;
         })
         .catch(() => {
+          if (requestRef.current !== request || request.signal.aborted) return;
+          retryNodeRef.current = node;
           setFetchError("Could not load that object. Please try again.");
           setPendingId(null);
         });
     },
-    [dispatch, goHome, home, projections, refocus],
+    [cancelPending, dispatch, goHome, home, projections, refocus],
   );
 
-  // Escape backs out: ask -> expanded, engaged/contact -> home.
+  // Escape closes the current detail before returning to the business.
   const onStageKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
-      if (machine.state === "ask") {
-        dispatch({ type: "askClose" });
+      e.preventDefault();
+      if (pendingId) {
+        cancelPending();
         return;
       }
-      if (machine.state === "expanded" || contactOpen || !isHome) {
+      if (machine.state === "ask") {
+        focusIntentRef.current = "ask-fyd";
+        dispatch({ type: "askClose" });
+      } else if (contactOpen || machine.evidence) {
+        focusIntentRef.current = contactOpen ? `${focusedId}-contact` : `${focusedId}-evidence`;
+        setContactOpen(false);
+        setMachine({ state: "expanded", evidence: false, closePending: false });
+      } else if (!isHome) {
         goHome();
-        window.setTimeout(
-          () => collapsedBtnRef.current?.focus({ preventScroll: true }),
-          60,
-        );
+      } else if (machine.state === "expanded") {
+        focusIntentRef.current = "center";
+        setMachine(INITIAL_CIRCLE_STATE);
       }
       return;
     }
@@ -323,79 +395,129 @@ export function SpatialCanvas({
     }
   };
 
-  // Reduced motion: plain vertical list, same semantics, no animation.
-  if (reducedMotion) {
-    return (
-      <div className="mx-auto w-full max-w-xl px-4 py-6">
+  const orientation = (
+    <div className="mx-auto max-w-5xl px-4 pt-6">
+      <h2 ref={contextHeadingRef} tabIndex={-1} className="scroll-mt-24 text-lg font-semibold text-purple-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-200">
+        {isHome ? home.name : `${home.name} › ${focus.name}`}
+      </h2>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         {!isHome && (
-          <button
-            type="button"
-            onClick={goHome}
-            className="mb-4 min-h-[44px] rounded-full border border-purple-300 bg-white px-5 py-2 text-sm font-semibold text-purple-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
-          >
+          <button type="button" onClick={goHome} className="min-h-11 rounded-full border border-amber-200/40 px-4 text-sm font-semibold text-amber-100 focus-visible:outline-2 focus-visible:outline-offset-2">
             Back to {home.name}
           </button>
         )}
-        <ul className="space-y-2">
-          {order.map((node) => {
-            const m = metaFor(node);
-            return (
-              <li key={node.objectId}>
-                <button
-                  type="button"
-                  onClick={() => activateNode(node)}
-                  aria-label={m.aria}
-                  className="flex min-h-[44px] w-full items-center gap-3 rounded-xl border border-purple-200 bg-white px-4 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-900 text-sm font-bold text-amber-100"
+        <div role="group" aria-label="Object view" className="flex gap-2">
+          <button
+            type="button"
+            aria-pressed={!listView}
+            disabled={Boolean(reducedMotion || narrow)}
+            onClick={() => setView("orbit")}
+            className="min-h-11 rounded-full border border-purple-300/50 px-4 text-sm font-semibold text-purple-50 aria-pressed:bg-purple-800 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            Orbit
+          </button>
+          <button type="button" aria-pressed={listView} onClick={() => setView("list")} className="min-h-11 rounded-full border border-purple-300/50 px-4 text-sm font-semibold text-purple-50 aria-pressed:bg-purple-800 focus-visible:outline-2 focus-visible:outline-offset-2">
+            List
+          </button>
+        </div>
+        <a href="/objects" className="inline-flex min-h-11 items-center px-2 text-sm text-purple-100 underline underline-offset-4">
+          Open object directory
+        </a>
+      </div>
+      <p role="status" className="mt-2 min-h-5 text-sm text-purple-100">
+        {pendingId ? `Loading ${retryNodeRef.current?.label ?? satellites.find(node => node.objectId === pendingId)?.label ?? "object"}…` : ""}
+      </p>
+      {fetchError && (
+        <div role="alert" className="mb-3 rounded-xl border border-red-300/50 bg-red-950/80 p-3 text-sm text-red-100">
+          <p>{fetchError}</p>
+          {retryNodeRef.current && (
+            <button type="button" onClick={() => activateNode(retryNodeRef.current!)} className="min-h-11 font-semibold underline underline-offset-4">
+              Retry loading {retryNodeRef.current.label}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  if (listView) {
+    return (
+      <div onKeyDown={onStageKeyDown} className="w-full">
+        {orientation}
+        <div className="mx-auto w-full max-w-xl px-4 pb-6">
+          <ul className="space-y-2">
+            {satellites.filter(node => node.role !== "parent").map((node) => {
+              const m = metaFor(node);
+              return (
+                <li key={node.objectId}>
+                  <button
+                    type="button"
+                    ref={(el) => {
+                      if (el) satRefs.current.set(node.objectId, el);
+                      else satRefs.current.delete(node.objectId);
+                    }}
+                    onClick={() => activateNode(node)}
+                    aria-label={m.aria}
+                    aria-busy={pendingId === node.objectId}
+                    className="flex min-h-[44px] w-full items-center gap-3 rounded-xl border border-purple-200 bg-white px-4 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
                   >
-                    {m.glyph}
-                  </span>
-                  <span className="text-sm font-medium text-stone-900">
-                    {node.role === "center" ? focus.name : m.label}
-                  </span>
-                  <span className="ml-auto text-xs text-stone-500">
-                    {node.role}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        <div className="mt-6 rounded-2xl border border-purple-200 bg-white p-5">
-          <h2 className="text-lg font-bold text-stone-900">{focus.name}</h2>
-          <p className="text-sm text-stone-500">{focus.kindLabel}</p>
-          {snapshot && isHome && (
-            <img
-              src={snapshot.src}
-              srcSet={snapshot.srcSet || undefined}
-              alt={`${focus.name} website snapshot`}
-              className="mt-3 w-full rounded-xl"
-              style={{ aspectRatio: "16 / 10", objectFit: "cover" }}
-            />
-          )}
-          {focus.summary && focus.summary.evidence.state !== "unknown" && (
-            <p className="mt-2 text-sm text-stone-700">{focus.summary.value}</p>
-          )}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <a
-              href={`/o/${encodeURIComponent(focus.id)}`}
-              className="flex min-h-[44px] items-center rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
-            >
-              Open full node
-            </a>
-            <a
-              href="/objects"
-              className="flex min-h-[44px] items-center rounded-full border border-purple-300 px-5 py-2 text-sm font-semibold text-purple-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
-            >
-              Rectangle version
-            </a>
+                    <span
+                      aria-hidden="true"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-900 text-sm font-bold text-amber-100"
+                    >
+                      {m.glyph}
+                    </span>
+                    <span className="text-sm font-medium text-stone-900">
+                      {m.label}
+                    </span>
+                    <span className="ml-auto text-xs text-stone-500">
+                      {node.role}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <div ref={engagedRef} tabIndex={-1} role="region" aria-label={focus.name + " details"} className="mt-6 rounded-2xl border border-purple-300/40 bg-purple-950 p-5 text-purple-50 focus-visible:outline-2 focus-visible:outline-offset-4">
+            {machine.state === "ask" ? (
+              <SpatialAskPanel key={focus.id} siteId={HOME_ID} objectId={askObjectId} objectName={focus.name} sampleQuestions={focus.sampleQuestions} />
+            ) : contactOpen ? (
+              <>
+                <h3 className="font-semibold">Contact {contactOwnerName}</h3>
+                <ContactFacts contact={effectiveContact} />
+              </>
+            ) : machine.evidence ? (
+              <EvidenceView projection={focus} snapshot={isHome ? snapshot : null} />
+            ) : (
+              <>
+                <h3 className="text-lg font-bold">{focus.name}</h3>
+                <p className="text-sm text-purple-200">{focus.kindLabel}</p>
+                {snapshot && isHome && (
+                  <img
+                    src={snapshot.src}
+                    srcSet={snapshot.srcSet || undefined}
+                    alt={`${focus.name} website snapshot`}
+                    className="mt-3 w-full rounded-xl"
+                    style={{ aspectRatio: "16 / 10", objectFit: "cover" }}
+                  />
+                )}
+                {focus.summary && focus.summary.evidence.state !== "unknown" && (
+                  <p className="mt-2 text-sm text-purple-100">{focus.summary.value}</p>
+                )}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <a
+                    href={`/o/${encodeURIComponent(focus.id)}`}
+                    className="flex min-h-[44px] items-center rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+                  >
+                    Open full node
+                  </a>
+                </div>
+                <p className="mt-3 text-xs text-purple-200">
+                  {focus.provenance.label}
+                </p>
+              </>
+            )}
           </div>
-          <p className="mt-3 text-xs text-stone-500">
-            {focus.provenance.label}
-          </p>
         </div>
       </div>
     );
@@ -405,21 +527,10 @@ export function SpatialCanvas({
   const centerVp = center ? toViewport(center, stage) : { x: stage.w / 2, y: stage.h / 2, r: 90 };
 
   return (
-    <div className="w-full">
-      {!isHome && (
-        <div className="mx-auto flex max-w-5xl justify-start px-4 pt-2">
-          <button
-            type="button"
-            onClick={goHome}
-            className="min-h-[44px] rounded-full border border-amber-200/40 bg-purple-950/90 px-5 py-2 text-sm font-semibold text-amber-100 hover:bg-purple-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
-          >
-            Back to {home.name}
-          </button>
-        </div>
-      )}
+    <div className="w-full" onKeyDown={onStageKeyDown}>
+      {orientation}
       <div
         ref={stageRef}
-        onKeyDown={onStageKeyDown}
         className="relative mx-auto w-full overflow-hidden"
         style={{ minHeight: "70vh" }}
         aria-label={`${focus.name} object space`}
@@ -433,7 +544,7 @@ export function SpatialCanvas({
               y={centerVp.y}
               r={centerVp.r}
               engagedR={engagedR}
-              snapshot={snapshot}
+              snapshot={isHome ? snapshot : null}
               askObjectId={askObjectId}
               contact={effectiveContact}
               contactOwnerName={contactOwnerName}
@@ -471,22 +582,6 @@ export function SpatialCanvas({
             );
           })}
         </AnimatePresence>
-        {fetchError && (
-          <p
-            role="alert"
-            className="absolute inset-x-0 bottom-4 mx-auto w-fit rounded-full bg-red-950/90 px-5 py-2 text-sm text-red-100"
-          >
-            {fetchError}
-          </p>
-        )}
-      </div>
-      <div className="mx-auto flex max-w-5xl justify-center px-4 pb-6">
-        <a
-          href="/objects"
-          className="text-sm text-purple-200 underline decoration-dotted underline-offset-4 hover:text-purple-100"
-        >
-          Rectangle version
-        </a>
       </div>
     </div>
   );

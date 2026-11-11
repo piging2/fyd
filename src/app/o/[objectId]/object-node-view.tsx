@@ -168,7 +168,7 @@ export function ObjectNodeView({
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 pb-20 sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 pb-20 sm:px-6">
         <ObjectPlacementDisclosure objectId={view.id} context={displayContext} now={presentationNow} />
         <ObjectDiscoveryExplanation objectId={view.id} context={displayContext} now={presentationNow} />
         {/* Hero: the object's living banner. The identity mark is the
@@ -400,7 +400,7 @@ export function ObjectNodeView({
             )}
           </div>
         </details>
-      </main>
+      </div>
     </div>
   );
 }

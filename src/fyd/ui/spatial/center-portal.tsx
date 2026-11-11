@@ -80,7 +80,7 @@ function GradientFace({ id, name }: { id: string; name: string }) {
   );
 }
 
-function ContactFacts({ contact }: { contact: ContactProjection }) {
+export function ContactFacts({ contact }: { contact: ContactProjection }) {
   const facts = [contact.phone, contact.email, contact.website].filter(
     (f): f is NonNullable<typeof f> => f !== null,
   );
@@ -125,7 +125,7 @@ function ContactFacts({ contact }: { contact: ContactProjection }) {
   );
 }
 
-function EvidenceView({
+export function EvidenceView({
   projection,
   snapshot,
 }: {

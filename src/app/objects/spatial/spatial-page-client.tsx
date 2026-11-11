@@ -20,25 +20,29 @@ export function SpatialPageClient({
   snapshot: SnapshotInfo | null;
 }) {
   return (
-    <main className="min-h-screen bg-purple-950 text-purple-50">
+    <div className="min-h-screen bg-purple-950 text-purple-50">
       <div className="mx-auto max-w-5xl px-4 pt-8">
         <p className="text-xs font-semibold uppercase tracking-widest text-amber-200/80">
           PING object space
         </p>
         <h1 className="mt-1 text-2xl font-bold text-purple-50">
-          {initialProjection.name}, in space
+          Business object space
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-purple-200">
-          One object and its satellites. Hover or tap the center to look
-          closer, tap a satellite to move through the graph. Everything
-          shown carries its evidence.
+          Select a service or location to inspect it. Switch between the
+          orbit and list to explore the same public objects and evidence.
         </p>
       </div>
+      <noscript>
+        <p className="mx-auto max-w-5xl px-4 pt-4">
+          <a href={`/o/${encodeURIComponent(initialProjection.id)}`} className="underline">Open {initialProjection.name} details</a>
+        </p>
+      </noscript>
       <SpatialCanvas
         initialProjection={initialProjection}
         initialSpec={initialSpec}
         snapshot={snapshot}
       />
-    </main>
+    </div>
   );
 }

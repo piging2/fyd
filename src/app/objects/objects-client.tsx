@@ -33,7 +33,7 @@ export function ObjectsClient({ objects }: { objects: ObjectHandle[] }) {
       ) : null}
 
       <div className="flex items-start gap-8">
-        <main className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-widest text-purple-700">
             PING objects
           </p>
@@ -75,7 +75,7 @@ export function ObjectsClient({ objects }: { objects: ObjectHandle[] }) {
               No object projections are available right now.
             </p>
           ) : null}
-        </main>
+        </div>
 
         {/* Desktop rail: sticky, in-flow, zero overlap by construction. */}
         {objects.length > 0 ? (

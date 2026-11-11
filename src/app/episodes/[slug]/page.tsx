@@ -6,6 +6,7 @@ import { getPost } from "@/lib/blog";
 import { buildEpisodeDepth, buildEpisodePageTitle, durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
 import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
 import { getTenant } from "@/lib/tenant-config";
+import { EpisodePlayer } from "@/components/episode-player";
 
 export const dynamic = "force-static";
 
@@ -128,15 +129,14 @@ export default async function EpisodeLandingPage({
 
       <Section>
         <Container className="max-w-4xl">
-          <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-deep">
-            <iframe
-              src={embedUrlFor(video)}
-              title={video.title}
-              className="absolute inset-0 h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
+          <EpisodePlayer
+            key={video.id}
+            title={video.title}
+            embedUrl={embedUrlFor(video)}
+            poster={entry.useTitlePlate ? undefined : video.thumbnail}
+            fallbackPoster={entry.useTitlePlate ? undefined : video.thumbnailFallback}
+            duration={video.duration}
+          />
           <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3 font-medium">
             <a
               href={video.watchUrl}
@@ -144,7 +144,7 @@ export default async function EpisodeLandingPage({
               rel="noopener noreferrer"
               className="text-accent hover:underline"
             >
-              Watch on YouTube →
+              Watch on YouTube (opens in a new tab) →
             </a>
             <span className="text-text-muted">
               {siteUrl.replace("https://", "")}/episodes/{slug}

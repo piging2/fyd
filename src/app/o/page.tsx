@@ -40,7 +40,7 @@ export default function ObjectsIndexPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
-      <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
         <p className="text-sm font-medium uppercase tracking-widest text-amber-800">FYD</p>
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight">Objects</h1>
         <p className="mt-2 max-w-xl text-base text-stone-600">
@@ -55,7 +55,7 @@ export default function ObjectsIndexPage() {
         <p className="mt-10 text-xs text-stone-400">
           Demo surface. Object data is observed from public business websites.
         </p>
-      </main>
+      </div>
     </div>
   );
 }

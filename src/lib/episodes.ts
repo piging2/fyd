@@ -18,6 +18,8 @@ import { episodeVideos, featuredFilm, type FeaturedVideo } from "@/lib/longping-
 export interface EpisodePage {
   slug: string;
   video: FeaturedVideo;
+  /** Use the episode title when its current provider artwork names another film. */
+  useTitlePlate?: boolean;
   /**
    * Meta description for the landing page, in the site 147 to 160
    * character band. Derived only from the episode own blurb and facts:
@@ -40,6 +42,7 @@ export const episodePages: EpisodePage[] = [
   {
     slug: "the-water-wheel-problem",
     video: episodeVideos.find((v) => v.id === "7ljMOGuKKv8")!,
+    useTitlePlate: true,
     description:
       "Episode 2, chapters 1-10: the water wheel, the grid it built, and the long argument between centralised and distributed power, an argument that never ended.",
   },
