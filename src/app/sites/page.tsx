@@ -17,8 +17,8 @@ import {
 import { isServableSiteId } from "@/app/sites/_shared/site-lookup";
 
 export const metadata: Metadata = {
-  title: "FYD demo sites | PING",
-  description: "Index of the authorized FYD Social demo sites.",
+  title: { absolute: "FYD demo sites | PingFyd" },
+  description: "Working demo websites built by FYD for real local businesses: a plumber, a carpentry company, and PingFyd itself. Open any demo and look around.",
 };
 
 /**
@@ -65,7 +65,7 @@ export default async function SitesIndexPage() {
           <SectionHeading
             eyebrow="/sites"
             title="FYD demo sites"
-            description="Available FYD sites, discovered live from the projection directory. Names resolve from each tenant's PING-backed object graph at render time."
+            description="Demo websites FYD built for real local businesses. Open any of them and look around."
           />
           {sites.length > 0 ? (
             <div className="mt-10 grid gap-6 sm:grid-cols-2">
