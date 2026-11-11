@@ -23,15 +23,15 @@ const OBJECT_KINDS = [
 const COMPREHENSION = [
   {
     when: "First 10 seconds",
-    line: "This understands my business and keeps my digital presence.",
+    line: "This understands my business and keeps my presence current.",
   },
   {
     when: "Next 30 seconds",
-    line: "It knows services, locations, projects, and relationships as real things, not just webpage text.",
+    line: "It knows my services, locations, projects, and people as the real things they are, not just words on a webpage.",
   },
   {
     when: "Next 2 minutes",
-    line: "I can explore those things, ask questions about them, see why FYD believes them, and correct them.",
+    line: "I can look at what it knows, ask questions about it, see why it believes it, and correct it in plain words.",
   },
 ];
 
@@ -43,7 +43,7 @@ export function FydUnderstand() {
           <SectionHeading
             eyebrow="/understand"
             title="FYD understands your business, not your pages"
-            description="Paste a website address. FYD reads what is public and shows you what it understood: the actual things your business is made of, connected to each other."
+            description="Paste your website address. FYD reads what is public and shows you your business the way a customer sees it: your services, your projects, your people, and your offers, all in one place."
           />
           <div className="mt-8 flex flex-wrap gap-2">
             {OBJECT_KINDS.map((k) => (
@@ -56,11 +56,11 @@ export function FydUnderstand() {
             ))}
           </div>
           <p className="mt-6 max-w-3xl text-lg text-text-muted" style={{ lineHeight: "var(--leading-body)" }}>
-            A visitor does not experience these as database records. A service
-            is a thing with hours, a price range, and the people who do it. A
-            project is a thing with photos, a location, and the customer it
-            was for. When the business changes, the things change, and every
-            place they appear stays consistent.
+            Your customers do not think in pages. They think in services with
+            hours and prices, projects with photos and locations, and the
+            people who do the work. FYD keeps your business in that shape.
+            When something changes, it changes once, and every place your
+            customers look stays consistent.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <FydCopyClassLabel kind="live" />
