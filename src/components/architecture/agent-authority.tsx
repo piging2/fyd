@@ -113,9 +113,6 @@ export function AgentAuthority() {
           Intelligence does not imply authority.
         </p>
       </div>
-      <p className="mt-6 hidden text-center text-lg font-semibold text-text md:block">
-        Intelligence does not imply authority.
-      </p>
     </div>
   );
 }

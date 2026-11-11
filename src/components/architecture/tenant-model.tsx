@@ -19,9 +19,9 @@ const PILLARS = [
 ];
 
 const TENANTS = [
-  { id: "A", label: "Tenant A", items: "identity · namespace · knowledge · evidence · capabilities · workflows · history" },
-  { id: "B", label: "Tenant B", items: "identity · namespace · knowledge · evidence · capabilities · workflows · history" },
-  { id: "C", label: "Tenant C", items: "identity · namespace · knowledge · evidence · capabilities · workflows · history" },
+  { id: "A", label: "Tenant A" },
+  { id: "B", label: "Tenant B" },
+  { id: "C", label: "Tenant C" },
 ];
 
 export function TenantModel() {
@@ -75,12 +75,14 @@ export function TenantModel() {
         </h3>
         <div className="rounded-lg border border-border-soft bg-surface-2 p-6">
           <p className="mb-4 text-center font-mono text-sm font-bold text-text">PING</p>
+          <p className="mb-4 text-center text-xs text-text-muted">
+            Every tenant carries the same seven parts: identity · namespace · knowledge · evidence · capabilities · workflows · history
+          </p>
           <div className="grid gap-4 md:grid-cols-3">
             {TENANTS.map((t) => (
               <div key={t.id} className="rounded-lg border border-border-soft bg-surface p-4">
                 <p className="text-sm font-bold text-text">{t.label}</p>
-                <p className="mt-1 font-mono text-[11px] leading-relaxed text-text-muted">business graph</p>
-                <p className="mt-2 text-xs text-text-muted">{t.items}</p>
+                <p className="mt-1 font-mono text-[11px] leading-relaxed text-text-muted">its own business graph</p>
               </div>
             ))}
           </div>
