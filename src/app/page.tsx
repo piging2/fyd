@@ -68,7 +68,7 @@ const LOOP_BEATS: LoopBeat[] = [
   {
     eyebrow: "/observe",
     verb: "OBSERVE",
-    line: "Something happened.",
+    line: "It notices what happens.",
     bullets: [
       "Raw input: a call, an email, a form, an API.",
       "Recorded with timestamp, source, and version.",
@@ -79,7 +79,7 @@ const LOOP_BEATS: LoopBeat[] = [
   {
     eyebrow: "/remember",
     verb: "REMEMBER",
-    line: "Recorded, immutable.",
+    line: "It writes it down, and keeps it.",
     bullets: [
       "Canonical events with envelope validation.",
       "Append-only store, now DB-enforced: the trigger rejects UPDATE and DELETE. TRUNCATE is not covered.",
@@ -90,7 +90,7 @@ const LOOP_BEATS: LoopBeat[] = [
   {
     eyebrow: "/connect",
     verb: "CONNECT",
-    line: "Relationships, not just documents.",
+    line: "It connects the call to the customer to the job.",
     bullets: [
       "A customer called. That created a lead, which became a project.",
       "Generic knowledge graph built and exported.",
@@ -101,7 +101,7 @@ const LOOP_BEATS: LoopBeat[] = [
   {
     eyebrow: "/act",
     verb: "ACT",
-    line: "Agents act inside capability grants.",
+    line: "It does the work, within the limits you set.",
     bullets: [
       "Missions run live on Oracle: LEAD_FOLLOWUP completed end to end through the patched event door, plus real Python and agent work orders (captured 2026-09-16/17).",
       "Worker runtime built. 150 executions in the captured 2026-07-28 run. Retry/dead-letter path verified live: 12/12 assertions.",
@@ -435,9 +435,9 @@ export default async function HomePage() {
       <Section className="bg-surface-2">
         <Container className="max-w-5xl">
           <SectionHeading
-            eyebrow="/observe /remember /connect /act /prove"
-            title="The closed compounding loop"
-            description="(so knowledge compounds instead of evaporating) Information enters as raw input and moves through a loop that makes it increasingly useful. Every cycle produces new evidence, which feeds the next cycle."
+            eyebrow="/how it works"
+            title="Nothing your business learns gets lost"
+            description="Every call, job, and customer detail goes in once, gets remembered, and gets more useful over time. What your business figures out this month is still working for you next year. The five steps below are the mechanism, with the evidence attached."
             align="center"
           />
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -466,8 +466,10 @@ export default async function HomePage() {
                 <h3 className="mt-2 text-lg font-bold uppercase tracking-wide text-text">THE LOOP CLOSES</h3>
                 <p className="mt-1 text-sm font-semibold text-text">New evidence feeds the next cycle.</p>
                 <p className="mt-3 text-sm text-text-muted">
-                  Observation → Evidence → Event → Knowledge → Action → New evidence.
-                  Playbooks ran end to end in test scope on 2026-09-17: proposal, approval, activation, execution, outcome, then a revision that waits on Nolan, then replay and witness. Three wiring gaps are documented in the matrix.
+                  What happens becomes a record, the record becomes knowledge, and the knowledge
+                  drives the next job. The full loop ran end to end in testing on 2026-09-17,
+                  from a proposal through to a checked result. Three wiring gaps are documented
+                  honestly in the matrix.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <MaturityLabel status="Built" />
@@ -498,9 +500,9 @@ export default async function HomePage() {
       <Section>
         <Container className="max-w-5xl">
           <SectionHeading
-            eyebrow="/govern"
-            title="Intelligence is not authority"
-            description="(so agents can act without acting on vibes) Software that acts on your behalf needs boundaries more than it needs intelligence. Every agent operates under explicit capability grants. Humans remain the decision authority where it matters."
+            eyebrow="/in charge"
+            title="Software that works for you, within limits you set"
+            description="Anything that acts on your behalf runs with clear permissions, and a person stays in charge of the decisions that matter. Nothing freelances with your business. The layers below are how that is enforced, with their real maturity labels."
             align="center"
           />
           <div className="mt-12 grid gap-6 md:grid-cols-3">
@@ -568,9 +570,9 @@ export default async function HomePage() {
       <Section className="bg-surface-2">
         <Container className="max-w-5xl">
           <SectionHeading
-            eyebrow="/prove"
+            eyebrow="/receipts"
             title="Every answer comes with receipts"
-            description="(so every answer can show its work) An annotated record from a real captured run. Tap through the lineage: the observation, the event, the mission it caused, the workers that ran."
+            description="A real run, recorded end to end. Follow any answer back to where it came from: what was seen, what it set in motion, and who did the work."
             align="center"
           />
           <div className="mx-auto mt-12 max-w-3xl rounded-lg border border-border-soft bg-deep p-6 sm:p-8">
@@ -648,9 +650,9 @@ export default async function HomePage() {
       <Section>
         <Container className="max-w-5xl">
           <SectionHeading
-            eyebrow="/run"
-            title="One authority, many runtimes"
-            description="(so execution can spread without truth splitting) Workers: where tasks run. The event plane: where truth lands. Authority: what decides. What PING provides: canonical events, capability grants, evidence. What that guarantees: execution can move without truth splitting."
+            eyebrow="/under the hood"
+            title="The work can happen anywhere. The record stays in one place."
+            description="Jobs run wherever there is capacity. What happened, what was decided, and the proof of it land in one record you can check, so the story never splits into competing versions."
             align="center"
           />
           <div className="mt-12">
@@ -667,7 +669,7 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow={<span className="text-honey">/applied · {tenant.operator.business}</span>}
             title={<span className="text-text-on-dark">Built on PING</span>}
-            description={<span className="text-text-on-dark/80">(so the infrastructure meets a real business) PING builds the infrastructure. PingFyd applies it. Nolan Geske works directly with home service businesses to put AI to practical use on real operational problems.</span>}
+            description={<span className="text-text-on-dark/80">The system at work in a real business. PingFyd builds it, and Nolan Geske sets it up directly with home service businesses, on real operational problems rather than demos.</span>}
             align="center"
             descriptionColor="text-text-on-dark/80"
           />
@@ -769,7 +771,7 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow="/status"
             title="What is real"
-            description="(so ambition never outruns evidence) Every capability on this page carries its maturity. Stages, not dates. Captured evidence is labeled captured; every number carries its as-of date."
+            description="Every capability on this page is labeled with how real it is today. Ambition never outruns evidence here: stages, not dates, and every number carries the date it was true."
             align="center"
           />
           <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -793,8 +795,8 @@ export default async function HomePage() {
           <Reveal>
             <SectionHeading
               eyebrow="/watch · Latest from the studio"
-              title="The Long Ping: the show that tests the thesis"
-              description="Long-form films about the systems everything else depends on: how they fail, why they fail that way, and what remembering changes. Watch the newest film, or take an episode as audio or as a written transcript series."
+              title="The Long Ping: watch the work happen"
+              description="Long-form films about the systems everything else depends on: how they fail, why they fail that way, and what remembering changes. Watch the newest film, or take an episode as audio or as a written series."
             />
           </Reveal>
           <Reveal className="mt-10">
