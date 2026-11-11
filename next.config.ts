@@ -1,6 +1,25 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Publisher loader cache policy (CEO Continuation workstream A, measured
+  // 2026-11-11): the loader is an unversioned URL embedded on publisher
+  // pages, so it must never be cached immutably; a five minute freshness
+  // window with stale-while-revalidate removes most revalidation round
+  // trips while keeping a fix minutes away from every publisher. Before:
+  // the platform default, max-age=0 with an ETag revalidation per load.
+  async headers() {
+    return [
+      {
+        source: "/fyd-circle-loader.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=300, stale-while-revalidate=3600",
+          },
+        ],
+      },
+    ];
+  },
   // nodemailer must be required at runtime in route handlers, not
   // webpack-bundled: the bundled copy cannot load its transport in
   // the serverless function (submission-mailer delivery path).
