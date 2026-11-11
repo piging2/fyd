@@ -187,11 +187,11 @@ export default async function HomePage() {
               </div>
               <p className="text-lg font-medium text-honey">{tenant.tagline}</p>
               <h1 className="mt-4 text-4xl font-bold text-text-on-dark sm:text-5xl lg:text-6xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-                A serious production studio{" "}
-                <span className="text-text-on-dark/55">with profoundly unserious ideas.</span>
+                More customers found,{" "}
+                <span className="text-text-on-dark/55">followed up with, and kept.</span>
               </h1>
               <p className="mt-6 max-w-xl text-lg text-text-on-dark/90" style={{ lineHeight: 'var(--leading-body)' }}>
-                PING builds real things with autonomous systems, films what actually happens, and publishes the evidence. Cinematic investigations into the hidden systems shaping our future, where we build, break, test, and explain the technology ourselves.
+                PingFyd is a front desk and a memory for your business. Your phones get answered, every customer gets followed up with, the busywork gets handled, and your website puts you in front of more of the right people. We film and publish the work as we go, so you can see exactly what you are getting.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <a
@@ -218,12 +218,13 @@ export default async function HomePage() {
                 </Link>
               </div>
               <p className="mt-4 max-w-xl text-base text-text-on-dark/75" style={{ lineHeight: 'var(--leading-body)' }}>
-                PING turns information into reliable understanding, understanding into useful action,
-                and action into evidence that can be trusted and replayed.
+                Underneath sits PING, the system that remembers how your business runs. What a
+                customer told you last spring is still there when you need it, instead of lost
+                in someone's inbox.
               </p>
               <p className="mt-6 text-sm text-text-on-dark/60">
-                This site is a live TenantOS tenant. The runtime behind it is under active construction.
-                Maturity labels on this page say what is real.
+                This site runs on the same system, and it is still under construction. The
+                maturity labels on this page say what is real today.
               </p>
             </div>
             <div className="entrance-rise entrance-rise-late">
@@ -234,10 +235,10 @@ export default async function HomePage() {
           </div>
           <section aria-labelledby="business-spotlight" className="mt-8 rounded-2xl border border-text-on-dark/15 bg-deep-2/60 p-6">
             <h2 id="business-spotlight" className="text-2xl font-bold text-text-on-dark sm:text-3xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-              Inspired by the best of the best.
+              Get featured, and get found by more customers.
             </h2>
             <p className="mt-3 text-text-on-dark/85" style={{ lineHeight: 'var(--leading-body)' }}>
-              PING helps exceptional people and businesses get recognized, work smarter and put technology to practical use. We start by listening, understanding how things really work and finding improvements that make a measurable difference.
+              We feature exceptional local businesses in our Top Ranked groups and on this site, free. A feature puts your name, your work, and your reviews in front of people who are ready to hire, and it costs nothing to apply.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
@@ -260,10 +261,9 @@ export default async function HomePage() {
               </Link>
             </div>
             <p className="mt-4 text-sm text-text-on-dark/70">
-              Applying covers your own business. Nominating is how you point
-              us to a business you admire: message PING on Facebook and tell
-              us its name. Featuring is free to apply for, and selection is
-              not promised.
+              Applying covers your own business. Nominating points us to a
+              business you admire: message us on Facebook with its name.
+              Featuring is free to apply for, and selection is not promised.
             </p>
           </section>
         </Container>
@@ -325,14 +325,14 @@ export default async function HomePage() {
           <Reveal>
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey-text">/make</p>
             <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-              What we make
+              The proof is published
             </h2>
           </Reveal>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             <Reveal className="h-full">
               <div className="h-full rounded-lg border border-border-soft bg-surface p-5">
                 <h3 className="font-bold text-text">Long-form films</h3>
-                <p className="mt-2 text-sm text-text-muted">Multi-hour documentaries produced by a supervised agent factory, with every finished minute verified before it counts.</p>
+                <p className="mt-2 text-sm text-text-muted">We build real systems for real businesses and film what actually happens, start to finish. Multi-hour documentaries, with every finished minute verified before it counts.</p>
               </div>
             </Reveal>
             <Reveal delay={90} className="h-full">
@@ -344,7 +344,7 @@ export default async function HomePage() {
             <Reveal delay={180} className="h-full">
               <div className="h-full rounded-lg border border-border-soft bg-surface p-5">
                 <h3 className="font-bold text-text">Investigations</h3>
-                <p className="mt-2 text-sm text-text-muted">The engineering behind the films, published as annotated breakdowns with logs, timestamps, and receipts.</p>
+                <p className="mt-2 text-sm text-text-muted">The engineering behind the films, published with logs, timestamps, and receipts, so any claim on this site can be checked.</p>
               </div>
             </Reveal>
           </div>
@@ -363,18 +363,18 @@ export default async function HomePage() {
         <Container className="max-w-5xl">
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey-text">/offers</p>
           <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-            What PING offers
+            What PingFyd can do for your business
           </h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-lg border border-border-soft bg-surface p-5">
               <h3 className="font-bold text-text">Business Spotlight</h3>
               <p className="mt-2 text-sm text-text-muted">Exceptional Western Colorado businesses, featured in the Top Ranked groups and on PING&apos;s pages. Free to apply.</p>
-              <Link href="/apply" className="mt-3 inline-block font-medium text-honey-text hover:underline">Apply to be considered for a feature.</Link>
+              <Link href="/apply" className="mt-3 inline-block font-medium text-honey-text hover:underline">Apply for a feature</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
-              <h3 className="font-bold text-text">Practical technology and operations assessment</h3>
+              <h3 className="font-bold text-text">Find what is wasting your time and money</h3>
               <p className="mt-2 text-sm text-text-muted">A scoped introductory assessment: what is wasting time or money, the root cause, and what would genuinely improve it.</p>
-              <Link href="/assessment" className="mt-3 inline-block font-medium text-honey-text hover:underline">Explore a practical technology and operations assessment.</Link>
+              <Link href="/assessment" className="mt-3 inline-block font-medium text-honey-text hover:underline">Explore the assessment</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
               <h3 className="font-bold text-text">Digital Concierge and business websites</h3>
@@ -382,8 +382,8 @@ export default async function HomePage() {
               <Link href="/products" className="mt-3 inline-block font-medium text-honey-text hover:underline">See it in Products</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
-              <h3 className="font-bold text-text">Operational Memory and Automation</h3>
-              <p className="mt-2 text-sm text-text-muted">Systems that remember how your business works and automate the repetitive parts. In development, applied incrementally through engagements.</p>
+              <h3 className="font-bold text-text">A memory for your business</h3>
+              <p className="mt-2 text-sm text-text-muted">Systems that remember how your business works and take over the repetitive parts, so the same question stops getting answered three times. In development, applied piece by piece through engagements.</p>
               <Link href="/products" className="mt-3 inline-block font-medium text-honey-text hover:underline">See it in Products</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
@@ -392,8 +392,8 @@ export default async function HomePage() {
               <Link href="/contact" className="mt-3 inline-block font-medium text-honey-text hover:underline">Start a conversation</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
-              <h3 className="font-bold text-text">The PING Platform</h3>
-              <p className="mt-2 text-sm text-text-muted">The intelligence system underneath everything. Its ambitions are labelled as ambitions: documented, in development, or direction.</p>
+              <h3 className="font-bold text-text">The system underneath</h3>
+              <p className="mt-2 text-sm text-text-muted">PING, the intelligence system behind everything above. Its ambitions are labelled as ambitions: documented, in development, or direction.</p>
               <Link href="/technology" className="mt-3 inline-block font-medium text-honey-text hover:underline">Read the technology</Link>
             </div>
           </div>
@@ -419,12 +419,13 @@ export default async function HomePage() {
         <Container className="max-w-4xl">
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey-text">/truth</p>
           <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
-            Most AI starts from zero every session. PING starts from everything that happened before.
+            The knowledge in your business should not walk out the door every night.
           </h2>
           <p className="mt-6 max-w-3xl text-lg text-text-muted" style={{ lineHeight: 'var(--leading-body)' }}>
             A technician answers the same customer question three times because nothing was written down.
-            The business knows things, but the knowledge lives in heads, inboxes, and scattered tools.
-            It does not compound. PING is infrastructure for turning activity into durable organizational intelligence.
+            Estimates, promises, and preferences live in heads, inboxes, and scattered tools, so every
+            day starts from scratch. PingFyd keeps what your business learns in one place that
+            remembers, and puts it to work.
           </p>
         </Container>
       </Section></div>
