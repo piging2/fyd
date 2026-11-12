@@ -258,7 +258,13 @@ export function ObjectCircle({ view, nodeHref, className }: ObjectCircleProps) {
             tabIndex={-1}
             className={cn(
               styles.sheetEnter,
-              "relative max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl focus:outline-none sm:max-w-md sm:rounded-2xl",
+              // Focus reveal (UI finding 1, 2026-11-12): the sticky close
+              // bar below is 60px tall and this dialog is its own scroll
+              // container, so without scroll padding a keyboard-focused
+              // element scrolls to the top edge and lands hidden under
+              // the bar, worst on short screens where 85vh is little
+              // room. scroll-pt-16 (64px) clears the bar with a gap.
+              "relative max-h-[85vh] w-full scroll-pt-16 overflow-y-auto rounded-t-2xl bg-white shadow-2xl focus:outline-none sm:max-w-md sm:rounded-2xl",
             )}
           >
             <div className="sticky top-0 flex justify-end bg-white/95 p-2">
