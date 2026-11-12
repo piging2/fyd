@@ -6,16 +6,21 @@
  * localhost/private-network host. Anything else fails closed with a typed
  * 403 demo_owner_mode_required and nothing is written.
  */
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { NextRequest } from "next/server";
 import { POST } from "../verify/route";
+import { claim, createObserved } from "@/fyd/claim/machine";
+import { readClaim, writeClaim } from "@/fyd/claim/store";
 
 const DEMO_ENV_VAR = "NEXT_PUBLIC_FYD_DEMO_OWNER_MODE";
 const OLD_DEMO_ENV = process.env[DEMO_ENV_VAR];
+const OLD_CLAIM_DIR = process.env.FYD_CLAIM_DIR;
+const OLD_DEV_HOSTS = process.env.FYD_DEV_OWNER_HOSTS;
+let claimDirectory: string;
 
-function req(body: unknown, host = "localhost:3000") {
+function req(body: unknown, host = "localhost:3000", resourceId = "happy-place") {
   return {
     req: {
       json: async () => {
@@ -26,12 +31,12 @@ function req(body: unknown, host = "localhost:3000") {
         get: (name: string) => (name.toLowerCase() === "host" ? host : null),
       },
     } as unknown as NextRequest,
-    params: Promise.resolve({ resourceId: "happy-place" }),
+    params: Promise.resolve({ resourceId }),
   };
 }
 
-async function call(body: unknown, host = "localhost:3000") {
-  const { req: r, params } = req(body, host);
+async function call(body: unknown, host = "localhost:3000", resourceId = "happy-place") {
+  const { req: r, params } = req(body, host, resourceId);
   const resp = await POST(r, { params });
   return {
     status: resp.status,
@@ -40,13 +45,20 @@ async function call(body: unknown, host = "localhost:3000") {
 }
 
 beforeEach(() => {
-  process.env.FYD_CLAIM_DIR = mkdtempSync(join(tmpdir(), "fyd-claim-test-"));
+  claimDirectory = mkdtempSync(join(tmpdir(), "fyd-claim-test-"));
+  process.env.FYD_CLAIM_DIR = claimDirectory;
   process.env[DEMO_ENV_VAR] = "1";
+  delete process.env.FYD_DEV_OWNER_HOSTS;
 });
 
 afterEach(() => {
   if (OLD_DEMO_ENV === undefined) delete process.env[DEMO_ENV_VAR];
   else process.env[DEMO_ENV_VAR] = OLD_DEMO_ENV;
+  if (OLD_CLAIM_DIR === undefined) delete process.env.FYD_CLAIM_DIR;
+  else process.env.FYD_CLAIM_DIR = OLD_CLAIM_DIR;
+  if (OLD_DEV_HOSTS === undefined) delete process.env.FYD_DEV_OWNER_HOSTS;
+  else process.env.FYD_DEV_OWNER_HOSTS = OLD_DEV_HOSTS;
+  rmSync(claimDirectory, { recursive: true, force: true });
 });
 
 describe("verify route demo-owner-mode gate", () => {
@@ -87,5 +99,37 @@ describe("verify route demo-owner-mode gate", () => {
     const { status, body } = await call(null);
     expect(status).toBe(400);
     expect(body.code).toBe("invalid-body");
+  });
+
+  test.each([
+    { enabled: false, host: "localhost:3000" },
+    { enabled: true, host: "fyd.example.com" },
+    { enabled: true, host: "" },
+  ])("denied request cannot verify an existing claim: %j", async ({ enabled, host }) => {
+    const before = claim(createObserved("url-fixture"), {
+      kind: "demo-owner", actorId: "fixture-owner", actorLabel: "Fixture owner",
+      authenticatedAt: "2026-11-12T00:00:00.000Z",
+      authNote: "DEMO OWNER MODE - not real authentication.",
+    });
+    writeClaim(before);
+    if (!enabled) delete process.env[DEMO_ENV_VAR];
+    const { status } = await call({ method: "operator-attestation", basis: "I control the fixture resource." }, host, before.resourceId);
+    expect(status).toBe(403);
+    expect(readClaim(before.resourceId)).toEqual(before);
+  });
+
+  test("explicit demo owner on localhost can verify the existing claim", async () => {
+    const before = claim(createObserved("url-fixture"), {
+      kind: "demo-owner", actorId: "fixture-owner", actorLabel: "Fixture owner",
+      authenticatedAt: "2026-11-12T00:00:00.000Z",
+      authNote: "DEMO OWNER MODE - not real authentication.",
+    });
+    writeClaim(before);
+    const { status } = await call({ method: "operator-attestation", basis: "I control the fixture resource." }, "localhost:3000", before.resourceId);
+    expect(status).toBe(200);
+    const after = readClaim(before.resourceId)!;
+    expect(after.state).toBe("verified-controlled");
+    expect(after.history.slice(0, before.history.length)).toEqual(before.history);
+    expect(after.history.at(-1)?.type).toBe("verified");
   });
 });

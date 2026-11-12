@@ -7,7 +7,7 @@
     {
       "id": "ping-social",
       "name": "PingFyd",
-      "tagline": "AI concierge and business automation consultancy for home service businesses",
+      "tagline": "AI front desk and business automation, set up for home service businesses",
       "status": "available",
       "summary": "Practical automation consulting for independent home service businesses. We study how your business actually works, then recommend and implement the automation that fits: reliable inquiry capture, fast consistent response, follow-up that actually happens, review systems, and less administrative drag. Consultative, not packaged. Measurable value or the engagement does not continue.",
       "offers": [
@@ -27,9 +27,9 @@
     {
       "id": "ping-intelligence",
       "name": "PING",
-      "tagline": "Continuity infrastructure for AI agents and the businesses they serve",
+      "tagline": "The system underneath: it remembers everything, shows its evidence, and works only within the limits it is given",
       "status": "in-development",
-      "summary": "The intelligence system underneath everything: event-sourced continuity, agent execution boundaries, evidence and provenance, deterministic replay. Real architecture, documented on this site as it is built. Not a product you can buy; the consultancy applies its principles to real businesses today.",
+      "summary": "The system underneath everything: it keeps a continuous record of what happened, works only within the authority it is given, shows the evidence behind every answer, and can replay a decision to prove how it was reached. Real architecture, documented on this site as it is built. Not a product you can buy; the consultancy applies its principles to real businesses today.",
       "documented": [
         "Continuity: events as source truth, knowledge that accumulates, evidence attached to claims",
         "Agents: capability boundaries, stdin-based machine execution, reversible by default",
@@ -43,16 +43,16 @@
       "name": "AI Concierge",
       "tagline": "An always-on front desk for your business",
       "status": "in-development",
-      "summary": "The applied form of the PING intelligence system for a single business: answers customer questions, captures job details, schedules work, and follows up, with every action recorded and attributable. Currently delivered as bespoke engagements through PingFyd rather than as a standalone product.",
+      "summary": "The PING system put to work for a single business: answers customer questions, captures job details, schedules work, and follows up, with every action recorded and attributable. Currently delivered as one-off engagements through PingFyd rather than as a standalone product.",
       "cta": { "label": "Ask about concierge work", "href": "/contact" }
     },
     {
       "id": "tenant-websites",
       "name": "Websites on TenantOS",
-      "tagline": "One codebase, many tenants, configuration over forking",
+      "tagline": "Websites for many businesses on one shared platform, each with its own content and brand",
       "status": "future",
-      "summary": "The platform direction this site proves. TenantOS is the model where each tenant is configuration plus content plus brand plus domain, never a fork. This website is tenant one. Websites for other businesses on this model are future work, not an offering today.",
-      "proof": "This site: identity, brand, navigation, and SEO resolve from a versioned tenant authority. Re-skinning is token changes, not code edits.",
+      "summary": "The platform direction this site proves: many businesses on one shared system, each defined by its own content, brand, and domain, never a separate copy of the code. This website is tenant one. Websites for other businesses on this model are future work, not an offering today.",
+      "proof": "This site: its identity, brand, navigation, and search presence all come from one versioned tenant record. Restyling it is a settings change, not a code change.",
       "cta": { "label": "See the direction", "href": "/technology/tenantos" }
     }
   ]

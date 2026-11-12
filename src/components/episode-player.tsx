@@ -27,7 +27,10 @@ export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duratio
   const [phase, setPhase] = useState<PlayerPhase>("poster");
   const [attempt, setAttempt] = useState(0);
   const [posterSource, setPosterSource] = useState(poster ?? "");
-  const showFrame = phase === "requested" || phase === "loaded";
+  // A slow or failed request remains mounted so a late load can recover and
+  // keyboard focus inside the player survives the warning. Only an explicit
+  // reload/retry replaces the frame through its attempt key.
+  const showFrame = phase !== "poster";
 
   const handlePosterFailure = useCallback(() => {
     setPosterSource((current) => {
@@ -120,7 +123,7 @@ export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duratio
       </div>
       <p role="status" className="mt-2 text-sm text-text-muted">
         {phase === "requested" && "Requesting the YouTube player…"}
-        {phase === "unavailable" && "The player is taking longer than expected. Try again, or watch on YouTube below."}
+        {phase === "unavailable" && "The player is taking longer than expected. You can keep waiting, retry, or watch on YouTube below."}
         {phase === "loaded" && "If playback is unavailable, watch on YouTube below."}
       </p>
       <noscript>

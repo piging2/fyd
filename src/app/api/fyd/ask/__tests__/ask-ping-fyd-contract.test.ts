@@ -7,11 +7,10 @@
  *
  * The four-case product contract:
  * - SUPPORTED: known PING fact -> answer -> object refs -> evidence refs.
- * - PARTIAL (retired by the item 7 obligation model): each obligation
- *   resolves on its own evidence, so a question whose obligations are
- *   all unresolvable (business hours) is UNSUPPORTED with a named
- *   unknown; partially-grounded questions answer the grounded
- *   obligations and name the rest (see ask-relevance.test.ts).
+ * - UNKNOWN HOURS + SUPPORTED CONTACT FALLBACK: the requested hours
+ *   remain an explicit unknown. The concierge may still cite a recorded
+ *   contact method to help the visitor check. The response's support
+ *   class describes those cited contact facts, never invented hours.
  * - UNSUPPORTED: absent fact -> explicit lack of evidence (refusal).
  * - CONFLICTED: no conflict data exists in the fixture (and none is
  *   fabricated); conflict behavior is proven at the deterministic layer
@@ -71,6 +70,7 @@ async function postAsk(siteId: string, question: string) {
     evidenceRefs: { id: string }[];
     sourceRefs: { source: string }[];
     unknowns: string[];
+    claims: { claim: string; evidenceRefIds: string[] }[];
   };
   return { resp, body };
 }
@@ -127,20 +127,30 @@ describe("SUPPORTED: the boring proof", () => {
   });
 });
 
-describe("OBLIGATION: an unresolvable obligation is refused with a named unknown", () => {
-  test("hours unknown: the obligation is refused honestly, never invented", async () => {
+describe("OBLIGATION: unknown requested hours with a supported contact fallback", () => {
+  test("hours stay explicitly unknown and only the recorded phone is cited", async () => {
     const { resp, body } = await postAsk("ping-fyd", "What are the business hours?");
     expect(resp.status).toBe(200);
     expect(body.ok).toBe(true);
-    // Obligation model (item 7): the business-hours obligation has no
-    // evidence anywhere, so the question resolves UNSUPPORTED with the
-    // unknown named explicitly. No hours are ever filled from a model prior.
-    expect(body.refusal).toBe(true);
-    expect(body.answerClass).toBe("UNSUPPORTED");
-    expect(body.answerState).toBe("UNKNOWN");
-    expect(body.answer).toMatch(/no hours are on record/i);
-    expect(body.unknowns).toContain("No hours are on record for PING Social.");
-    expect(body.answer).not.toMatch(/\d{1,2}:\d{2}/);
+    // Hours have no evidence. The existing concierge preserves a useful
+    // phone fallback; its citation does not establish business hours.
+    expect(body.unknowns).toEqual(["No hours are on record for PING Social."]);
+    expect(body.answer).toMatch(/^No hours are on record for PING Social\./);
+    expect(body.answer).toContain("Call (970) 589-3309 to discuss your needs.");
+    expect(body.answer).not.toMatch(/\d{1,2}:\d{2}|\b(?:a\.?m\.?|p\.?m\.?)\b/i);
+    expect(body.refusal).toBe(false);
+    expect(body.answerClass).toBe("SUPPORTED DIRECTLY");
+    expect(body.answerState).toBe("KNOWN");
+    expect(body.citations.map(c => ({ id: c.id, kind: c.kind, claimClass: c.claimClass }))).toEqual([
+      { id: "ping-fyd-business#phone", kind: "field", claimClass: "SUPPORTED DIRECTLY" },
+    ]);
+    expect(body.claims).toEqual([
+      expect.objectContaining({
+        claim: "Call (970) 589-3309 to discuss your needs.",
+        evidenceRefIds: ["ping-fyd-business#phone"],
+      }),
+    ]);
+    expect(body.evidenceRefs.map(ref => ref.id)).toEqual(["ping-fyd-business#phone"]);
   });
 });
 

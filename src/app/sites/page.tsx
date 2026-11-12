@@ -22,12 +22,16 @@ export const metadata: Metadata = {
 };
 
 /**
- * All available FYD sites, discovered dynamically from the projection
- * directory. No hardcoded site list: adding a projection JSON file
- * automatically adds the site. This is live observability of the
- * available object graphs.
+ * The refresh contract for this directory (decided on evidence,
+ * 2026-11-12, input C): the candidate set is discovered from the
+ * projection directory AT RENDER TIME, inside the page function below,
+ * never cached at module scope. Projection files arrive by deploy, so a
+ * new site appears on the first render after its deploy. Each candidate
+ * is servable-checked and its public projection is verified at render;
+ * a candidate that fails verification is omitted from the public
+ * directory (fail closed) and the omission is logged server-side, so a
+ * failure is never a silent empty result for the operator.
  */
-const DEMO_SITES: readonly string[] = listPingSiteIdsSync();
 
 function ownerName(
   graph: { objects: { schema: string; visibility: string; title: string }[] },
@@ -45,13 +49,16 @@ export default async function SitesIndexPage() {
   // Candidates are filtered through the same servable check the dynamic
   // route uses, and a candidate whose public projection cannot be read
   // creates no card at all. One bad graph still never rejects the index.
-  const candidates = DEMO_SITES.filter((siteId) => isServableSiteId(siteId));
+  const candidates = listPingSiteIdsSync().filter((siteId) => isServableSiteId(siteId));
   const reads = await Promise.all(
     candidates.map(async (siteId) => {
       try {
         const { graph } = await getVerifiedPublicProjection(siteId, "anonymous");
         return { siteId, name: ownerName(graph, siteId) };
-      } catch {
+      } catch (err) {
+        // Fail closed for the public directory, visible to the operator:
+        // the omission is logged server-side with its cause, never silent.
+        console.error(`[sites] demo site omitted from directory: ${siteId}`, err);
         return null;
       }
     }),
@@ -63,6 +70,7 @@ export default async function SitesIndexPage() {
       <Container>
         <Section size="minor">
           <SectionHeading
+            headingLevel="h1"
             eyebrow="/sites"
             title="FYD demo sites"
             description="Demo websites FYD built for real local businesses. Open any of them and look around."

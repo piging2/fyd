@@ -38,7 +38,7 @@ const FALLBACK: TenantManifest = {
     id: "ping",
     slug: "ping",
     siteName: "PING",
-    tagline: "Continuity infrastructure for AI agents and the businesses they serve.",
+    tagline: "More customers found and followed up with for businesses that cannot afford to forget.",
     description: "",
     domain: null,
     operator: { name: "Nolan Geske", business: "PingFyd", role: "Founder and operator" },

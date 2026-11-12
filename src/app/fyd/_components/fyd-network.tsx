@@ -38,8 +38,8 @@ export function FydNetwork() {
         <Container className="max-w-5xl">
           <SectionHeading
             eyebrow="/network"
-            title="Your business in a permission-aware network"
-            description="FYD is not only a tool for isolated businesses. Presences can connect: businesses, customers, creators, partners, communities. The network grows only from information that is legitimately public or owner-authorized. Never by weakening the boundary."
+            title="Your business, connected to the ones around it"
+            description="FYD is not only a tool for businesses standing alone. Your presence can connect: to customers, creators, partners, and communities. Every connection asks permission first. The network grows only from information that is legitimately public or owner-authorized. Never by weakening the boundary."
             align="center"
           />
           <div className="mt-12 space-y-6">

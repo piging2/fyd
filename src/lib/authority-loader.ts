@@ -77,7 +77,6 @@ export function loadAuthority<T>({
       "@/config/faq.v1.json": require("../config/faq.v1.json"),
       "@/config/cities.v1.json": require("../config/cities.v1.json"),
       "@/config/materials.v1.json": require("../config/materials.v1.json"),
-      "@/config/before-after.v1.json": require("../config/before-after.v1.json"),
       "@/config/gallery-presets.v1.json": require("../config/gallery-presets.v1.json"),
       "@/config/manifest.v1.json": require("../config/manifest.v1.json"),
       "@/config/tenant.ping.v1.json": require("../config/tenant.ping.v1.json"),

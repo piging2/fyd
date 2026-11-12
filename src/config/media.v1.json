@@ -848,10 +848,10 @@
       },
       "variants": {
         "original": "/images/hero-background-enhanced.jpg",
-        "web": "/images/hero-background-enhanced.jpg",
-        "webp": "/images/hero-background-enhanced.jpg",
-        "avif": "/images/hero-background-enhanced.jpg",
-        "thumbnail": "/images/hero-background-enhanced.jpg"
+        "web": "/images/hero-background-enhanced-1080.webp",
+        "webp": "/images/hero-background-enhanced-1080.webp",
+        "avif": "/images/hero-background-enhanced-1080.avif",
+        "thumbnail": "/images/hero-background-enhanced-thumb.webp"
       },
       "alt": "Photograph of a completed deck project showing quality carpentry work with warm wood tones and clean construction",
       "description": "Homepage hero - deck project",
@@ -1123,15 +1123,15 @@
       "type": "image",
       "orientation": "landscape",
       "dimensions": {
-        "width": 4367,
-        "height": 3275
+        "width": 1448,
+        "height": 1086
       },
       "variants": {
         "original": "/images/projects/pergolas/1.png",
-        "web": "/images/projects/pergolas/1.png",
-        "webp": "/images/projects/pergolas/1.png",
-        "avif": "/images/projects/pergolas/1.png",
-        "thumbnail": "/images/projects/pergolas/1.png"
+        "web": "/images/projects/pergolas/1-1080.webp",
+        "webp": "/images/projects/pergolas/1-1080.webp",
+        "avif": "/images/projects/pergolas/1-1080.avif",
+        "thumbnail": "/images/projects/pergolas/1-thumb.webp"
       },
       "alt": "Pergola before construction",
       "description": "Original pergola site before construction",

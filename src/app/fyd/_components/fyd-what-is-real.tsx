@@ -30,7 +30,7 @@ export function FydWhatIsReal() {
           <SectionHeading
             eyebrow="/status"
             title="What is real"
-            description="Every capability on this page carries its copy class. Stages, not dates. Product claim never exceeds running proof."
+            description="Every capability on this page is labeled with how real it is today. We describe stages, not dates, and no claim ever runs ahead of what is actually working."
             align="center"
           />
           <div className="mt-10 grid gap-4 md:grid-cols-2">

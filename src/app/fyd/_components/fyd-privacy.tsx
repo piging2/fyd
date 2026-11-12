@@ -38,7 +38,7 @@ export function FydPrivacy() {
           <SectionHeading
             eyebrow="/yours"
             title="Your business stays yours"
-            description="TenantOS is the part of the system that keeps every business separate. FYD runs on that ordinary tenant machinery: no special access, no bypass, no exceptions for the product itself."
+            description="The part of the system underneath FYD keeps every business separate, and FYD runs on that same ordinary machinery as everyone else: no special access, no bypass, no exceptions for the product itself."
             align="center"
           />
           <div className="mt-12 grid gap-6 md:grid-cols-3">

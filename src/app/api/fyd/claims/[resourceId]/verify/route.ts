@@ -6,6 +6,8 @@
  *
  * Only implemented verification methods are accepted; the rest return 501
  * with the full method list so the UI can say what is coming, honestly.
+ * Operator attestation is limited to explicitly enabled development owner
+ * hosts. Demo owner mode is not real authentication.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { isValidResourceId, verifyControl } from "@/fyd/claim/machine";
@@ -17,6 +19,7 @@ import {
 } from "@/fyd/claim/verification-seam";
 import { readClaim, writeClaim } from "@/fyd/claim/store";
 import { projectClaimForViewer } from "@/fyd/claim/claim-projection";
+import { isDevOwnerHost } from "@/fyd/owner-mode/gate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +37,22 @@ export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ resourceId: string }> },
 ): Promise<NextResponse> {
+  const enabled = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1";
+  const hostPrivate = isDevOwnerHost(req.headers.get("host") ?? "");
+  if (!enabled || !hostPrivate) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "demo_owner_mode_required",
+        error:
+          "Claim verification requires DEV/DEMO OWNER MODE on an explicitly permitted development host. " +
+          "DEMO OWNER MODE - not real authentication. No identity was verified.",
+        demoOwnerMode: enabled,
+        hostPrivate,
+      },
+      { status: 403 },
+    );
+  }
   const { resourceId } = await ctx.params;
   if (!isValidResourceId(resourceId)) {
     return NextResponse.json(

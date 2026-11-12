@@ -51,7 +51,7 @@ const eslintConfig = defineConfig([
   },
   {
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2022, // Existing .mjs tools use top-level await (supported by Node 24).
       sourceType: "module",
       parserOptions: {
         ecmaFeatures: {

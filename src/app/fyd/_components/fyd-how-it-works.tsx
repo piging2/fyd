@@ -26,23 +26,23 @@ const STEPS: {
   {
     n: "2",
     name: "Understand",
-    line: "Builds a model of your business as connected things.",
+    line: "Builds a picture of your business, as the real things it is made of.",
     detail:
-      "Services, locations, people, offers, projects, and how they relate. Not page text: actual things.",
+      "Your services, locations, people, offers, and projects, and how they connect. The actual business, not just the words on your pages.",
     copy: "live",
   },
   {
     n: "3",
     name: "Build",
-    line: "Generates your presence from that model.",
+    line: "Builds your website and your answers from that picture.",
     detail:
-      "Your website and customer-facing answers come from the understanding, so they stay consistent with each other.",
+      "Your website and the answers your customers get come from the same understanding, so they never contradict each other.",
     copy: "live",
   },
   {
     n: "4",
     name: "Keep current",
-    line: "Re-reads sources and folds in changes. Your corrections survive.",
+    line: "Re-reads your sources and folds in what changed. Your corrections stick.",
     detail:
       "When the business changes, the understanding updates and every place it appears follows. Owner corrections persist across rebuilds.",
     copy: "coming",
@@ -50,7 +50,7 @@ const STEPS: {
   {
     n: "5",
     name: "Help",
-    line: "Ask FYD answers customers from evidence.",
+    line: "Ask FYD answers your customers, and shows its sources.",
     detail:
       "Answers cite their sources. When the evidence is missing, FYD says it does not know instead of guessing.",
     copy: "live",
@@ -66,9 +66,9 @@ const STEPS: {
   {
     n: "7",
     name: "Learn",
-    line: "Outcomes become new evidence.",
+    line: "What happens becomes the next lesson.",
     detail:
-      "What worked and what did not feeds back into the understanding, so the system gets more useful instead of resetting.",
+      "What worked, and what did not, feeds back in, so FYD gets more useful over time instead of starting over.",
     copy: "coming",
   },
 ];
@@ -81,7 +81,7 @@ export function FydHowItWorks() {
           <SectionHeading
             eyebrow="/how"
             title="How it works: the loop"
-            description="Information enters as public observation and moves through a loop that makes it increasingly useful. Every cycle produces new evidence, which feeds the next cycle."
+            description="Your public information goes in once and keeps getting more useful: FYD reads it, builds from it, keeps it current, and learns from what happens. Each round starts smarter than the last."
             align="center"
           />
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">

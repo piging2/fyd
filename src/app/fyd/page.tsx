@@ -3,6 +3,7 @@ import { getTenant } from "@/lib/tenant-config";
 import { FydChapterIndex, FydNav } from "./_components/fyd-nav";
 import { FydHero } from "./_components/fyd-hero";
 import { FydUnderstand } from "./_components/fyd-understand";
+import { FydArtwork } from "./_components/fyd-artwork";
 import { FydObjects } from "./_components/fyd-objects";
 import { FydDemoSites } from "./_components/fyd-demo-sites";
 import { FydHowItWorks } from "./_components/fyd-how-it-works";
@@ -10,6 +11,7 @@ import { FydAskDemo } from "./_components/fyd-ask-demo";
 import { FydWhy } from "./_components/fyd-why";
 import { FydOwnerCorrection } from "./_components/fyd-owner-correction";
 import { FydNetwork } from "./_components/fyd-network";
+import { FydInstall } from "./_components/fyd-install";
 import { FydPingUnderneath } from "./_components/fyd-ping-underneath";
 import { FydPrivacy } from "./_components/fyd-privacy";
 import { FydWhatIsReal } from "./_components/fyd-what-is-real";
@@ -62,6 +64,7 @@ export default function FydProductPage() {
         <FydHero />
         <FydChapterIndex />
         <FydUnderstand />
+        <FydArtwork />
         <FydObjects />
         <FydDemoSites />
         <FydHowItWorks />
@@ -69,6 +72,7 @@ export default function FydProductPage() {
         <FydWhy />
         <FydOwnerCorrection />
         <FydNetwork />
+        <FydInstall />
         <FydPingUnderneath />
         <FydPrivacy />
         <FydWhatIsReal />

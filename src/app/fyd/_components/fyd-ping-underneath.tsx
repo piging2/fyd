@@ -73,9 +73,9 @@ export function FydPingUnderneath() {
             }
             description={
               <span className="text-text-on-dark/80">
-                FYD is the human-facing product. PING is the intelligence and
-                orchestration underneath it. You never need to understand PING
-                internals. This is the whole story in nine steps.
+                FYD is the part you see and use. PING is the thinking and
+                coordinating underneath it. You never need to understand how
+                PING works inside. This is the whole story in nine steps.
               </span>
             }
             align="center"
@@ -105,8 +105,8 @@ export function FydPingUnderneath() {
             ))}
           </div>
           <p className="mx-auto mt-4 max-w-2xl text-center text-sm text-text-on-dark/60">
-            FYD makes it human. PING makes it possible. TenantOS makes the
-            boundary safe.
+            FYD makes it human. PING makes it possible. The tenancy layer
+            keeps every business separate and safe.
           </p>
         </Container>
       </Section>

@@ -4,9 +4,13 @@ const nextConfig: NextConfig = {
   // Publisher loader cache policy (CEO Continuation workstream A, measured
   // 2026-11-11): the loader is an unversioned URL embedded on publisher
   // pages, so it must never be cached immutably; a five minute freshness
-  // window with stale-while-revalidate removes most revalidation round
-  // trips while keeping a fix minutes away from every publisher. Before:
-  // the platform default, max-age=0 with an ETag revalidation per load.
+  // window with a short stale-while-revalidate tail removes most
+  // revalidation round trips while keeping a fix minutes away from every
+  // publisher. Reconciled 2026-11-11: the tail was 3600 at first landing,
+  // which let a browser serve a stale loader for up to about 65 minutes
+  // after a fix, against the minutes standard above; at 60 the worst case
+  // is about 6 minutes. Before: the platform default, max-age=0 with an
+  // ETag revalidation per load.
   async headers() {
     return [
       {
@@ -14,7 +18,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=300, stale-while-revalidate=3600",
+            value: "public, max-age=300, stale-while-revalidate=60",
           },
         ],
       },
@@ -61,11 +65,16 @@ const nextConfig: NextConfig = {
         pathname: '/api/drive/files/**',
       },
     ],
-    // Allow Vercel Blob storage for media assets
+    // Allow Vercel Blob storage for media assets. Pinned to the one store
+    // the site actually uses (input B trust review, 2026-11-12): the
+    // wildcard trusted every public Blob store in existence, while the
+    // tree census finds exactly one store hostname in 162 references
+    // (media authority + FYD demo media). A future store rotation updates
+    // this one line; that friction is the control working.
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.public.blob.vercel-storage.com',
+        hostname: '8zci9xnviilmi6qj.public.blob.vercel-storage.com',
         port: '',
         pathname: '/**',
       },

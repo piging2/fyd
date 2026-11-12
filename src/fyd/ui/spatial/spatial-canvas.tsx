@@ -41,6 +41,7 @@ import {
 import { SpatialNodeButton } from "./spatial-node";
 import { ContactFacts, EvidenceView } from "./center-portal";
 import { SpatialAskPanel } from "./spatial-ask-panel";
+import { focusAndReveal } from "./focus-and-reveal";
 
 const HOME_ID = "happy-place";
 
@@ -107,11 +108,20 @@ export function SpatialCanvas({
   const returnNodeIdRef = React.useRef<string | null>(null);
   const focusIntentRef = React.useRef<string | null>(null);
   const retryNodeRef = React.useRef<SpatialNode | null>(null);
+  const retryButtonRef = React.useRef<HTMLButtonElement>(null);
 
   const focusedId = spec.focusedObjectId;
   const focus = projections[focusedId] ?? initialProjection;
   const home = projections[HOME_ID] ?? initialProjection;
   const isHome = focusedId === HOME_ID;
+  const order = keyboardOrder(spec);
+  const center = order.find((node) => node.role === "center");
+  const satellites = order.filter((node) => node.role !== "center");
+  // The parent already has a Back control in list view. Keyboard traversal
+  // must use exactly the nodes that have rendered satellite controls.
+  const renderedSatellites = listView
+    ? satellites.filter((node) => node.role !== "parent")
+    : satellites;
 
   // Ask FYD scoping: the business slug is not a graph object id, so the
   // home focus asks with no objectId (the pipeline defaults to the site's
@@ -176,12 +186,12 @@ export function SpatialCanvas({
         ? engagedRef.current
         : target === "center"
           ? (listView ? contextHeadingRef.current : collapsedBtnRef.current)
-          : satRefs.current.get(target);
+          : (satRefs.current.get(target) ?? contextHeadingRef.current);
     if (element) {
       focusIntentRef.current = null;
-      element.focus({ preventScroll: true });
+      focusAndReveal(element);
     }
-  }, [focusedId, listView, machine, contactOpen]);
+  }, [focusedId, listView, machine, contactOpen, pendingId]);
 
   // Mirror availability is resolved server-side from the capture manifest;
   // the client only renders what the server verified. No client probing.
@@ -234,6 +244,14 @@ export function SpatialCanvas({
 
   const activateNode = React.useCallback(
     (node: SpatialNode) => {
+      // Retry disappears while a request is pending. Return focus to the
+      // stable originating control before removing the focused button.
+      if (document.activeElement === retryButtonRef.current) {
+        const origin = satRefs.current.get(node.objectId) ?? contextHeadingRef.current;
+        if (origin) focusAndReveal(origin);
+        // Recheck after removing the error panel changes the layout.
+        focusIntentRef.current = node.objectId;
+      }
       cancelPending();
       retryNodeRef.current = null;
       setFetchError(null);
@@ -321,8 +339,7 @@ export function SpatialCanvas({
       }
       return;
     }
-    const order = keyboardOrder(spec);
-    const sats = order.filter((n) => n.role !== "center");
+    const sats = renderedSatellites;
     const active = document.activeElement;
     const idx = sats.findIndex((n) => satRefs.current.get(n.objectId) === active);
     if (idx === -1) return;
@@ -337,10 +354,6 @@ export function SpatialCanvas({
     setRoving(next);
     satRefs.current.get(node.objectId)?.focus();
   };
-
-  const order = keyboardOrder(spec);
-  const center = order.find((n) => n.role === "center");
-  const satellites = order.filter((n) => n.role !== "center");
 
   const metaFor = (node: SpatialNode): { label: string; glyph: string; aria: string } => {
     const focusName = focus.name;
@@ -431,7 +444,7 @@ export function SpatialCanvas({
         <div role="alert" className="mb-3 rounded-xl border border-red-300/50 bg-red-950/80 p-3 text-sm text-red-100">
           <p>{fetchError}</p>
           {retryNodeRef.current && (
-            <button type="button" onClick={() => activateNode(retryNodeRef.current!)} className="min-h-11 font-semibold underline underline-offset-4">
+            <button ref={retryButtonRef} type="button" onClick={() => activateNode(retryNodeRef.current!)} className="min-h-11 font-semibold underline underline-offset-4">
               Retry loading {retryNodeRef.current.label}
             </button>
           )}
@@ -446,7 +459,7 @@ export function SpatialCanvas({
         {orientation}
         <div className="mx-auto w-full max-w-xl px-4 pb-6">
           <ul className="space-y-2">
-            {satellites.filter(node => node.role !== "parent").map((node) => {
+            {renderedSatellites.map((node, i) => {
               const m = metaFor(node);
               return (
                 <li key={node.objectId}>
@@ -456,6 +469,7 @@ export function SpatialCanvas({
                       if (el) satRefs.current.set(node.objectId, el);
                       else satRefs.current.delete(node.objectId);
                     }}
+                    tabIndex={i === Math.min(roving, renderedSatellites.length - 1) ? 0 : -1}
                     onClick={() => activateNode(node)}
                     aria-label={m.aria}
                     aria-busy={pendingId === node.objectId}

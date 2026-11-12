@@ -16,12 +16,12 @@ export const dynamic = "force-static";
 
 export const metadata: Metadata = {
   title: "About PING and PingFyd",
-  description: "About PING: continuity infrastructure for AI agents, and PingFyd, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
+  description: "PingFyd helps Western Colorado businesses get found, followed up with, and remembered. PING is the system underneath it all. From Grand Junction, Colorado.",
   alternates: { canonical: "/about" },
   openGraph: {
     type: "website",
     title: "About PING and PingFyd · PING",
-    description: "About PING: continuity infrastructure for AI agents, and PingFyd, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
+    description: "PingFyd helps Western Colorado businesses get found, followed up with, and remembered. PING is the system underneath it all. From Grand Junction, Colorado.",
     url: siteUrl + "/about",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
     title: "About PING and PingFyd · PING",
-    description: "About PING: continuity infrastructure for AI agents, and PingFyd, the consultancy that puts it to work for real businesses. From Grand Junction, Colorado.",
+    description: "PingFyd helps Western Colorado businesses get found, followed up with, and remembered. PING is the system underneath it all. From Grand Junction, Colorado.",
   },
 };
 
@@ -65,12 +65,21 @@ export default function AboutPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
       />
-      <Section className="bg-deep">
-        <Container className="max-w-4xl">
+      <Section className="bg-deep relative overflow-hidden">
+        {/* CS-4 variant 1, "Logo Field": the original logo as a background
+            mark on the About hero, staged live for owner trial. Decorative:
+            aria-hidden, empty alt, pointer-events-none, below content. */}
+        <img
+          src="/brand/logo.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-24 top-1/2 hidden w-[560px] max-w-none -translate-y-1/2 opacity-[0.08] sm:block"
+        />
+        <Container className="relative max-w-4xl">
           <SectionHeading
             headingLevel="h1"
             eyebrow={<span className="text-honey">About</span>}
-            title={<span className="text-text-on-dark">PING is infrastructure for systems that remember</span>}
+            title={<span className="text-text-on-dark">A system that remembers, built for businesses that cannot afford to forget</span>}
             description={<span className="text-text-on-dark/90">{tenant.description}</span>}
           />
         </Container>
@@ -95,8 +104,19 @@ export default function AboutPage() {
         </Container>
       </Section>
 
-      <Section>
-        <Container className="max-w-4xl">
+      <Section className="relative overflow-hidden">
+        {/* CS-4 variant 2, "President": the approved PIGI president art as a
+            background figure on this light section, same decorative
+            discipline as variant 1 above: aria-hidden, empty alt,
+            pointer-events-none, below content. The character is the
+            owner's approved art, resized and encoded only, never redrawn. */}
+        <img
+          src="/brand/pigi-president.webp"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-16 top-1/2 hidden w-[520px] max-w-none -translate-y-1/2 opacity-[0.10] sm:block"
+        />
+        <Container className="relative max-w-4xl">
           <h2 className="text-2xl font-bold text-text">Two halves, one system</h2>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <article className="rounded-lg border border-border-soft bg-surface p-6">

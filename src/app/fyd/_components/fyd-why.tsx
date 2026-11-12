@@ -19,7 +19,7 @@ export function FydWhy() {
           <SectionHeading
             eyebrow="/why"
             title="Why this? Every claim shows its work."
-            description="Tap it on any claim. FYD walks you back through the record: the value, the object field, the claim, the evidence, the observation, the source."
+            description="See a claim about a business on FYD and you can ask why it says that. One tap walks you back to where it came from, step by step, down to the actual source. Nothing about your business is ever just asserted."
             align="center"
           />
           <div className="mt-6 flex justify-center">
@@ -35,7 +35,7 @@ export function FydWhy() {
                   claim="Coppersmith Plumbing offers emergency plumbing."
                   steps={[
                     { step: "What you see", detail: "Emergency plumbing, listed under services" },
-                    { step: "Object field", detail: "service.offered" },
+                    { step: "The field it came from", detail: "service.offered" },
                     { step: "Claim", detail: "read from the business's public website" },
                     { step: "Evidence", detail: "page text, fetched and recorded 2026-09-24" },
                     { step: "Source", detail: "the business's public website" },

@@ -27,12 +27,12 @@ export const dynamic = "force-static";
 export const metadata: Metadata = {
   title: "Products: What Exists, What Is Being Built",
   description:
-    "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware: every product carries its real status.",
+    "What PingFyd offers a business today, what is in development, and where it is headed. Every product carries an honest label, so you can tell at a glance what is real and what is not sold as finished.",
   alternates: { canonical: "/products" },
   openGraph: {
     type: "website",
     title: "Products: What Exists, What Is Being Built · PING",
-    description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware: every product carries its real status.",
+    description: "What PingFyd offers a business today, what is in development, and where it is headed. Every product carries an honest label, so you can tell at a glance what is real and what is not sold as finished.",
     url: siteUrl + "/products",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
     title: "Products: What Exists, What Is Being Built · PING",
-    description: "What PING offers today, what is in development, and where the platform is headed. Honest labels, no vaporware: every product carries its real status.",
+    description: "What PingFyd offers a business today, what is in development, and where it is headed. Every product carries an honest label, so you can tell at a glance what is real and what is not sold as finished.",
   },
 };
 
@@ -184,14 +184,14 @@ export default function ProductsPage() {
         <Container className="max-w-4xl">
           <h2 className="text-2xl font-bold text-text">How to read this page</h2>
           <p className="mt-3 text-text-muted" style={{ lineHeight: "var(--leading-body)" }}>
-            PingFyd is the consultancy: that is the business, and it is
-            available now. The PING intelligence system is the infrastructure
-            underneath, in active development and documented publicly as it is
-            built. The AI concierge is that infrastructure applied to a single
-            business, currently delivered through bespoke engagements. Websites
-            on TenantOS, including this site as tenant one, are the platform
-            direction. If you are a home service business, what matters today
-            is the first item.
+            PingFyd is the working business, and it is available now: a
+            consultancy that sets this up with you. Underneath it, the PING
+            system is in active development, documented publicly as it is
+            built. The AI front desk is that system applied to one business,
+            delivered today as one-off engagements. Websites running on the
+            same platform, this site included, are the direction. If you run
+            a home service business, the first item is the one that matters
+            today.
           </p>
         </Container>
       </Section>
