@@ -70,6 +70,7 @@ export default async function SitesIndexPage() {
       <Container>
         <Section size="minor">
           <SectionHeading
+            headingLevel="h1"
             eyebrow="/sites"
             title="FYD demo sites"
             description="Demo websites FYD built for real local businesses. Open any of them and look around."
