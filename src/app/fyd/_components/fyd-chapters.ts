@@ -5,6 +5,7 @@ export const FYD_CHAPTERS = [
   { href: "#how", label: "How FYD works", mobile: true },
   { href: "#fyd-ask", label: "Ask about Coppersmith", mobile: true },
   { href: "#network", label: "Network" },
+  { href: "#install", label: "Install" },
   { href: "#inside", label: "PING inside" },
   { href: "#privacy", label: "Your data" },
   { href: "#try", label: "Try your website", mobile: true },

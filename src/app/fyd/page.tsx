@@ -10,6 +10,7 @@ import { FydAskDemo } from "./_components/fyd-ask-demo";
 import { FydWhy } from "./_components/fyd-why";
 import { FydOwnerCorrection } from "./_components/fyd-owner-correction";
 import { FydNetwork } from "./_components/fyd-network";
+import { FydInstall } from "./_components/fyd-install";
 import { FydPingUnderneath } from "./_components/fyd-ping-underneath";
 import { FydPrivacy } from "./_components/fyd-privacy";
 import { FydWhatIsReal } from "./_components/fyd-what-is-real";
@@ -69,6 +70,7 @@ export default function FydProductPage() {
         <FydWhy />
         <FydOwnerCorrection />
         <FydNetwork />
+        <FydInstall />
         <FydPingUnderneath />
         <FydPrivacy />
         <FydWhatIsReal />
