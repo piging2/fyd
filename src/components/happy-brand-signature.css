@@ -38,3 +38,11 @@
     animation: none;
   }
 }
+
+/* Visual effects preference, user override (effects-provider.tsx):
+   the class half of the same layer globals.css carries for the shared
+   utilities, kept with this consumer per T6. */
+.effects-reduced .animate-happy-gold-idle,
+.effects-off .animate-happy-gold-idle {
+  animation: none;
+}

@@ -573,6 +573,34 @@ a {
   }
 }
 
+/* ------------------------------------------------------------------
+ * Visual effects preference — user override (effects-provider.tsx).
+ * Layers on top of the prefers-reduced-motion block above.
+ *
+ * .effects-reduced: no continuous/ambient animation; one-shot
+ *   transitions (reveals, hovers) remain.
+ * .effects-off: no animation or transition at all.
+ * The Happy gold idle rule of this layer lives in
+ * happy-brand-signature.css with its only consumer (audit T6).
+ * ------------------------------------------------------------------ */
+.effects-reduced .animate-shimmer-slow,
+.effects-reduced .animate-shimmer-fast,
+.effects-reduced .animate-ping,
+.effects-off .animate-shimmer-slow,
+.effects-off .animate-shimmer-fast,
+.effects-off .animate-ping {
+  animation: none;
+}
+
+.effects-off *,
+.effects-off *::before,
+.effects-off *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
 /* Wave 08 proof rail: the pinned claim swaps with an opacity-only fade
    when the active rule changes. The enhancement only mounts when motion
    is allowed; the keyframes live under no-preference as a backstop. */

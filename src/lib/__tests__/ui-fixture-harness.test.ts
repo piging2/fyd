@@ -276,6 +276,16 @@ describe("spatial fixtures (finding 6)", () => {
 /* ------------------------------------------------------------------ */
 /* Findings 1 and 2: code-property guards (browser proof is separate). */
 /* ------------------------------------------------------------------ */
+describe("effects preference CSS layer (Item 60 follow-through)", () => {
+  test("globals.css carries the user-override layer exactly once", () => {
+    const css = read("src/app/globals.css");
+    expect(css.match(/\.effects-reduced \.animate-ping/g) ?? []).toHaveLength(1);
+    expect(css.match(/\.effects-off \*,/g) ?? []).toHaveLength(1);
+    const signature = read("src/components/happy-brand-signature.css");
+    expect(signature.match(/\.effects-off \.animate-happy-gold-idle/g) ?? []).toHaveLength(1);
+  });
+});
+
 describe("focus code-property guards (findings 1 and 2)", () => {
   test("object circle dialog carries scroll padding for its sticky bar", () => {
     const src = read("src/fyd/ui/object-circle.tsx");
