@@ -2,8 +2,9 @@
  * <div id="c"></div>
  * <script src="https://site.example/fyd-circle-loader.js"></script>
  * <script>FydCircle.mount(document.getElementById("c"),{objectId:"happy-place-carpentry",apiBase:"https://site.example"});</script>
- * Renders a collapsed 48px circle; hover/focus shows the name; click opens the
- * object's website in a new tab. Fails closed: fetch error renders a neutral
+ * Renders a collapsed 48px circle; hover/focus shows the name; when the object
+ * carries a website capability, click opens its website in a new tab; without
+ * one the circle is presentational, never a dead button. Fails closed: fetch error renders a neutral
  * circle with a dot, never fake data. Full interactive Circle is the React
  * component. */
 (function () {
@@ -30,12 +31,14 @@
       if (c[i] && c[i].kind === "website" && c[i].href) { href = c[i].href; break; }
     }
     el.innerHTML = "";
-    var b = document.createElement("button");
-    b.type = "button";
-    b.style.cssText = S + "cursor:pointer;" +
+    var linked = !!href;
+    var b = document.createElement(linked ? "button" : "span");
+    if (linked) b.type = "button";
+    b.style.cssText = S + (linked ? "cursor:pointer;" : "") +
       (bg.kind === "image" && bg.src ? "background:url(" + encodeURI(bg.src) + ") center/cover" :
        bg.kind === "css" && bg.css ? "background:" + bg.css :
        "background:linear-gradient(135deg,#7c6f5a,#4a4438)");
+    if (!linked) b.setAttribute("role", "img");
     b.setAttribute("aria-label", p.name || "Business circle");
     var t = document.createElement("span");
     t.textContent = p.name || "";
@@ -44,20 +47,26 @@
     b.appendChild(t);
     function show(v) { return function () { t.style.opacity = v; }; }
     b.onmouseenter = show("1"); b.onmouseleave = show("0");
-    b.onfocus = show("1"); b.onblur = show("0");
-    b.onclick = function () { if (href) window.open(href, "_blank", "noopener"); };
+    if (linked) {
+      b.onfocus = show("1"); b.onblur = show("0");
+      b.onclick = function () { window.open(href, "_blank", "noopener"); };
+    }
     el.appendChild(b);
   }
   function mount(el, o) {
     o = o || {};
-    if (!el || !o.objectId || !o.apiBase) { if (el) closed(el); return; }
+    if (!el) return;
+    var gen = (el._fydGen || 0) + 1;
+    el._fydGen = gen;
+    if (!o.objectId || !o.apiBase) { closed(el); return; }
     fetch(String(o.apiBase).replace(/\/+$/, "") + "/api/fyd/circle?id=" + encodeURIComponent(o.objectId))
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
       .then(function (x) {
+        if (el._fydGen !== gen) return;
         if (!x || x.ok !== true || !x.projection) throw 0;
         render(el, x.projection);
       })
-      .catch(function () { closed(el); });
+      .catch(function () { if (el._fydGen === gen) closed(el); });
   }
   window.FydCircle = { mount: mount };
 })();
