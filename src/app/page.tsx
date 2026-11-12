@@ -35,12 +35,12 @@ const siteUrl =
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "PingFyd: Continuity infrastructure for AI agents",
+  title: "PingFyd: More customers found, followed up with, and kept",
   description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve. With receipts.",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    title: "PingFyd: Continuity infrastructure for AI agents",
+    title: "PingFyd: More customers found, followed up with, and kept",
     description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve. With receipts.",
     url: siteUrl + "/",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
-    title: "PingFyd: Continuity infrastructure for AI agents",
+    title: "PingFyd: More customers found, followed up with, and kept",
     description: "PING is an evolving intelligence system: continuity, agent infrastructure, evidence and provenance, for AI agents and the businesses they serve. With receipts.",
   },
 };
