@@ -11,13 +11,22 @@ export function FollowButton({ objectId, className }: { objectId: string; classN
   const pending = relationship.status === "pending" || relationship.status === "loading";
   const retryable = relationship.status === "retryable-error";
   const terminal = relationship.status === "terminal-error";
+  // Focus lifecycle (UI finding 2, 2026-11-12): this control is never
+  // natively disabled. A focused button that becomes disabled drops its
+  // focus to the document in Chrome-class browsers, so a keyboard user
+  // who saved, failed, and landed on the retry state would lose their
+  // place entirely. Inert states are expressed with aria-disabled and a
+  // withheld handler instead: the element stays focusable through the
+  // whole pending, error, retry, success lifecycle, and the status line
+  // below announces every transition.
+  const inert = pending || terminal || (relationship.state === null && !retryable);
   return (
     <span className="inline-flex flex-col items-start gap-1">
       <button
         type="button"
-        className={cn("focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-60", className)}
-        onClick={retryable ? relationship.retry : relationship.toggle}
-        disabled={pending || terminal || (relationship.state === null && !retryable)}
+        className={cn("focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4", inert && "opacity-60", className)}
+        onClick={inert ? undefined : retryable ? relationship.retry : relationship.toggle}
+        aria-disabled={inert || undefined}
         aria-pressed={relationship.state === true}
         aria-busy={pending}
         aria-describedby={messageId}
