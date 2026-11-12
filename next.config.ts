@@ -65,11 +65,16 @@ const nextConfig: NextConfig = {
         pathname: '/api/drive/files/**',
       },
     ],
-    // Allow Vercel Blob storage for media assets
+    // Allow Vercel Blob storage for media assets. Pinned to the one store
+    // the site actually uses (input B trust review, 2026-11-12): the
+    // wildcard trusted every public Blob store in existence, while the
+    // tree census finds exactly one store hostname in 162 references
+    // (media authority + FYD demo media). A future store rotation updates
+    // this one line; that friction is the control working.
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.public.blob.vercel-storage.com',
+        hostname: '8zci9xnviilmi6qj.public.blob.vercel-storage.com',
         port: '',
         pathname: '/**',
       },
