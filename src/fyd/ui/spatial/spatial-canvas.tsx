@@ -324,9 +324,18 @@ export function SpatialCanvas({
   };
 
   // Reduced motion: plain vertical list, same semantics, no animation.
+  // Keyboard state coverage (UI finding 6, 2026-11-12): this branch used
+  // to render without the stage key handler, without roving tabindex,
+  // and with the center as an activatable button, so the documented
+  // identical semantics did not hold: the keyboard contract (arrows,
+  // Escape) covered only the animated grid state, and every list button
+  // sat in the tab order. The list now wires the same handler, the same
+  // satRefs registry, and the same roving index as the grid; the center
+  // is a presentational row, exactly as it is not a satellite stop in
+  // the grid.
   if (reducedMotion) {
     return (
-      <div className="mx-auto w-full max-w-xl px-4 py-6">
+      <div className="mx-auto w-full max-w-xl px-4 py-6" onKeyDown={onStageKeyDown}>
         {!isHome && (
           <button
             type="button"
@@ -339,26 +348,56 @@ export function SpatialCanvas({
         <ul className="space-y-2">
           {order.map((node) => {
             const m = metaFor(node);
+            const rowBody = (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-900 text-sm font-bold text-amber-100"
+                >
+                  {m.glyph}
+                </span>
+                <span className="text-sm font-medium text-stone-900">
+                  {node.role === "center" ? focus.name : m.label}
+                </span>
+                <span className="ml-auto text-xs text-stone-500">
+                  {node.role}
+                </span>
+              </>
+            );
+            if (node.role === "center") {
+              return (
+                <li
+                  key={node.objectId}
+                  aria-label={focus.name}
+                  className="flex min-h-[44px] w-full items-center gap-3 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2 text-left"
+                >
+                  {rowBody}
+                </li>
+              );
+            }
+            const i = satellites.indexOf(node);
+            const pending = pendingId === node.objectId;
             return (
               <li key={node.objectId}>
                 <button
                   type="button"
+                  ref={(el) => {
+                    if (el) satRefs.current.set(node.objectId, el);
+                    else satRefs.current.delete(node.objectId);
+                  }}
+                  tabIndex={i === roving ? 0 : -1}
                   onClick={() => activateNode(node)}
-                  aria-label={m.aria}
+                  aria-label={pending ? `Loading ${m.label}` : m.aria}
                   className="flex min-h-[44px] w-full items-center gap-3 rounded-xl border border-purple-200 bg-white px-4 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-900 text-sm font-bold text-amber-100"
-                  >
-                    {m.glyph}
-                  </span>
-                  <span className="text-sm font-medium text-stone-900">
-                    {node.role === "center" ? focus.name : m.label}
-                  </span>
-                  <span className="ml-auto text-xs text-stone-500">
-                    {node.role}
-                  </span>
+                  {pending ? (
+                    <>
+                      <span aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-900 text-sm font-bold text-amber-100">...</span>
+                      <span className="text-sm font-medium text-stone-900">...</span>
+                    </>
+                  ) : (
+                    rowBody
+                  )}
                 </button>
               </li>
             );
