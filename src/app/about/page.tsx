@@ -65,8 +65,17 @@ export default function AboutPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
       />
-      <Section className="bg-deep">
-        <Container className="max-w-4xl">
+      <Section className="bg-deep relative overflow-hidden">
+        {/* CS-4 variant 1, "Logo Field": the original logo as a background
+            mark on the About hero, staged live for owner trial. Decorative:
+            aria-hidden, empty alt, pointer-events-none, below content. */}
+        <img
+          src="/brand/logo.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-24 top-1/2 hidden w-[560px] max-w-none -translate-y-1/2 opacity-[0.08] sm:block"
+        />
+        <Container className="relative max-w-4xl">
           <SectionHeading
             headingLevel="h1"
             eyebrow={<span className="text-honey">About</span>}
