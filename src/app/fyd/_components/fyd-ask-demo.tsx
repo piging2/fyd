@@ -63,6 +63,7 @@ export function FydAskDemo() {
           <ScrollReveal>
             <div className="mt-10 rounded-2xl border border-text-on-dark/10 bg-deep-2/60 p-6 sm:p-8">
               <AskObjectPanel
+                dark
                 key={askKey}
                 siteId="coppersmith-plumbing"
                 objectName="Coppersmith Plumbing"
