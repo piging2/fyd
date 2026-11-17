@@ -54,7 +54,7 @@ const STATUS_DESCRIPTIONS: Record<ProductStatus, string> = {
 
 function StatusBadge({ status }: { status: ProductStatus }) {
   const styles: Record<ProductStatus, string> = {
-    available: "bg-green-500/10 text-green-600",
+    available: "bg-green-500/10 text-green-800",
     "in-development": "bg-honey/10 text-honey-text",
     future: "bg-surface-muted text-text-muted",
   };
