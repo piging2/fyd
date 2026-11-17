@@ -20,7 +20,7 @@ export interface FeaturedVideo {
   blurb: string;
 }
 
-function ytThumb(id: string, variant: "maxresdefault" | "hqdefault") {
+function ytThumb(id: string, variant: "maxresdefault" | "sddefault" | "hqdefault") {
   return `https://i.ytimg.com/vi/${id}/${variant}.jpg`;
 }
 
@@ -30,7 +30,7 @@ export const featuredFilm: FeaturedVideo = {
   kind: "Film",
   watchUrl: "https://www.youtube.com/watch?v=s3Os1RNAmeo",
   duration: "3h 43m",
-  thumbnail: ytThumb("s3Os1RNAmeo", "maxresdefault"),
+  thumbnail: ytThumb("s3Os1RNAmeo", "sddefault"),
   thumbnailFallback: ytThumb("s3Os1RNAmeo", "hqdefault"),
   blurb:
     "Episode 3 of The Long Ping, in full: three hours and forty-three minutes on how power grids fail, why they fail the way they do, and what the failures teach about every other system we depend on.",
@@ -43,7 +43,7 @@ export const episodeVideos: FeaturedVideo[] = [
     kind: "Episode",
     watchUrl: "https://www.youtube.com/watch?v=7ljMOGuKKv8",
     duration: "3h 27m",
-    thumbnail: ytThumb("7ljMOGuKKv8", "maxresdefault"),
+    thumbnail: ytThumb("7ljMOGuKKv8", "sddefault"),
     thumbnailCard: ytThumb("7ljMOGuKKv8", "hqdefault"),
     thumbnailFallback: ytThumb("7ljMOGuKKv8", "hqdefault"),
     blurb:
@@ -54,7 +54,7 @@ export const episodeVideos: FeaturedVideo[] = [
     title: "The Long Ping, Episode 1: What Survives 10,000 Years",
     kind: "Episode",
     watchUrl: "https://www.youtube.com/watch?v=ekJnwDb7ssw",
-    thumbnail: ytThumb("ekJnwDb7ssw", "maxresdefault"),
+    thumbnail: ytThumb("ekJnwDb7ssw", "sddefault"),
     thumbnailCard: ytThumb("ekJnwDb7ssw", "hqdefault"),
     thumbnailFallback: ytThumb("ekJnwDb7ssw", "hqdefault"),
     blurb:

@@ -20,7 +20,7 @@ const LAST_VERIFIED_VIDEO: FeaturedVideo = {
   title: "AI Got Possessed by Good Architecture | The Long Ping EP4: Halloween Preview",
   kind: "Film",
   watchUrl: "https://www.youtube.com/watch?v=ilkHr7tO4mU",
-  thumbnail: "https://i.ytimg.com/vi/ilkHr7tO4mU/maxresdefault.jpg",
+  thumbnail: "https://i.ytimg.com/vi/ilkHr7tO4mU/hqdefault.jpg",
   thumbnailCard: "https://i.ytimg.com/vi/ilkHr7tO4mU/hqdefault.jpg",
   thumbnailFallback: "https://i.ytimg.com/vi/ilkHr7tO4mU/hqdefault.jpg",
   blurb: "The latest film from The Long Ping, straight from the PingFyd channel on YouTube.",
@@ -55,7 +55,7 @@ export async function getFeaturedVideo(): Promise<FeaturedVideo> {
       title,
       kind: isShort ? "Short" : "Film",
       watchUrl: link,
-      thumbnail: "https://i.ytimg.com/vi/" + id + "/maxresdefault.jpg",
+      thumbnail: "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg",
       thumbnailCard: "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg",
       thumbnailFallback: "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg",
       blurb: isShort
