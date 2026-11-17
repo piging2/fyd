@@ -26,7 +26,7 @@ export function FydTryIt() {
             descriptionColor="text-text-on-dark/80"
           />
           <div className="mt-6 flex justify-center">
-            <FydCopyClassLabel kind="live" />
+            <FydCopyClassLabel kind="live" onDark />
           </div>
           <ScrollReveal>
             <div className="mx-auto mt-10 max-w-3xl rounded-2xl bg-background p-6 shadow-2xl sm:p-8">

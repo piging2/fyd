@@ -58,7 +58,7 @@ export function FydAskDemo() {
             descriptionColor="text-text-on-dark/80"
           />
           <div className="mt-6 flex justify-center">
-            <FydCopyClassLabel kind="live" />
+            <FydCopyClassLabel kind="live" onDark />
           </div>
           <ScrollReveal>
             <div className="mt-10 rounded-2xl border border-text-on-dark/10 bg-deep-2/60 p-6 sm:p-8">

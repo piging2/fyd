@@ -96,7 +96,7 @@ export function FydPingUnderneath() {
                   <div className="pb-8">
                     <div className="flex flex-wrap items-center gap-3">
                       <h3 className="text-base font-bold text-text-on-dark">{c.name}</h3>
-                      <FydCopyClassLabel kind={c.copy} />
+                      <FydCopyClassLabel kind={c.copy} onDark />
                     </div>
                     <p className="mt-1 text-sm text-text-on-dark/70">{c.line}</p>
                   </div>

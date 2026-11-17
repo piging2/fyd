@@ -52,7 +52,7 @@ export function FydHero() {
             </a>
           </div>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <FydCopyClassLabel kind="live" />
+            <FydCopyClassLabel kind="live" onDark />
             <p className="text-sm text-text-on-dark/60">
               Live proof, below: two real demo businesses, built from what
               FYD learned about them.
