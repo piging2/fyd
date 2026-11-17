@@ -18,7 +18,7 @@ export function VideoCard({ video, large = false }: { video: FeaturedVideo; larg
       href={video.watchUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block overflow-hidden rounded-lg border border-border-soft bg-surface transition-shadow hover:shadow-md"
+      className="group block scroll-mt-24 overflow-hidden rounded-lg border border-border-soft bg-surface transition-shadow hover:shadow-md"
     >
       <div className="relative aspect-video w-full overflow-hidden bg-deep">
         {/* eslint-disable-next-line @next/next/no-img-element */}
