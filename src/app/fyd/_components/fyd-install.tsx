@@ -1,6 +1,7 @@
 import { Container, Section, SectionHeading } from "@/components/section";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { FydCopyClassLabel } from "./fyd-copy-class";
+import { SnippetCopyButton } from "./snippet-copy-button";
 
 /**
  * /install: the canonical loader snippet for a business that already has
@@ -54,9 +55,16 @@ export function FydInstall() {
           </div>
           <ScrollReveal>
             <pre className="mx-auto mt-10 max-w-2xl overflow-x-auto rounded-2xl border border-border-soft bg-surface p-6 text-left text-sm leading-relaxed text-text">
-              <code>{SNIPPET}</code>
+              <code id="fyd-install-snippet">{SNIPPET}</code>
             </pre>
           </ScrollReveal>
+          <div className="mx-auto max-w-2xl">
+            <SnippetCopyButton snippet={SNIPPET} targetId="fyd-install-snippet" />
+            <p className="mt-3 text-right text-sm text-text-subtle">
+              Replace your-object-id with the id from your FYD setup before
+              you publish.
+            </p>
+          </div>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {FACTS.map((f) => (
               <div
