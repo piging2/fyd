@@ -16,6 +16,8 @@ Here is the comedy, and it is structural, not decorative. The burglars broke int
 
 But the tools were not the real story. The real story was the question underneath them: how did the burglars get in? FireEye's investigators [chased the intrusion backward](/technology/replay), and the trail did not end at a phishing email or a careless password. It ended at a piece of software FireEye, like roughly everyone, had installed on purpose, from its vendor, through the normal update channel, with a valid signature on it. On December 12, FireEye informed SolarWinds that its Orion platform had been compromised. On December 13, FireEye published the name the backdoor would carry: SUNBURST.
 
+## The crime scene was the build room
+
 To understand SUNBURST you have to go to the build room, because that is where the crime actually happened, months earlier, in the spring of 2020.
 
 SolarWinds makes Orion, a network monitoring platform. Monitoring software is, by design, the trusted observer: it sits in the middle of an organization's infrastructure with broad visibility and broad permissions, because you cannot watch systems you cannot reach. Its customers numbered in the hundreds of thousands overall, and its Orion customer list included most of the Fortune 500 and a long roll of United States government agencies. If you wanted one doorway into a great many well-defended buildings, you could hardly design a better one than the software those buildings use to watch themselves.
@@ -28,6 +30,8 @@ Then came the part that should be printed on a poster in every engineering offic
 
 SolarWinds told the SEC it believed fewer than 18,000 customers may have installed an Orion product containing the vulnerability. Eighteen thousand organizations did the thing every security awareness poster tells them to do. They kept their software updated. They installed the patch from the vendor, through the vendor's channel, with the vendor's signature verified. The most obedient networks in the world were the exposed ones, and they were exposed precisely because of their obedience.
 
+## The malware took a nap
+
 And then the malware took a nap.
 
 FireEye's analysis found that SUNBURST, once installed, remained dormant for up to two weeks before it began reaching out to its operators. This is the detail that separates a smash-and-grab from an intelligence operation. A dormant period breaks the most natural investigative instinct there is: we installed something Tuesday and something broke Wednesday, so Tuesday's install is suspect. Two weeks of silence scrambles cause and effect. By the time the backdoor woke up and started its quiet conversations, disguised inside the Orion Improvement Program traffic the software normally sends, the update that carried it was old news, one patch among dozens, beneath layers of newer changes. The attackers were not hiding from the alarm system. They were hiding from the calendar.
@@ -36,9 +40,13 @@ When SUNBURST did phone home, it did not run wild. The operators checked who had
 
 Microsoft's experience shows what the spear stage looked like from inside a target. Microsoft found the malicious SolarWinds code in its own environment, isolated it, and kept digging, and on December 31 it published an update written in the careful dialect of a company saying something alarming in the flattest possible voice: "We detected unusual activity with a small number of internal accounts and upon review, we discovered one account had been used to view source code in a number of source code repositories." View, not modify: Microsoft stressed that the account had no permission to change code or engineering systems, that no changes were made, and that the investigation found "no evidence of access to production services or customer data." Even so. An intelligence service had stood, briefly, inside the reading room of the world's most consequential codebase, using a network monitoring update as its library card.
 
+## The disclosure weekend
+
 Now return to the disclosure weekend, because December 12 and 13, 2020 deserve their reputation. On Saturday the 12th, FireEye told SolarWinds what it had found. On Sunday the 13th, everything happened at once. FireEye published its SUNBURST analysis and detection guidance for the whole industry, free, immediately, because the same door stood open in thousands of networks. CISA issued Emergency Directive 21-01, only the fifth emergency directive in its history, ordering federal civilian agencies to disconnect or power down affected Orion products. Not patch them. Not monitor them closely. Pull them off the network, because the monitoring tool itself was now the suspect. On Monday the 14th, SolarWinds filed its 8-K with the SEC and the stock market learned what the security world had learned over the weekend.
 
 And on January 5, 2021, the United States government said the quiet part in its official voice: "an Advanced Persistent Threat (APT) actor, likely Russian in origin, is responsible for most or all of the recently discovered, ongoing cyber compromises of both government and non-governmental networks," and "we believe this was, and continues to be, an intelligence gathering effort." In April 2021, the formal attribution named Russia's Foreign Intelligence Service, the SVR. Notice what the operation was not. Nothing was ransomed. Nothing was wiped. The attackers read, copied, and listened. This was not vandalism or theft in the ordinary sense. It was a listening post installed, at industrial scale, through the front door of the software supply chain.
+
+## Verify the artifact, not the signature
 
 So what is the lesson, for those of us who build and ship software and will never be briefed by the NSA about it?
 
