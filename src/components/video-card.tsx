@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import type { FeaturedVideo } from "@/lib/longping-media";
+import { ThumbnailImage } from "./thumbnail-image";
 
 /**
  * A thumbnail card that links out to the video on YouTube.
@@ -11,7 +11,6 @@ import type { FeaturedVideo } from "@/lib/longping-media";
  * the large render keeps the maxres still.
  */
 export function VideoCard({ video, large = false }: { video: FeaturedVideo; large?: boolean }) {
-  const [src, setSrc] = useState(!large && video.thumbnailCard ? video.thumbnailCard : video.thumbnail);
 
   return (
     <a
@@ -21,19 +20,11 @@ export function VideoCard({ video, large = false }: { video: FeaturedVideo; larg
       className="group block scroll-mt-24 overflow-hidden rounded-lg border border-border-soft bg-surface transition-shadow hover:shadow-md"
     >
       <div className="relative aspect-video w-full overflow-hidden bg-deep">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={`${video.title} video thumbnail`}
-          loading="lazy"
-          width={1280}
-          height={720}
+        <ThumbnailImage
+          preferred={!large && video.thumbnailCard ? video.thumbnailCard : video.thumbnail}
+          fallback={video.thumbnailFallback}
+          title={video.title}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-          onError={() => {
-            if (video.thumbnailFallback && src !== video.thumbnailFallback) {
-              setSrc(video.thumbnailFallback);
-            }
-          }}
         />
         <span className="absolute left-3 top-3 inline-block rounded bg-deep/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-honey">
           {video.kind}
