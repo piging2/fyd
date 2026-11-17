@@ -42,7 +42,7 @@ const inputClass =
   "w-full rounded-lg border border-border bg-background px-4 py-3 text-text focus:border-honey focus:outline-none focus:ring-2 focus:ring-honey/40";
 const labelClass = "block text-sm font-semibold text-text";
 const hintClass = "mt-1 text-sm text-text-muted";
-const errorClass = "mt-1 text-sm font-medium text-red-600";
+const errorClass = "mt-1 text-sm font-medium text-red-700";
 
 export function ApplyForm() {
   const [businessName, setBusinessName] = useState("");

@@ -24,7 +24,7 @@ type Errors = Partial<Record<string, string>>;
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-4 py-3 text-text focus:border-honey focus:outline-none focus:ring-2 focus:ring-honey/40";
 const labelClass = "block text-sm font-semibold text-text";
-const errorClass = "mt-1 text-sm font-medium text-red-600";
+const errorClass = "mt-1 text-sm font-medium text-red-700";
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,}$/;
 
