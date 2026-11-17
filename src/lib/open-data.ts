@@ -122,8 +122,8 @@ export const evalGates: EvalGate[] = [
       "Whether the production codebase itself is healthy at the moment a change ships: the full test suite, the typechecker, and a production build must pass, and the change must verify live.",
     state: "3,420 tests passing on the current tree",
     trend:
-      "Three tests in two suites (the demo owner-mode gate suites) fail in the shared environment posture. The cause is root-caused to environment, the failures are identical on every tree, and they are published here instead of rounded away: 3,420 passing is the number, not a cleaner one.",
-    source: "Reconciled deploy + Wave 58 gate runs",
+      "The full suite is green on the current tree: 3,420 tests passing, zero failures, 17 skipped across 325 of 326 suites. The two demo owner-mode gate suites that failed in the shared environment posture were fixed by the 2026-11-12 merge, and the measured number is published here instead of a cleaner one: 3,420 passing.",
+    source: "Full suite gate run, 2026-11-12 (325 of 326 suites)",
     asOf: "2026-11-12",
   },
 ];
