@@ -13,6 +13,8 @@
  * inventory id next to its slug so the mapping is auditable.
  */
 
+import fs from "fs";
+import path from "path";
 import { renderMarkdown, toPlainText, type BlogHeading } from "@/lib/blog";
 import { episodeVideos, featuredFilm, type FeaturedVideo } from "@/lib/longping-media";
 
@@ -158,4 +160,21 @@ export function buildEpisodeDepth(body: string): EpisodeBreakdownDepth | null {
     topics,
     excerpt: paragraphs[paragraphs.length - 1],
   };
+}
+
+const TRANSCRIPT_DIR = path.join(process.cwd(), "src/content/transcripts");
+
+/**
+ * The episode's full transcript, when one has been published into
+ * src/content/transcripts/<slug>.md (the Content Engine's artifact).
+ * An absent file means an absent section: the episode page renders
+ * exactly as it does today, and the VideoObject carries no transcript
+ * property. Nothing is fetched or generated at request time.
+ */
+export function getEpisodeTranscript(slug: string): string | null {
+  const file = path.join(TRANSCRIPT_DIR, slug + ".md");
+  if (!fs.existsSync(file)) {
+    return null;
+  }
+  return fs.readFileSync(file, "utf-8");
 }

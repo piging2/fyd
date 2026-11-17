@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Container, Section } from "@/components/section";
-import { getPost } from "@/lib/blog";
-import { buildEpisodeDepth, buildEpisodePageTitle, durationToIso8601, embedUrlFor, episodePages, getEpisodePage } from "@/lib/episodes";
+import { getPost, renderMarkdown } from "@/lib/blog";
+import { buildEpisodeDepth, buildEpisodePageTitle, durationToIso8601, embedUrlFor, episodePages, getEpisodePage, getEpisodeTranscript } from "@/lib/episodes";
 import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
 import { getTenant } from "@/lib/tenant-config";
 import { EpisodePlayer } from "@/components/episode-player";
@@ -63,6 +63,8 @@ export default async function EpisodeLandingPage({
   // post body by the episodes data module. A post that stops resolving,
   // or yields no depth, renders no depth sections (dangling data guard).
   const depth = breakdown ? buildEpisodeDepth(breakdown.body) : null;
+  const transcript = getEpisodeTranscript(slug);
+  const transcriptHtml = transcript ? renderMarkdown(transcript).html : null;
   const tenant = getTenant();
   const siteUrl =
     tenant.domain ??
@@ -86,6 +88,9 @@ export default async function EpisodeLandingPage({
   }
   if (video.uploadDate) {
     jsonLd.uploadDate = video.uploadDate;
+  }
+  if (transcript) {
+    jsonLd.transcript = siteUrl + "/episodes/" + slug + "#transcript";
   }
 
   const idx = episodePages.findIndex((e) => e.slug === slug);
@@ -204,6 +209,13 @@ export default async function EpisodeLandingPage({
                   </Link>
                 </p>
               </div>
+            </div>
+          )}
+
+          {transcriptHtml && (
+            <div className="mt-12" id="transcript">
+              <h2 className="text-2xl font-bold text-text">Full transcript</h2>
+              <article className="mt-4 max-w-[72ch]" dangerouslySetInnerHTML={{ __html: transcriptHtml }} />
             </div>
           )}
 
