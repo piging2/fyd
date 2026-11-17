@@ -33,7 +33,7 @@ export function ScrollReveal({
 
   if (prefersReducedMotion) {
     // Render children immediately without animation
-    return <div className={cn(className)}>{children}</div>;
+    return <div className={cn("min-w-0", className)}>{children}</div>;
   }
 
   const variants: Record<string, Variants> = {
