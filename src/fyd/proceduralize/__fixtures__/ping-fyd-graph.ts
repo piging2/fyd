@@ -46,7 +46,7 @@ export const PING_FYD_GRAPH: ObjectGraph = {
       "controllerId": "ping-fyd",
       "visibility": "public",
       "title": "PING Social",
-      "description": "AI concierge and business automation for home service businesses.",
+      "description": "AI concierge and business automation for home service businesses. Get found, get every inquiry answered and followed up with, in one system that remembers.",
       "fields": {
         "phone": "(970) 589-3309",
         "locality": "Grand Junction, Colorado",

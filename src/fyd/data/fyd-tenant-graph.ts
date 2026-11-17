@@ -120,9 +120,10 @@ const FYD_TENANT_PINS = {
    * PING Social (the dogfood tenant): the owner-asserted knowledge base the
    * PING-side dump recorded 2026-09-21, pinned here as a fixture exactly as
    * happy-place and coppersmith-plumbing are pinned. The digest below is
-   * sha256 over the repo-canonical JSON of the fixture base; it matches the
-   * dump's recorded graphDigest (bd56fbed...2d982ec1562), so the pin locks
-   * the same base the dump verified.
+   * sha256 over the repo-canonical JSON of the fixture base; it matched
+   * the dump's recorded graphDigest (bd56fbed...2d982ec1562) until the
+   * 2026-11-13 business description update (B-1), when the pin was
+   * re-computed over the updated fixture base.
    *
    * OVERLAY STORY (explicit decision): eventSequences is null and no
    * overlay event ids are baked in - the dump recorded overlayEventIds: []
@@ -148,7 +149,7 @@ const FYD_TENANT_PINS = {
   "ping-fyd": {
     graph: PING_FYD_GRAPH,
     baseDigest:
-      "bd56fbed1e7ed91729e6671d5e1d9b94560fb7dff800dbc6d40322d982ec1562",
+      "84932fb728a6c3c69e829c4b25eea310e7f8c46a692c7bc5957978ff519101e5",
     generatedAt: "2026-09-21T00:00:00.000Z",
     eventSequences: null,
   },
