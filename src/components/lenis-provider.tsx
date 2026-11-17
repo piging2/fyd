@@ -258,6 +258,10 @@ export function LenisProvider({ children }: { children: ReactNode }) {
     });
     lenisRef.current = lenisInstance;
     setLenis(lenisInstance);
+    // A modal scroll lock can outlive the previous instance (an
+    // effects transition while a dialog is open): start stopped
+    // while locks are outstanding.
+    if (lockCount.current > 0) lenisInstance.stop();
     dlog('[lenis] initialized');
 
     // React to mid-session reduced-motion changes while the page is open.
@@ -283,7 +287,12 @@ export function LenisProvider({ children }: { children: ReactNode }) {
       cancelAnimationFrame(frameId);
       lenisInstance.destroy();
       lenisRef.current = null;
-      lockCount.current = 0;
+      // Clear the retired instance from context: consumers (the
+      // fragment router above all) must fall back to native
+      // scrolling, never call scrollTo on a destroyed instance.
+      setLenis(null);
+      // Outstanding modal scroll locks are preserved across the
+      // transition: lockCount is deliberately NOT reset here.
     };
   }, [pathname, resolved]);
 

@@ -12,7 +12,7 @@ import * as React from "react";
  * - off:     no animation or transition at all
  *
  * Default "system" resolves from the OS prefers-reduced-motion setting.
- * Persisted to localStorage ("ping-effects") — same convention as ThemeProvider.
+ * Persisted to localStorage ("ping-effects"), same convention as ThemeProvider.
  * Sets effects-full | effects-reduced | effects-off on documentElement so plain
  * CSS keyframe animations can be gated without JS in every component.
  */
@@ -46,7 +46,15 @@ function resolvePreference(p: EffectsPreference): ResolvedEffects {
 
 function readStored(): EffectsPreference {
   if (typeof window === "undefined") return "system";
-  const stored = window.localStorage.getItem(STORAGE_KEY);
+  // Storage access can be denied (blocked cookies, privacy modes):
+  // a throwing read must never crash the app. Fall back to the
+  // System preference, the same default as an unset value.
+  let stored: string | null = null;
+  try {
+    stored = window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return "system";
+  }
   return stored === "full" || stored === "reduced" || stored === "off"
     ? stored
     : "system";
