@@ -10,7 +10,7 @@
  * No template/font/page choices: the owner never configures the build.
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface StageEvent {
@@ -37,6 +37,9 @@ export default function BuildMyFydClient() {
   const [url, setUrl] = useState("");
   const [socials, setSocials] = useState("");
   const [documents, setDocuments] = useState<string[]>([]);
+  const [docNotice, setDocNotice] = useState("");
+  const [docFocusTarget, setDocFocusTarget] = useState<number | null>(null);
+  const docListRef = useRef<HTMLUListElement>(null);
   const [running, setRunning] = useState(false);
   const [openingReport, setOpeningReport] = useState(false);
   const [stages, setStages] = useState<StageEvent[]>([]);
@@ -45,10 +48,43 @@ export default function BuildMyFydClient() {
   const busy = running || openingReport;
   const lastStage = stages.at(-1);
 
-  function onFiles(files: FileList | null) {
-    if (!files) return;
-    setDocuments(Array.from(files).map((f) => f.name).slice(0, 10));
+  function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    e.target.value = "";
+    if (!files || files.length === 0) return;
+    const picked = Array.from(files).map((f) => f.name);
+    const merged = [...documents, ...picked];
+    if (merged.length > 10) {
+      setDocNotice(
+        `Only the first 10 filenames are recorded. ${merged.length - 10} ${
+          merged.length - 10 === 1 ? "name was" : "names were"
+        } not added.`
+      );
+      setDocuments(merged.slice(0, 10));
+    } else {
+      setDocNotice("");
+      setDocuments(merged);
+    }
   }
+
+  function removeDocument(index: number) {
+    setDocuments((prev) => prev.filter((_, i) => i !== index));
+    setDocFocusTarget(index);
+  }
+
+  // After a removal, focus lands on the remove control that took the
+  // removed item's place (or the previous one, or the file input when
+  // the list empties), so a keyboard user never loses their position.
+  useEffect(() => {
+    if (docFocusTarget === null) return;
+    const buttons = docListRef.current?.querySelectorAll("button");
+    if (buttons && buttons.length > 0) {
+      buttons[Math.min(docFocusTarget, buttons.length - 1)].focus();
+    } else {
+      document.getElementById("fyd-documents")?.focus();
+    }
+    setDocFocusTarget(null);
+  }, [docFocusTarget, documents]);
 
   async function onBuild(e: React.FormEvent) {
     e.preventDefault();
@@ -164,13 +200,44 @@ export default function BuildMyFydClient() {
             aria-describedby="fyd-documents-help"
             type="file"
             multiple
-            onChange={(e) => onFiles(e.target.files)}
+            onChange={onFiles}
             disabled={busy}
             className="mt-1 block w-full min-w-0 text-sm disabled:opacity-60"
           />
           {documents.length > 0 && (
-            <p className="mt-1 break-words text-sm text-text-muted">
-              Selected filenames: {documents.join(", ")}.
+            <div className="mt-2">
+              <p className="text-sm text-text-muted">
+                {documents.length} of 10 filenames selected. Picking more
+                files adds to this list.
+              </p>
+              <ul
+                ref={docListRef}
+                aria-label="Selected filenames"
+                className="mt-2 flex flex-wrap gap-2"
+              >
+                {documents.map((name, i) => (
+                  <li
+                    key={`${i}-${name}`}
+                    className="inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-background py-1 pl-3 pr-1 text-sm"
+                  >
+                    <span className="min-w-0 break-all">{name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeDocument(i)}
+                      disabled={busy}
+                      aria-label={`Remove ${name}`}
+                      className="inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-full text-text-muted hover:text-text disabled:opacity-50"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {docNotice && (
+            <p role="status" className="mt-2 text-sm text-text-muted">
+              {docNotice}
             </p>
           )}
         </div>
