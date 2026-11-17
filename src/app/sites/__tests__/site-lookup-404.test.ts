@@ -30,6 +30,9 @@ describe("site-lookup gate: unknown slug -> 404, never 500", () => {
     expect(isServableSiteId("happy-place")).toBe(true);
     expect(isServableSiteId("coppersmith-plumbing")).toBe(true);
     expect(isServableSiteId("ping-fyd")).toBe(true);
+    // Onboarded 2026-11-17 through the same pipeline as coppersmith:
+    // public-site ingestion, generated fixture graph, tenant pin.
+    expect(isServableSiteId("buzz-electrical")).toBe(true);
   });
 
   test("kims-auto-parts is not servable (stale old-demo slug: no PING projection, no tenant pin)", () => {
@@ -50,7 +53,7 @@ describe("site-lookup gate: unknown slug -> 404, never 500", () => {
 
   test("gate agrees with the bundle seam's serving authority", () => {
     expect(listSiteIds().slice().sort()).toEqual(
-      ["coppersmith-plumbing", "happy-place", "ping-fyd"].sort(),
+      ["buzz-electrical", "coppersmith-plumbing", "happy-place", "ping-fyd"].sort(),
     );
   });
 
