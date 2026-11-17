@@ -16,7 +16,7 @@ Within nine days, the United States Department of Transportation had issued an e
 
 To understand how a flagship phone got itself individually banned from the sky, you have to go back to the design brief, because the Note 7's real defect was not in either battery. It was in the sentence the batteries were asked to live inside: thinner phone, bigger battery, same space.
 
-### Defect one: the battery that did not fit its own house
+## Defect one: the battery that did not fit its own house
 
 The Galaxy Note 7 launched on August 19, 2016, and by the standards of the day it was a genuinely impressive object: a 5.7 inch curved display, an iris scanner, a stylus, and a 3,500 milliamp-hour battery packed into a body that reviewers praised for how slim it felt. That last pairing, big battery and slim body, is where the trouble lived. A lithium-ion battery is not a static block. Its electrode assembly, a layered roll of positive electrode, negative electrode, and a thin separator keeping them apart, swells and contracts as the cell charges and discharges. It needs room to breathe. In the Note 7's first battery, which the investigation would later call Battery A, it did not reliably have that room.
 
@@ -26,7 +26,7 @@ The fires began within weeks of launch. By September 1, Samsung had received 35 
 
 On September 15, the U.S. Consumer Product Safety Commission made the first recall official in the United States: about 1 million phones, with Samsung reporting 92 cases of batteries overheating in the U.S., including 26 reports of burns and 55 reports of property damage, among them fires in cars and a garage. The framing was orderly and reassuring. A bad batch from a bad supplier, identified, isolated, and being replaced with verified-safe units. This is the part of the story where the recall was working, right up until the moment the replacement phones started catching fire too.
 
-### The replacement fiasco: a second launch with worse press
+## The replacement fiasco: a second launch with worse press
 
 The replacements had a problem that the diagnosis had never looked for, because the diagnosis had already concluded. Battery B, the cell from the second supplier, was a different battery with a different design and, as it turned out, a different defect. Samsung's investigation later found that Battery B's original cells showed no deficiency. The defect arrived with the ramp. When Samsung suddenly needed millions of Battery B cells to replace the recalled fleet, production sped up, and quality slipped in a specific, lethal way: the ultrasonic welding that attached the positive tab left abnormally high burrs, sharp protrusions tall enough, under the normal swelling and contraction of charge cycles, to be driven through the insulation tape and the separator and into direct contact with the negative electrode. Some cells were assembled without the protective insulation tape over the tab at all. Internal short circuit. Thermal runaway. Same fire, new cause, in the phones that were supposed to end the fires.
 
@@ -36,7 +36,7 @@ The end came fast after that. Replacement phones were reported smoking and burni
 
 And still the phones were out there. Samsung pushed software updates that capped charging, then further updates that reduced the battery to a paperweight with a screen. Airports set up exchange desks. The announcements before boarding went on for months, a little liturgy of corporate failure recited at every gate in America: if you are carrying a Samsung Galaxy Note 7, you may not fly with it, you may not charge it, you may not put it in your checked bag. Laptops could fly. Lighters faced restrictions, but a phone had joined the category of things the federal government names individually, a category otherwise populated by materials with warning diamonds on the crate.
 
-### The investigation: how to do the second one properly
+## The investigation: how to do the second one properly
 
 To Samsung's credit, and this matters for the lesson, the investigation that followed was not a press release with a lab coat on. The company put roughly 700 researchers and engineers on the problem, built a large-scale test facility, and tested more than 200,000 fully assembled devices and more than 30,000 batteries, deliberately replicating the failures. It hired three independent organizations, UL, Exponent, and TÜV Rheinland, to reach their own conclusions. On January 23, 2017, in Seoul, Samsung stood up and published the answer, including the parts that indicted its own process.
 
@@ -44,7 +44,7 @@ The answer was that there was no single answer. The phone's hardware and softwar
 
 Notice the asymmetry, because it is the most instructive number in the whole saga. The investigation that finally produced the truth tested 200,000 devices. The recall that shipped the second defective battery to millions of people was, in effect, tested by the public. The difference between those two numbers is not budget. Samsung had the budget the whole time. The difference is sequence: validation performed before the claim, or validation performed by the claim's victims. One of those is engineering. The other is a recall with better marketing.
 
-### The lesson: a swap is not a fix
+## The lesson: a swap is not a fix
 
 Here is the engineering principle the Note 7 bought for $5.3 billion, available to the rest of us at a steep discount.
 
