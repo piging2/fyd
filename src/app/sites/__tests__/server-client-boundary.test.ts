@@ -40,12 +40,15 @@ const VISITOR_ISLANDS = new Set([
  *   coordinates through (balanced scroll ownership, focus return).
  * - lenis-provider.tsx: the Lenis scroll-lock provider the dialog
  *   primitive coordinates through (provided by the root layout).
+ * - effects-provider.tsx: the motion-preference provider the Lenis
+ *   provider consumes (provided by the root layout).
  */
 const ISLAND_DEPENDENCIES = new Set([
   "src/fyd/ui/why-this.tsx",
   "src/fyd/ui/evidence-state.tsx",
   "src/fyd/ui/use-fyd-dialog.ts",
   "src/components/lenis-provider.tsx",
+  "src/components/effects-provider.tsx",
 ]);
 
 const OWNER_BUILD_SURFACES = new Set([
