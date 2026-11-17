@@ -3,6 +3,7 @@
 import { useEffect, createContext, useContext, ReactNode, useState, useRef, useCallback } from "react";
 import Lenis from "@studio-freight/lenis";
 import { usePathname } from "next/navigation";
+import { useVisualEffects } from "@/components/effects-provider";
 
 interface LenisContextValue {
   lenis: Lenis | null;
@@ -225,6 +226,7 @@ export function LenisProvider({ children }: { children: ReactNode }) {
   const lenisRef = useRef<Lenis | null>(null);
   const lockCount = useRef(0);
   const pathname = usePathname();
+  const { resolved } = useVisualEffects();
 
   const setModalScrollLock = useCallback((locked: boolean) => {
     if (locked) {
@@ -246,6 +248,7 @@ export function LenisProvider({ children }: { children: ReactNode }) {
 
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (media.matches) return; // native scroll when reduced motion is preferred
+    if (resolved !== "full") return; // native scroll under a reduced or off effects preference
 
     const lenisInstance = new Lenis({
       lerp: 0.25, // Higher lerp = snappier feel (default 0.1)
@@ -282,7 +285,7 @@ export function LenisProvider({ children }: { children: ReactNode }) {
       lenisRef.current = null;
       lockCount.current = 0;
     };
-  }, [pathname]);
+  }, [pathname, resolved]);
 
   return (
     <LenisContext.Provider value={{ lenis, setModalScrollLock }}>

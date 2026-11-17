@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { prefersReducedMotion } from "@/motion/motionTokens";
+import { useVisualEffects } from "@/components/effects-provider";
 
 /**
  * Motion Context
@@ -28,13 +29,17 @@ const MotionContext = createContext<MotionContextType>({
  * - Consistent animation behavior across the app
  */
 export function MotionProvider({ children }: { children: ReactNode }) {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [osReducedMotion, setOsReducedMotion] = useState(false);
+  const { resolved } = useVisualEffects();
+  // The visitor preference governs alongside the OS signal: an explicit
+  // reduced or off choice takes the reduced branch even when the OS does not.
+  const reducedMotion = osReducedMotion || resolved !== "full";
 
   useEffect(() => {
     // The server has no window and renders false. Read the real preference
     // only after mount so a reduced-motion client hydrates with the same
     // first render as the server, then takes the reduced branch.
-    setReducedMotion(prefersReducedMotion());
+    setOsReducedMotion(prefersReducedMotion());
   }, []);
 
   useEffect(() => {

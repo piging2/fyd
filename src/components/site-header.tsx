@@ -9,6 +9,7 @@ import { getTenant } from "@/lib/tenant-config";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { EffectsToggle } from "@/components/effects-toggle";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { FYD_CHAPTERS, focusFydChapter } from "@/app/fyd/_components/fyd-chapters";
 
@@ -114,6 +115,7 @@ export function SiteHeader() {
 
         <div className="hidden shrink-0 lg:flex items-center gap-2">
           <ThemeToggle />
+          <EffectsToggle />
           {contact && (
             <Link
               href={contact.href}
@@ -177,6 +179,10 @@ export function SiteHeader() {
           <div className="mt-2 pt-2 border-t border-border/40 flex items-center justify-between">
             <span className="text-sm text-black dark:text-text-on-dark">Theme</span>
             <ThemeToggle />
+          </div>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-sm text-black dark:text-text-on-dark">Effects</span>
+            <EffectsToggle />
           </div>
         </nav>
       </div>

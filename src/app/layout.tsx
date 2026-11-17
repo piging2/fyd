@@ -13,6 +13,7 @@ import { ScrollToTop } from "@/components/scroll-to-top";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LenisProvider } from "@/components/lenis-provider";
 import { MotionProvider } from "@/components/motion-provider";
+import { EffectsProvider } from "@/components/effects-provider";
 import { SpeculationRules } from "@/components/speculation-rules";
 
 // F-6 (wave 13): Geist and Geist Mono are not preloaded. Their variables
@@ -142,6 +143,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       </head>
       <body className="min-h-full flex flex-col bg-background">
         <ThemeProvider defaultTheme="light" storageKey="ping-theme">
+          <EffectsProvider>
           <MotionProvider>
             <LenisProvider>
             <SpeculationRules />
@@ -157,6 +159,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             {!chromeless && <SiteFooter />}
             </LenisProvider>
           </MotionProvider>
+          </EffectsProvider>
         </ThemeProvider>
       </body>
     </html>
