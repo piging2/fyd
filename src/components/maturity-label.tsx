@@ -12,6 +12,14 @@ const STYLES: Record<Maturity, string> = {
   Unproven: "bg-amber-500/10 text-amber-700 border-amber-500/30",
 };
 
+const DARK_STYLES: Record<Maturity, string> = {
+  Live: "bg-green-500/10 text-green-400 border-green-500/30",
+  Built: "bg-sky-500/10 text-sky-400 border-sky-500/30",
+  Experimental: "bg-violet-500/10 text-violet-400 border-violet-500/30",
+  Direction: "bg-surface-muted text-text-muted border-border-soft",
+  Unproven: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+};
+
 const HINTS: Record<Maturity, string> = {
   Live: "Running now, verified this week",
   Built: "Real code, not evidenced live right now",
@@ -21,13 +29,13 @@ const HINTS: Record<Maturity, string> = {
 };
 
 /** Structural maturity label. Every capability on the page carries one. */
-export function MaturityLabel({ status, className }: { status: Maturity; className?: string }) {
+export function MaturityLabel({ status, className, onDark }: { status: Maturity; className?: string; onDark?: boolean }) {
   return (
     <span
       title={HINTS[status]}
       className={cn(
         "inline-block rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-        STYLES[status],
+        onDark ? DARK_STYLES[status] : STYLES[status],
         className
       )}
     >

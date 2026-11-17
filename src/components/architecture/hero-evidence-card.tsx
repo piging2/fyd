@@ -80,7 +80,7 @@ export function HeroEvidenceCard() {
           Evidence card
         </p>
         <div className="flex items-center gap-2">
-          <MaturityLabel status="Built" />
+          <MaturityLabel status="Built" onDark />
           <span className="rounded border border-text-on-dark/20 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-text-on-dark/60">
             Captured 2026-07-28
           </span>
