@@ -4,6 +4,7 @@ import { CTASection } from "@/components/cta-section";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { getTenant } from "@/lib/tenant-config";
 import { buildContactPageJsonLd } from "@/lib/structured-data";
+import { ContactForm } from "./contact-form";
 
 const siteUrl =
   getTenant().domain ??
@@ -78,7 +79,9 @@ export default function ContactPage() {
               </div>
             </dl>
           </div>
-          <div className="rounded-2xl border border-border bg-surface-muted p-8">
+          <div className="space-y-6">
+            <ContactForm />
+            <div className="rounded-2xl border border-border bg-surface-muted p-8">
             <h2 className="text-xl font-bold text-text" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>Start with the newsletter</h2>
             <p className="measure mt-2 text-text" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}>
               The PING newsletter covers continuity, agents, and practical business automation. One email when there is something worth saying.
@@ -89,6 +92,7 @@ export default function ContactPage() {
             >
               Subscribe
             </a>
+            </div>
           </div>
         </Container>
       </Section>
