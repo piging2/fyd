@@ -393,7 +393,9 @@ export async function syncSubscriberToKit(input: KitSyncRequest): Promise<KitSyn
     };
   }
 
-  // Validate sequenceId if present
+  // Validate sequenceId if present. An unset value arrives as NaN from
+  // the env getter; NaN means absent, not invalid, and is treated as absent.
+  const sequenceProvided = input.sequenceId !== undefined && !Number.isNaN(input.sequenceId);
   const validSequenceId = input.sequenceId !== undefined && 
     typeof input.sequenceId === 'number' && 
     Number.isInteger(input.sequenceId) && 
@@ -401,7 +403,7 @@ export async function syncSubscriberToKit(input: KitSyncRequest): Promise<KitSyn
     ? input.sequenceId 
     : undefined;
 
-  if (input.sequenceId !== undefined && validSequenceId === undefined) {
+  if (sequenceProvided && validSequenceId === undefined) {
     return {
       success: false,
       created: false,
