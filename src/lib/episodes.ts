@@ -3,8 +3,9 @@
  *
  * Built only from the verified media inventory in @/lib/longping-media:
  * the featured film plus the episode videos. Nothing is invented here:
- * episodes without a duration in the inventory stay without one, and no
- * dates exist in the inventory, so none are published.
+ * episodes without a duration in the inventory stay without one, and
+ * upload dates are published only where the inventory carries the
+ * video's verified upload date.
  *
  * Slugs are stable title slugs. They match the episode order already used
  * by the blog episode navigation (what-survives-10000-years,

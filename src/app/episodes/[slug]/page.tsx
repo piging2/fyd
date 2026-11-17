@@ -84,6 +84,9 @@ export default async function EpisodeLandingPage({
   if (isoDuration) {
     jsonLd.duration = isoDuration;
   }
+  if (video.uploadDate) {
+    jsonLd.uploadDate = video.uploadDate;
+  }
 
   const idx = episodePages.findIndex((e) => e.slug === slug);
   const prev = idx > 0 ? episodePages[idx - 1] : null;

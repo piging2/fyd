@@ -13,6 +13,7 @@ export interface FeaturedVideo {
   kind: "Film" | "Episode" | "Short";
   watchUrl: string;
   duration?: string;
+  uploadDate?: string;
   thumbnail: string;
   /** Card-size variant (hqdefault); large and og usage keeps `thumbnail`. */
   thumbnailCard?: string;
@@ -30,6 +31,7 @@ export const featuredFilm: FeaturedVideo = {
   kind: "Film",
   watchUrl: "https://www.youtube.com/watch?v=s3Os1RNAmeo",
   duration: "3h 43m",
+  uploadDate: "2026-10-21",
   thumbnail: ytThumb("s3Os1RNAmeo", "sddefault"),
   thumbnailFallback: ytThumb("s3Os1RNAmeo", "hqdefault"),
   blurb:
@@ -43,6 +45,7 @@ export const episodeVideos: FeaturedVideo[] = [
     kind: "Episode",
     watchUrl: "https://www.youtube.com/watch?v=7ljMOGuKKv8",
     duration: "3h 27m",
+  uploadDate: "2026-10-27",
     thumbnail: ytThumb("7ljMOGuKKv8", "sddefault"),
     thumbnailCard: ytThumb("7ljMOGuKKv8", "hqdefault"),
     thumbnailFallback: ytThumb("7ljMOGuKKv8", "hqdefault"),
@@ -54,6 +57,8 @@ export const episodeVideos: FeaturedVideo[] = [
     title: "The Long Ping, Episode 1: What Survives 10,000 Years",
     kind: "Episode",
     watchUrl: "https://www.youtube.com/watch?v=ekJnwDb7ssw",
+    duration: "5h 18m",
+    uploadDate: "2026-10-14",
     thumbnail: ytThumb("ekJnwDb7ssw", "sddefault"),
     thumbnailCard: ytThumb("ekJnwDb7ssw", "hqdefault"),
     thumbnailFallback: ytThumb("ekJnwDb7ssw", "hqdefault"),
