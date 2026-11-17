@@ -55,6 +55,7 @@ import type {
 import { HAPPY_PLACE_GRAPH } from "@/fyd/proceduralize/__fixtures__/happy-place-graph";
 import { COPPERSMITH_GRAPH } from "@/fyd/proceduralize/__fixtures__/coppersmith-graph";
 import { PING_FYD_GRAPH } from "@/fyd/proceduralize/__fixtures__/ping-fyd-graph";
+import { BUZZ_ELECTRICAL_GRAPH } from "@/fyd/proceduralize/__fixtures__/buzz-electrical-graph";
 
 /** Typed failure for the tenant graph seam. The ask lane maps every code to projection_unavailable. */
 export class FydTenantGraphError extends Error {
@@ -146,6 +147,23 @@ const FYD_TENANT_PINS = {
    * was explicitly rejected: it would break this seam's closed-read
    * convergence boundary (no FYD_PROJECTION_DIR, no fs reads).
    */
+  /**
+   * Buzz Electrical (Grand Junction electrician): the one-link bootstrap
+   * Wave 1 fixture, ingested 2026-11-17 from the business's own public
+   * site (https://buzzgj.com/) through the same extraction pipeline that
+   * produced the coppersmith pin. Every claim is a website_statement
+   * from that site's structured data; fields the site does not state
+   * (services, hours) are absent, never invented. No journal overlay
+   * window exists for this tenant yet; overlays compose above the
+   * pinned base through the governed reader like every tenant.
+   */
+  "buzz-electrical": {
+    graph: BUZZ_ELECTRICAL_GRAPH,
+    baseDigest:
+      "b6a246fc62d6cc8d88abbeba3d1183ff17569f69e486ed8f631ceaed40c1bab8",
+    generatedAt: "2026-11-17T15:10:00.000Z",
+    eventSequences: null,
+  },
   "ping-fyd": {
     graph: PING_FYD_GRAPH,
     baseDigest:
