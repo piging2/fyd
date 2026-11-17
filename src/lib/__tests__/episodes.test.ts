@@ -29,6 +29,10 @@ describe("episode landing page data (B-12)", () => {
         // Episode 2 corrected edition: duration verified from the YouTube
         // player response (lengthSeconds 12446) in the publish record.
         expect(durationToIso8601(v.duration)).toBe("PT3H27M");
+      } else if (v.id === "ekJnwDb7ssw") {
+        // Episode 1: duration verified from the YouTube player response
+        // (lengthSeconds 19084) in the B-7 sourcing record, 2026-11-13.
+        expect(durationToIso8601(v.duration)).toBe("PT5H18M");
       } else {
         expect(durationToIso8601(v.duration)).toBeNull();
       }
