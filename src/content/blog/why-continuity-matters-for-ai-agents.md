@@ -56,4 +56,6 @@ That compounding is the real prize. Most AI deployments get linearly better with
 
 Continuity is not free. It requires discipline at every boundary: typed event schemas, canonicalization rules, provenance tracking, deterministic replay semantics. It requires saying no to convenient shortcuts, like letting a summary silently replace its source. And it requires the hardest discipline of all: admitting what the system does not know, explicitly, rather than filling gaps with confident fabrication.
 
+This is not theory in our own studio. The system that does our work keeps its [continuity](/technology/continuity) as an append-only history of events, and every result that matters has to survive [replay](/technology/replay) before it counts as knowledge. An agent that starts from zero every morning is a stranger every morning. Ours are not allowed to be.
+
 PING pays these costs because the alternative is worse: an agent that acts without memory is an agent that cannot learn, cannot be audited, and cannot be trusted. The technology pages on this site document how each layer works. This post is the argument for why the layers exist at all.

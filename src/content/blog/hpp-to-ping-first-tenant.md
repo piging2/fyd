@@ -45,4 +45,6 @@ Every decision during the rebuild was checked against one question: could Tenant
 
 TenantOS is a direction with one proof point, not a product. This site does not yet demonstrate Tenant B onboarding end to end, per-tenant domains at the edge, or per-tenant integrations. Those are future work. The honest label on the technology page is "Direction," and it will stay that way until the second tenant exists.
 
+The studio behind both sites works the same way this rebuild did. Identity lives in configuration and survives transformation, the [continuity](/technology/continuity) discipline the platform documents across its [technology](/technology) pages, and the first tenant was the proof we ran on ourselves before asking anyone else to believe it.
+
 The point of the first tenant is not to be complete. It is to make the second tenant boring. If adding Tenant B is a configuration task rather than an engineering project, the model works. Everything about this rebuild was arranged to make that true.

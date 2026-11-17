@@ -60,4 +60,6 @@ For the businesses PING serves, this is not philosophy. It is the difference bet
 
 Marketing makes the same demand at scale. PING's marketing rule is that claims must be demonstrable: deterministic replay, traceable evidence, explicit provenance. These are not slogans; they are capabilities the architecture actually provides. The strongest marketing asset is a capability that can be demonstrated, and demonstration requires evidence.
 
+Our own studio holds itself to the same standard. Every result a worker claims has to land as [evidence](/technology/evidence) with its lineage attached, and the claims that matter most have to survive [replay](/technology/replay) before anyone acts on them. A claim that cannot show its work is treated here as a claim that has not been made.
+
 Build systems that can show their work. Everything else is performance.

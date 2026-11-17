@@ -49,4 +49,6 @@ The deeper point: none of this is enforced by asking the model nicely. A system 
 
 This is the PING posture toward agents generally. Capability boundaries, explicit permission scopes, reversible-by-default actions, human confirmation for the irreversible: these are structural properties of the system, not behaviors requested of the model. The model can be clever or confused, careful or rushed; the boundaries hold either way.
 
+Our own studio runs on this posture every day. The [agents](/technology/agents) that do the work cross machine boundaries as opaque script bytes, carry capabilities instead of credentials, and leave every action behind as [evidence](/technology/evidence) a supervisor can inspect. The boundaries are not paperwork around the work. They are what makes the work delegable.
+
 Intelligence without boundaries is a liability. Boundaries without intelligence are just bureaucracy. The goal is both: agents smart enough to be useful, bounded enough to be trusted.
