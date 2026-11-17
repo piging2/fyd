@@ -685,16 +685,16 @@ export function FollowButton({
   return (
     <button
       type="button"
-      disabled={["loading", "pending", "terminal-error"].includes(follow.status)}
+      aria-disabled={["loading", "pending", "terminal-error"].includes(follow.status) || undefined}
       aria-busy={follow.status === "pending" || follow.status === "loading"}
       title={follow.message}
       aria-pressed={!!following}
       aria-label={following ? `Following ${name}` : `Follow ${name}`}
-      onClick={(e) => {
+      onClick={["loading", "pending", "terminal-error"].includes(follow.status) ? undefined : (e) => {
         e.stopPropagation();
         void toggleFollow();
       }}
-      className={cls}
+      className={["loading", "pending", "terminal-error"].includes(follow.status) ? cls + " opacity-60" : cls}
     >
       {following ? <UserCheck size={14} aria-hidden="true" /> : <UserPlus size={14} aria-hidden="true" />}
       <span>{follow.status === "retryable-error" ? "Retry follow" : follow.status === "pending" ? "Saving…" : follow.status === "loading" ? "Loading…" : follow.status === "terminal-error" ? "Unavailable" : following ? "Following · demo" : "Follow · demo"}</span>
@@ -726,16 +726,16 @@ export function LikeButton({
   return (
     <button
       type="button"
-      disabled={["loading", "pending", "terminal-error"].includes(like.status)}
+      aria-disabled={["loading", "pending", "terminal-error"].includes(like.status) || undefined}
       aria-busy={like.status === "pending" || like.status === "loading"}
       title={like.message}
       aria-pressed={!!liked}
       aria-label={liked ? `Unlike ${name}` : `Like ${name}`}
-      onClick={(e) => {
+      onClick={["loading", "pending", "terminal-error"].includes(like.status) ? undefined : (e) => {
         e.stopPropagation();
         void toggleLike();
       }}
-      className={cls}
+      className={["loading", "pending", "terminal-error"].includes(like.status) ? cls + " opacity-60" : cls}
     >
       <Heart size={14} aria-hidden="true" fill={liked ? "currentColor" : "none"} />
       <span>{like.status === "retryable-error" ? "Retry like" : like.status === "pending" ? "Saving…" : like.status === "loading" ? "Loading…" : like.status === "terminal-error" ? "Unavailable" : liked ? "Liked · demo" : "Like · demo"}</span>
