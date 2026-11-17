@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { prefersReducedMotion } from "@/motion/motionTokens";
 
 /**
@@ -28,7 +28,14 @@ const MotionContext = createContext<MotionContextType>({
  * - Consistent animation behavior across the app
  */
 export function MotionProvider({ children }: { children: ReactNode }) {
-  const reducedMotion = prefersReducedMotion();
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    // The server has no window and renders false. Read the real preference
+    // only after mount so a reduced-motion client hydrates with the same
+    // first render as the server, then takes the reduced branch.
+    setReducedMotion(prefersReducedMotion());
+  }, []);
 
   useEffect(() => {
     // Add reduced-motion class to document for CSS fallbacks
