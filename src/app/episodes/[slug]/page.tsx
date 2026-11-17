@@ -110,15 +110,15 @@ export default async function EpisodeLandingPage({
       />
       <Section className="bg-deep">
         <Container className="max-w-4xl">
-          <Link href="/episodes" className="text-honey-text hover:underline text-sm font-semibold">
+          <Link href="/episodes" className="text-honey hover:underline text-sm font-semibold">
             Back to all episodes
           </Link>
           <div className="mt-4 mb-4 flex flex-wrap items-center gap-3">
-            <span className="inline-block px-3 py-1 bg-honey/10 text-honey-text rounded text-sm font-semibold">
+            <span className="inline-block px-3 py-1 bg-honey/10 text-honey rounded text-sm font-semibold">
               {video.kind}
             </span>
             {video.duration && (
-              <span className="inline-block px-3 py-1 bg-honey/10 text-honey-text rounded text-sm font-semibold">
+              <span className="inline-block px-3 py-1 bg-honey/10 text-honey rounded text-sm font-semibold">
                 {video.duration}
               </span>
             )}
