@@ -49,10 +49,11 @@ export default function BuildMyFydClient() {
   const lastStage = stages.at(-1);
 
   function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
+    const picked = e.target.files
+      ? Array.from(e.target.files).map((f) => f.name)
+      : [];
     e.target.value = "";
-    if (!files || files.length === 0) return;
-    const picked = Array.from(files).map((f) => f.name);
+    if (picked.length === 0) return;
     const merged = [...documents, ...picked];
     if (merged.length > 10) {
       setDocNotice(
