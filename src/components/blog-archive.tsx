@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BlogPostMeta } from "@/lib/blog";
+import { readBlogArchiveState, writeBlogArchiveSearch } from "@/lib/blog-archive-state";
 
 function formatDate(date: string) {
   return new Date(date + "T00:00:00Z").toLocaleDateString("en-US", {
@@ -18,15 +19,43 @@ export function BlogArchive({ posts }: { posts: BlogPostMeta[] }) {
   const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState("");
-  useEffect(() => setReady(true), []);
-
-  const tagCounts = new Map<string, number>();
-  for (const post of posts) {
-    for (const topic of post.tags) {
-      tagCounts.set(topic, (tagCounts.get(topic) ?? 0) + 1);
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const post of posts) {
+      for (const topic of post.tags) {
+        counts.set(topic, (counts.get(topic) ?? 0) + 1);
+      }
     }
+    return counts;
+  }, [posts]);
+  const tags = useMemo(() => [...tagCounts.keys()].sort(), [tagCounts]);
+
+  useEffect(() => {
+    const restore = () => {
+      const state = readBlogArchiveState(window.location.search, tags);
+      setInput(state.query);
+      setQuery(state.query.toLowerCase());
+      setTag(state.topic);
+    };
+    restore();
+    setReady(true);
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+  }, [tags]);
+
+  function applyFilters(nextInput: string, nextTag: string) {
+    const search = writeBlogArchiveSearch(window.location.search, { query: nextInput, topic: nextTag }, tags);
+    const state = readBlogArchiveState(search, tags);
+    const url = new URL(window.location.href);
+    url.search = search;
+    url.hash = "studio-notebook";
+    // Keep one archive entry. Article Back restores the applied filters and
+    // the existing notebook destination through the shell's scroll router.
+    window.history.replaceState(null, "", url);
+    setInput(state.query);
+    setQuery(state.query.toLowerCase());
+    setTag(state.topic);
   }
-  const tags = [...tagCounts.keys()].sort();
   const matches = posts.filter((post) => (
     (!tag || post.tags.includes(tag)) &&
     (!query || [post.title, post.excerpt, ...post.tags.map((topic) => topic.replaceAll("-", " "))]
@@ -39,7 +68,7 @@ export function BlogArchive({ posts }: { posts: BlogPostMeta[] }) {
         className="mt-5"
         onSubmit={(event) => {
           event.preventDefault();
-          setQuery(input.trim().toLowerCase());
+          applyFilters(input, tag);
         }}
         hidden={!ready}
       >
@@ -59,8 +88,7 @@ export function BlogArchive({ posts }: { posts: BlogPostMeta[] }) {
               id="blog-archive-topic"
               value={tag}
               onChange={(event) => {
-                setTag(event.target.value);
-                setQuery(input.trim().toLowerCase());
+                applyFilters(input, event.target.value);
               }}
               className="min-h-11 min-w-0 rounded-lg border border-border bg-background px-3 text-base font-normal"
             >
@@ -84,17 +112,19 @@ export function BlogArchive({ posts }: { posts: BlogPostMeta[] }) {
             <button
               type="button"
               className="min-h-11 rounded-lg border border-border px-4 text-sm font-semibold text-text"
-              onClick={() => {
-                setInput("");
-                setQuery("");
-                setTag("");
-              }}
+              onClick={() => applyFilters("", "")}
             >
               Clear
             </button>
           </div>
         </div>
       </form>
+
+      <noscript>
+        <p className="my-4 text-sm text-text-muted">
+          Search and topic filters need JavaScript. All published articles are listed below.
+        </p>
+      </noscript>
 
       <p role="status" className="my-4 break-words text-sm text-text-muted">
         {matches.length} {matches.length === 1 ? "article" : "articles"}

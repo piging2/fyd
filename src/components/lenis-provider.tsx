@@ -103,10 +103,13 @@ function readChromeTopPx(): number {
  *   never double-handles a fragment traversal.
  */
 function HashRouter() {
+  const pathname = usePathname();
   const { lenis } = useLenis();
   const { resolved, preference } = useVisualEffects();
   const lenisRef = useRef(lenis);
   lenisRef.current = lenis;
+  const effectsRef = useRef({ resolved, preference });
+  effectsRef.current = { resolved, preference };
   const preFragmentY = useRef<number | null>(null);
   const previousHash = useRef<string>("");
 
@@ -120,9 +123,9 @@ function HashRouter() {
         : undefined,
       chromeTopPx: readChromeTopPx,
       reducedMotion: () =>
-        preference === "system"
+        effectsRef.current.preference === "system"
           ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          : resolved !== "full",
+          : effectsRef.current.resolved !== "full",
     });
 
     const restorePrevious = () => {
@@ -148,18 +151,21 @@ function HashRouter() {
       previousHash.current = hash;
     };
 
-    // Direct navigation / reload: the browser may have jumped natively
+    // Direct navigation / reload / committed route change: the browser may have jumped natively
     // before hydration; re-settle through the coordinated path. Never reset
-    // to top here (ScrollToTop skips when a hash is present).
+    // to top here (ScrollToTop skips when a hash is present). A cross-page
+    // popstate can arrive before the destination's fragment target mounts.
     const initialHash = window.location.hash;
+    let initialFrame = 0;
+    let settledFrame = 0;
     previousHash.current = initialHash;
     if (initialHash) {
       preFragmentY.current = 0;
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
+      initialFrame = requestAnimationFrame(() => {
+        settledFrame = requestAnimationFrame(() => {
           if (window.location.hash === initialHash) applyHash(initialHash);
-        }),
-      );
+        });
+      });
     }
 
     const onHashChange = () => {
@@ -202,12 +208,14 @@ function HashRouter() {
     window.addEventListener("popstate", onPopState);
     document.addEventListener("click", onClick);
     return () => {
+      cancelAnimationFrame(initialFrame);
+      cancelAnimationFrame(settledFrame);
       window.removeEventListener("hashchange", onHashChange);
       window.removeEventListener("popstate", onPopState);
       document.removeEventListener("click", onClick);
       window.history.scrollRestoration = prevRestoration;
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }
