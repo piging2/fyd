@@ -1,7 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { prefersReducedMotion } from "@/motion/motionTokens";
+import { createContext, useContext, useEffect, ReactNode } from "react";
 import { useVisualEffects } from "@/components/effects-provider";
 
 /**
@@ -29,24 +28,18 @@ const MotionContext = createContext<MotionContextType>({
  * - Consistent animation behavior across the app
  */
 export function MotionProvider({ children }: { children: ReactNode }) {
-  const [osReducedMotion, setOsReducedMotion] = useState(false);
-  const { resolved, preference } = useVisualEffects();
+  const { resolved } = useVisualEffects();
   // Precedence, decided 2026-11-17: an explicit visitor choice governs
   // every preference-consuming layer on its own. The OS signal governs
-  // only in system mode, where resolved already encodes it; the OS leg
-  // is kept for that mode because this provider's mount read lands
-  // before the effects provider's resolution effect.
-  const reducedMotion =
-    preference === "system"
-      ? osReducedMotion || resolved !== "full"
-      : resolved !== "full";
-
-  useEffect(() => {
-    // The server has no window and renders false. Read the real preference
-    // only after mount so a reduced-motion client hydrates with the same
-    // first render as the server, then takes the reduced branch.
-    setOsReducedMotion(prefersReducedMotion());
-  }, []);
+  // only in system mode, where resolved already encodes it, because
+  // EffectsProvider subscribes to the OS media query and is the single
+  // preference authority. This provider previously ORed in its own
+  // mount-only OS read for that mode; the read never updated, so an OS
+  // change from reduced to normal left this layer stuck in reduced
+  // motion until reload (reproduced live 2026-11-18). Deriving from
+  // resolved alone keeps the first render identical to the server's
+  // (resolved starts at "full") and follows every later transition.
+  const reducedMotion = resolved !== "full";
 
   useEffect(() => {
     // Add reduced-motion class to document for CSS fallbacks
