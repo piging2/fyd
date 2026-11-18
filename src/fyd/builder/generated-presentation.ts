@@ -201,11 +201,17 @@ export function verifyGeneratedPresentation(
             "\" on \"" + b.objectId + "\": the copy is not grounded in its bindings.",
         );
       }
-      const actualRef = o.provenance?.ref ?? null;
+      // The claim must cite the object's CURRENT evidence ref
+      // (LANE-CLAIM D1): the latest update ref when the object has
+      // been updated since ingestion, else its provenance ref. A
+      // claim pinned to superseded evidence is a mismatch, exactly
+      // as a claim pinned to foreign evidence is.
+      let actualRef = o.provenance?.ref ?? null;
+      for (const r of o.provenance?.updatedRefs ?? []) actualRef = r;
       if (b.claimRef !== actualRef) {
         at(
           "claim-mismatch",
-          "binding claim ref does not match the object's provenance ref.",
+          "binding claim ref does not match the object's current evidence ref.",
         );
       }
       if (o.visibility !== "public") {

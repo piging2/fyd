@@ -268,7 +268,7 @@ function fieldText(o: PingObject, field: string): string {
 /**
  * The emitted spec's factual binding set: every generated-copy slot
  * binding as a PresentationBinding. The planner's slots bind object fields
- * whose claimRef matched the object's provenance ref (checked by
+ * whose claimRef matched the object's current evidence ref (checked by
  * assertGeneratedPresentationVerified); the BindingVerifier re-checks the
  * full seam (object field + evidence ref + owner assertions) so the
  * renderer path cannot be handed an unverified spec.
@@ -425,11 +425,17 @@ export function planSite(input: SitePlannerInput): PlannedSite {
   if (owner) {
     const locality = fieldText(owner, "locality").trim();
     const tagline = locality !== "" ? owner.title + " -- " + locality : owner.title;
+    // Claims cite the object's CURRENT evidence (LANE-CLAIM D1):
+    // the latest update ref when the object has been updated since
+    // ingestion, else its provenance ref. A claim pinned to the
+    // superseded base ref is refused by the binding verifier.
+    let claimRef: string | null = owner.provenance?.ref ?? null;
+    for (const r of owner.provenance?.updatedRefs ?? []) claimRef = r;
     const bindings = [
-      { objectId: owner.id, field: "title", claimRef: owner.provenance?.ref ?? null },
+      { objectId: owner.id, field: "title", claimRef },
     ];
     if (locality !== "") {
-      bindings.push({ objectId: owner.id, field: "locality", claimRef: owner.provenance?.ref ?? null });
+      bindings.push({ objectId: owner.id, field: "locality", claimRef });
     }
     // Copy class follows the owner's provenance: website-derived facts
     // verify as DIRECT_FACT (direct evidence); anything else the owner
