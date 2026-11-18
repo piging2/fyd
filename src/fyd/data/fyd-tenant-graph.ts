@@ -369,6 +369,18 @@ export function applyTenantOverlays(
           if (!target) throw malformed(eid, rawOp, "bad deactivate_object");
           target.visibility = "private";
           touch(target, eid);
+          // Deactivation withdraws the object from evidence, so its
+          // evidence relationships are withdrawn from the graph in
+          // the same op: a relationship leg into a non-public object
+          // is unusable as evidence and the graph verifier fails
+          // closed on it. Ported op-for-op with dump.py; the journal
+          // keeps the full history.
+          const kept: PingRelationship[] = [];
+          for (const r of graph.relationships) {
+            if (r.subject === oid || r.object === oid) relIds.delete(r.id);
+            else kept.push(r);
+          }
+          graph.relationships = kept;
           break;
         }
         case "set_presentation_intent": {

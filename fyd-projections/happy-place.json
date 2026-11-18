@@ -38,7 +38,7 @@
       "fyd-ovl-mulxaxri-c3dbf3e08b33",
       "fyd-ovl-mulxdrme-8013374d3d29"
     ],
-    "graphDigest": "94a6f624eeacd7ab90b8df856fdefdaa5f59aa5d0d8bea9a1963fb0cd0e030b7",
+    "graphDigest": "5eb802b3cbc4a2c8aa9e1ca310747f3687987960c2f57a52aa0960fbee9635f1",
     "generatedAt": "2026-09-21T12:00:00.000Z",
     "eventSequences": [
       65,
@@ -286,15 +286,6 @@
         "status": "active",
         "createdAt": "2026-09-21T13:50:00Z",
         "evidenceRef": "proceduralizer:project:service-card:estimate-service-card:fences"
-      },
-      {
-        "id": "rel-demo-pergola-01",
-        "subject": "website-business-6fa5ebd99d72c4cb",
-        "predicate": "offers",
-        "object": "website-service-51de038c1defe8bd",
-        "status": "active",
-        "createdAt": "2026-09-19T18:32:14.908Z",
-        "evidenceRef": "ping-event:fyd-seed-ovl-002"
       }
     ]
   },

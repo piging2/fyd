@@ -118,9 +118,14 @@ describe("authorized graph read seam", () => {
     expect(added!.provenance.kind).toBe("canonical-journal");
     expect(added!.provenance.ref).toBe("ping-event:ev-1");
 
+    // Deactivation withdraws the object's evidence relationships in
+    // the same op (repaired 2026-11-18): a relationship leg into a
+    // non-public object is unusable as evidence and the graph
+    // verifier fails closed on it. The relationship's provenance
+    // stays in the journal (ev-2); the composed graph no longer
+    // carries the withdrawn leg.
     const rel = tenant.graph.relationships.find((r) => r.id === "rel-stub-1");
-    expect(rel).toBeDefined();
-    expect(rel!.evidenceRef).toBe("ping-event:ev-2");
+    expect(rel).toBeUndefined();
 
     const biz = tenant.graph.objects.find((o) => o.id === HAPPY_BIZ);
     expect(biz!.fields.tagline).toBe("Built right. Built to last.");

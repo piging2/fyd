@@ -36,7 +36,7 @@ Output (atomic write via tmp+rename):
                                                    # .presentationIntentDigest
 
   graphDigest = sha256 over the canonical form of graph: recursive key sort,
-  arrays keep their order, JSON separators (',', ':') — the same rule as the
+  arrays keep their order, JSON separators (',', ':'): the same rule as the
   website repo's canonicalize() in src/lib/ping/ask-composer.ts. The Next.js
   source module recomputes this digest and FAILS CLOSED on mismatch.
 
@@ -50,7 +50,7 @@ kinds abort the dump):
   {op:"add_relationship", relationship}           # full PingRelationship;
                                                   # evidenceRef forced to
                                                   # ping-event:<event_id>
-  {op:"deactivate_object", objectId}              # visibility -> "private"
+  {op:"deactivate_object", objectId}              # visibility -> "private", evidence relationships withdrawn
                                                   # (drops out of public render)
   {op:"set_presentation_intent", intentId,        # PRESENTATION INTENT layer:
       siteIntent, proposal, approval}             # approval carries the demo-owner
@@ -531,6 +531,20 @@ def apply_overlays(graph, events):
                 ref = "ping-event:" + eid
                 if ref not in refs:
                     refs.append(ref)
+                # Deactivation withdraws the object from evidence, so
+                # its evidence relationships are withdrawn from the
+                # materialized graph in the same op: a relationship
+                # leg into a non-public object is unusable as evidence
+                # and the graph verifier fails closed on it. The
+                # journal keeps the full history; a re-dump from the
+                # journal reproduces this materialization exactly.
+                kept = []
+                for r in graph["relationships"]:
+                    if r.get("subject") == oid or r.get("object") == oid:
+                        rel_ids.discard(r["id"])
+                    else:
+                        kept.append(r)
+                graph["relationships"] = kept
             elif kind == "set_presentation_intent":
                 # PRESENTATION INTENT layer. Validated strictly; never merged
                 # into the object graph. The website's read seam re-verifies
