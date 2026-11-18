@@ -11,7 +11,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 import { applyOwnerCommand } from "@/fyd/object/owner-store";
 import { GET } from "../route";
 
@@ -26,13 +26,25 @@ function get(objectId = OBJECT_ID) {
   return { params };
 }
 
+function requestAs(host: string, objectId = OBJECT_ID) {
+  return new NextRequest(
+    `http://localhost/api/fyd/objects/${objectId}/overrides`,
+    { headers: { host } },
+  );
+}
+
 async function callGet(objectId = OBJECT_ID) {
-  const resp = await GET({} as NextRequest, get(objectId));
+  const resp = await GET(requestAs("localhost", objectId), get(objectId));
   return { status: resp.status, body: (await resp.json()) as Record<string, unknown> };
 }
 
 beforeEach(() => {
   process.env.FYD_OWNER_DIR = mkdtempSync(join(tmpdir(), "fyd-owner-get-test-"));
+  // The owner read is gated to DEVELOPMENT OWNER MODE on a dev-owner
+  // host (the read boundary charged 2026-11-17); these tests exercise
+  // the legitimate owner surface, so they present both, exactly as the
+  // cross-surface suite presents its host explicitly.
+  process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE = "1";
 });
 
 describe("PROD-8: overrides GET surfaces orphaned corrections", () => {
@@ -69,5 +81,22 @@ describe("PROD-8: overrides GET surfaces orphaned corrections", () => {
     expect(orphans[0].reason).toBe("service-order-orphaned");
     expect(orphans[0].correction).toBeNull();
     expect(orphans[0].detail).toContain(WARNING);
+  });
+});
+
+describe("read boundary: the overrides GET refuses non-owner callers", () => {
+  test("a public host is refused before any owner data is served", async () => {
+    const resp = await GET(requestAs("pingfyd.com"), get());
+    const body = (await resp.json()) as Record<string, unknown>;
+    expect(resp.status).toBe(403);
+    expect(body.code).toBe("demo_owner_mode_required");
+    expect(body.view).toBeUndefined();
+    expect(body.history).toBeUndefined();
+  });
+
+  test("demo owner mode off refuses even a dev-owner host", async () => {
+    process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE = "0";
+    const resp = await GET(requestAs("localhost"), get());
+    expect(resp.status).toBe(403);
   });
 });
