@@ -118,11 +118,16 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                const theme = localStorage.getItem('ping-theme');
-                if (theme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
+                try {
+                  const theme = localStorage.getItem('ping-theme');
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {
+                  // Denied storage: leave the default theme in place.
+                  // This script must never throw before first paint.
                 }
               })();
             `,

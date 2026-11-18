@@ -28,9 +28,18 @@ export function ThemeProvider({
   storageKey = "hpp-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = React.useState<Theme>(
-    () => (typeof window !== "undefined" && (localStorage.getItem(storageKey) as Theme)) || defaultTheme
-  );
+  const [theme, setTheme] = React.useState<Theme>(() => {
+    if (typeof window === "undefined") return defaultTheme;
+    try {
+      return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+    } catch {
+      // Storage can be denied (private mode, browser policy). A denied
+      // read must fall back to the default theme, never throw during
+      // render: this initializer runs inside the provider that wraps
+      // the whole app, so a throw here blanks the page.
+      return defaultTheme;
+    }
+  });
 
   React.useEffect(() => {
     const root = window.document.documentElement;
@@ -53,7 +62,12 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
+      try {
+        localStorage.setItem(storageKey, theme);
+      } catch {
+        // Denied writes degrade to session-only, matching the effects
+        // provider: the theme still applies for this session.
+      }
       setTheme(theme);
     },
   };
