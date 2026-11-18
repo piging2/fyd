@@ -64,7 +64,7 @@ async function surfaces(expected: string) {
   const owner = await ownerResponse.json();
   expect(owner.view.summary).toBe(expected);
   expect(owner.contract.checkpoint).toBe(page.projection.provenance.checkpoint);
-  const ownerResponse2 = await getOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`), {params:Promise.resolve({objectId:siteId})});
+  const ownerResponse2 = await getOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`, { headers: { host: "localhost" } }), {params:Promise.resolve({objectId:siteId})});
   expect(ownerResponse2.status).toBe(200);
   expect((await ownerResponse2.json()).checkpoint).toBe(page.projection.provenance.checkpoint);
   expect(loadObjectViewById(bundle!.ownerProjection!, siteId, service.id, bundle!.readOwner)?.summary).toBe(expected);
@@ -147,7 +147,7 @@ test('a failed required conflict read is unavailable, never a zero-conflict proj
     const response = await handleAskRequest(siteId, askRequest());
     expect(response.status).toBe(503);
     expect((await response.json()).answer).toBeUndefined();
-    const owner = await getOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`), {params:Promise.resolve({objectId:siteId})});
+    const owner = await getOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`, { headers: { host: "localhost" } }), {params:Promise.resolve({objectId:siteId})});
     expect(owner.status).toBe(503);
   } finally { spy.mockRestore(); }
   await expect(getSiteBundle(siteId,{readConflicts:async()=>{throw new Error('conflict read unavailable');}})).rejects.toThrow();
@@ -159,7 +159,7 @@ test('an unreadable correction log serves no public value', async () => {
   const response = await handleAskRequest(siteId,askRequest());
   expect(response.status).toBe(503);
   expect((await response.json()).answer).toBeUndefined();
-  const owner = await getOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`), {params:Promise.resolve({objectId:siteId})});
+  const owner = await getOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`, { headers: { host: "localhost" } }), {params:Promise.resolve({objectId:siteId})});
   expect(owner.status).toBe(503);
 });
 test('a stale page checkpoint refuses an answer and a refreshed checkpoint agrees', async () => {
