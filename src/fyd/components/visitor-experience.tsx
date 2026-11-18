@@ -146,9 +146,28 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
   const hasMedia = !!ctx.heroMedia && !!plan.section('Hero');
   const action = phone.kind === 'safe' ? <a className="ve-action ve-action-primary" href={phone.href}><Phone size={18} /><span>Call {phoneValue}</span></a>
     : email.kind === 'safe' ? <a className="ve-action ve-action-primary" href={email.href}>Email {emailValue}</a> : null;
-  const catalog = primary === 'products' ? products : services;
   const rank = (component: string) => plan.page.sections.findIndex(s => s.component === component);
-  const catalogId = primary === 'products' ? 'products' : 'services';
+  // TENANT-2: every independently eligible, visible catalog renders,
+  // in SiteSpec order. The plan's arrays are already the eligible sets
+  // (spec section present and not hidden, hidden-object and ordering
+  // filters applied), so a non-empty array is the whole eligibility
+  // test. The primary catalog keeps emphasis: it wins order ties and
+  // carries the hero CTA.
+  const catalogDefs = [
+    { kind: 'services' as const, items: services, id: 'services', navLabel: 'Services', eyebrow: 'What they do', defaultHeading: 'Find the right service', component: 'Services' },
+    { kind: 'products' as const, items: products, id: 'products', navLabel: 'Products', eyebrow: 'Discover', defaultHeading: 'Explore products', component: 'Products' },
+  ];
+  const catalogs = catalogDefs
+    .filter(c => c.items.length > 0)
+    .sort((a, b) => {
+      const ra = rank(a.component);
+      const rb = rank(b.component);
+      const oa = ra === -1 ? Number.MAX_SAFE_INTEGER : ra;
+      const ob = rb === -1 ? Number.MAX_SAFE_INTEGER : rb;
+      if (oa !== ob) return oa - ob;
+      return (a.kind === primary ? 0 : 1) - (b.kind === primary ? 0 : 1);
+    });
+  const primaryCatalog = catalogs.find(c => c.kind === primary) ?? catalogs[0];
   // Item 5 (fyd-execution): THEME AUTHORITY. SiteSpec-approved presentation
   // state is authoritative: this component binds ONLY to ctx.spec.themeTokens.
   // The silent palette replacement (ink/accent/accentForeground overrides)
@@ -175,7 +194,7 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
     <header className="ve-header" style={{order:-1}}>
       <a className="ve-wordmark" href="#business">{name}</a>
       <nav aria-label="Business navigation">
-        {!!catalog.length && <a href={`#${catalogId}`}>{primary === 'products' ? 'Products' : 'Services'}</a>}
+        {catalogs.map(c => <a key={c.id} href={`#${c.id}`}>{c.navLabel}</a>)}
         {(locality || locations.length > 0 || serviceArea) && <a href="#locations">Location</a>}
         {(action || website.kind === 'safe' || phoneValue || emailValue) && <a href="#contact">Contact</a>}
         {ask && <a href="#ask">Ask FYD</a>}
@@ -195,15 +214,15 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
           {ctx.siteId && <LiveSiteViewIsland siteId={ctx.siteId} name={name} websiteHref={website.kind === "safe" ? website.href : null} />}
           <a href={"/o/" + encodeURIComponent(owner.id)} className="ve-text-action">Full object</a>
         </div>
-        <div className="ve-actions">{action}{catalog.length > 0 && <a className="ve-action ve-action-outline" href={`#${catalogId}`}>Explore {catalogId}<ArrowRight size={18} /></a>}{ask && <a className="ve-text-action" href="#ask"><MessageCircle size={18} />Ask a question</a>}</div>
+        <div className="ve-actions">{action}{primaryCatalog && <a className="ve-action ve-action-outline" href={`#${primaryCatalog.id}`}>Explore {primaryCatalog.id}<ArrowRight size={18} /></a>}{ask && <a className="ve-text-action" href="#ask"><MessageCircle size={18} />Ask a question</a>}</div>
         {summary && <SourceDisclosure object={owner} checkpoint={ctx.projectionCheckpoint}><p>“{summary}”</p></SourceDisclosure>}
       </div>
       {hasMedia && ctx.heroMedia && <HeroFigure media={ctx.heroMedia} siteId={ctx.siteId ?? ""} />}
     </section>
-    {!!catalog.length && <section className="ve-section ve-catalog" id={catalogId} style={{order:rank(primary === "products" ? "Products" : "Services")}}>
-      <div className="ve-section-heading"><div><p className="ve-eyebrow">{primary === 'products' ? 'Discover' : 'What they do'}</p><h2>{plan.section(primary === 'products' ? 'Products' : 'Services')?.presentation.heading ?? (primary === 'products' ? 'Explore products' : 'Find the right service')}</h2></div>{ask && <a href="#ask">Not sure? Ask FYD <ArrowUpRight size={18}/></a>}</div>
+    {catalogs.map(c => <section key={c.id} className="ve-section ve-catalog" id={c.id} style={{order:rank(c.component)}}>
+      <div className="ve-section-heading"><div><p className="ve-eyebrow">{c.eyebrow}</p><h2>{plan.section(c.component)?.presentation.heading ?? c.defaultHeading}</h2></div>{ask && <a href="#ask">Not sure? Ask FYD <ArrowUpRight size={18}/></a>}</div>
       <div className="ve-cards">
-        {catalog.map((object, i) => {
+        {c.items.map((object, i) => {
           const title = read(object, 'title')!;
           const description = read(object, 'description');
           const href = resolveSafeLink(read(object, 'service_href') ?? read(object, 'url'), 'navigate');
@@ -218,7 +237,7 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
           </article>;
         })}
       </div>
-    </section>}
+    </section>)}
     {(locality || locations.length > 0 || serviceArea || action || website.kind === 'safe' || phoneValue || emailValue) && <section className="ve-section ve-contact-grid" id="contact" style={{order:Math.max(rank("Contact"),rank("Locations"))}}>
       {(locality || locations.length > 0 || serviceArea) && <div id="locations"><p className="ve-eyebrow">Where to find them</p><h2>{locations.length > 1 ? 'Locations' : 'Location & service area'}</h2>
         {locations.length ? locations.map(o => { const title = read(o, 'title')!; return <div className="ve-location-object" data-fyd-object={o.id} key={o.id}><ObjectIdentityMark object={markFor(o, title)} size={40} /><ObjectTriggerIsland object={o} title={title} description={read(o, 'description') ?? ""} className="ve-object-trigger"><span>{title}</span></ObjectTriggerIsland></div>; }) : [locality].filter(Boolean).map(label => <p className="ve-location" key={label}><MapPin size={22}/>{label}</p>)}
