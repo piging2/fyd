@@ -1,42 +1,50 @@
 "use client";
 
 import * as React from "react";
-import { Sparkles, Sparkle, ZapOff } from "lucide-react";
+import { Sparkles, Sparkle, ZapOff, MonitorSmartphone } from "lucide-react";
 import {
   useVisualEffects,
-  type ResolvedEffects,
+  type EffectsPreference,
 } from "@/components/effects-provider";
 import { cn } from "@/lib/utils";
 
-const ORDER: ResolvedEffects[] = ["full", "reduced", "off"];
+const ORDER: EffectsPreference[] = ["full", "reduced", "off", "system"];
 
 const META: Record<
-  ResolvedEffects,
+  EffectsPreference,
   { icon: typeof Sparkles; label: string; title: string }
 > = {
   full: {
     icon: Sparkles,
     label: "Visual effects: full",
-    title: "Visual effects: full — switch to reduced",
+    title: "Visual effects: full, switch to reduced",
   },
   reduced: {
     icon: Sparkle,
     label: "Visual effects: reduced",
-    title: "Visual effects: reduced — switch to off",
+    title: "Visual effects: reduced, switch to off",
   },
   off: {
     icon: ZapOff,
     label: "Visual effects: off",
-    title: "Visual effects: off — switch to full",
+    title: "Visual effects: off, switch to system",
+  },
+  system: {
+    icon: MonitorSmartphone,
+    label: "Visual effects: system",
+    title: "Visual effects: system, switch to full",
   },
 };
 
 /**
- * EffectsToggle — cycles full → reduced → off.
- * Compact header control, modeled on ThemeToggle. Persists via EffectsProvider.
+ * EffectsToggle: cycles full, reduced, off, system.
+ * Compact header control, modeled on ThemeToggle. Persists via
+ * EffectsProvider. The system stop returns the visitor to following
+ * the OS reduced-motion signal; without it, a visitor who ever touched
+ * the control could never get back to system behavior in-page.
  */
 export function EffectsToggle({ className }: { className?: string }) {
-  const { resolved, setPreference } = useVisualEffects();
+  const { preference, setPreference } = useVisualEffects();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -58,9 +66,9 @@ export function EffectsToggle({ className }: { className?: string }) {
     );
   }
 
-  const meta = META[resolved];
+  const meta = META[preference];
   const Icon = meta.icon;
-  const next = ORDER[(ORDER.indexOf(resolved) + 1) % ORDER.length];
+  const next = ORDER[(ORDER.indexOf(preference) + 1) % ORDER.length];
 
   return (
     <button

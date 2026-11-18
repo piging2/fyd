@@ -30,10 +30,16 @@ const MotionContext = createContext<MotionContextType>({
  */
 export function MotionProvider({ children }: { children: ReactNode }) {
   const [osReducedMotion, setOsReducedMotion] = useState(false);
-  const { resolved } = useVisualEffects();
-  // The visitor preference governs alongside the OS signal: an explicit
-  // reduced or off choice takes the reduced branch even when the OS does not.
-  const reducedMotion = osReducedMotion || resolved !== "full";
+  const { resolved, preference } = useVisualEffects();
+  // Precedence, decided 2026-11-17: an explicit visitor choice governs
+  // every preference-consuming layer on its own. The OS signal governs
+  // only in system mode, where resolved already encodes it; the OS leg
+  // is kept for that mode because this provider's mount read lands
+  // before the effects provider's resolution effect.
+  const reducedMotion =
+    preference === "system"
+      ? osReducedMotion || resolved !== "full"
+      : resolved !== "full";
 
   useEffect(() => {
     // The server has no window and renders false. Read the real preference

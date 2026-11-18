@@ -104,6 +104,7 @@ function readChromeTopPx(): number {
  */
 function HashRouter() {
   const { lenis } = useLenis();
+  const { resolved, preference } = useVisualEffects();
   const lenisRef = useRef(lenis);
   lenisRef.current = lenis;
   const preFragmentY = useRef<number | null>(null);
@@ -118,7 +119,10 @@ function HashRouter() {
         ? (target, opts) => lenisRef.current?.scrollTo(target, opts)
         : undefined,
       chromeTopPx: readChromeTopPx,
-      reducedMotion: () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      reducedMotion: () =>
+        preference === "system"
+          ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          : resolved !== "full",
     });
 
     const restorePrevious = () => {
@@ -226,7 +230,7 @@ export function LenisProvider({ children }: { children: ReactNode }) {
   const lenisRef = useRef<Lenis | null>(null);
   const lockCount = useRef(0);
   const pathname = usePathname();
-  const { resolved } = useVisualEffects();
+  const { resolved, preference } = useVisualEffects();
 
   const setModalScrollLock = useCallback((locked: boolean) => {
     if (locked) {
@@ -247,7 +251,7 @@ export function LenisProvider({ children }: { children: ReactNode }) {
     if (isWorkbenchRoute || isWorkbenchPreview) return;
 
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (media.matches) return; // native scroll when reduced motion is preferred
+    if (media.matches && preference === "system") return; // OS reduced motion stands Lenis down only while the visitor follows the OS
     if (resolved !== "full") return; // native scroll under a reduced or off effects preference
 
     const lenisInstance = new Lenis({
@@ -294,7 +298,7 @@ export function LenisProvider({ children }: { children: ReactNode }) {
       // Outstanding modal scroll locks are preserved across the
       // transition: lockCount is deliberately NOT reset here.
     };
-  }, [pathname, resolved]);
+  }, [pathname, resolved, preference]);
 
   return (
     <LenisContext.Provider value={{ lenis, setModalScrollLock }}>

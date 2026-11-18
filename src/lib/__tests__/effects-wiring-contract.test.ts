@@ -36,7 +36,19 @@ describe("effects preference wiring", () => {
     const src = read("src/components/lenis-provider.tsx");
     expect(src).toContain("useVisualEffects()");
     expect(src).toContain('if (resolved !== "full") return;');
-    expect(src).toContain("}, [pathname, resolved]);");
+    expect(src).toContain("}, [pathname, resolved, preference]);");
+  });
+
+  it("root layout applies the stored effects preference before paint", () => {
+    const layout = read("src/app/layout.tsx");
+    expect(layout).toContain("localStorage.getItem('ping-effects')");
+    expect(layout).toContain("effects-' + resolved");
+  });
+
+  it("effects toggle cycles through a system stop", () => {
+    const src = read("src/components/effects-toggle.tsx");
+    expect(src).toContain('"system"');
+    expect(src).toContain("EffectsPreference");
   });
 
   it("site header offers the effects toggle beside the theme toggle", () => {

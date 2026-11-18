@@ -128,6 +128,33 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             `,
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('ping-effects');
+                  var preference = (stored === 'full' || stored === 'reduced' || stored === 'off' || stored === 'system') ? stored : 'system';
+                  var resolved = preference;
+                  if (preference === 'system') {
+                    resolved = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduced' : 'full';
+                  }
+                  var root = document.documentElement;
+                  root.classList.remove('effects-full', 'effects-reduced', 'effects-off');
+                  root.classList.add('effects-' + resolved);
+                  if (resolved !== 'full') {
+                    root.classList.add('reduced-motion');
+                  } else {
+                    root.classList.remove('reduced-motion');
+                  }
+                } catch (e) {
+                  // Storage or media access denied: the providers resolve
+                  // the same defaults after mount. Never throw pre-paint.
+                }
+              })();
+            `,
+          }}
+        />
         {!chromeless && (
           <>
             <script
