@@ -162,15 +162,44 @@ function tenantMismatchResponse(ctx: OwnerContext, key: string, claimed: string)
  * surface's read path; the public GET /api/fyd/objects/[objectId] never
  * serves history.
  *
- * DEMO/DEV ONLY, same as POST: no production authentication. The
- * OwnerContext seam stamps the response; the Manage surface labels every
- * session DEV/DEMO.
+ * DEMO/DEV ONLY, gated exactly as the POST approve stage: DEVELOPMENT
+ * OWNER MODE on a dev-owner host, refused before any owner data is
+ * read. No production authentication exists in this mode. The
+ * OwnerContext seam stamps the response; the Manage surface labels
+ * every session DEV/DEMO.
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ objectId: string }> },
 ) {
   const { objectId } = await params;
+  // READ BOUNDARY (charged 2026-11-17): this handler serves the OWNER
+  // projection and the correction history. It carries the same gate as
+  // the POST approve stage below: DEVELOPMENT OWNER MODE on a dev-owner
+  // host, refused before any owner context is constructed or any owner
+  // data is read. The DEV/DEMO label was a disclosure, not an access
+  // control; this check is the control. The public projection is served
+  // by GET /api/fyd/objects/[objectId] and is unaffected.
+  const demoEnabled = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE === "1";
+  const reqHost = request.headers?.get("host") ?? "";
+  const hostPrivate = isDevOwnerHost(reqHost);
+  if (!demoEnabled || !hostPrivate) {
+    return NextResponse.json(
+      {
+        ...ownerContextRefusalLabel(),
+        ok: false,
+        code: "demo_owner_mode_required",
+        error:
+          "Owner reads require DEV/DEMO OWNER MODE " +
+          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+          "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+          "this mode is for explicit development hosts only.",
+        demoOwnerMode: demoEnabled,
+        hostPrivate,
+      },
+      { status: 403 },
+    );
+  }
   let ctx: OwnerContext;
   try {
     ctx = await createOwnerContext(objectId);
