@@ -14,8 +14,9 @@
  * mutations run as a seeded demo actor, no owner identity is verified.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { OwnerCommand } from "@/fyd/object/types";
+import { useFydDialog } from "@/fyd/ui/use-fyd-dialog";
 
 type Phase = "idle" | "proposing" | "proposed" | "approving" | "applied" | "failed";
 
@@ -68,6 +69,56 @@ export function OwnerPanel({ siteId }: { siteId: string }) {
 
   const endpoint = "/api/fyd/objects/" + encodeURIComponent(siteId) + "/overrides";
   const busy = phase === "proposing" || phase === "approving";
+
+  // TENANT-5: the panel runs on the one FYD dialog primitive
+  // (useFydDialog, focus "into"): balanced scroll lock, initial
+  // focus, Tab containment, Escape, and focus return, instead of
+  // the bare fixed div it rendered before (focus left on the body
+  // at open, Tab escaping into the page behind, no Escape).
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useFydDialog(panelRef, { open, onClose: close, focus: "into" });
+
+  // Busy settlement: while a propose or approve is in flight,
+  // dismissal is blocked BEFORE the dialog controller's
+  // requestClose, never inside onClose. The controller releases
+  // its scroll lock and returns focus in a finally even when
+  // onClose refuses, which would strand an open panel with its
+  // coordination released. The close button and the backdrop
+  // already refuse while busy in their own handlers; Escape is
+  // the remaining path, intercepted here in the capture phase
+  // ahead of the primitive's own key handler.
+  const busyRef = useRef(busy);
+  busyRef.current = busy;
+  useEffect(() => {
+    if (!open) return;
+    const onKeyCapture = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && busyRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener("keydown", onKeyCapture, true);
+    return () => window.removeEventListener("keydown", onKeyCapture, true);
+  }, [open ]);
+
+  // Focus choreography the primitive cannot know about: the
+  // trigger unmounts while the panel is open (this component
+  // swaps branches), so on open the request field takes focus
+  // (the owner's first act is describing the change), and on
+  // close focus returns to the remounted trigger explicitly.
+  const wasOpenRef = useRef(false);
+  useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      textRef.current?.focus({ preventScroll: true });
+    }
+    if (!open && wasOpenRef.current) {
+      triggerRef.current?.focus();
+    }
+    wasOpenRef.current = open;
+  }, [open ]);
 
   // PROD-8: when the customize panel loads, check for orphaned
   // corrections (active in the journal, applying to nothing) so the
@@ -213,6 +264,7 @@ export function OwnerPanel({ siteId }: { siteId: string }) {
   if (!open) {
     return (
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         className="fixed bottom-6 right-6 z-50 min-h-[44px] rounded-full px-6 py-3 text-base font-semibold shadow-lg"
@@ -226,6 +278,8 @@ export function OwnerPanel({ siteId }: { siteId: string }) {
 
   return (
     <div
+      ref={panelRef}
+      tabIndex={-1}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center"
       role="dialog"
       aria-modal="true"
@@ -281,6 +335,7 @@ export function OwnerPanel({ siteId }: { siteId: string }) {
               Describe the change in plain language
             </label>
             <textarea
+              ref={textRef}
               id="owner-panel-text"
               value={text}
               onChange={(e) => setText(e.target.value)}
