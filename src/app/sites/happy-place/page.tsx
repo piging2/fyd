@@ -1,5 +1,10 @@
-export const dynamic = "force-static";
-export const revalidate = 3600;
+// force-dynamic is load-bearing, not a performance choice: the root
+// layout decides tenant chrome from the request pathname (the
+// middleware header), which a static prerender cannot supply. A
+// prerendered copy of this route baked the PING header, footer, and
+// JSON-LD in beside the tenant's own (VISUAL-4, diagnosed 2026-11-17).
+// This route renders per request, like the coppersmith control route.
+export const dynamic = "force-dynamic";
 
 /**
  * FYD Social generated-site demo: Happy Place Carpentry.
