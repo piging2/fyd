@@ -914,8 +914,13 @@ a {
 }
 
 /* Apply to specific component types that are typically below the fold */
+/* The FAQ list is deliberately NOT in this rule: its closed height is
+   far below the shared 600px estimate, and while the list sits
+   unrendered above a fragment target, the estimate error shifts the
+   target's landing by the full difference (measured 398px on /fyd,
+   landing the #try section at -238 instead of its offset). The list is
+   a handful of closed details elements, small enough to render eagerly. */
 .CraftCard-grid,
-.faq-list,
 .gallery-grid,
 .reviews-grid {
   content-visibility: auto;
