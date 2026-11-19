@@ -64,6 +64,7 @@ overlay journal did not prove the expected identity (marker mismatch or
 unreadable marker) on its pre-flight GET.
 """
 
+import copy
 import hashlib
 import json
 import os
@@ -487,11 +488,20 @@ def apply_overlays(graph, events):
             if kind == "set_field":
                 oid, field, value = op.get("objectId"), op.get("field"), op.get("value")
                 if not (isinstance(oid, str) and isinstance(field, str)
-                        and isinstance(value, (str, list)) and oid in objects):
+                        and (isinstance(value, str)
+                             or (isinstance(value, list)
+                                 and all(isinstance(x, str) for x in value)))
+                        and oid in objects):
                     raise ValueError("event %s: bad set_field %r" % (eid, op))
                 o = objects[oid]
                 if field in ("title", "description"):
-                    o[field] = value if isinstance(value, str) else value
+                    if not isinstance(value, str):
+                        raise ValueError("event %s: bad set_field %r" % (eid, op))
+                    o[field] = value
+                    # Keep an existing scalar mirror consistent with the
+                    # canonical pseudo-field (parity with the TS applier).
+                    if field in o.get("fields", {}):
+                        o["fields"][field] = value
                 else:
                     o.setdefault("fields", {})[field] = value
                 prov = o.setdefault("provenance", {})
@@ -504,7 +514,7 @@ def apply_overlays(graph, events):
                 if not (isinstance(o, dict) and isinstance(o.get("id"), str)
                         and o["id"] not in objects):
                     raise ValueError("event %s: bad add_object %r" % (eid, op))
-                new_o = dict(o)
+                new_o = copy.deepcopy(o)  # deep copy: later ops must not mutate the journal event's object (TS applier parity: structuredClone)
                 new_o["provenance"] = {
                     "kind": "canonical-journal",
                     "ref": "ping-event:" + eid,
@@ -517,7 +527,7 @@ def apply_overlays(graph, events):
                 if not (isinstance(r, dict) and isinstance(r.get("id"), str)
                         and r["id"] not in rel_ids):
                     raise ValueError("event %s: bad add_relationship %r" % (eid, op))
-                new_r = dict(r)
+                new_r = copy.deepcopy(r)  # deep copy, same reason as add_object above
                 new_r["evidenceRef"] = "ping-event:" + eid
                 rel_ids.add(new_r["id"])
                 graph["relationships"].append(new_r)
