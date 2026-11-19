@@ -22,6 +22,8 @@ const PLAYER_LABELS: Record<PlayerPhase, string> = {
 export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duration }: EpisodePlayerProps) {
   const playerId = useId();
   const frame = useRef<HTMLIFrameElement>(null);
+  const loadButton = useRef<HTMLButtonElement>(null);
+  const attemptRef = useRef(0);
   const posterImage = useRef<HTMLImageElement>(null);
   const [interactive, setInteractive] = useState(false);
   const [phase, setPhase] = useState<PlayerPhase>("poster");
@@ -48,14 +50,28 @@ export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duratio
 
   useEffect(() => {
     if (phase !== "requested") return;
-    const timeout = window.setTimeout(() => setPhase("unavailable"), 15000);
+    const forAttempt = attempt;
+    const timeout = window.setTimeout(() => {
+      if (attemptRef.current === forAttempt) setPhase("unavailable");
+    }, 15000);
     return () => window.clearTimeout(timeout);
-  }, [phase]);
+  }, [phase, attempt]);
 
   function requestPlayer() {
     if (phase === "requested") return;
+    attemptRef.current += 1;
+    setAttempt(attemptRef.current);
     setPhase("requested");
-    setAttempt((value) => value + 1);
+  }
+
+  function closePlayer() {
+    // Invalidate the active attempt first: a late onLoad or onError from
+    // the closing frame, or its pending timeout, must not change the
+    // poster state or a newer attempt.
+    attemptRef.current += 1;
+    setAttempt(attemptRef.current);
+    setPhase("poster");
+    loadButton.current?.focus();
   }
 
   return (
@@ -75,8 +91,12 @@ export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duratio
             allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
-            onLoad={() => setPhase("loaded")}
-            onError={() => setPhase("unavailable")}
+            onLoad={() => {
+              if (attemptRef.current === attempt) setPhase("loaded");
+            }}
+            onError={() => {
+              if (attemptRef.current === attempt) setPhase("unavailable");
+            }}
           />
         ) : (
           <>
@@ -101,6 +121,7 @@ export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duratio
 
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
         <button
+          ref={loadButton}
           type="button"
           onClick={requestPlayer}
           disabled={!interactive}
@@ -117,6 +138,16 @@ export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duratio
             className="min-h-11 rounded px-2 font-semibold text-honey-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             Go to video player
+          </button>
+        )}
+        {showFrame && (
+          <button
+            type="button"
+            onClick={closePlayer}
+            aria-controls={playerId}
+            className="min-h-11 rounded px-2 font-semibold text-honey-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            Close player
           </button>
         )}
         {duration && <span className="text-sm text-text-muted">{duration}</span>}
