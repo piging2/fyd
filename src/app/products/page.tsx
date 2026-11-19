@@ -27,12 +27,12 @@ export const dynamic = "force-static";
 export const metadata: Metadata = {
   title: "Products: What Exists, What Is Being Built",
   description:
-    "What PingFyd offers a business today, what is in development, and where it is headed. Every product carries an honest label, so you can tell at a glance what is real and what is not sold as finished.",
+    "What PingFyd offers today, what is in development, and where it is headed. Every product carries an honest label: what is real, and what is not sold as finished.",
   alternates: { canonical: "/products" },
   openGraph: {
     type: "website",
     title: "Products: What Exists, What Is Being Built · PING",
-    description: "What PingFyd offers a business today, what is in development, and where it is headed. Every product carries an honest label, so you can tell at a glance what is real and what is not sold as finished.",
+    description: "What PingFyd offers today, what is in development, and where it is headed. Every product carries an honest label: what is real, and what is not sold as finished.",
     url: siteUrl + "/products",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
     title: "Products: What Exists, What Is Being Built · PING",
-    description: "What PingFyd offers a business today, what is in development, and where it is headed. Every product carries an honest label, so you can tell at a glance what is real and what is not sold as finished.",
+    description: "What PingFyd offers today, what is in development, and where it is headed. Every product carries an honest label: what is real, and what is not sold as finished.",
   },
 };
 

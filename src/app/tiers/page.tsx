@@ -17,22 +17,22 @@ const siteUrl =
     : "https://pingfyd.com");
 
 export const metadata: Metadata = {
-  title: "Pricing: Self-Hosted $0, Hosted DIY from $29/mo, Concierge from $2,500 | PingFyd",
+  title: "PingFyd Pricing: $0 Self-Hosted, $29/mo Hosted, $2,500 Concierge",
   description:
-    "Three tiers, priced in the open with the logic published: Self-Hosted free forever, Hosted DIY Launch $29/mo and Growth $59/mo with ticket caps and zero 1:1 owner time, Concierge Builds at $2,500 fixed and Retainers at $1,250/mo with capped owner hours.",
+    "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, zero 1:1 owner time. Concierge: Builds $2,500 fixed, Retainers $1,250/mo, capped hours.",
   alternates: { canonical: "/tiers" },
   openGraph: {
     type: "website",
-    title: "Pricing: Self-Hosted $0, Hosted DIY from $29/mo, Concierge from $2,500 | PingFyd",
-    description: "Three tiers, priced in the open with the logic published: Self-Hosted free forever, Hosted DIY Launch $29/mo and Growth $59/mo with ticket caps and zero 1:1 owner time, Concierge Builds at $2,500 fixed and Retainers at $1,250/mo with capped owner hours.",
+    title: "PingFyd Pricing: $0 Self-Hosted, $29/mo Hosted, $2,500 Concierge",
+    description: "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, zero 1:1 owner time. Concierge: Builds $2,500 fixed, Retainers $1,250/mo, capped hours.",
     url: siteUrl + "/tiers",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
-    title: "Pricing: Self-Hosted $0, Hosted DIY from $29/mo, Concierge from $2,500 | PingFyd",
-    description: "Three tiers, priced in the open with the logic published: Self-Hosted free forever, Hosted DIY Launch $29/mo and Growth $59/mo with ticket caps and zero 1:1 owner time, Concierge Builds at $2,500 fixed and Retainers at $1,250/mo with capped owner hours.",
+    title: "PingFyd Pricing: $0 Self-Hosted, $29/mo Hosted, $2,500 Concierge",
+    description: "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, zero 1:1 owner time. Concierge: Builds $2,500 fixed, Retainers $1,250/mo, capped hours.",
   },
 };
 

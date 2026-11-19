@@ -15,22 +15,22 @@ const siteUrl =
     : "https://pingfyd.com");
 
 export const metadata: Metadata = {
-  title: "What It Costs to Run This: DIY Cost Physics and Calculator | PingFyd Open",
+  title: "What It Costs to Run This: DIY Cost Physics | PingFyd",
   description:
-    "The real cost of running a small business web, social, and AI stack yourself, line by line, with an interactive true-cost calculator that prices your own hours. Estimates labeled, unknowns admitted.",
+    "The cost of running your small business web, social, and AI stack yourself, with a true-cost calculator that prices your own hours. Estimates labeled, unknowns admitted.",
   alternates: { canonical: "/open/costs" },
   openGraph: {
     type: "website",
-    title: "What It Costs to Run This: DIY Cost Physics and Calculator | PingFyd Open",
-    description: "The real cost of running a small business web, social, and AI stack yourself, line by line, with an interactive true-cost calculator that prices your own hours. Estimates labeled, unknowns admitted.",
+    title: "What It Costs to Run This: DIY Cost Physics | PingFyd",
+    description: "The cost of running your small business web, social, and AI stack yourself, with a true-cost calculator that prices your own hours. Estimates labeled, unknowns admitted.",
     url: siteUrl + "/open/costs",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
-    title: "What It Costs to Run This: DIY Cost Physics and Calculator | PingFyd Open",
-    description: "The real cost of running a small business web, social, and AI stack yourself, line by line, with an interactive true-cost calculator that prices your own hours. Estimates labeled, unknowns admitted.",
+    title: "What It Costs to Run This: DIY Cost Physics | PingFyd",
+    description: "The cost of running your small business web, social, and AI stack yourself, with a true-cost calculator that prices your own hours. Estimates labeled, unknowns admitted.",
   },
 };
 
