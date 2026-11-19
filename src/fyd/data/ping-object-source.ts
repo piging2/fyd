@@ -19,8 +19,13 @@
  *     compared to meta.graphDigest. canonicalize is the repo's existing
  *     canonical JSON (src/lib/ping/ask-composer.ts), the same rule the
  *     dump uses (recursive key sort, array order preserved). A mismatch
- *     means the projection was tampered with or written by a different
- *     dumper version: refuse to serve it.
+ *     means the graph on disk is not the graph the digest was computed
+ *     over: refuse to serve it. meta.dumperVersion is provenance, not
+ *     an acceptance gate: this seam's legitimate corpus spans dumper
+ *     versions (test fixtures at 1.0.0, Pig var projections at 1.0.0
+ *     through current, one foreign producer), so a version-acceptance
+ *     policy belongs to the dump pipeline's owner together with a
+ *     corpus migration, not to a reader-side pin.
  *
  * The projection directory is configurable via FYD_PROJECTION_DIR for tests;
  * in production it is the PING-owned var dir the dump writes to.
@@ -91,15 +96,6 @@ export interface PingSourceOpts {
    */
   ownerOverlay?: boolean;
 }
-
-/**
- * The dumper version this reader accepts. The header above has always
- * treated a foreign dumper version as a refusal reason; this pin makes
- * that check explicit instead of accepting any non-empty string. Bump
- * in the same commit as any DUMPER_VERSION change in
- * tools/fyd-site-projection/dump.py.
- */
-const EXPECTED_DUMPER_VERSION = "fyd-projection-dump@1.2.2";
 
 function projectionDir(): string {
   // Priority: explicit env override -> Pig path (when present) -> bundled
@@ -176,12 +172,6 @@ function validateMeta(meta: unknown, siteId: string): asserts meta is Projection
     if (typeof meta[k] !== "string" || (meta[k] as string).length === 0) {
       fail(siteId, `meta has bad "${k}"`);
     }
-  }
-  if (meta["dumperVersion"] !== EXPECTED_DUMPER_VERSION) {
-    fail(
-      siteId,
-      `meta.dumperVersion "${String(meta["dumperVersion"])}" is not the pinned dumper version (${EXPECTED_DUMPER_VERSION})`,
-    );
   }
   if (!Array.isArray(meta["overlayEventIds"])) {
     fail(siteId, "meta.overlayEventIds is not an array");
