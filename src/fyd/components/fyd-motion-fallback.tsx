@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useVisualEffects } from "@/components/effects-provider";
 
 /**
  * FydMotionFallback: keeps scroll-enter motion working where the browser
@@ -16,14 +17,26 @@ import { useEffect } from "react";
  * below-fold elements as they scroll into view.
  */
 export function FydMotionFallback() {
+  // The visitor's effects preference is the single authority for motion
+  // on every surface (the 2026-11-17 precedence decision): an explicit
+  // choice governs everywhere, and the OS signal reaches this component
+  // only through the provider's resolved value in system mode. Reading
+  // the raw OS query here broke that in both directions on the tenant
+  // surfaces: an explicit full choice was overridden by the OS, and an
+  // explicit reduced choice was ignored when the OS did not agree.
+  const { resolved } = useVisualEffects();
+
   useEffect(() => {
     if (typeof document === "undefined") return;
 
     // Reduced motion: ensure everything is visible, no animations.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (resolved !== "full") {
       document.documentElement.classList.add("fyd-reduced-motion");
-      return;
+      return () => {
+        document.documentElement.classList.remove("fyd-reduced-motion");
+      };
     }
+    document.documentElement.classList.remove("fyd-reduced-motion");
 
     const supportsTimeline =
       typeof CSS !== "undefined" &&
@@ -101,7 +114,7 @@ export function FydMotionFallback() {
     return () => {
       if (safetyTimer) clearTimeout(safetyTimer);
     };
-  }, []);
+  }, [resolved]);
 
   return null;
 }
