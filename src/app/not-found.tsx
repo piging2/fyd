@@ -1,8 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Container, Section } from "@/components/section";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PingWordmark } from "@/components/ping-wordmark";
+
+
+export const metadata: Metadata = {
+  title: "Page Not Found | PingFyd",
+  description: "That page does not exist, or it moved. Head back to the PingFyd home page or see how PING works.",
+};
 
 export default function NotFound() {
   return (
