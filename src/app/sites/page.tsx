@@ -19,6 +19,7 @@ import { isServableSiteId } from "@/app/sites/_shared/site-lookup";
 export const metadata: Metadata = {
   title: { absolute: "FYD demo sites | PingFyd" },
   description: "Working demo websites built by FYD for real local businesses: a plumber, a carpentry company, and PingFyd itself. Open any demo and look around.",
+  alternates: { canonical: "/sites" },
 };
 
 /**
