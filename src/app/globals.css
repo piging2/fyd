@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * SEMANTIC DESIGN TOKENS — PING technology brand.
+ * SEMANTIC DESIGN TOKENS: PING technology brand.
  * TenantOS model: to re-skin for another tenant, change tokens only.
  * (CEO visual direction) Color roles, not equal-weight colors:
  *   --color-primary     = Deep Ink       (brand: header, nav, buttons, footer, dark sections)
@@ -14,12 +14,12 @@
  * To re-skin for another business, change tokens only.
  */
 @theme {
-  /* Brand — Deep Navy (primary brand color) */
+  /* Brand: Deep Navy (primary brand color) */
   --color-primary: #232033;
   --color-primary-hover: #2E2A44;
   --color-primary-foreground: #FAFBFC;
 
-  /* Secondary brand — Cedar Gold (single warm CTA pop, 5-8% usage) */
+  /* Secondary brand: Cedar Gold (single warm CTA pop, 5-8% usage) */
   --color-honey: #C9A227;
   --color-honey-hover: #DDBB4A;
   --color-honey-foreground: #1c1917;
@@ -33,13 +33,13 @@
      Ported from the tested fyd010-fix slice 7f3a1c2 (audit F2/F3/F6). */
   --color-focus: #8A6D1F;
 
-  /* PING brand — violet signal accent (pig purple) */
+  /* PING brand: violet signal accent (pig purple) */
   --color-ping-violet: #7C5CD6;
   --color-ping-violet-hover: #8F6FE0;
   --color-ping-gold: #C9A227;
   --color-ping-ink: #1A1729;
 
-  /* Accent — Charcoal (borders, icons, labels) */
+  /* Accent: Charcoal (borders, icons, labels) */
   --color-accent: #432E2D;
   --color-accent-foreground: #FAFBFC;
 
@@ -48,24 +48,24 @@
   --color-forest-hover: #355B4C;
   --color-forest-foreground: #FAFBFC;
 
-  /* Backgrounds — warm, layered whites (Phase 9) */
-  --color-background: #F7F7F9;       /* warm paper white — page (was #FAFBFC cloud white) */
-  --color-surface-2: #E8E8EF;         /* soft linen — secondary sections (was #DCEAF3 steel blue) */
-  --color-surface: #EFEFF4;           /* shoji white — cards (was #E8F1F5 fog blue) */
-  --color-surface-muted: #D8D8E2;    /* smokey taupe — subtle sections (was #D8E3EA slate mist) */
+  /* Backgrounds: warm, layered whites (Phase 9) */
+  --color-background: #F7F7F9;       /* warm paper white: page (was #FAFBFC cloud white) */
+  --color-surface-2: #E8E8EF;         /* soft linen: secondary sections (was #DCEAF3 steel blue) */
+  --color-surface: #EFEFF4;           /* shoji white: cards (was #E8F1F5 fog blue) */
+  --color-surface-muted: #D8D8E2;    /* smokey taupe: subtle sections (was #D8E3EA slate mist) */
   --color-border: #30424E;           /* charcoal borders/dividers (unchanged) */
-  --color-border-soft: #CDC4B5;      /* smokey taupe — soft borders (was #D8E3EA) */
+  --color-border-soft: #CDC4B5;      /* smokey taupe: soft borders (was #D8E3EA) */
 
   /* Deep (hero / dark sections) */
   --color-deep: #1A1729;             /* ripe olive for hero */
   --color-deep-2: #12101D;           /* deep oxblood charcoal for dark sections */
 
-  /* Atmospheric Lighting — Pacific Northwest forest-inspired */
-  --color-atmosphere-shadow: #44483D;  /* Ripe Olive — deepest atmospheric foundation */
-  --color-atmosphere-primary: #5E6259; /* Pewter Green — primary drifting atmospheric layer */
-  --color-atmosphere-highlight: #858D81; /* Carolina Gull — gentle moving highlights */
+  /* Atmospheric Lighting: Pacific Northwest forest-inspired */
+  --color-atmosphere-shadow: #44483D;  /* Ripe Olive: deepest atmospheric foundation */
+  --color-atmosphere-primary: #5E6259; /* Pewter Green: primary drifting atmospheric layer */
+  --color-atmosphere-highlight: #858D81; /* Carolina Gull: gentle moving highlights */
 
-  /* Material Palette — Phase 8 introduction (ready for gradual rollout) */
+  /* Material Palette: Phase 8 introduction (ready for gradual rollout) */
   --color-shoji-white: #E6DFD3;      /* primary warm surface */
   --color-smokey-taupe: #CDC4B5;     /* secondary surface */
   --color-pewter-green: #5E6259;     /* atmospheric support (matches existing atmosphere-primary) */
@@ -74,10 +74,10 @@
   --color-cavern-clay: #AC6B53;       /* premium accent (NEW - not yet applied) */
   --color-blood-orange: #E74C3C;      /* optional future accent (token only - not yet applied) */
 
-  /* Warm Paper White — emotional center of the brand (ready for gradual rollout) */
+  /* Warm Paper White: emotional center of the brand (ready for gradual rollout) */
   --color-warm-paper: #F8F5F0;        /* warm ivory/paper white - leans slightly yellow, not cream/beige */
 
-  /* Expanded Warm Neutrals — Phase 9 (bright, layered family) */
+  /* Expanded Warm Neutrals: Phase 9 (bright, layered family) */
   --color-sunlit-white: #F6F1E8;     /* sunlit white - bright, warm illumination */
   --color-soft-linen: #E9E1D4;       /* soft linen - subtle warm texture */
 
@@ -107,12 +107,12 @@
   --color-aged-bronze: #A1887F;     /* aged bronze for accents */
   --color-charcoal: #432E2D;        /* warm charcoal for text */
 
-  /* Typography — Playfair Display (display) + Georgia (body) */
+  /* Typography: Playfair Display (display) + Georgia (body) */
   --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-sans: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Microtypography — optical alignment and rhythm */
+  /* Microtypography: optical alignment and rhythm */
   --leading-display: 1.15;      /* tight leading for display headings */
   --leading-body: 1.6;          /* comfortable reading rhythm */
   --leading-tight: 1.25;        /* compact headings */
@@ -120,29 +120,29 @@
   --tracking-body: 0.01em;      /* slight letter-spacing increase for body readability */
   --tracking-tight: -0.01em;    /* neutral tracking for compact text */
 
-  /* Shadows — warm, layered, not harsh */
+  /* Shadows: warm, layered, not harsh */
   --shadow-warm: 0 1px 3px rgba(53, 36, 35, 0.12), 0 1px 2px rgba(53, 36, 35, 0.08);
   --shadow-float: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
   
-  /* Card shadows — softer, natural depth using atmospheric colors */
+  /* Card shadows: softer, natural depth using atmospheric colors */
   --shadow-card: 0 2px 8px -2px rgba(68, 72, 61, 0.08), 0 1px 4px -1px rgba(94, 98, 89, 0.06);
   --shadow-card-hover: 0 4px 16px -4px rgba(68, 72, 61, 0.12), 0 2px 8px -2px rgba(94, 98, 89, 0.08);
 
-  /* Spacing tokens — consistent rhythm across components */
+  /* Spacing tokens: consistent rhythm across components */
   --space-card-xs: 0.5rem;   /* 8px */
   --space-card-sm: 0.75rem;  /* 12px */
   --space-card-md: 1rem;     /* 16px */
   --space-card-lg: 1.25rem;  /* 20px */
   --space-card-xl: 1.5rem;   /* 24px */
 
-  /* Radius — consistent, slightly rounded */
+  /* Radius: consistent, slightly rounded */
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-card: 0.75rem;
   --radius-full: 9999px;
 
-  /* Secondary brand — storm for dark sections */
+  /* Secondary brand: storm for dark sections */
   --color-secondary: #432E2D;
   --color-secondary-hover: #352423;
   --color-secondary-foreground: #FAFBFC;
@@ -230,7 +230,7 @@ body {
 
 
 /* ============================================================================
-   P0 VISUAL LANGUAGE — refinement only, no redesign.
+   P0 VISUAL LANGUAGE: refinement only, no redesign.
    Craftsmanship layers are intentionally almost invisible (3–6% opacity).
    If you notice them immediately, they are too strong.
    ========================================================================== */
@@ -332,7 +332,7 @@ body {
   mask-image: linear-gradient(90deg, transparent 78px, black 78px 84px);
 }
 
-/* IMAGE MOUNTING — feel mounted, not floating (Apple-like).
+/* IMAGE MOUNTING: feel mounted, not floating (Apple-like).
    1px warm ivory stroke + inset highlight + extremely soft shadow + tiny
    bevel + rounded corners. Replaces borderless float on photo frames. */
 .photo-mounted {
@@ -364,7 +364,7 @@ body {
   opacity: 0.6;
 }
 
-/* barely perceptible lift on hover — calm, confident, not flashy */
+/* barely perceptible lift on hover: calm, confident, not flashy */
 .photo-mounted { will-change: transform; }
 @media (hover: hover) {
   a:hover .photo-mounted,
@@ -430,7 +430,7 @@ a {
   --color-border-soft: rgba(255, 255, 255, 0.08);
 }
 
-/* CRAFT RULE — a hairline double separator with a single honey pin.
+/* CRAFT RULE: a hairline double separator with a single honey pin.
    Used between major sections for quiet rhythm (no loud dividers). */
 .craft-rule {
   display: flex;
@@ -466,7 +466,7 @@ a {
 }
 .eyebrow-mark svg { width: 16px; height: 16px; color: var(--color-honey); }
 
-/* ORGANIC divider — cedar PRINCIPLE, not a texture (CEO review).
+/* ORGANIC divider: cedar PRINCIPLE, not a texture (CEO review).
    Asymmetric, hand-placed lengths instead of one identical rule. */
 .organic-divider {
   height: 2px;
@@ -511,7 +511,7 @@ a {
   }
 }
 
-/* Hero parallax layer — subtle slow drift on the background photo. */
+/* Hero parallax layer: subtle slow drift on the background photo. */
 @media (prefers-reduced-motion: no-preference) {
   .hero-parallax {
     will-change: transform;
@@ -574,7 +574,7 @@ a {
 }
 
 /* ------------------------------------------------------------------
- * Visual effects preference — user override (effects-provider.tsx).
+ * Visual effects preference: user override (effects-provider.tsx).
  * Layers on top of the prefers-reduced-motion block above.
  *
  * .effects-reduced: no continuous/ambient animation; one-shot
@@ -671,7 +671,7 @@ a {
   }
 }
 
-/* Mobile typography scaling — 80% of desktop values for readability */
+/* Mobile typography scaling: 80% of desktop values for readability */
 @media (max-width: 768px) {
   :root {
     --font-display-scale: 0.8;
@@ -687,7 +687,7 @@ a {
   }
 }
 
-/* Mobile touch targets — minimum 44x44px for accessibility */
+/* Mobile touch targets: minimum 44x44px for accessibility */
 @media (max-width: 768px) {
   a,
   button {
@@ -753,7 +753,7 @@ a {
 }
 
 /* ============================================================================
-   ENVIRONMENTAL RICHNESS — PNW-inspired backgrounds (2-8% opacity)
+   ENVIRONMENTAL RICHNESS: PNW-inspired backgrounds (2-8% opacity)
    ========================================================================== */
 
 /* Pacific Northwest fog layer - atmospheric, masked */
@@ -766,7 +766,7 @@ a {
 }
 
 /* ============================================================================
-   SECTION TRANSITIONS — native CSS clip-path and layering
+   SECTION TRANSITIONS: native CSS clip-path and layering
    ========================================================================== */
 
 /* Diagonal section transition - clip-path based */
