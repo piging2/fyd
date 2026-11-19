@@ -92,6 +92,15 @@ export interface PingSourceOpts {
   ownerOverlay?: boolean;
 }
 
+/**
+ * The dumper version this reader accepts. The header above has always
+ * treated a foreign dumper version as a refusal reason; this pin makes
+ * that check explicit instead of accepting any non-empty string. Bump
+ * in the same commit as any DUMPER_VERSION change in
+ * tools/fyd-site-projection/dump.py.
+ */
+const EXPECTED_DUMPER_VERSION = "fyd-projection-dump@1.2.2";
+
 function projectionDir(): string {
   // Priority: explicit env override -> Pig path (when present) -> bundled
   // fyd-projections/ in the repo (Vercel serverless). The bundled directory
@@ -167,6 +176,12 @@ function validateMeta(meta: unknown, siteId: string): asserts meta is Projection
     if (typeof meta[k] !== "string" || (meta[k] as string).length === 0) {
       fail(siteId, `meta has bad "${k}"`);
     }
+  }
+  if (meta["dumperVersion"] !== EXPECTED_DUMPER_VERSION) {
+    fail(
+      siteId,
+      `meta.dumperVersion "${String(meta["dumperVersion"])}" is not the pinned dumper version (${EXPECTED_DUMPER_VERSION})`,
+    );
   }
   if (!Array.isArray(meta["overlayEventIds"])) {
     fail(siteId, "meta.overlayEventIds is not an array");
