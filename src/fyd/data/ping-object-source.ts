@@ -10,14 +10,14 @@
  * Verification (fail closed, in order):
  *  1. The projection file exists and parses.
  *  2. meta.siteId matches the requested site.
- *  3. Every object carries provenance with a non-empty ref — the
+ *  3. Every object carries provenance with a non-empty ref: the
  *     "NO CUSTOMER FACT WITHOUT A TRACEABLE BASIS" law. This is the data
  *     source's share of "verify bindings before render": the renderer
  *     verifies per-field bindings; this module guarantees the projection
  *     itself only contains traceable objects.
  *  4. graphDigest: sha256 over canonicalize(graph) recomputed here and
  *     compared to meta.graphDigest. canonicalize is the repo's existing
- *     canonical JSON (src/lib/ping/ask-composer.ts) — the same rule the
+ *     canonical JSON (src/lib/ping/ask-composer.ts), the same rule the
  *     dump uses (recursive key sort, array order preserved). A mismatch
  *     means the projection was tampered with or written by a different
  *     dumper version: refuse to serve it.
