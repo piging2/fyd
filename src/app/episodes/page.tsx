@@ -109,17 +109,21 @@ export default function EpisodesPage() {
                     <p className="mt-2 text-text-muted">{video.blurb}</p>
                   </div>
                 </Link>
-                <div className="flex flex-wrap gap-x-6 gap-y-2 px-5 pb-5 font-medium">
-                  <Link href={"/episodes/" + slug} className="text-accent hover:underline">
+                <div className="flex flex-wrap gap-x-4 gap-y-2 px-5 pb-5 font-medium">
+                  <Link
+                    href={"/episodes/" + slug}
+                    className="inline-flex min-h-11 items-center px-2 text-accent hover:underline"
+                  >
                     Episode page →
                   </Link>
                   <a
                     href={video.watchUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-accent hover:underline"
+                    className="inline-flex min-h-11 items-center px-2 text-accent hover:underline"
                   >
-                    Watch on YouTube →
+                    Watch on YouTube ↗
+                    <span className="sr-only"> (opens in a new tab)</span>
                   </a>
                 </div>
               </div>
