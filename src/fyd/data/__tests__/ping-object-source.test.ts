@@ -137,15 +137,14 @@ describe("ping-object-source read seam (W-23)", () => {
     ).rejects.toThrow(/bad "dumperVersion"/);
   });
 
-  it("refuses a dumperVersion other than the pinned one (W-16)", async () => {
+  it("serves an older dumper version: the version is provenance, not a gate (W-16 as landed)", async () => {
     serve(
       projectionDoc((doc) => {
-        doc.meta.dumperVersion = "fyd-projection-dump@9.9.9";
+        doc.meta.dumperVersion = "fyd-projection-dump@1.0.0";
       }),
     );
-    await expect(
-      getPingObjectGraph(SITE, { ownerOverlay: false }),
-    ).rejects.toThrow(/not the pinned dumper version/);
+    const out = await getPingObjectGraph(SITE, { ownerOverlay: false });
+    expect(out.meta.dumperVersion).toBe("fyd-projection-dump@1.0.0");
   });
 
   it("refuses a site with no projection file", async () => {
