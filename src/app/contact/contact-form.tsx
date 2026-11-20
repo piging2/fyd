@@ -10,7 +10,8 @@
  * values and offers retry plus the Facebook message path.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { PublicFormError } from "@/components/public-form-error";
 
 const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61594275542163";
 
@@ -20,6 +21,13 @@ interface Receipt {
 }
 
 type Errors = Partial<Record<string, string>>;
+
+const errorFields = {
+  name: "ct-name",
+  email: "ct-email",
+  business: "ct-business",
+  message: "ct-message",
+};
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-4 py-3 text-text focus:border-honey focus:outline-none focus:ring-2 focus:ring-honey/40";
@@ -38,6 +46,11 @@ export function ContactForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const receiptHeading = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (receipt) receiptHeading.current?.focus();
+  }, [receipt]);
 
   function validate(): Errors {
     const e: Errors = {};
@@ -52,6 +65,7 @@ export function ContactForm() {
 
   async function onSubmit(ev: React.FormEvent) {
     ev.preventDefault();
+    if (busy) return;
     const e = validate();
     setErrors(e);
     if (Object.keys(e).length > 0) {
@@ -95,7 +109,7 @@ export function ContactForm() {
   if (receipt) {
     return (
       <div role="status" className="rounded-2xl border border-border-soft bg-surface p-8">
-        <h2 className="text-2xl font-bold text-text">Thank you. Your message is in.</h2>
+        <h2 ref={receiptHeading} tabIndex={-1} className="scroll-mt-24 text-2xl font-bold text-text">Thank you. Your message is in.</h2>
         <p className="mt-3 text-text-muted" style={{ lineHeight: "var(--leading-body)" }}>
           Your message reached the PING inbox. A conversation about your
           workflow comes first, recommendations second: expect a reply at
@@ -127,7 +141,25 @@ export function ContactForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="rounded-2xl border border-border-soft bg-surface p-6 sm:p-8">
-      <div className="grid gap-6">
+      <noscript>
+        <p className="mb-4 text-sm text-text">
+          This form requires JavaScript. You can also{" "}
+          <a href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer" className="font-semibold underline">message PING on Facebook</a>.
+        </p>
+      </noscript>
+      <p role="status" className="sr-only">{busy ? "Sending your message..." : ""}</p>
+      <div className="grid gap-6" aria-busy={busy}>
+        {formError && (
+          <PublicFormError message={formError} errors={errors} fields={errorFields}>
+            <p className="mt-2">
+              Rather message us?{" "}
+              <a href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer" className="font-semibold underline">
+                Message PING on Facebook
+              </a>.
+            </p>
+          </PublicFormError>
+        )}
+
         <div>
           <label htmlFor="ct-name" className={labelClass}>
             Your name (required)
@@ -219,24 +251,6 @@ export function ContactForm() {
             </p>
           )}
         </div>
-
-        {formError && (
-          <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-            <p>{formError}</p>
-            <p className="mt-2">
-              Rather message us?{" "}
-              <a
-                href={FACEBOOK_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold underline"
-              >
-                Message PING on Facebook
-              </a>
-              .
-            </p>
-          </div>
-        )}
 
         <div>
           <button
