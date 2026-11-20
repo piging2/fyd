@@ -22,32 +22,9 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      {
-        // Tenant proof surfaces (W-25): the routes render per request
-        // (force-dynamic, because the root layout decides tenant
-        // chrome from the request pathname; a static prerender baked
-        // the wrong chrome in VISUAL-4). Per-URL edge caching is safe
-        // for the same reason it is scoped per URL: the cached copy
-        // was rendered under this URL's own request, chrome included.
-        // Browsers revalidate at the edge (max-age=0); the edge holds
-        // five minutes with a stale-while-revalidate tail.
-        source: "/sites/happy-place",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=0, s-maxage=300, stale-while-revalidate=3600",
-          },
-        ],
-      },
-      {
-        source: "/sites/coppersmith-plumbing",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=0, s-maxage=300, stale-while-revalidate=3600",
-          },
-        ],
-      },
+      // The tenant proof surfaces' edge cache policy (W-25) lives in
+      // src/middleware.ts: the force-dynamic document response
+      // overrides a headers() rule here, so this table cannot hold it.
     ];
   },
   // nodemailer must be required at runtime in route handlers, not
