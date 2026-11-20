@@ -5,6 +5,10 @@
  * reference known components, ids are unique and deterministic.
  * Layer 2 (semantic): components accept the schemas their queries can
  * return, required fields are satisfiable, no section renders without data.
+ * A reference query that names a schema at runtime must name a member of
+ * the known set (tenant-schema membership); the reference kind declares
+ * no schema field, so a foreign name there is an error here, not a
+ * filter that silently resolves to nothing at render.
  * Layer 3 (item 4, fyd-execution): token/contrast validation. Every text-role
  * pairing (accentText/surface, foreground/surface, mutedForeground/surface,
  * onAccent/accent, accentForeground/accent) must meet WCAG AA 4.5:1. A
@@ -34,7 +38,16 @@ function warn(resourceId: string, path: string, message: string): FYDFinding {
 
 /**
  * Validate a SiteSpec. Pure and deterministic.
- * `knownSchemas` is the set of schema ids present in the graph being rendered.
+ * `knownSchemas` is the schema set of the graph being rendered. Bare
+ * queries expand against it. A reference query carrying a schema
+ * outside it at runtime is refused (tenant-schema membership, decided
+ * 2026-11-19): the reference kind declares no schema field, so callers
+ * pass their own tenant graph's set and a foreign spec cannot name its
+ * way into another tenant's schemas through the one query kind that
+ * never legitimately names one. Related and all queries are out of
+ * scope by evidence: their schemas lists are the generator's
+ * cross-vocabulary resolution sets, naming variants the tenant graph
+ * does not carry, and the eligibility layer governs them.
  */
 export function validateSiteSpec(spec: FYDSiteSpec, knownSchemas: Set<string>): FYDFinding[] {
   const findings: FYDFinding[] = [];
@@ -75,6 +88,23 @@ export function validateSiteSpec(spec: FYDSiteSpec, knownSchemas: Set<string>): 
       if (!def) {
         findings.push(err(rid, spath + ".component", "Unknown component '" + section.component + "'."));
         return;
+      }
+      // Tenant-schema membership, reference queries: every schema a
+      // reference query names at runtime must belong to the known
+      // set. The write-back boundary remains the enforcement surface
+      // of record; this check is the validator's own authority layer
+      // in front of it, so a spec that reaches the validator alone is
+      // still refused cross-tenant on the measured gap's shape.
+      for (const ns of namedQuerySchemas(section)) {
+        if (!knownSchemas.has(ns)) {
+          findings.push(
+            err(
+              rid,
+              spath + ".query",
+              "Query names schema '" + ns + "', which is outside this site's known schema set; a spec may only name schemas its own tenant graph carries.",
+            ),
+          );
+        }
       }
       // Semantic layer: the query's schemas must be acceptable to the component.
       const querySchemas = querySchemasFor(section, knownSchemas);
@@ -158,6 +188,24 @@ function validateThemeContrast(
       );
     }
   }
+}
+
+/**
+ * Schemas a reference query names at runtime, read defensively off the
+ * query object: the reference kind's declared type carries no schema
+ * field, but a spec arriving as JSON can carry one, and an authority
+ * check has no shadowed-field blind spots, so both the singular and
+ * list fields count. Other kinds return nothing here: their schemas
+ * lists are resolution vocabularies, not membership claims (see the
+ * validateSiteSpec contract above).
+ */
+function namedQuerySchemas(section: FYDSection): string[] {
+  if (section.query.kind !== "reference") return [];
+  const q = section.query as { schema?: string; schemas?: string[] };
+  const named = new Set<string>();
+  if (q.schema) named.add(q.schema);
+  for (const s of q.schemas ?? []) named.add(s);
+  return [...named].sort();
 }
 
 /** Schemas a section query can resolve to, for eligibility checks. */
