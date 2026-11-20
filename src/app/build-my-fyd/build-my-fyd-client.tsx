@@ -44,9 +44,14 @@ export default function BuildMyFydClient() {
   const [openingReport, setOpeningReport] = useState(false);
   const [stages, setStages] = useState<StageEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const buildInFlight = useRef(false);
   const busy = running || openingReport;
   const lastStage = stages.at(-1);
+
+  useEffect(() => {
+    if (error && !busy) errorRef.current?.focus();
+  }, [error, busy]);
 
   function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files
@@ -287,9 +292,23 @@ export default function BuildMyFydClient() {
       )}
 
       {error && (
-        <div role="alert" className="mt-8 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+        <div ref={errorRef} tabIndex={-1} role="alert" className="mt-8 scroll-mt-24 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-800">
           <p className="font-semibold">Build failed</p>
           <p className="mt-1">{error}</p>
+          <p className="mt-3">Your details are still here.</p>
+          <a
+            href="#fyd-url"
+            className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+            onClick={(event) => {
+              const input = document.getElementById("fyd-url");
+              if (!input) return;
+              event.preventDefault();
+              input.focus({ preventScroll: true });
+              input.scrollIntoView({ block: "center" });
+            }}
+          >
+            Review details and try again
+          </a>
         </div>
       )}
     </div>
