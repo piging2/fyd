@@ -908,7 +908,7 @@ export function MarginObject({
         setWorkspaceTab(tab);
         setWorkspaceQuestion(question);
         workspaceOpen();
-      });
+      }, viewport.reducedMotion);
     },
     [workspaceOpen],
   );
@@ -1361,7 +1361,7 @@ function ClusterMemberCard({
       setWorkspaceQuestion(question);
       setWorkspace(true);
       workspaceOpen();
-    });
+    }, viewport.reducedMotion);
   };
 
   if (workspace) {

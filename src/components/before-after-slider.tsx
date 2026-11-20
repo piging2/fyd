@@ -28,7 +28,7 @@ export interface BeforeAfterPair {
 }
 
 /**
- * BeforeAfterSlider — draggable before/after reveal.
+ * BeforeAfterSlider : draggable before/after reveal.
  * 
  * Uses media.v1.json for image sources (project-owned).
  * Automatically hides if before or after media is missing.

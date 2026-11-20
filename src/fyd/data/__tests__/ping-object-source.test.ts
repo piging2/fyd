@@ -12,7 +12,13 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { canonicalize } from "@/lib/ping/ask-composer";
-import { getPingObjectGraph } from "../ping-object-source";
+import {
+  getPingObjectGraph,
+  getPingObjectGraphSync,
+  getVerifiedPublicProjectionSync,
+  listPingSiteIds,
+  listPingSiteIdsSync,
+} from "../ping-object-source";
 
 const SITE = "fixture-site";
 
@@ -151,5 +157,66 @@ describe("ping-object-source read seam (W-23)", () => {
     await expect(
       getPingObjectGraph("absent-site", { ownerOverlay: false }),
     ).rejects.toThrow(/no PING projection/);
+  });
+});
+
+describe("source freshness observability", () => {
+  it("carries the source meta dumpedAt through the verified projection", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "ping-fresh-"));
+    const savedEnv = process.env.FYD_PROJECTION_DIR;
+    process.env.FYD_PROJECTION_DIR = dir;
+    try {
+      writeFileSync(join(dir, SITE + ".json"), JSON.stringify(projectionDoc()));
+      const verified = getVerifiedPublicProjectionSync(SITE, "anonymous", {
+        ownerOverlay: false,
+      });
+      expect(verified.sourceDumpedAt).toBe("2026-11-19T00:00:00Z");
+    } finally {
+      if (savedEnv === undefined) delete process.env.FYD_PROJECTION_DIR;
+      else process.env.FYD_PROJECTION_DIR = savedEnv;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("siteId slug validation (W-22)", () => {
+  it("refuses a traversal-shaped siteId before any file read", () => {
+    expect(() => getPingObjectGraphSync("../fyd-overlay-snapshot")).toThrow();
+    expect(() => getPingObjectGraphSync("a/b")).toThrow();
+    expect(() => getPingObjectGraphSync("")).toThrow();
+  });
+
+  it("still refuses a well-formed but absent id at the read, not the slug gate", () => {
+    expect(() => getPingObjectGraphSync("no-such-site")).toThrow(/no PING projection/);
+  });
+});
+
+describe("listPingSiteIds failure semantics", () => {
+  let savedEnv: string | undefined;
+  let dir: string;
+
+  beforeEach(() => {
+    savedEnv = process.env.FYD_PROJECTION_DIR;
+    dir = mkdtempSync(join(tmpdir(), "ping-list-"));
+  });
+
+  afterEach(() => {
+    if (savedEnv === undefined) delete process.env.FYD_PROJECTION_DIR;
+    else process.env.FYD_PROJECTION_DIR = savedEnv;
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("throws when the projection path is a regular file", async () => {
+    const file = join(dir, "not-a-dir");
+    writeFileSync(file, "x");
+    process.env.FYD_PROJECTION_DIR = file;
+    expect(() => listPingSiteIdsSync()).toThrow();
+    await expect(listPingSiteIds()).rejects.toThrow();
+  });
+
+  it("returns an empty list when the directory is absent", async () => {
+    process.env.FYD_PROJECTION_DIR = join(dir, "does-not-exist");
+    expect(listPingSiteIdsSync()).toEqual([]);
+    await expect(listPingSiteIds()).resolves.toEqual([]);
   });
 });

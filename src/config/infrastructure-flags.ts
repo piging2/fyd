@@ -1,5 +1,5 @@
 /**
- * Feature flags — central rollout control (Directive 031).
+ * Feature flags : central rollout control (Directive 031).
  * Flip these to enable Horizon-2 capabilities without branching the codebase.
  * Keep all flags boolean and default-off unless the capability is production-ready.
  */

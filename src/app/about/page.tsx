@@ -91,6 +91,7 @@ export default function AboutPage() {
             <div className="overflow-hidden rounded-2xl border border-border-soft bg-surface">
               <PigiGif
                 gif="/brand/pigi-call-center-variant1.gif"
+                webm="/brand/pigi-call-center-variant1.webm"
                 poster="/brand/pigi-call-center-variant1-poster.webp"
                 width={553}
                 height={309}

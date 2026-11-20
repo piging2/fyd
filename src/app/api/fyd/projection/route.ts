@@ -30,6 +30,15 @@ export async function GET(request: Request): Promise<NextResponse> {
   try {
     const verified = await getVerifiedPublicProjection(siteId, "anonymous");
     const { provenance } = verified;
+    // Freshness observability (additive): when the source projection
+    // was dumped, and its age at serve time. No serving decision
+    // reads these fields; they exist so staleness is visible on the
+    // receipt instead of being discovered by accident.
+    const dumpedAt = verified.sourceDumpedAt ?? null;
+    const dumpedMs = dumpedAt ? Date.parse(dumpedAt) : NaN;
+    const ageSeconds = Number.isFinite(dumpedMs)
+      ? Math.max(0, Math.floor((Date.now() - dumpedMs) / 1000))
+      : null;
     return NextResponse.json({
       ok: true,
       siteId,
@@ -41,6 +50,8 @@ export async function GET(request: Request): Promise<NextResponse> {
         decisionsDigest: provenance.decisionsDigest,
         viewerPolicyDigest: provenance.viewerPolicyDigest,
         capabilities: provenance.capabilities,
+        dumpedAt,
+        ageSeconds,
       },
       graph: verified.graph,
     });

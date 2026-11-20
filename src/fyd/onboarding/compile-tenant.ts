@@ -4,11 +4,11 @@
  * This is Lane P-01's product spine automation. It composes ONLY existing
  * machinery (no new authorities):
  *
- *   normalize            claimResourceIdForUrl (fyd/claim) — deterministic
+ *   normalize            claimResourceIdForUrl (fyd/claim) : deterministic
  *                        tenant identity from the normalized origin.
- *   acquire              generateAnonymousPreview (fyd/onboarding) — SSRF-safe
+ *   acquire              generateAnonymousPreview (fyd/onboarding) : SSRF-safe
  *                        fetch, structured extraction, OBSERVED claim.
- *   compile              compileGraph (this file, pure) — PageEvidence ->
+ *   compile              compileGraph (this file, pure) : PageEvidence ->
  *                        evidence-backed PING object graph. Deterministic:
  *                        same evidence bytes -> same graph bytes.
  *   project              projection JSON in the exact contract the PING-side

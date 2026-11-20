@@ -1,5 +1,5 @@
 /**
- * FYD public projection boundary — SERVER ONLY (node:crypto + owner-store file reads).
+ * FYD public projection boundary : SERVER ONLY (node:crypto + owner-store file reads).
  *
  * This module is the single public projection boundary for FYD tenant
  * object graphs (Q-C-01):
@@ -118,6 +118,13 @@ export interface VerifiedPublicProjection {
    */
   decisions: FieldVisibilityDecision[];
   provenance: PublicProjectionProvenance;
+  /**
+   * The source projection's dump timestamp (meta.dumpedAt), carried
+   * for freshness observability only: it is not part of the boundary
+   * contract and no serving decision reads it. Optional because the
+   * verifier itself does not mint it; the read seam attaches it.
+   */
+  sourceDumpedAt?: string;
 }
 
 /** Runtime brand check for defense-in-depth at trust boundaries. */

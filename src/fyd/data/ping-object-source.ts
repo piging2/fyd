@@ -36,6 +36,7 @@ import { readFile } from "node:fs/promises";
 import { statSync } from "node:fs";
 import { join } from "node:path";
 import { readFileSync, readdirSync } from "node:fs";
+import { TENANT_ID_PATTERN } from "../tenant/tenant-context";
 import { canonicalize } from "@/lib/ping/ask-composer";
 import type { ObjectGraph } from "@/fyd/sitespec/types";
 import type { PingObject, PingRelationship } from "@/lib/ping/types";
@@ -276,10 +277,23 @@ function parseAndVerify(
  * evidence attached per object; pass { ownerOverlay: false } for the raw
  * source graph.
  */
+/**
+ * Refuse a non-slug siteId before any file access. Tenant ids are
+ * DNS-safe slugs (TENANT_ID_PATTERN, the same pattern the ask route's
+ * tenant context enforces); anything else can only be a traversal
+ * attempt or a caller bug, and the seam fails it closed by name.
+ */
+function assertSiteIdSlug(siteId: string): void {
+  if (!TENANT_ID_PATTERN.test(siteId)) {
+    fail(siteId, "siteId is not a DNS-safe slug; refusing to read a projection for it");
+  }
+}
+
 export async function getPingObjectGraph(
   siteId: string,
   opts?: PingSourceOpts,
 ): Promise<PingProjection> {
+  assertSiteIdSlug(siteId);
   const path = join(projectionDir(), siteId + ".json");
   let raw: string;
   try {
@@ -301,6 +315,7 @@ export function getPingObjectGraphSync(
   siteId: string,
   opts?: PingSourceOpts,
 ): PingProjection {
+  assertSiteIdSlug(siteId);
   const path = join(projectionDir(), siteId + ".json");
   let raw: string;
   try {
@@ -323,8 +338,13 @@ export async function listPingSiteIds(): Promise<string[]> {
       .filter((f) => f.endsWith(".json"))
       .map((f) => f.slice(0, -".json".length))
       .sort();
-  } catch {
-    return [];
+  } catch (err) {
+    // An absent projection directory is an honest empty list. Any
+    // other fault (a file where a directory belongs, a permission
+    // failure) is a failure with a cause, never an empty list: the
+    // /sites index must surface it, not silently render empty.
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw err;
   }
 }
 
@@ -335,8 +355,11 @@ export function listPingSiteIdsSync(): string[] {
       .filter((f) => f.endsWith(".json"))
       .map((f) => f.slice(0, -".json".length))
       .sort();
-  } catch {
-    return [];
+  } catch (err) {
+    // Same rule as listPingSiteIds: ENOENT is an honest empty list;
+    // any other readdir fault throws with its cause.
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw err;
   }
 }
 
@@ -353,8 +376,11 @@ export async function getVerifiedPublicProjection(
   viewerKind: PublicViewerKind,
   opts?: PingSourceOpts,
 ): Promise<VerifiedPublicProjection> {
-  const { graph } = await getPingObjectGraph(siteId, opts);
-  return verifyPublicProjection(graph, decisionsForGraph(graph, siteId), viewerKind);
+  const { graph, meta } = await getPingObjectGraph(siteId, opts);
+  return {
+    ...verifyPublicProjection(graph, decisionsForGraph(graph, siteId), viewerKind),
+    sourceDumpedAt: meta.dumpedAt,
+  };
 }
 
 /** Synchronous variant of getVerifiedPublicProjection. */
@@ -363,6 +389,9 @@ export function getVerifiedPublicProjectionSync(
   viewerKind: PublicViewerKind,
   opts?: PingSourceOpts,
 ): VerifiedPublicProjection {
-  const { graph } = getPingObjectGraphSync(siteId, opts);
-  return verifyPublicProjection(graph, decisionsForGraph(graph, siteId), viewerKind);
+  const { graph, meta } = getPingObjectGraphSync(siteId, opts);
+  return {
+    ...verifyPublicProjection(graph, decisionsForGraph(graph, siteId), viewerKind),
+    sourceDumpedAt: meta.dumpedAt,
+  };
 }

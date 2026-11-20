@@ -305,6 +305,7 @@ export default async function HomePage() {
             <div className="overflow-hidden rounded-2xl border border-border-soft bg-surface">
               <PigiGif
                 gif="/brand/pigi-call-center-variant2.gif"
+                webm="/brand/pigi-call-center-variant2.webm"
                 poster="/brand/pigi-call-center-variant2-poster.webp"
                 width={414}
                 height={231}

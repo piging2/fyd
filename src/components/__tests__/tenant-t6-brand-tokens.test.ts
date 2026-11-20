@@ -1,5 +1,5 @@
 /**
- * tenant-t6-brand-tokens.test.ts — pins Website UI audit 2026-11-01
+ * tenant-t6-brand-tokens.test.ts : pins Website UI audit 2026-11-01
  * finding T6.
  *
  * One tenant's (Happy Place Carpentry's) brand tokens and classes

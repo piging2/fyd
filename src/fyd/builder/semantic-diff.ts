@@ -41,6 +41,7 @@ import {
   type DependencyManifest,
   type BindingManifest,
 } from "./manifest";
+import { currentEvidenceRef } from "../sitespec/binding-verifier";
 import {
   normalizeOwnerIntent,
   resolveOperatingConstraints,
@@ -222,8 +223,8 @@ function compareFieldMaps(
 }
 
 function claimRefOf(o: PingObject): string | null {
-  const ref = o.provenance ? o.provenance.ref : "";
-  return typeof ref === "string" && ref.length > 0 ? ref : null;
+  const ref = currentEvidenceRef(o);
+  return ref.length > 0 ? ref : null;
 }
 
 function evidenceRefOf(r: PingRelationship): string | null {

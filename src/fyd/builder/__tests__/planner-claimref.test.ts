@@ -35,6 +35,21 @@ describe("planner claim refs on updated owner objects", () => {
     }
   });
 
+  it("cites the current ref in the manifest hero binding", () => {
+    const graph = tradeGraph();
+    const owner = graph.objects.find((o) => o.id === "biz-trade")!;
+    owner.provenance = {
+      ...owner.provenance!,
+      updatedRefs: ["ping-event:upd-1", "ping-event:upd-2"],
+    };
+    const planned = planSite({ ctx: CTX, graph, vector: COPPERSMITH_VECTOR });
+    const hero = planned.manifest.bindings.find(
+      (b) => b.objectField === "slot:hero-tagline",
+    );
+    expect(hero).toBeDefined();
+    expect(hero!.claimRef).toBe("ping-event:upd-2");
+  });
+
   it("still refuses a slot pinned to the superseded base ref", () => {
     const graph = tradeGraph();
     const owner = graph.objects.find((o) => o.id === "biz-trade")!;
@@ -60,5 +75,19 @@ describe("planner claim refs on updated owner objects", () => {
     const result = verifyGeneratedPresentation(gp, graph, []);
     expect(result.valid).toBe(false);
     expect(result.findings.some((f) => f.code === "claim-mismatch")).toBe(true);
+  });
+
+  it("cites the current ref in manifest bindings for updated bound objects", () => {
+    const graph = tradeGraph();
+    const svc = graph.objects.find((o) => o.id === "svc-drains")!;
+    svc.provenance = {
+      ...svc.provenance!,
+      updatedRefs: ["ping-event:svc-upd-1", "ping-event:svc-upd-2"],
+    };
+    const planned = planSite({ ctx: CTX, graph, vector: COPPERSMITH_VECTOR });
+    const nonHero = planned.manifest.bindings.filter(
+      (b) => b.objectField !== "slot:hero-tagline",
+    );
+    expect(nonHero.some((b) => b.claimRef === "ping-event:svc-upd-2")).toBe(true);
   });
 });

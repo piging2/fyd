@@ -172,6 +172,13 @@ const TRANSCRIPT_DIR = path.join(process.cwd(), "src/content/transcripts");
  * property. Nothing is fetched or generated at request time.
  */
 export function getEpisodeTranscript(slug: string): string | null {
+  // Slugs are plain lowercase words joined by hyphens (the placed
+  // transcript filenames). Anything else, separators above all, is
+  // refused before the path join so this reader can never be turned
+  // into a traversal, whatever future caller reaches it.
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) {
+    return null;
+  }
   const file = path.join(TRANSCRIPT_DIR, slug + ".md");
   if (!fs.existsSync(file)) {
     return null;

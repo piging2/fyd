@@ -1,5 +1,5 @@
 /**
- * Customer-facing Preliminary Planning Range (P3 — the "planning assistant").
+ * Customer-facing Preliminary Planning Range (P3 : the "planning assistant").
  *
  * This is intentionally NOT an official quote. It is a conservative planning
  * estimate biased ~12% high so the formal quote is often pleasantly lower.
@@ -18,15 +18,15 @@ export interface ServiceSeed {
   range: [number, number];
   /** per-unit hint shown under the summary */
   unit?: { per: number; label: string };
-  /** NEW — optional scope-keyed sub-ranges. Falls back to `range` if absent */
+  /** NEW : optional scope-keyed sub-ranges. Falls back to `range` if absent */
   scopeRanges?: Record<string, [number, number]>;
-  /** NEW — optional per-unit rate */
+  /** NEW : optional per-unit rate */
   unitRate?: [number, number];
-  /** NEW — optional modifiers applied multiplicatively */
+  /** NEW : optional modifiers applied multiplicatively */
   modifiers?: { id: string; label: string; multiplier: number }[];
-  /** NEW — base confidence before dynamic adjustment */
+  /** NEW : base confidence before dynamic adjustment */
   baseConfidence?: "low" | "medium" | "high";
-  /** NEW — estimation strategy */
+  /** NEW : estimation strategy */
   strategy?: EstimationStrategy;
 }
 
@@ -148,7 +148,7 @@ export interface PlanningResult {
   low: number;
   high: number;
   note: string;
-  // NEW — breakdown, confidence, assumptions, missingInputs
+  // NEW : breakdown, confidence, assumptions, missingInputs
   breakdown?: {
     service: ServiceSlug;
     label: string;

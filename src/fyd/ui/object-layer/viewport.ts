@@ -16,6 +16,7 @@
  */
 
 import * as React from "react";
+import { useVisualEffects } from "@/components/effects-provider";
 
 export type ViewportWidthClass = "xs" | "sm" | "md" | "lg" | "xl";
 export type PointerKind = "coarse" | "fine" | "none";
@@ -38,7 +39,13 @@ export interface ViewportCapabilities {
   pointer: PointerKind;
   /** Whether hover is available. NO feature may depend on hover existing. */
   hover: HoverKind;
-  /** prefers-reduced-motion at measurement time. */
+  /**
+   * The governing reduced-motion state. The raw reader measures the OS
+   * query, but useViewportCapabilities overrides this field with the
+   * visitor's resolved effects preference (an explicit choice governs;
+   * the OS signal governs only in system mode), matching every other
+   * preference-consuming layer.
+   */
   reducedMotion: boolean;
   /** Explicit color scheme; never guessed from the host page. */
   colorScheme: "light" | "dark";
@@ -160,5 +167,6 @@ export function useViewportCapabilities(
       for (const m of mqls) m.removeEventListener("change", refresh);
     };
   }, [colorScheme]);
-  return caps;
+  const { resolved } = useVisualEffects();
+  return { ...caps, reducedMotion: resolved !== "full" };
 }

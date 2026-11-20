@@ -631,7 +631,12 @@ function evidenceRefLineage(obj: PingObject | undefined): string[] {
  * The object's current evidence ref: the latest update ref when the
  * object has been updated, else the base provenance ref.
  */
-function currentEvidenceRef(obj: PingObject | undefined): string {
+/** The single authority for an object's CURRENT evidence ref
+ * (LANE-CLAIM D1): the latest updatedRefs entry when the object has
+ * been updated since ingestion, else its provenance ref, else "".
+ * Every claim-citing surface routes through here so the convention
+ * cannot drift between the verifier, the planner, and the diff. */
+export function currentEvidenceRef(obj: PingObject | undefined): string {
   let current = obj?.provenance?.ref ?? "";
   for (const r of obj?.provenance?.updatedRefs ?? []) current = r;
   return current;

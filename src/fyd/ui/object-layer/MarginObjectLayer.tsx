@@ -79,6 +79,7 @@ import {
   REST_D,
 } from "./ObjectCircle";
 import { claimExpanded, requestObjectOpen, subscribeNavigateRequest } from "./expansion";
+import { useVisualEffects } from "@/components/effects-provider";
 import type { MotionTokens } from "@/fyd/sitespec/types";
 import type { AskPageContext, MarginObjectDescriptor } from "./types";
 
@@ -437,6 +438,9 @@ export function MarginObjectLayer({
   }, [layout]);
   const projection: string | null = layout ? projectionLabel(layout.vw, rails) : null;
   const projectionRef = React.useRef(projection);
+  const { resolved: effectsResolved } = useVisualEffects();
+  const effectsResolvedRef = React.useRef(effectsResolved);
+  effectsResolvedRef.current = effectsResolved;
   projectionRef.current = projection;
 
   // Relationship navigation: collapse the current card, scroll the
@@ -452,7 +456,7 @@ export function MarginObjectLayer({
           return;
         }
         claimExpanded(null);
-        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const reducedMotion = effectsResolvedRef.current !== "full";
         const openTarget = () => requestObjectOpen(objectId);
         let el = document.querySelector(`[data-object-id="${CSS.escape(objectId)}"]`);
         if (!el) {

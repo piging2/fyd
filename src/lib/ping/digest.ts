@@ -1,5 +1,5 @@
 /**
- * PING shared digest implementation — `sha256-canonical-json-v1`.
+ * PING shared digest implementation : `sha256-canonical-json-v1`.
  *
  * NORTH STAR BACKLOG_PING.md rule 16 requires every lane to "commit the exact
  * digest algorithm/script with it, **or point at the shared digest
@@ -15,7 +15,7 @@
  *      - arrays: element order preserved (array order is semantic).
  *      - strings: JSON.stringify escaping.
  *      - numbers/booleans: JSON.stringify (NaN and Infinity become null,
- *        -0 becomes 0 — JSON semantics, pinned).
+ *        -0 becomes 0 : JSON semantics, pinned).
  *      - null and undefined become the literal `null`. NOTE: an object key
  *        whose value is undefined is EMITTED as `"key":null`; it is NOT
  *        dropped. Functions and symbols become `null`.
@@ -37,7 +37,7 @@
  * src/fyd/proceduralize/sha256.ts, extended to also accept raw bytes
  * (string | Uint8Array; Buffer is a Uint8Array) for content digests.
  *
- * Event-ID formulation note (live gateway runtime — OUT OF SCOPE here):
+ * Event-ID formulation note (live gateway runtime : OUT OF SCOPE here):
  * triage reported UnifiedEventRuntime.emit forms event IDs as sha256 over
  * JSON.stringify of {eventType, source, [namespace], logical_id|payload}.
  * No such formulation exists anywhere in the repo tree at

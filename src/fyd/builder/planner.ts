@@ -81,6 +81,7 @@ import {
   type PresentationBinding,
   type VerifiedRenderModel,
 } from "../sitespec/binding-verifier";
+import { currentEvidenceRef } from "../sitespec/binding-verifier";
 import {
   SERVICE_TIER_BOOST,
   serviceSignal,
@@ -429,8 +430,7 @@ export function planSite(input: SitePlannerInput): PlannedSite {
     // the latest update ref when the object has been updated since
     // ingestion, else its provenance ref. A claim pinned to the
     // superseded base ref is refused by the binding verifier.
-    let claimRef: string | null = owner.provenance?.ref ?? null;
-    for (const r of owner.provenance?.updatedRefs ?? []) claimRef = r;
+    const claimRef: string | null = currentEvidenceRef(owner) || null;
     const bindings = [
       { objectId: owner.id, field: "title", claimRef },
     ];
@@ -511,11 +511,15 @@ export function planSite(input: SitePlannerInput): PlannedSite {
       const isHeroCopy = heroSections[0] && s.id === heroSections[0].id && slots[0];
       const classification: BindingClassification = isHeroCopy ? "generated" : "direct";
       const objectField = isHeroCopy ? "slot:hero-tagline" : objectFieldFor(s.query);
+      // Non-hero bindings cite CURRENT evidence too (LANE-CLAIM D1):
+      // the bound object's latest update ref when it has been updated,
+      // else its base ref; the owner's current ref and the attestation
+      // digest remain the fallbacks for sections with no bound object.
       const claimRef = isHeroCopy
-        ? (owner?.provenance?.ref ?? null)
-        : (first?.provenance?.ref ??
-          owner?.provenance?.ref ??
-          input.attestation?.digest ??
+        ? (owner ? currentEvidenceRef(owner) || null : null)
+        : (currentEvidenceRef(first ?? undefined) ||
+          currentEvidenceRef(owner ?? undefined) ||
+          input.attestation?.digest ||
           null);
       const factBasis = first ?? owner;
       const conf = factBasis

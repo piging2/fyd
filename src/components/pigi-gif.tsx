@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 
 type PigiGifProps = {
   gif: string;
+  /** WebM twin of the GIF (W-08): a fraction of the bytes, played in
+   * preference to the GIF whenever the caller supplies one. The GIF
+   * stays as the error fallback and for callers without a twin. */
+  webm?: string;
   poster: string;
   width: number;
   height: number;
@@ -12,8 +16,9 @@ type PigiGifProps = {
   className?: string;
 };
 
-export default function PigiGif({ gif, poster, width, height, alt, eager = false, className = "" }: PigiGifProps) {
+export default function PigiGif({ gif, webm, poster, width, height, alt, eager = false, className = "" }: PigiGifProps) {
   const [playing, setPlaying] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -26,6 +31,22 @@ export default function PigiGif({ gif, poster, width, height, alt, eager = false
 
   return (
     <>
+      {playing && webm && !videoFailed ? (
+        <video
+          src={webm}
+          poster={poster}
+          width={width}
+          height={height}
+          autoPlay
+          muted
+          loop
+          playsInline
+          role="img"
+          aria-label={alt}
+          onError={() => setVideoFailed(true)}
+          className={"h-auto w-full " + className}
+        />
+      ) : (
       <img
         src={playing ? gif : poster}
         width={width}
@@ -35,6 +56,7 @@ export default function PigiGif({ gif, poster, width, height, alt, eager = false
         decoding="async"
         className={"h-auto w-full " + className}
       />
+      )}
       <div className="flex justify-end border-t border-border-soft px-3">
         <button
           type="button"

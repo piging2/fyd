@@ -7,7 +7,7 @@
  * fails loudly. Pinned values were generated from node:crypto as an
  * independent reference, plus the published SHA-256 test vectors.
  *
- * Context: FAILURE_LEDGER.md FL-20260920-031b — Lane B's projection digest
+ * Context: FAILURE_LEDGER.md FL-20260920-031b : Lane B's projection digest
  * `37a5aa99...` could not be reproduced by 11 candidate formulations because
  * the exact algorithm was never preserved. This suite is the tripwire.
  */

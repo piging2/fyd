@@ -88,6 +88,19 @@ export default function PrivacyPage() {
             </p>
           </section>
           <section>
+            <h2 className="text-xl font-bold text-text">Your choices</h2>
+            <p className="mt-2">
+              <strong className="text-text">How do I stop the newsletter?</strong> Every issue
+              carries an unsubscribe link, and using it removes you from future sends.
+            </p>
+            <p className="mt-2">
+              <strong className="text-text">How do I ask about or remove my information?</strong>{" "}
+              Reach {tenant.operator.business} through the{" "}
+              <a href="/contact" className="text-honey-text hover:underline">contact page</a>{" "}
+              with your request, and we will act on the information you submitted.
+            </p>
+          </section>
+          <section>
             <h2 className="text-xl font-bold text-text">Contact</h2>
             <p className="mt-2">
               Questions about your data? Reach {tenant.operator.business} through the{" "}

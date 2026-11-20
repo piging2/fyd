@@ -34,13 +34,6 @@ export function identityTransitionName(objectId: string): string {
   return `fyd-identity-${slug || "object"}`;
 }
 
-/** Reduced-motion signal, read live (SSR-safe). */
-export function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function")
-    return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
 function startTransition(update: () => void): boolean {
   if (typeof document === "undefined") return false;
   const doc = document as Document & {
@@ -61,10 +54,13 @@ function startTransition(update: () => void): boolean {
  * Run a state update inside a same-document View Transition when the
  * browser supports it and the user has not asked for reduced motion.
  * Falls back to a synchronous update otherwise: the UI is correct
- * with or without the animation.
+ * with or without the animation. The reduced-motion decision is the
+ * caller's, taken from its viewport capabilities, whose governing
+ * source is the visitor's resolved effects preference; this module
+ * never reads the raw OS query itself.
  */
-export function transitionViews(update: () => void): void {
-  if (prefersReducedMotion()) {
+export function transitionViews(update: () => void, reducedMotion: boolean): void {
+  if (reducedMotion) {
     update();
     return;
   }

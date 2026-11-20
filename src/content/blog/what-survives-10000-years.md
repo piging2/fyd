@@ -13,6 +13,7 @@ Preserving bits is not preserving meaning. Episode 1 climbs a seven-rung ladder 
 ## Watch it
 
 - **YouTube:** [The Long Ping, Episode 1: What Survives 10,000 Years](https://www.youtube.com/watch?v=ekJnwDb7ssw)
+- **On this site:** [the Episode 1 page](/episodes/what-survives-10000-years), with the film and its details.
 - **Any podcast app:** subscribe to [the RSS feed](https://anchor.fm/s/118430774/podcast/rss) and Episode 1 is in your pocket.
 
 ## Read the full transcript series on Substack
@@ -27,4 +28,4 @@ The complete Episode 1 transcript is published in five parts on [PING](https://t
 
 ## The short version
 
-A system that cannot remember cannot be trusted with anything that matters. That argument starts here, in this episode, and the rest of the series, and the rest of PING, is what happens when you refuse to let it go.
+A system that cannot remember cannot be trusted with anything that matters. That argument starts here, in this episode, and the rest of the series, and the rest of PING, is what happens when you refuse to let it go. Episode 2, [The Water Wheel Problem](/blog/the-water-wheel-problem), and Episode 3, [The Grid Problem](/blog/the-grid-problem), are already out in full.

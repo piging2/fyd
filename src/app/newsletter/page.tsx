@@ -80,6 +80,25 @@ export default function NewsletterPage() {
             </ul>
           </div>
 
+          <div className="mt-8 rounded-lg border border-border-soft bg-surface p-8">
+            <h2 className="text-xl font-bold text-text">Straight answers</h2>
+            <p className="mt-4 text-text-muted">
+              <strong className="text-text">How often does it arrive?</strong> There is no fixed
+              schedule. An issue goes out when there is something worth saying, and the first
+              issue is still being written.
+            </p>
+            <p className="mt-3 text-text-muted">
+              <strong className="text-text">How do I unsubscribe?</strong> Every issue carries an
+              unsubscribe link at the bottom. One click, and no further issues are sent to you.
+            </p>
+            <p className="mt-3 text-text-muted">
+              <strong className="text-text">What does it cost?</strong> Nothing. The newsletter is
+              free, and your email address is used only to send it, as the{" "}
+              <a href="/privacy" className="text-honey-text hover:underline">privacy policy</a>{" "}
+              describes.
+            </p>
+          </div>
+
           <div className="mt-8">
             <h2 className="text-xl font-bold text-text">Latest from the blog</h2>
             <div className="mt-4 space-y-4">

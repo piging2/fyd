@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { CardLightSweep } from "@/components/card-light-sweep";
 
 /**
- * CraftCard — premium card component using existing design language.
+ * CraftCard : premium card component using existing design language.
  * 
  * Inherits craftsmanship from homepage cards:
  * - Layered shadow stack (subtle depth)
@@ -59,7 +59,7 @@ export function CraftCard({ className, children, style }: { className?: string; 
 }
 
 /**
- * Card — legacy component, now uses CraftCard internally.
+ * Card : legacy component, now uses CraftCard internally.
  * @deprecated Use CraftCard directly for new implementations.
  */
 export function Card({ className, children }: { className?: string; children: React.ReactNode }) {

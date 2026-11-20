@@ -99,7 +99,7 @@ export function MobileSheet({
    * identity name with the workspace header, so the object persists
    * through the transition. Plain update without support. */
   const select = React.useCallback((id: string | null) => {
-    transitionViews(() => setSelectedId(id));
+    transitionViews(() => setSelectedId(id), viewport.reducedMotion);
   }, []);
 
   // Peer jump: a related-object link selects that object here.

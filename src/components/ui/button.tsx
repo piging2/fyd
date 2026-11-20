@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 /**
- * Button — uses SEMANTIC design tokens only (bg-primary, bg-secondary, …).
+ * Button : uses SEMANTIC design tokens only (bg-primary, bg-secondary, …).
  * Re-skinning the brand happens in globals.css @theme, not here.
  * Premium micro-interactions: press animation, hover glow, shadow shift, ripple, magnetic effect.
  */

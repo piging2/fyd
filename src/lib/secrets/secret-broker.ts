@@ -1,5 +1,5 @@
 /**
- * PING Secret Broker — the ONE custody pattern for all of PING (Lane L).
+ * PING Secret Broker : the ONE custody pattern for all of PING (Lane L).
  *
  * Agents and connector code NEVER receive tokens. They receive an opaque
  * capability handle scoped to (principal, operation, target, audience,
@@ -8,7 +8,7 @@
  * crosses into agent-visible context.
  *
  * Harvested mechanisms (see lane-l/HARVEST.md):
- *  - macaroons: additive scope narrowing (attenuation) — server-side caveats
+ *  - macaroons: additive scope narrowing (attenuation) : server-side caveats
  *  - Vault: lease/TTL ceilings + revocation kills outstanding handles
  *  - SPIFFE: no long-lived secret touches the worker; audience binding
  *  - STS/RFC8693/capability-URLs: TTL + audience-bound delegation
@@ -100,7 +100,7 @@ export interface AuditRecord {
   seq: number;
   ts: string;
   event: "issued" | "executed" | "denied" | "revoked" | "rotated" | "attenuated" | "renewed";
-  /** sha256(handle) truncated — correlatable, not replayable */
+  /** sha256(handle) truncated : correlatable, not replayable */
   handleFp: string;
   principal: string;
   operation: string;
@@ -294,7 +294,7 @@ export class SecretBroker {
     }
     const secret = this.store.get(rec.credentialId);
     if (secret === undefined) {
-      // Fail closed: the secret backend is unreachable — do NOT run fn.
+      // Fail closed: the secret backend is unreachable : do NOT run fn.
       this.audit("denied", handle, rec, "SOURCE_UNAVAILABLE", `credential "${rec.credentialId}" missing`);
       throw new BrokerError("SOURCE_UNAVAILABLE", `execute: credential "${rec.credentialId}" unavailable`);
     }

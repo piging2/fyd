@@ -9,7 +9,7 @@ import { episodePages } from "@/lib/episodes";
  * Bump when the entry shape or the covered route set changes; inv-13
  * pins the current value so a contract change without a bump fails.
  */
-export const SITEMAP_CONTRACT_VERSION = "fyd.sitemap@2";
+export const SITEMAP_CONTRACT_VERSION = "fyd.sitemap@3";
 
 /**
  * Site URL resolves from the tenant config. Falls back to the current Vercel
@@ -33,12 +33,15 @@ const TECH_PAGES = [
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = getSiteUrl();
-  const now = new Date();
+  // lastModified carries only a real per-page date (W-30): blog posts
+  // publish their post date and episodes their verified upload date.
+  // Every other route omits the element entirely; a build or request
+  // timestamp shared by dozens of URLs describes the deployment, not
+  // the pages, and teaches crawlers to distrust the field.
   const staticRoutes = ["", "/technology", "/blog", "/episodes", "/products", "/about", "/contact", "/faq", "/privacy", "/newsletter", "/open", "/open/evals", "/open/costs", "/tiers"];
 
   const entries: MetadataRoute.Sitemap = staticRoutes.map((r) => ({
     url: `${siteUrl}${r}`,
-    lastModified: now,
     changeFrequency: r === "" ? "weekly" : "monthly",
     priority: r === "" ? 1 : 0.7,
   }));
@@ -55,7 +58,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   for (const c of conversionRoutes) {
     entries.push({
       url: `${siteUrl}${c.path}`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: c.priority,
     });
@@ -64,7 +66,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   for (const t of TECH_PAGES) {
     entries.push({
       url: `${siteUrl}${t}`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
     });
@@ -73,7 +74,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   for (const ep of episodePages) {
     entries.push({
       url: siteUrl + "/episodes/" + ep.slug,
-      lastModified: now,
+      ...(ep.video.uploadDate
+        ? { lastModified: new Date(ep.video.uploadDate) }
+        : {}),
       changeFrequency: "monthly",
       priority: 0.6,
     });

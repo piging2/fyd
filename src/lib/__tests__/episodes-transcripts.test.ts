@@ -24,6 +24,13 @@ describe("episode transcripts (W-02)", () => {
     expect((t as string).length).toBeGreaterThan(5000);
   });
 
+  it("returns null for traversal-shaped slugs (W-49)", () => {
+    expect(getEpisodeTranscript("../silence-is-not-an-answer")).toBeNull();
+    expect(getEpisodeTranscript("a/b")).toBeNull();
+    expect(getEpisodeTranscript("..\\x")).toBeNull();
+    expect(getEpisodeTranscript("")).toBeNull();
+  });
+
   it("returns null for an unknown slug", () => {
     expect(getEpisodeTranscript("no-such-episode")).toBeNull();
   });

@@ -29,4 +29,4 @@ A fourth, **The War of Currents, Explained**, is live as a [Facebook reel](https
 
 ## Why this episode
 
-Every system you rely on has a grid story hiding inside it: a dependency nobody mapped, an alarm nobody tested, a margin that existed only on paper. The Grid Problem is the show's longest single argument that reliability is not a feature you add at the end. It is the discipline of knowing what your system will do on its worst day, and being able to prove it before that day arrives.
+Every system you rely on has a grid story hiding inside it: a dependency nobody mapped, an alarm nobody tested, a margin that existed only on paper. The Grid Problem is the show's longest single argument that reliability is not a feature you add at the end. It is the discipline of knowing what your system will do on its worst day, and being able to prove it before that day arrives. The film itself, with its chapters, lives on [the Episode 3 page](/episodes/the-grid-problem). The argument runs through the whole series: it starts in [What Survives 10,000 Years](/blog/what-survives-10000-years) and continues in [The Water Wheel Problem](/blog/the-water-wheel-problem).

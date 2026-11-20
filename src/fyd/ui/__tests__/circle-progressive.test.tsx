@@ -646,7 +646,7 @@ describe("view-transitions: progressive object continuity", () => {
     let ran = false;
     transitionViews(() => {
       ran = true;
-    });
+    }, false);
     expect(ran).toBe(true);
   });
 
