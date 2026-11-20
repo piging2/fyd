@@ -23,6 +23,12 @@ const TENANT_EDGE_CACHE_PATHS = new Set([
 ]);
 const TENANT_EDGE_CACHE_POLICY =
   "public, max-age=0, s-maxage=300, stale-while-revalidate=3600";
+// Round 2 (2026-11-19): the Cache-Control above is still overwritten
+// by the dynamic render on production, so the edge policy is also
+// carried on the CDN cache headers, which the renderer does not own
+// and the Vercel edge obeys for function responses.
+const TENANT_CDN_CACHE_POLICY =
+  "public, s-maxage=300, stale-while-revalidate=3600";
 
 export function middleware(request: NextRequest) {
   const headers = new Headers(request.headers);
@@ -30,6 +36,11 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next({ request: { headers } });
   if (TENANT_EDGE_CACHE_PATHS.has(request.nextUrl.pathname)) {
     response.headers.set("Cache-Control", TENANT_EDGE_CACHE_POLICY);
+    response.headers.set("CDN-Cache-Control", TENANT_CDN_CACHE_POLICY);
+    response.headers.set(
+      "Vercel-CDN-Cache-Control",
+      TENANT_CDN_CACHE_POLICY,
+    );
   }
   return response;
 }
