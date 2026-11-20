@@ -188,6 +188,7 @@ export function SiteHeader() {
                 "whitespace-nowrap px-3.5 py-2.5 text-[13px] font-medium tracking-wide transition-all duration-200 relative z-10",
                 isActive(item.href) ? "text-primary" : "text-text hover:text-text hover:bg-surface/50 rounded-md"
               )}
+              style={{ transitionTimingFunction: `cubic-bezier(${easing.premium.join(",")})` }}
             >
               {isActive(item.href) ? <NavShimmer>{item.label}</NavShimmer> : item.label}
             </Link>
