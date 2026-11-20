@@ -268,16 +268,8 @@ export function LenisProvider({ children }: { children: ReactNode }) {
     if (lockCount.current > 0) lenisInstance.stop();
     dlog('[lenis] initialized');
 
-    // React to mid-session reduced-motion changes while the page is open.
-    const onMotionChange = (event: MediaQueryListEvent) => {
-      if (event.matches) {
-        dlog('[lenis] reduced motion enabled mid-session; stopping smooth scroll');
-        lenisInstance.stop();
-      } else if (lockCount.current === 0) {
-        lenisInstance.start();
-      }
-    };
-    media.addEventListener("change", onMotionChange);
+    // EffectsProvider resolves live OS changes in System mode. Its resolved
+    // value drives this lifecycle without overriding an explicit Full choice.
 
     let frameId: number;
     function raf(time: number) {
@@ -287,7 +279,6 @@ export function LenisProvider({ children }: { children: ReactNode }) {
     frameId = requestAnimationFrame(raf);
 
     return () => {
-      media.removeEventListener("change", onMotionChange);
       cancelAnimationFrame(frameId);
       lenisInstance.destroy();
       lenisRef.current = null;
