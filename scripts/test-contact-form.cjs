@@ -31,7 +31,7 @@ fs.mkdirSync(output, { recursive: true });
 
 const report = {
   startedAt: new Date().toISOString(), baseUrl: base, localSourceRoot: root,
-  scope: 'Chromium public ContactForm interaction; native keyboard validation and locally intercepted synthetic responses. No real contact delivery, inbox receipt, authorization or backend-health claim. Local hashes do not identify the served deployment.',
+  scope: 'Chromium public ContactForm interaction; native keyboard validation and locally intercepted synthetic responses. Optional demo-session creation is explicitly declined by a local fixture. No real contact delivery, inbox receipt, session creation, authorization or backend-health claim. Local hashes do not identify the served deployment.',
   localSourceFiles: ['src/app/contact/contact-form.tsx', 'src/components/public-form-error.tsx', 'scripts/test-contact-form.cjs'].map(name => ({
     path: name, sha256: createHash('sha256').update(fs.readFileSync(path.join(root, name))).digest('hex'),
   })),
@@ -110,13 +110,17 @@ async function sendByKeyboard(page) {
 
 async function runCase(browser, width, reducedMotion, theme) {
   const context = await browser.newContext({ viewport: { width, height: 960 }, reducedMotion });
-  const row = { width, reducedMotion, theme, attempts: [], blockedOtherWrites: [], fields: [] };
+  const row = { width, reducedMotion, theme, attempts: [], declinedDemoSessions: [], blockedOtherWrites: [], fields: [] };
   const control = { scenario: 'invalid', release: null, pendingReleases: [], aborts: 0 };
   const contactUrl = new URL('/api/fyd/contact', base).href;
   await context.addInitScript(theme => { localStorage.setItem('ping-theme', theme); }, theme);
   await context.route('**/*', async route => {
     const request = route.request();
     if (['GET', 'HEAD', 'OPTIONS'].includes(request.method())) return route.continue();
+    if (request.method() === 'POST' && request.url() === new URL('/api/fyd/relationship-session', base).href) {
+      row.declinedDemoSessions.push({ method: request.method(), url: request.url(), delivered: false });
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: false, code: 'TEST_READ_ONLY', error: 'This contact verification does not create a demo session.', retryable: false, scope: null }) });
+    }
     if (request.method() !== 'POST' || request.url() !== contactUrl) {
       row.blockedOtherWrites.push({ method: request.method(), url: request.url() });
       return route.abort();
