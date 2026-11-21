@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * QuoteForm — the real quote-request form (test plane).
+ * QuoteForm: the real quote-request form (test plane).
  *
  * Posts to POST /api/fyd/inquiry with a client-generated idempotency key.
  * Retries REPLAY the stored receipt (same key): decision replay, never
@@ -107,7 +107,7 @@ export function QuoteForm({
           <div>Received: {receipt.receivedAt}</div>
           {replayed && (
             <div style={{ marginTop: 6, color: "#065f46" }}>
-              This is the stored receipt for your earlier request — the
+              This is the stored receipt for your earlier request; the
               retry created nothing new.
             </div>
           )}
