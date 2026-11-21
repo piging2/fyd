@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const CHAIN = [
-  { id: "E1", label: "EVENT E1", detail: "Something happened. Recorded with timestamp, source, and version.", color: "#C9A227" },
+  { id: "E1", label: "EVENT E1", detail: "Something happened. Recorded with timestamp, source, and version.", color: "#C9A227", onColor: "#1A1729" },
   { id: "M1", label: "MISSION M1", detail: "The event triggered a mission: the objective to pursue.", color: "#7C5CD6" },
   { id: "A3", label: "AGENT A3", detail: "The agent assigned, with explicit capability grants.", color: "#1A1729", darkColor: "#C9C4B8" },
-  { id: "ACT", label: "ACTION", detail: "The concrete operation the agent performed.", color: "#8B9BB4", darkColor: "#A9BCD4" },
+  { id: "ACT", label: "ACTION", detail: "The concrete operation the agent performed.", color: "#8B9BB4", darkColor: "#A9BCD4", onColor: "#1A1729" },
   { id: "R1", label: "RESULT R1", detail: "What the action produced, with evidence attached.", color: "#2E5A4F", darkColor: "#8FC7B5" },
   { id: "W1", label: "WITNESS W1", detail: "The permanent attestation: who, what, when, with what authority.", color: "#7C5CD6" },
-  { id: "L1", label: "LINEAGE L1", detail: "The full chain, queryable. Every step links to its cause.", color: "#C9A227" },
+  { id: "L1", label: "LINEAGE L1", detail: "The full chain, queryable. Every step links to its cause.", color: "#C9A227", onColor: "#1A1729" },
 ];
 
 const REPLAY_STEPS = [
@@ -69,7 +69,7 @@ export function ReplayEvidence() {
                   style={{
                     borderColor: dark && item.darkColor ? item.darkColor : item.color,
                     backgroundColor: i === activeChain ? item.color : "transparent",
-                    color: i === activeChain ? "#fff" : dark && item.darkColor ? item.darkColor : item.color,
+                    color: i === activeChain ? item.onColor ?? "#fff" : dark && item.darkColor ? item.darkColor : item.color,
                   }}
                   aria-hidden="true"
                 >
