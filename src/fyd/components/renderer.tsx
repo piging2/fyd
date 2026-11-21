@@ -191,7 +191,9 @@ export function claimBadgeLabel(objects: PingObject[]): string {
  * VQ-002: the badge defaults to the light-surface treatment
  * (border-border-soft / text-accent). On the dark hero slab (theme.ink) those
  * light-theme tokens are illegible, so the Hero passes tone="onDark": text in
- * text-background (the same token as the hero h1, proven legible on ink)
+ * text-text-on-dark (the constant on-dark token, the same paint as the
+ * hero h1; text-background is the app page color and flips to near-black
+ * in the app dark theme, which made this text illegible on ink)
  * with a theme.accent border (the same treatment as the Ask FYD button border
  * on the same slab). Theme tokens only; no invented colors, no literal
  * RGB-complement math.
@@ -210,7 +212,7 @@ function ClaimBadge({
     <span
       className={
         "inline-block rounded-full border px-2 py-0.5 text-xs uppercase tracking-wide" +
-        (dark ? " text-background" : " border-border-soft text-accent")
+        (dark ? " text-text-on-dark" : " border-border-soft text-accent")
       }
       style={dark && theme ? { borderColor: theme.accent } : undefined}
     >
@@ -1089,13 +1091,13 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
       <div className="mx-auto max-w-5xl">
         <ClaimBadge objects={objects} theme={theme} tone="onDark" />
         <h1
-          className="mt-4 break-words text-4xl font-bold text-background sm:text-6xl"
+          className="mt-4 break-words text-4xl font-bold text-text-on-dark sm:text-6xl"
           style={{ fontFamily: theme.fontDisplay }}
         >
           {heading}
         </h1>
         {copy ? (
-          <p className="mt-4 max-w-2xl text-lg text-background/80">{copy}</p>
+          <p className="mt-4 max-w-2xl text-lg text-text-on-dark/80">{copy}</p>
         ) : null}
         <div className="mt-8 flex flex-wrap gap-3">
           {/* CONTACT-DISCOVERABILITY: the business phone is a hero CTA on
@@ -1130,7 +1132,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
           ) : null}
           <a
             href="#ask"
-            className="rounded border px-6 py-3 font-semibold text-background"
+            className="rounded border px-6 py-3 font-semibold text-text-on-dark"
             style={{ borderColor: theme.accent, borderRadius: theme.radius === "full" ? 9999 : 8 }}
           >
             Ask FYD
@@ -1828,12 +1830,12 @@ function AskFYDSection({ presentation, theme, ctx }: SectionProps) {
     <section id="ask" className="w-full px-4 py-12 sm:px-6" style={{ background: theme.ink }}>
       <div className="mx-auto max-w-3xl text-center">
         <h2
-          className="text-2xl font-semibold text-background sm:text-3xl"
+          className="text-2xl font-semibold text-text-on-dark sm:text-3xl"
           style={{ fontFamily: theme.fontDisplay }}
         >
           {presentation.heading ?? "Ask FYD about " + ownerName}
         </h2>
-        <p className="mt-2 text-background/70">
+        <p className="mt-2 text-text-on-dark/70">
           {presentation.copy ?? "Questions go to Ask FYD. Answers come only from this site's published information, with sources shown."}
         </p>
         <div className="text-left">
