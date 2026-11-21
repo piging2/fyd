@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 const CHAIN = [
   { id: "E1", label: "EVENT E1", detail: "Something happened. Recorded with timestamp, source, and version.", color: "#C9A227" },
   { id: "M1", label: "MISSION M1", detail: "The event triggered a mission: the objective to pursue.", color: "#7C5CD6" },
-  { id: "A3", label: "AGENT A3", detail: "The agent assigned, with explicit capability grants.", color: "#1A1729" },
-  { id: "ACT", label: "ACTION", detail: "The concrete operation the agent performed.", color: "#8B9BB4" },
-  { id: "R1", label: "RESULT R1", detail: "What the action produced, with evidence attached.", color: "#2E5A4F" },
+  { id: "A3", label: "AGENT A3", detail: "The agent assigned, with explicit capability grants.", color: "#1A1729", darkColor: "#C9C4B8" },
+  { id: "ACT", label: "ACTION", detail: "The concrete operation the agent performed.", color: "#8B9BB4", darkColor: "#A9BCD4" },
+  { id: "R1", label: "RESULT R1", detail: "What the action produced, with evidence attached.", color: "#2E5A4F", darkColor: "#8FC7B5" },
   { id: "W1", label: "WITNESS W1", detail: "The permanent attestation: who, what, when, with what authority.", color: "#7C5CD6" },
   { id: "L1", label: "LINEAGE L1", detail: "The full chain, queryable. Every step links to its cause.", color: "#C9A227" },
 ];
@@ -24,6 +24,18 @@ export function ReplayEvidence() {
   const [activeChain, setActiveChain] = useState(0);
   const [replayPhase, setReplayPhase] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  // The chain's identity colors were chosen for light surfaces;
+  // three steps carry dark-surface counterparts. The theme class
+  // on the document element is the provider's own signal.
+  useEffect(() => {
+    const read = () => setDark(document.documentElement.classList.contains("dark"));
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -55,9 +67,9 @@ export function ReplayEvidence() {
                 <span
                   className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold transition-all duration-500")}
                   style={{
-                    borderColor: item.color,
+                    borderColor: dark && item.darkColor ? item.darkColor : item.color,
                     backgroundColor: i === activeChain ? item.color : "transparent",
-                    color: i === activeChain ? "#fff" : item.color,
+                    color: i === activeChain ? "#fff" : dark && item.darkColor ? item.darkColor : item.color,
                   }}
                   aria-hidden="true"
                 >

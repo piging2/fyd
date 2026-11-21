@@ -186,6 +186,12 @@ export function VisitorExperience({ ctx }: { ctx: RenderContext }) {
     '--fyd-on-accent': roles.onAccent,
     '--fyd-font-display': ctx.spec.themeTokens.fontDisplay,
     '--fyd-font-body': ctx.spec.themeTokens.fontBody,
+    // The tenant surface is a light scheme by design. Pin its text
+    // color and form-control scheme at this root so the app theme
+    // cannot leak a flipped body color onto tenant panels (the
+    // 2026-11-21 dark census found white labels on white panels).
+    color: roles.foreground,
+    colorScheme: 'light',
   } as CSSProperties;
   const businessMark = findConfiguredMark(owner.id) ?? (ctx.siteId ? findConfiguredMark(ctx.siteId) : null);
   const markFor = (o: PingObject, t: string) => ({ id: o.id, name: t, fallbackMark: businessMark ?? undefined });
