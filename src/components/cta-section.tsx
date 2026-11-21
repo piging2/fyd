@@ -20,7 +20,7 @@ export function CTASection({
     <Section className="relative bg-surface-2">
       <div className="absolute inset-0 bg-gradient-to-br from-surface-2 via-surface to-surface-muted opacity-100" aria-hidden="true" />
       <Container className="relative z-10 flex flex-col items-center text-center">
-        <h2 className="text-3xl font-bold text-primary sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+        <h2 className="text-3xl font-bold text-primary dark:text-honey-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
           {typeof title === 'string' ? title : title}
         </h2>
         <p className="mt-4 max-w-2xl text-lg text-text" style={{ lineHeight: 'var(--leading-body)', letterSpacing: 'var(--tracking-body)' }}>{typeof subtitle === 'string' ? subtitle : subtitle}</p>

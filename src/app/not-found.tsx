@@ -18,7 +18,7 @@ export default function NotFound() {
         <div className="mb-8 flex items-center justify-center gap-3">
           <PingWordmark />
         </div>
-        <p className="text-6xl font-bold text-primary">404</p>
+        <p className="text-6xl font-bold text-primary dark:text-honey-text">404</p>
         <h1 className="mt-4 text-3xl font-bold text-text">Page not found</h1>
         <p className="mt-3 text-text-muted">That page does not exist, or it moved. Let&apos;s get you back on track.</p>
         <div className="mt-8 flex justify-center gap-3">

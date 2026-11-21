@@ -166,8 +166,14 @@
   --color-text-subtle: #8B8983;
   --color-primary: #2A2540;
   --color-primary-hover: #2E2A44;
-  --color-honey-text: #C9A227;
-  --color-honey-text-hover: #DDBB4A;
+  /* In dark mode the accent is a text color (section eyebrows,
+     links); the light theme's storm value is unreadable on dark
+     surfaces, so dark mode carries the lighter gold instead.
+     Owner word 2026-11-21: anywhere that color renders in dark
+     mode, it becomes a lighter gold. */
+  --color-accent: #DDBB4A;
+  --color-honey-text: #DDBB4A;
+  --color-honey-text-hover: #E9CE7A;
 }
 
 /*

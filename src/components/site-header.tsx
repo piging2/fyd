@@ -186,7 +186,7 @@ export function SiteHeader() {
               aria-current={isCurrent(item.href) ? "page" : isActive(item.href) ? "location" : undefined}
               className={cn(
                 "whitespace-nowrap px-3.5 py-2.5 text-[13px] font-medium tracking-wide transition-all duration-200 relative z-10",
-                isActive(item.href) ? "text-primary" : "text-text hover:text-text hover:bg-surface/50 rounded-md"
+                isActive(item.href) ? "text-primary dark:text-honey-text" : "text-text hover:text-text hover:bg-surface/50 rounded-md"
               )}
             >
               {isActive(item.href) ? <NavShimmer>{item.label}</NavShimmer> : item.label}
@@ -232,7 +232,7 @@ export function SiteHeader() {
               aria-current={isCurrent(item.href) ? "page" : isActive(item.href) ? "location" : undefined}
               className={cn(
                 "rounded-lg px-3 py-3 text-base font-medium transition-colors duration-200",
-                isActive(item.href) ? "bg-primary/10 text-primary" : "text-black dark:text-text-on-dark hover:bg-white/50 dark:hover:bg-surface-muted/50"
+                isActive(item.href) ? "bg-primary/10 text-primary dark:text-honey-text" : "text-black dark:text-text-on-dark hover:bg-white/50 dark:hover:bg-surface-muted/50"
               )}
             >
               {isActive(item.href) ? <NavShimmer>{item.label}</NavShimmer> : item.label}
