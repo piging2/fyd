@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { delay as motionDelay } from "@/motion";
 import { Reveal } from "@/components/reveal";
 import { ProofRail } from "@/components/proof-rail";
 import PigiGif from "@/components/pigi-gif";
@@ -442,8 +443,8 @@ export default async function HomePage() {
             align="center"
           />
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {LOOP_BEATS.map((beat) => (
-              <ScrollReveal key={beat.verb}>
+            {LOOP_BEATS.map((beat, index) => (
+              <ScrollReveal key={beat.verb} delay={(index % 3) * motionDelay.stagger}>
                 <div className="flex h-full flex-col rounded-lg border border-border-soft bg-surface p-6">
                   <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">{beat.eyebrow}</p>
                   <h3 className="mt-2 text-lg font-bold uppercase tracking-wide text-text">{beat.verb}</h3>
@@ -461,7 +462,7 @@ export default async function HomePage() {
                 </div>
               </ScrollReveal>
             ))}
-            <ScrollReveal>
+            <ScrollReveal delay={2 * motionDelay.stagger}>
               <div className="flex h-full flex-col justify-center rounded-lg border border-dashed border-honey/40 bg-honey/5 p-6">
                 <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">/prove → /observe</p>
                 <h3 className="mt-2 text-lg font-bold uppercase tracking-wide text-text">THE LOOP CLOSES</h3>

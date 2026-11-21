@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, Variants } from "framer-motion";
+import { motion, type TargetAndTransition, type Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { revealUp, revealDown, revealLeft, revealRight } from "@/motion";
 import { useMotion } from "@/components/motion-provider";
@@ -43,13 +43,30 @@ export function ScrollReveal({
     right: revealRight,
   };
 
+  const directionVariant = variants[direction];
+  const visibleVariant = directionVariant.visible;
+  const visibleTarget =
+    typeof visibleVariant === "object" && visibleVariant !== null
+      ? (visibleVariant as TargetAndTransition)
+      : undefined;
+  const variantsWithDelay: Variants = visibleTarget
+    ? {
+        ...directionVariant,
+        visible: {
+          ...visibleTarget,
+          transition: {
+            ...visibleTarget.transition,
+            delay,
+          },
+        },
+      }
+    : directionVariant;
   return (
     <motion.div
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-50px" }}
-      variants={variants[direction]}
-      transition={{ delay }}
+      variants={variantsWithDelay}
       className={cn("min-w-0", className)}
     >
       {children}
