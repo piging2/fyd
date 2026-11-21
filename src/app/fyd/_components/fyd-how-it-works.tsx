@@ -1,6 +1,5 @@
 import { Container, Section, SectionHeading } from "@/components/section";
 import { ScrollReveal } from "@/components/scroll-reveal";
-import { delay as motionDelay } from "@/motion";
 import { FydCopyClassLabel, type FydCopyClass } from "./fyd-copy-class";
 
 /**
@@ -87,7 +86,7 @@ export function FydHowItWorks() {
           />
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {STEPS.map((s, index) => (
-              <ScrollReveal key={s.n} delay={(index % 3) * motionDelay.stagger}>
+              <ScrollReveal key={s.n} staggerIndex={index}>
                 <div className="flex h-full flex-col rounded-lg border border-border-soft bg-surface p-6">
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-mono text-xs font-bold text-honey-text">{s.n}</span>
@@ -101,7 +100,7 @@ export function FydHowItWorks() {
                 </div>
               </ScrollReveal>
             ))}
-            <ScrollReveal delay={(STEPS.length % 3) * motionDelay.stagger}>
+            <ScrollReveal staggerIndex={STEPS.length}>
               <div className="flex h-full flex-col justify-center rounded-lg border border-dashed border-honey/40 bg-honey/5 p-6">
                 <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-honey-text">
                   Learn → Observe
