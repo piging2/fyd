@@ -56,7 +56,7 @@ export function FydArtwork() {
                   />
                 </div>
                 <figcaption className="mx-auto mt-5 max-w-xs">
-                  <h3 className="font-display text-2xl font-bold text-primary dark:text-honey-text">{concept.title}</h3>
+                  <h3 className="font-display text-2xl font-bold text-heading">{concept.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-text-muted">{concept.caption}</p>
                 </figcaption>
               </figure>

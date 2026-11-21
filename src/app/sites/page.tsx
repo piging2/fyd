@@ -84,7 +84,7 @@ export default async function SitesIndexPage() {
                   href={`/sites/${siteId}`}
                   className="group block rounded-2xl border border-border-soft bg-surface p-8 transition hover:border-honey"
                 >
-                  <p className="text-2xl font-bold text-primary dark:text-honey-text">{name}</p>
+                  <p className="text-2xl font-bold text-heading">{name}</p>
                   <p className="mt-2 text-sm text-text-muted">{`/sites/${siteId}`}</p>
                   <p className="mt-6 text-sm font-semibold text-honey-text group-hover:text-honey-text-hover">
                     Open demo site &rarr;

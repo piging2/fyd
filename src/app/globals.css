@@ -16,6 +16,10 @@
 @theme {
   /* Brand: Deep Navy (primary brand color) */
   --color-primary: #232033;
+  /* Heading text: the primary ink on light surfaces; in .dark it
+     carries the lighter gold (owner word 2026-11-21), because
+     text-primary in dark mode is a surface color, not a text one. */
+  --color-heading: #232033;
   --color-primary-hover: #2E2A44;
   --color-primary-foreground: #FAFBFC;
 
@@ -165,6 +169,7 @@
   --color-text-muted: #C7C5BF;
   --color-text-subtle: #8B8983;
   --color-primary: #2A2540;
+  --color-heading: #DDBB4A;
   --color-primary-hover: #2E2A44;
   /* In dark mode the accent is a text color (section eyebrows,
      links); the light theme's storm value is unreadable on dark
