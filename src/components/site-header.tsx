@@ -10,8 +10,12 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { EffectsToggle } from "@/components/effects-toggle";
+import { useVisualEffects } from "@/components/effects-provider";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { FYD_CHAPTERS, focusFydChapter } from "@/app/fyd/_components/fyd-chapters";
+import { distance, duration, easing } from "@/motion/motionTokens";
+
+const MENU_DURATION = duration.fast * 1000;
 
 function NavShimmer({ children, className }: { children: React.ReactNode; className?: string }) {
   const [isHovered, setIsHovered] = React.useState(false);
@@ -64,10 +68,82 @@ export function SiteHeader() {
   const navigation = getNavigation();
   const tenant = getTenant();
   const toggleRef = React.useRef<HTMLButtonElement>(null);
-
-  React.useEffect(() => {
+  const menuRef = React.useRef<HTMLDivElement>(null);
+  const menuAnimation = React.useRef<Animation | null>(null);
+  const { resolved } = useVisualEffects();
+  const closeMenuImmediately = React.useCallback(() => {
+    if (menuAnimation.current) {
+      menuAnimation.current.onfinish = null;
+      menuAnimation.current.cancel();
+      menuAnimation.current = null;
+    }
+    if (menuRef.current) {
+      menuRef.current.hidden = true;
+      if ("inert" in menuRef.current) menuRef.current.inert = true;
+    }
     setOpen(false);
-  }, [pathname]);
+  }, []);
+
+  React.useLayoutEffect(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+    const supportsInert = "inert" in menu;
+    if (supportsInert) menu.inert = !open;
+
+    if (resolved !== "full" || !supportsInert || typeof menu.animate !== "function") {
+      if (menuAnimation.current) {
+        menuAnimation.current.onfinish = null;
+        menuAnimation.current.cancel();
+        menuAnimation.current = null;
+      }
+      menu.hidden = !open;
+      return;
+    }
+
+    // A settled disclosure needs no animation object or frame loop.
+    if (!menuAnimation.current && menu.hidden === !open) return;
+    const wasHidden = menu.hidden;
+    menu.hidden = false;
+    let animation = menuAnimation.current;
+    if (!animation) {
+      animation = menu.animate(
+        [{ opacity: 0, transform: `translateY(-${distance.tiny}px)` }, { opacity: 1, transform: "translateY(0)" }],
+        { duration: MENU_DURATION, easing: `cubic-bezier(${easing.premium.join(",")})`, fill: "both" },
+      );
+      animation.pause();
+      animation.currentTime = wasHidden ? 0 : MENU_DURATION;
+      menuAnimation.current = animation;
+    }
+    const settle = () => {
+      if (menuAnimation.current !== animation) return;
+      menu.hidden = !open;
+      animation.onfinish = null;
+      animation.cancel();
+      menuAnimation.current = null;
+    };
+    const time = Number(animation.currentTime ?? 0);
+    if ((open && time >= MENU_DURATION) || (!open && time <= 0)) {
+      settle();
+      return;
+    }
+    animation.onfinish = settle;
+    // Reverse the current timeline, rather than restarting a new entrance.
+    // The existing fast/instant tokens give a quieter, shorter exit.
+    animation.updatePlaybackRate(open ? 1 : -duration.fast / duration.instant);
+    animation.play();
+  }, [open, resolved]);
+
+  React.useLayoutEffect(() => () => {
+    if (menuAnimation.current) {
+      menuAnimation.current.onfinish = null;
+      menuAnimation.current.cancel();
+      menuAnimation.current = null;
+    }
+  }, []);
+
+  React.useLayoutEffect(() => {
+    closeMenuImmediately();
+  }, [pathname, closeMenuImmediately]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -88,7 +164,12 @@ export function SiteHeader() {
   const contact = navigation.find((n) => n.secondary);
 
   return (
-    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
+    <header
+      className="sticky top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4"
+      onBlur={(event) => {
+        if (open && !event.currentTarget.contains(event.relatedTarget as Node | null)) closeMenuImmediately();
+      }}
+    >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 rounded-[1.4rem] border border-border/70 bg-background/85 px-4 shadow-[0_10px_36px_rgba(16,12,40,0.10)] backdrop-blur-md sm:px-5">
         <Link href="/" className="group flex shrink-0 items-center gap-2.5" aria-label={`${tenant.siteName} home`}>
           <PingWordmark />
@@ -140,7 +221,8 @@ export function SiteHeader() {
         </button>
       </div>
 
-      <div id="mobile-menu" hidden={!open} className="mx-auto mt-2 max-h-[calc(100dvh-6rem)] max-w-7xl overflow-y-auto overscroll-contain rounded-[1.4rem] border border-border/70 bg-[#F8F6F3] shadow-[0_10px_36px_rgba(16,12,40,0.10)] dark:bg-surface lg:hidden">
+      {/* The native timeline owns hidden so an exit can finish before display:none. */}
+      <div ref={menuRef} id="mobile-menu" hidden aria-hidden={!open} data-lenis-prevent className="absolute left-3 right-3 top-full mx-auto mt-2 max-h-[calc(100dvh-5.25rem)] max-w-7xl overflow-y-auto overscroll-contain rounded-[1.4rem] border border-border/70 bg-[#F8F6F3] shadow-[0_10px_36px_rgba(16,12,40,0.10)] dark:bg-surface sm:left-5 sm:right-5 sm:max-h-[calc(100dvh-5.5rem)] lg:hidden">
         <nav className="flex flex-col p-3" aria-label="Mobile">
           {navigation.map((item) => (
             <Link
