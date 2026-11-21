@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 const CHAIN = [
@@ -24,18 +24,6 @@ export function ReplayEvidence() {
   const [activeChain, setActiveChain] = useState(0);
   const [replayPhase, setReplayPhase] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [dark, setDark] = useState(false);
-
-  // The chain's identity colors were chosen for light surfaces;
-  // three steps carry dark-surface counterparts. The theme class
-  // on the document element is the provider's own signal.
-  useEffect(() => {
-    const read = () => setDark(document.documentElement.classList.contains("dark"));
-    read();
-    const obs = new MutationObserver(read);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => obs.disconnect();
-  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -65,12 +53,20 @@ export function ReplayEvidence() {
                   <span className="absolute left-[15px] top-8 h-[calc(100%-24px)] w-px bg-border-soft" aria-hidden="true" />
                 )}
                 <span
-                  className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold transition-all duration-500")}
+                  className={cn("replay-chip-id flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold transition-all duration-500")}
                   style={{
-                    borderColor: dark && item.darkColor ? item.darkColor : item.color,
+                    // The inactive chip's text and border colors
+                    // ride these custom properties; globals.css
+                    // resolves them against the theme class, so no
+                    // script tracks the theme and no first paint
+                    // can race it.
+                    ["--chip" as string]: item.color,
+                    ["--chip-dark" as string]: item.darkColor ?? item.color,
                     backgroundColor: i === activeChain ? item.color : "transparent",
-                    color: i === activeChain ? item.onColor ?? "#fff" : dark && item.darkColor ? item.darkColor : item.color,
-                  }}
+                    ...(i === activeChain
+                      ? { borderColor: item.color, color: item.onColor ?? "#fff" }
+                      : {}),
+                  } as CSSProperties}
                   aria-hidden="true"
                 >
                   {item.id}

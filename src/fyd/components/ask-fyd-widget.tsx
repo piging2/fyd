@@ -176,22 +176,22 @@ export function AskFydWidget({ siteId, pageCheckpoint, theme, inputId = "ask-fyd
       </form>
 
       {!configured && (
-        <p className="mt-3 text-sm text-background/70">
+        <p className="mt-3 text-sm text-text-on-dark/70">
           Ask FYD is not available on this page yet.
         </p>
       )}
       {configured && (
         <div className="mt-4 flex flex-wrap gap-2" aria-label="Suggested questions">
           {prompts.map(prompt => <button key={prompt} type="button" disabled={stale}
-            className="min-h-[44px] rounded-full border border-current/30 px-4 py-2 text-sm text-background hover:bg-white/10 disabled:opacity-50"
+            className="min-h-[44px] rounded-full border border-current/30 px-4 py-2 text-sm text-text-on-dark hover:bg-white/10 disabled:opacity-50"
             onClick={() => { setQuestion(prompt); void ask(prompt); }}>{prompt}</button>)}
         </div>
       )}
 
       <div aria-live="polite" className="mt-4">
-        {busy && <p className="text-sm text-background/70">Looking that up...</p>}
+        {busy && <p className="text-sm text-text-on-dark/70">Looking that up...</p>}
         {status === "error" && (
-          <p role="alert" className="text-sm font-medium text-background">
+          <p role="alert" className="text-sm font-medium text-text-on-dark">
             {error}
           </p>
         )}
@@ -203,7 +203,7 @@ export function AskFydWidget({ siteId, pageCheckpoint, theme, inputId = "ask-fyd
           <div>
             {responseClass === "DENIAL" && (
               <p
-                className="mt-2 inline-block rounded-full border border-dashed px-3 py-1 text-xs font-semibold uppercase tracking-wide text-background/70"
+                className="mt-2 inline-block rounded-full border border-dashed px-3 py-1 text-xs font-semibold uppercase tracking-wide text-text-on-dark/70"
                 aria-label="Answer class: denial"
               >
                 Cannot answer
@@ -219,24 +219,24 @@ export function AskFydWidget({ siteId, pageCheckpoint, theme, inputId = "ask-fyd
               </p>
             )}
             {paragraphs.map((p, i) => (
-              <p key={i} className="mt-2 text-base leading-relaxed text-background">
+              <p key={i} className="mt-2 text-base leading-relaxed text-text-on-dark">
                 {p.replace(/\s*\[\d+\]/g, "")}
               </p>
             ))}
             {refusal && citations.length === 0 && responseClass === "DENIAL" && (
-              <p className="mt-2 text-sm text-background/70">
+              <p className="mt-2 text-sm text-text-on-dark/70">
                 FYD only answers from what the site shows. If you own this business, you can add
                 the missing detail and ask again.
               </p>
             )}
             {citations.length > 0 && (
               <details className="mt-3">
-                <summary className="inline-flex min-h-[44px] cursor-pointer items-center py-1 text-sm text-background underline">
+                <summary className="inline-flex min-h-[44px] cursor-pointer items-center py-1 text-sm text-text-on-dark underline">
                   Why this?
                 </summary>
                 <ul className="mt-2 space-y-2">
                   {citations.map((c) => (
-                    <li key={c.n} className="text-sm leading-relaxed text-background">
+                    <li key={c.n} className="text-sm leading-relaxed text-text-on-dark">
                       <span className="font-semibold">
                         [{c.n}] {c.label}
                       </span>

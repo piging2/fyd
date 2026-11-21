@@ -92,6 +92,8 @@ export function QuoteForm({
           padding: 16,
           borderRadius: 8,
           background: "#ecfdf5",
+          color: "#0f172a",
+          colorScheme: "light",
           border: "1px solid #6ee7b7",
         }}
       >
@@ -156,6 +158,8 @@ export function QuoteForm({
         padding: 16,
         borderRadius: 8,
         background: "#f8fafc",
+        color: "#0f172a",
+        colorScheme: "light",
         border: "1px solid #cbd5e1",
         display: "grid",
         gap: 10,

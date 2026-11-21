@@ -987,3 +987,15 @@ a {
     }
   }
 }
+
+/* Replay chain chips (components/architecture/replay-evidence):
+   the component stamps each step's identity colors as custom
+   properties; the theme class picks which one paints. */
+.replay-chip-id {
+  color: var(--chip);
+  border-color: var(--chip);
+}
+.dark .replay-chip-id {
+  color: var(--chip-dark, var(--chip));
+  border-color: var(--chip-dark, var(--chip));
+}
