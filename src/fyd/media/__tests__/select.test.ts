@@ -289,7 +289,7 @@ describe("heroMediaFor never returns a logo-role asset", () => {
   });
 });
 
-describe("Hero Why this? affordance", () => {
+describe("Hero photo cleanliness (owner word 2026-11-22)", () => {
   const whyMedia: DisplayMedia = {
     id: "fyd-media-why",
     role: "hero",
@@ -305,15 +305,16 @@ describe("Hero Why this? affordance", () => {
     observedAt: TS,
   };
 
-  test("Hero with media surfaces a contextual Why this? with provenance only", () => {
+  test("Hero with media renders the photo clean: no Why this? overlay, provenance in attributes only", () => {
     const html = renderHero(whyMedia);
-    expect(html).toContain("Why this?");
-    // Provenance fields flow through; nothing is invented.
-    expect(html).toContain("https://example.com/why.jpg");
-    expect(html).toContain("Public marketing imagery on the business site.");
+    expect(html).not.toContain("Why this?");
+    // Provenance fields flow through behind the scenes, in the
+    // data-media-* attributes; nothing is invented.
+    expect(html).toContain('data-media-source-url="https://example.com/why.jpg"');
+    expect(html).toContain('data-media-rights-basis="Public marketing imagery on the business site."');
   });
 
-  test("Hero without media has no Why this? affordance", () => {
+  test("Hero without media renders no photo block", () => {
     expect(renderHero(null)).not.toContain("Why this?");
   });
 });

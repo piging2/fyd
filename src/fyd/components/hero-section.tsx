@@ -34,7 +34,6 @@ import {
 } from "react";
 import type { DisplayMedia } from "../media/select";
 import type { FYDThemeTokens } from "../sitespec/types";
-import { WhyThis, mediaWhyThisSteps } from "../ui/why-this";
 
 /**
  * Selection rule for hero media, kept as a pure export for node-based unit
@@ -61,23 +60,12 @@ export function imageAlreadyFailed(
 }
 
 /**
- * Contextual provenance for the hero photo: the generic WhyThis drill-down
- * fed ONLY with the media's own provenance fields, in plain language
- * (PROD-5/PROD-6). No invented copy; steps with empty values are omitted,
- * and WhyThis renders nothing at all when the lineage is empty. The raw
- * technical values (digest, observedAt) live in non-visible data-media-*
- * attributes on the photo block; the visible caption is the photo's human
- * description (media.alt), rendered by HeroPhotoBlock.
+ * Owner word 2026-11-22: hero photos render clean. No caption and no
+ * provenance drill-down is drawn over the photo. The photo's human
+ * description stays in the img alt, and the provenance values stay in
+ * the non-visible data-media-* attributes on the photo block, behind
+ * the scenes where metadata belongs.
  */
-function HeroMediaWhyThis({ media }: { media: DisplayMedia }) {
-  return (
-    <WhyThis
-      claim={media.alt || "Hero photo"}
-      steps={mediaWhyThisSteps(media)}
-      className="[&_summary]:text-white"
-    />
-  );
-}
 
 /**
  * The photographic block. Pure (no hooks): renders the photo block or
@@ -99,11 +87,6 @@ export function HeroPhotoBlock({
   blurRef?: Ref<HTMLImageElement>;
 }) {
   if (!hero || failed) return null;
-  // PROD-5 (2026-09-27): the visible caption is the photo's human
-  // description, never rights-basis/digest/timestamp metadata. The raw
-  // technical values stay in the DOM as non-visible data-media-*
-  // attributes for verification.
-  const caption = hero.alt?.trim() ? hero.alt.trim() : null;
   return (
     <div
       className="relative h-64 w-full overflow-hidden sm:h-80"
@@ -133,14 +116,6 @@ export function HeroPhotoBlock({
         onError={onMediaError}
         className="absolute inset-0 h-full w-full object-cover"
       />
-      {caption ? (
-        <div className="absolute bottom-2 left-2 max-w-[65%] rounded bg-black/55 px-2 py-1">
-          <p className="text-xs text-white">{caption}</p>
-        </div>
-      ) : null}
-      <div className="absolute bottom-2 right-2 rounded bg-black/55 px-2 py-1">
-        <HeroMediaWhyThis media={hero} />
-      </div>
     </div>
   );
 }

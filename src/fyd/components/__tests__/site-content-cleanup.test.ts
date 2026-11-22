@@ -124,7 +124,7 @@ describe("PROD-5: human photo captions", () => {
     ).toEqual([]);
   });
 
-  test("HeroPhotoBlock shows the human caption, never metadata", () => {
+  test("HeroPhotoBlock renders the photo clean: no caption or provenance overlay, metadata in attributes", () => {
     const html = renderToStaticMarkup(
       React.createElement(HeroPhotoBlock, {
         hero: testMedia(),
@@ -133,8 +133,11 @@ describe("PROD-5: human photo captions", () => {
       }),
     );
     const text = visibleText(html);
-    // The visible caption describes the photo.
-    expect(text).toContain(ALT);
+    // No caption and no provenance label is drawn over the photo: the
+    // human description is not visible text at all.
+    expect(text).not.toContain(ALT);
+    // The description stays behind the scenes in the img alt.
+    expect(html).toContain('alt="' + ALT + '"');
     // No legal/technical metadata in visible text.
     expect(text).not.toMatch(/rights-basis/i);
     expect(text).not.toContain("digest:");
@@ -147,7 +150,7 @@ describe("PROD-5: human photo captions", () => {
     expect(html).toContain('data-media-source-url="' + SOURCE_URL + '"');
   });
 
-  test("HeroPhotoBlock omits the caption when there is no alt text", () => {
+  test("HeroPhotoBlock renders clean when there is no alt text", () => {
     const media = testMedia();
     media.alt = "   ";
     const html = renderToStaticMarkup(
