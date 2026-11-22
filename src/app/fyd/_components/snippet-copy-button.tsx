@@ -63,7 +63,7 @@ export function SnippetCopyButton({
       </span>
       <button
         type="button"
-        onClick={onCopy}
+        onClick={() => void onCopy()}
         className="min-h-11 rounded-full border border-border-soft bg-surface px-5 text-sm font-semibold text-text"
       >
         Copy the snippet

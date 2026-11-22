@@ -140,7 +140,7 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="rounded-2xl border border-border-soft bg-surface p-6 sm:p-8">
+    <form onSubmit={(ev) => void onSubmit(ev)} noValidate className="rounded-2xl border border-border-soft bg-surface p-6 sm:p-8">
       <noscript>
         <p className="mb-4 text-sm text-text">
           This form requires JavaScript. You can also{" "}
