@@ -1,5 +1,5 @@
 /**
- * globals-css.test.ts — pins the shared accessibility floor in
+ * globals-css.test.ts - pins the shared accessibility floor in
  * src/app/globals.css (website UI audit 2026-11-01, findings F2/F3/F6):
  *
  *  1. Exactly one :focus-visible rule exists (a duplicate pair drifted
@@ -63,6 +63,18 @@ describe("globals.css accessibility floor", () => {
     expect(css).toContain("@keyframes signalDrift");
     expect(css).toContain("prefers-reduced-motion: no-preference");
     expect(css).toContain("animation-timeline: view(block)");
+  });
+  it("explicit Reduced preference disables ambient motion when the OS allows motion", () => {
+    const rule = css.match(/\.effects-reduced\s+\.motion-ambient-drift,[\s\S]*?\{\s*animation:\s*none\s*!important;\s*\}/);
+    expect(rule).not.toBeNull();
+    for (const selector of [
+      ".effects-reduced .motion-ambient-drift",
+      ".effects-reduced .hero-parallax",
+      ".effects-reduced .hero-gradient-field",
+      ".effects-reduced .hero-signal-field",
+    ]) {
+      expect(rule?.[0]).toContain(selector);
+    }
   });
   it("scopes the H2 tenant section settle to the happy-place wrapper, transform only, motion-gated", () => {
     expect(css).toContain(".hp-motion .ve-section");

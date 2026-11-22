@@ -603,6 +603,15 @@ a {
   animation: none;
 }
 
+/* Reduced keeps one-shot interaction feedback, but drops continuous
+   atmosphere and parallax even when the OS itself allows motion. */
+.effects-reduced .motion-ambient-drift,
+.effects-reduced .hero-parallax,
+.effects-reduced .hero-gradient-field,
+.effects-reduced .hero-signal-field {
+  animation: none !important;
+}
+
 .effects-off *,
 .effects-off *::before,
 .effects-off *::after {
