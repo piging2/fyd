@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 type EpisodePlayerProps = {
   title: string;
@@ -18,6 +19,50 @@ const PLAYER_LABELS: Record<PlayerPhase, string> = {
   loaded: "Reload player",
   unavailable: "Retry player",
 };
+// H-03 Part 3 pilot: the poster-to-player swap is the one view transition
+// on the site. The guards are the contract: no API support, reduced motion,
+// or a reduced or off effects preference all take the instant swap, and the
+// state change applies even if starting the transition throws. The
+// transition name is set inline only for the swap, so several players on
+// one page never collide on a shared name.
+const PLAYER_TRANSITION_NAME = "episode-player-active";
+
+function startPlayerTransition(el: HTMLElement | null, apply: () => void) {
+  const doc = document as Document & {
+    startViewTransition?: (cb: () => void) => { finished: Promise<void> };
+  };
+  if (!el || typeof doc.startViewTransition !== "function") {
+    apply();
+    return;
+  }
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    apply();
+    return;
+  }
+  let stored: string | null = null;
+  try {
+    stored = window.localStorage.getItem("ping-effects");
+  } catch {
+    stored = null;
+  }
+  if (stored === "reduced" || stored === "off") {
+    apply();
+    return;
+  }
+  el.style.viewTransitionName = PLAYER_TRANSITION_NAME;
+  try {
+    const transition = doc.startViewTransition(() => {
+      flushSync(apply);
+    });
+    void transition.finished.finally(() => {
+      el.style.viewTransitionName = "";
+    });
+  } catch {
+    el.style.viewTransitionName = "";
+    apply();
+  }
+}
+
 
 export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duration }: EpisodePlayerProps) {
   const playerId = useId();
@@ -25,6 +70,7 @@ export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duratio
   const loadButton = useRef<HTMLButtonElement>(null);
   const attemptRef = useRef(0);
   const posterImage = useRef<HTMLImageElement>(null);
+  const container = useRef<HTMLDivElement>(null);
   const [interactive, setInteractive] = useState(false);
   const [phase, setPhase] = useState<PlayerPhase>("poster");
   const [attempt, setAttempt] = useState(0);
@@ -59,9 +105,11 @@ export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duratio
 
   function requestPlayer() {
     if (phase === "requested") return;
-    attemptRef.current += 1;
-    setAttempt(attemptRef.current);
-    setPhase("requested");
+    startPlayerTransition(container.current, () => {
+      attemptRef.current += 1;
+      setAttempt(attemptRef.current);
+      setPhase("requested");
+    });
   }
 
   function closePlayer() {
@@ -77,6 +125,7 @@ export function EpisodePlayer({ title, embedUrl, poster, fallbackPoster, duratio
   return (
     <>
       <div
+        ref={container}
         id={playerId}
         aria-busy={phase === "requested"}
         className="relative aspect-video min-h-[200px] w-full overflow-hidden rounded-lg bg-deep"

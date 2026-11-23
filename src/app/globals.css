@@ -1010,3 +1010,20 @@ a {
   color: var(--chip-dark, var(--chip));
   border-color: var(--chip-dark, var(--chip));
 }
+
+/* H-03 Part 3 pilot: EpisodePlayer poster-to-play view transition. The
+   transition name is assigned inline only during the swap (see
+   episode-player.tsx); the duration sits inside the motion budget. */
+::view-transition-old(episode-player-active),
+::view-transition-new(episode-player-active) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(episode-player-active),
+  ::view-transition-old(episode-player-active),
+  ::view-transition-new(episode-player-active) {
+    animation: none !important;
+  }
+}
