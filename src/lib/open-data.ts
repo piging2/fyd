@@ -120,9 +120,9 @@ export const evalGates: EvalGate[] = [
     name: "Wave gates (tests, types, build, live read)",
     tests:
       "Whether the production codebase itself is healthy at the moment a change ships: the full test suite, the typechecker, and a production build must pass, and the change must verify live.",
-    state: "3,475 tests passing on the current tree",
+    state: "3,517 tests passing on the current tree",
     trend:
-      "The full suite is green on the current tree: 3,475 tests passing, zero failures, 17 skipped across 334 of 335 suites. The measured number is published here instead of a cleaner one: 3,475 passing, and the gate runner now fails any run whose measured count disagrees with this page.",
+      "The full suite is green on the current tree: 3,517 tests passing, zero failures, 17 skipped across 334 of 335 suites. The measured number is published here instead of a cleaner one: 3,517 passing, and the gate runner now fails any run whose measured count disagrees with this page.",
     source: "Full suite gate run, 2026-11-19 (334 of 335 suites)",
     asOf: "2026-11-19",
   },
