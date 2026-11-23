@@ -119,7 +119,7 @@ export function extractWebsiteClaims(
       field: f.field,
       value: f.value,
       normalizedValue: normalized,
-      sourceKind: "website" as SourceKind,
+      sourceKind: "website",
       sourceUrl: meta.url,
       observedAt: meta.observedAt,
       evidenceRef: meta.evidenceRef + " :: website-observe.extractRawFacts (" + f.note + ")",
