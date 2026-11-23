@@ -17,6 +17,11 @@
  * Feed wiring (2026-10-07): also checks the PING journal (brain-postgres
  * ping_missions) when the FYD journal has no match. Source is attributed
  * in the response.
+ *
+ * Failure mode (desk acceptance, 2026-11-22): a journal-leg failure
+ * (FYD_JOURNAL_STORE unconfigured, or the journal unreadable) returns
+ * the typed 503 journal_unavailable in the family's form, on this
+ * surface and on the missions list and lineage alike.
  */
 
 import { loadJournalEvents, nowIso, projectMissions } from '../../_lib/mc-dispatch';
@@ -35,9 +40,18 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   } catch (e) {
     return readAuthResponse(e);
   }
+  let events;
+  try {
+    events = loadJournalEvents();
+  } catch (e) {
+    // Deliberate failure mode (desk acceptance, 2026-11-22): the store
+    // unconfigured or the journal unreadable is a typed refusal in the
+    // family's form (crm/route.ts), not an incidental projection failure.
+    return Response.json({ ok: false, error: 'journal_unavailable', message: String(e).slice(0, 300), status: 'PROVEN' }, { status: 503 });
+  }
   let missions;
   try {
-    missions = projectMissions(loadJournalEvents());
+    missions = projectMissions(events);
   } catch (e) {
     return Response.json({ ok: false, error: 'projection_failed', detail: String(e).slice(0, 300) }, { status: 500 });
   }

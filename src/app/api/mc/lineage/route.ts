@@ -55,10 +55,20 @@ export async function GET(req: Request) {
 
   // ---- MISSION view ----
   if (missionId) {
-    let missions;
+    let events;
     try {
       journalPath();
-      missions = projectMissions(loadJournalEvents());
+      events = loadJournalEvents();
+    } catch (e) {
+      // Deliberate failure mode (desk acceptance, 2026-11-22): the
+      // family's journal_unavailable form governs this failure on all
+      // three journal surfaces, so it is returned directly rather than
+      // through this route's bad() dialect.
+      return Response.json({ ok: false, error: 'journal_unavailable', message: String(e).slice(0, 300), status: 'PROVEN' }, { status: 503 });
+    }
+    let missions;
+    try {
+      missions = projectMissions(events);
     } catch (e) {
       return bad(500, 'projection_failed', String(e).slice(0, 300));
     }

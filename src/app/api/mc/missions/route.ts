@@ -17,6 +17,12 @@
  * brain-postgres ping_missions (read-only). The FYD file journal and the
  * PING postgres journal are distinct sources; both are returned with
  * explicit source attribution.
+ *
+ * Failure mode (desk acceptance, 2026-11-22): a journal-leg failure
+ * (FYD_JOURNAL_STORE unconfigured, or the journal unreadable) returns
+ * the typed 503 journal_unavailable in the family's form, on this
+ * surface and on missions/[id] and lineage alike. projection_failed
+ * remains for a genuine projection failure on loaded events.
  */
 
 import { loadJournalEvents, nowIso, projectMissions, journalPath } from '../_lib/mc-dispatch';
@@ -36,9 +42,18 @@ export async function GET(req: Request) {
   }
   let missions;
   let journal: string;
+  let events;
   try {
     journal = journalPath();
-    const all = projectMissions(loadJournalEvents());
+    events = loadJournalEvents();
+  } catch (e) {
+    // Deliberate failure mode (desk acceptance, 2026-11-22): the store
+    // unconfigured or the journal unreadable is a typed refusal in the
+    // family's form (crm/route.ts), not an incidental projection failure.
+    return Response.json({ ok: false, error: 'journal_unavailable', message: String(e).slice(0, 300), status: 'PROVEN' }, { status: 503 });
+  }
+  try {
+    const all = projectMissions(events);
     missions = all.filter((m) => inReadScope(scope, m.tenant));
   } catch (e) {
     return Response.json({ ok: false, error: 'projection_failed', detail: String(e).slice(0, 300) }, { status: 500 });
