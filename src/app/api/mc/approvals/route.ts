@@ -6,6 +6,21 @@
  * GET  /api/mc/approvals?proposal_id=<id>
  *      The recorded proposal: digest, status, summary, canonical bytes.
  *      Read-only; this is the proposal view for the owner decision.
+ *      READ GATE (MC read-authorization repair, staged candidate
+ *      2026-11-20): the GET now carries the same credential-derived
+ *      read authorization the missions routes carry (it previously had
+ *      no equivalent gate). Scope is resolved from the caller's
+ *      credential BEFORE any store or CLI read: no key + asserted
+ *      x-mc-tenant -> 401 caller_key_required; unknown key -> 401
+ *      identity_required; asserted tenant outside the caller's
+ *      entitlement -> 403 cross_tenant_denied; malformed header ->
+ *      400 invalid_caller_tenant. No key and no header keeps the
+ *      operator view (the loopback MC surface). Authenticated callers
+ *      see only proposals whose recorded tenant is inside their
+ *      scope; a per-id read outside scope is refused 403
+ *      cross_tenant_denied carrying the requested proposal_id only,
+ *      with no record fields. Records with no tenant provenance are
+ *      never visible to an authenticated scope (fail closed).
  * POST /api/mc/approvals
  *      {proposal_id, digest, decision: "approve"|"deny",
  *       approver?, reason?}
@@ -61,6 +76,13 @@ import {
   resolveApprover,
 } from '../_lib/mc-approval-gate';
 import { journalPath } from '../_lib/mc-dispatch';
+import { callerScope } from '../_lib/mc-tenant-gate';
+import {
+  inReadScope,
+  readAuthResponse,
+  scopeEnvelope,
+  type ReadScope,
+} from '../_lib/mc-read-identity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -70,46 +92,6 @@ const STORE_PATH = '/home/nolan/projects/ping/var/mc-approvals.json';
 const OUTREACH_PATH = '/home/nolan/workspace/outreach';
 const DIGEST_RE = /^[0-9a-f]{64}$/;
 
-// The approval_cli JSON boundary: the CLI's stdout and the on-disk store
-// are genuinely external data. These interfaces record exactly the shape
-// this route reads from them; fields are unknown-typed because the route
-// re-validates or null-coalesces every value it consumes.
-interface ApprovalRecord {
-  status?: unknown;
-  tenant?: unknown;
-  capability?: unknown;
-  actor?: unknown;
-  proposal_digest?: unknown;
-  decided_at?: unknown;
-  decided_by?: unknown;
-}
-
-interface ApprovalStore {
-  records?: Record<string, ApprovalRecord>;
-}
-
-interface ApprovalCliResult {
-  ok?: unknown;
-  record?: ApprovalRecord;
-  idempotent?: unknown;
-  how?: unknown;
-  event?: unknown;
-  reason?: unknown;
-  [key: string]: unknown;
-}
-
-type CliOutcome =
-  | { ok: true; result: ApprovalCliResult }
-  | { ok: false; error: string };
-
-interface ApprovalDecisionBody {
-  proposal_id?: unknown;
-  digest?: unknown;
-  decision?: unknown;
-  reason?: unknown;
-  approver?: unknown;
-}
-
 function bad(status: number, error: string, detail?: string) {
   return Response.json({ ok: false, error, detail: detail ?? null }, { status });
 }
@@ -118,7 +100,7 @@ function bad(status: number, error: string, detail?: string) {
 // invocation. approval_cli re-verifies principal -> tenant -> capability at
 // the effect site against the same caller registry; pass the
 // already-validated caller key through the environment (never argv).
-function runCli(args: string[], callerKey = ''): CliOutcome {
+function runCli(args: string[], callerKey = ''): { ok: boolean; result?: any; error?: string } {
   let r;
   try {
     r = spawnSync('python3', ['approval_cli.py', ...args], {
@@ -138,7 +120,7 @@ function runCli(args: string[], callerKey = ''): CliOutcome {
     return { ok: false, error: `approval_cli exited ${r.status}: ${(r.stderr || '').slice(0, 300)}` };
   }
   try {
-    return { ok: true, result: JSON.parse((r.stdout || '').trim()) as ApprovalCliResult };
+    return { ok: true, result: JSON.parse((r.stdout || '').trim()) };
   } catch {
     return { ok: false, error: `approval_cli returned unparsable output: ${(r.stdout || '').slice(0, 200)}` };
   }
@@ -148,43 +130,71 @@ function runCli(args: string[], callerKey = ''): CliOutcome {
  * Read-only proposal list for the Mission Control surface (2026-10-01):
  * the same records the per-id GET discloses, one summary row each.
  * GET-only; the POST approval boundary below is untouched.
+ * Read gate (repair, 2026-11-20): rows are filtered to the resolved
+ * credential-derived read scope; the operator scope sees every row, an
+ * authenticated scope sees only its own tenants' rows, and rows with
+ * no tenant provenance never enter an authenticated view.
  */
-function listProposals() {
-  let store: ApprovalStore;
+function listProposals(scope: ReadScope) {
+  let store: any;
   try {
-    store = JSON.parse(readFileSync(STORE_PATH, 'utf8')) as ApprovalStore;
+    store = JSON.parse(readFileSync(STORE_PATH, 'utf8'));
   } catch (e) {
     return bad(500, 'approval_store_unreadable', String(e).slice(0, 200));
   }
-  const records: Record<string, ApprovalRecord> =
+  const records =
     store && store.records && typeof store.records === 'object' ? store.records : {};
-  const proposals = Object.keys(records).map((id) => {
-    const r: ApprovalRecord = records[id] || {};
-    return {
-      proposal_id: id,
-      status: r.status ?? null,
-      tenant: r.tenant ?? null,
-      capability: r.capability ?? null,
-      actor: r.actor ?? null,
-      proposal_digest: r.proposal_digest ?? null,
-      decided_at: r.decided_at ?? null,
-      decided_by: r.decided_by ?? null,
-    };
+  const proposals = Object.keys(records)
+    .filter((id) => inReadScope(scope, (records[id] || {}).tenant ?? null))
+    .map((id) => {
+      const r = records[id] || {};
+      return {
+        proposal_id: id,
+        status: r.status ?? null,
+        tenant: r.tenant ?? null,
+        capability: r.capability ?? null,
+        actor: r.actor ?? null,
+        proposal_digest: r.proposal_digest ?? null,
+        decided_at: r.decided_at ?? null,
+        decided_by: r.decided_by ?? null,
+      };
+    });
+  return Response.json({
+    ok: true,
+    scope: scopeEnvelope(scope),
+    count: proposals.length,
+    proposals,
   });
-  return Response.json({ ok: true, count: proposals.length, proposals });
 }
 
-export function GET(req: Request) {
+export async function GET(req: Request) {
+  // Read gate first: the credential-derived scope is resolved before
+  // any store or CLI read, so a refusal discloses nothing and reads
+  // nothing (the GET previously carried no equivalent gate).
+  let scope: ReadScope;
+  try {
+    scope = callerScope(req);
+  } catch (e) {
+    return readAuthResponse(e);
+  }
   const { searchParams } = new URL(req.url);
   const proposalId = searchParams.get('proposal_id') || '';
   if (!proposalId) {
-    return listProposals();
+    return listProposals(scope);
   }
   const cli = runCli(['get', '--store', STORE_PATH, '--proposal-id', proposalId]);
   if (!cli.ok) return bad(500, 'approval_backend_failed', cli.error);
   const res = cli.result;
   if (!res.ok) {
     return bad(404, 'unknown_proposal', `no approval record for '${proposalId}'`);
+  }
+  if (!inReadScope(scope, res.record?.tenant ?? null)) {
+    // Typed deny, zero disclosure: only the requested id, never the
+    // record's tenant or any of its fields (the missions [id] form).
+    return Response.json(
+      { ok: false, error: 'cross_tenant_denied', proposal_id: proposalId },
+      { status: 403 },
+    );
   }
   return Response.json({ ok: true, proposal: res.record });
 }
@@ -194,9 +204,9 @@ export async function POST(req: Request) {
   const gate = gateApprovalCaller(req);
   if (!gate.ok) return gate.response;
 
-  let body: ApprovalDecisionBody;
+  let body: any;
   try {
-    body = (await req.json()) as ApprovalDecisionBody;
+    body = await req.json();
   } catch {
     return bad(400, 'bad_json', 'Request body must be JSON.');
   }

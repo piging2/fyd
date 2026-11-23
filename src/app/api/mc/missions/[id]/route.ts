@@ -3,11 +3,16 @@
  * EXISTING journal: mission, run, execution, start/end, capabilities granted,
  * artifacts, evidence, events, result, reconciliation state.
  *
- * Mission L (Q-P0-06 finding #4, 2026-09-27): tenant-scoped reads. A caller
- * asserting `x-mc-tenant` may read ONLY missions whose tenant matches; a
- * cross-tenant request gets a typed 403 with the requested mission_id only
- * (no tenant field, no metadata, no hint about the owning tenant). No header
- * means the operator view and is unchanged.
+ * Mission L (Q-P0-06 finding #4, 2026-09-27): tenant-scoped reads.
+ * REPAIRED (MC read-authorization repair, staged candidate 2026-11-20):
+ * the read scope is credential-derived (callerScope now delegates to
+ * resolveReadScope in mc-read-identity.ts). A credentialed caller may
+ * read ONLY missions inside its credential-derived scope; a
+ * cross-tenant request gets a typed 403 with the requested mission_id
+ * only (no tenant field, no metadata, no hint about the owning
+ * tenant). An asserted `x-mc-tenant` header alone grants nothing (401
+ * caller_key_required without a key). No key and no header means the
+ * operator view and is unchanged.
  *
  * Feed wiring (2026-10-07): also checks the PING journal (brain-postgres
  * ping_missions) when the FYD journal has no match. Source is attributed
@@ -17,6 +22,7 @@
 import { loadJournalEvents, nowIso, projectMissions } from '../../_lib/mc-dispatch';
 import { listAllPingMissions, PING_JOURNAL_SOURCE } from '../../_lib/mc-ping-journal';
 import { callerScope } from '../../_lib/mc-tenant-gate';
+import { inReadScope, readAuthResponse } from '../../_lib/mc-read-identity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,8 +32,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   let scope;
   try {
     scope = callerScope(req);
-  } catch {
-    return Response.json({ ok: false, error: 'invalid_caller_tenant' }, { status: 400 });
+  } catch (e) {
+    return readAuthResponse(e);
   }
   let missions;
   try {
@@ -37,7 +43,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   }
   const m = missions.find((x) => x.mission_id === id);
   if (m) {
-    if (scope.kind === 'tenant' && m.tenant !== scope.tenant) {
+    if (!inReadScope(scope, m.tenant)) {
       // Typed deny, zero disclosure: only the requested id, never the
       // mission's tenant or any of its metadata.
       return Response.json({ ok: false, error: 'cross_tenant_denied', mission_id: id }, { status: 403 });
@@ -49,7 +55,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     const pingMissions = await listAllPingMissions(1000);
     const pm = pingMissions.find((x) => x.mission_id === id);
     if (pm) {
-      if (scope.kind === 'tenant' && pm.tenant_id !== scope.tenant) {
+      if (!inReadScope(scope, pm.tenant_id)) {
         return Response.json({ ok: false, error: 'cross_tenant_denied', mission_id: id }, { status: 403 });
       }
       return Response.json({

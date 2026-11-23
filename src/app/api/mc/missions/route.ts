@@ -4,9 +4,14 @@
  * state because state lives in the journal; replay reconstructs it because
  * the projection is deterministic.
  *
- * Mission L (Q-P0-06 finding #4, 2026-09-27): tenant-scoped reads. A caller
- * asserting `x-mc-tenant` sees ONLY that tenant's missions. No header means
- * the operator view (the MC page's honest operator surface) and is unchanged.
+ * Mission L (Q-P0-06 finding #4, 2026-09-27): tenant-scoped reads.
+ * REPAIRED (MC read-authorization repair, staged candidate 2026-11-20):
+ * the read scope is credential-derived (callerScope now delegates to
+ * resolveReadScope in mc-read-identity.ts). An asserted `x-mc-tenant`
+ * header alone grants nothing: with no caller key it is refused 401
+ * caller_key_required, and with a key it may only narrow the caller's
+ * entitled scope. No key and no header means the operator view (the MC
+ * page's honest operator surface) and is unchanged.
  *
  * Feed wiring (2026-10-07): also projects PING journal missions from
  * brain-postgres ping_missions (read-only). The FYD file journal and the
@@ -17,6 +22,7 @@
 import { loadJournalEvents, nowIso, projectMissions, journalPath } from '../_lib/mc-dispatch';
 import { listAllPingMissions, PING_JOURNAL_SOURCE } from '../_lib/mc-ping-journal';
 import { callerScope } from '../_lib/mc-tenant-gate';
+import { inReadScope, readAuthResponse, scopeEnvelope } from '../_lib/mc-read-identity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,15 +31,15 @@ export async function GET(req: Request) {
   let scope;
   try {
     scope = callerScope(req);
-  } catch {
-    return Response.json({ ok: false, error: 'invalid_caller_tenant' }, { status: 400 });
+  } catch (e) {
+    return readAuthResponse(e);
   }
   let missions;
   let journal: string;
   try {
     journal = journalPath();
     const all = projectMissions(loadJournalEvents());
-    missions = scope.kind === 'tenant' ? all.filter((m) => m.tenant === scope.tenant) : all;
+    missions = all.filter((m) => inReadScope(scope, m.tenant));
   } catch (e) {
     return Response.json({ ok: false, error: 'projection_failed', detail: String(e).slice(0, 300) }, { status: 500 });
   }
@@ -43,7 +49,7 @@ export async function GET(req: Request) {
   let pingError: string | null = null;
   try {
     const allPing = await listAllPingMissions(100);
-    pingMissions = scope.kind === 'tenant' ? allPing.filter((m) => m.tenant_id === scope.tenant) : allPing;
+    pingMissions = allPing.filter((m) => inReadScope(scope, m.tenant_id));
   } catch (e) {
     pingError = String(e).slice(0, 200);
   }
@@ -51,7 +57,7 @@ export async function GET(req: Request) {
     ok: true,
     as_of: nowIso(),
     journal,
-    scope: scope.kind === 'tenant' ? { tenant: scope.tenant } : { operator: true },
+    scope: scopeEnvelope(scope),
     mission_count: missions.length,
     ping_journal: {
       source: PING_JOURNAL_SOURCE,

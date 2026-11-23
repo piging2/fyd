@@ -24,6 +24,7 @@ import {
 } from '../_lib/mc-dispatch';
 import { missionSpine, stage, type SpineSource } from '../_lib/mc-lineage';
 import { callerScope } from '../_lib/mc-tenant-gate';
+import { inReadScope, ReadAuthError } from '../_lib/mc-read-identity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,7 @@ function bad(status: number, error: string, detail?: string | null) {
   return Response.json({ ok: false, error, detail: detail ?? null }, { status });
 }
 
-export function GET(req: Request) {
+export async function GET(req: Request) {
   const url = new URL(req.url);
   const missionId = url.searchParams.get('missionId');
   const proposalId = url.searchParams.get('proposalId');
@@ -45,8 +46,11 @@ export function GET(req: Request) {
   let scope;
   try {
     scope = callerScope(req);
-  } catch {
-    return bad(400, 'invalid_caller_tenant', null);
+  } catch (e) {
+    // Credential-derived scope (repair, 2026-11-20): typed denies carry
+    // their own status (400 / 401 / 403), mapped in this route's shape.
+    if (e instanceof ReadAuthError) return bad(e.status, e.code, null);
+    throw e;
   }
 
   // ---- MISSION view ----
@@ -60,7 +64,7 @@ export function GET(req: Request) {
     }
     const m = missions.find((x) => x.mission_id === missionId);
     if (!m) return bad(404, 'unknown_mission', missionId);
-    if (scope.kind === 'tenant' && m.tenant !== scope.tenant) {
+    if (!inReadScope(scope, m.tenant)) {
       return bad(403, 'cross_tenant_denied', missionId);
     }
     return Response.json({

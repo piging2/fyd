@@ -7,10 +7,20 @@
  * No mission_id -> the contract §5 honest empty state, exactly, with no
  * journal access at all.
  *
- * Mission L tenant gate (same discipline as /api/mc/missions): a caller
- * asserting `x-mc-tenant` sees ONLY that tenant's mission; cross-tenant
- * gets a typed 403 carrying the requested mission_id only. No header means
- * the operator view and is unchanged.
+ * Mission L tenant gate (same discipline as /api/mc/missions).
+ * REPAIRED (MC read-authorization repair, staged candidate 2026-11-20):
+ * the scope is credential-derived; a credentialed caller sees ONLY
+ * missions inside its entitled scope; cross-tenant gets a typed 403
+ * carrying the requested mission_id only. An asserted `x-mc-tenant`
+ * header alone grants nothing (401 caller_key_required without a key).
+ * No key and no header means the operator view and is unchanged.
+ *
+ * siteId selector (44-check battery re-run clearing change, 2026-11-22):
+ * when the caller names a siteId, this surface answers it under the
+ * same rule as /api/mc/graph, BEFORE any projection: an unknown tenant
+ * is 404 unknown_tenant; a known tenant outside the caller's scope is
+ * the typed 403 cross_tenant_denied carrying the requested siteId
+ * only. No siteId named: the mission_id selector governs, unchanged.
  *
  * Fail-closed: journal unreachable -> 503 ping_journal_unreachable, never an
  * invented empty state. Unknown mission id -> 404 unknown_mission.
@@ -25,10 +35,11 @@ import {
   canonicalJson,
   emptyMarketingOSProjection,
   projectMarketingOS,
-  type MarketingOSProjection,
 } from '../_lib/mc-marketingos';
 import { callerScope } from '../_lib/mc-tenant-gate';
+import { inReadScope, readAuthResponse, scopeEnvelope } from '../_lib/mc-read-identity';
 import { nowIso } from '../_lib/mc-dispatch';
+import { getFydTenantIds } from '@/fyd/data/fyd-tenant-graph';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,8 +52,27 @@ export async function GET(req: Request) {
   let scope;
   try {
     scope = callerScope(req);
-  } catch {
-    return Response.json({ ok: false, error: 'invalid_caller_tenant' }, { status: 400 });
+  } catch (e) {
+    return readAuthResponse(e);
+  }
+
+  // siteId selector gate: the same typed refusals /api/mc/graph
+  // delivers, before any projection is built. Zero disclosure: the
+  // 403 carries only the siteId the caller itself named.
+  const siteIdParam = url.searchParams.get('siteId');
+  if (siteIdParam !== null && siteIdParam !== '') {
+    if (!getFydTenantIds().includes(siteIdParam)) {
+      return Response.json(
+        { ok: false, error: 'unknown_tenant', status: 'PROVEN' },
+        { status: 404 },
+      );
+    }
+    if (!inReadScope(scope, siteIdParam)) {
+      return Response.json(
+        { ok: false, error: 'cross_tenant_denied', siteId: siteIdParam, status: 'PROVEN' },
+        { status: 403 },
+      );
+    }
   }
 
   const asOf = nowIso();
@@ -53,8 +83,8 @@ export async function GET(req: Request) {
       ok: true,
       as_of: asOf,
       journal: PING_JOURNAL_SOURCE,
-      scope: scope.kind === 'tenant' ? { tenant: scope.tenant } : { operator: true },
-      projection: JSON.parse(canonicalJson(emptyMarketingOSProjection(objective))) as MarketingOSProjection,
+      scope: scopeEnvelope(scope),
+      projection: JSON.parse(canonicalJson(emptyMarketingOSProjection(objective))),
     });
   }
 
@@ -83,7 +113,7 @@ export async function GET(req: Request) {
     // Honest miss: the id is unknown, not a failed mission.
     return Response.json({ ok: false, error: 'unknown_mission', mission_id: missionId }, { status: 404 });
   }
-  if (scope.kind === 'tenant' && row.tenant_id !== scope.tenant) {
+  if (!inReadScope(scope, row.tenant_id)) {
     // Typed deny, zero disclosure: only the requested id, never the
     // mission's tenant or any of its metadata.
     return Response.json({ ok: false, error: 'cross_tenant_denied', mission_id: missionId }, { status: 403 });
@@ -94,7 +124,7 @@ export async function GET(req: Request) {
     ok: true,
     as_of: asOf,
     journal: PING_JOURNAL_SOURCE,
-    scope: scope.kind === 'tenant' ? { tenant: scope.tenant } : { operator: true },
-    projection: JSON.parse(canonicalJson(projection)) as MarketingOSProjection,
+    scope: scopeEnvelope(scope),
+    projection: JSON.parse(canonicalJson(projection)),
   });
 }
