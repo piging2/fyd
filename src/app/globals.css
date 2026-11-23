@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * SEMANTIC DESIGN TOKENS: PING technology brand.
  * TenantOS model: to re-skin for another tenant, change tokens only.
