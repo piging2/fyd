@@ -17,8 +17,11 @@
  * the caller's credential-derived scope; a known tenant outside scope
  * is refused 403 cross_tenant_denied carrying the requested siteId
  * only; an unknown tenant is 404 unknown_tenant. No response from
- * this route carries the tenant inventory any longer. No key and no
- * asserted header keeps the operator view (the loopback MC surface).
+ * this route carries the tenant inventory any longer. A tenant-specific
+ * read with no key and no asserted header is refused 401
+ * caller_key_required (graph posture repair, desk ruling 2026-11-22
+ * on T3's destination qualifications): the operator view does not
+ * extend to tenant-specific graph reads on a public surface.
  */
 import { NextResponse } from "next/server";
 import {
@@ -46,6 +49,15 @@ export async function GET(request: Request) {
     return NextResponse.json(
       { ok: false, error: "unknown_tenant", status: "PROVEN" },
       { status: 404 }
+    );
+  }
+  if (scope.kind === "operator") {
+    // Tenant-specific read claimed with no credential: not
+    // authorization (the x-mc-tenant assertion rule, applied to the
+    // siteId selector). Typed refusal, zero disclosure.
+    return NextResponse.json(
+      { ok: false, error: "caller_key_required", status: "PROVEN" },
+      { status: 401 }
     );
   }
   if (!inReadScope(scope, siteId)) {
