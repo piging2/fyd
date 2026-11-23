@@ -65,17 +65,29 @@ export class TenantContextError extends Error {
   readonly tenantId: string | null;
   /** The key that was refused, when a cross-tenant reference was attempted. */
   readonly attemptedKey: string | null;
+  /**
+   * The underlying refusal's message, when a wrapper reclassifies a
+   * source error into this contract error. This is also the standard
+   * Error cause property, narrowed to the string form the wrappers
+   * pass, so the cause chain survives the reclassification.
+   */
+  readonly cause: string | null;
 
   constructor(
     code: TenantRejectionCode,
     message: string,
-    opts?: { tenantId?: string | null; attemptedKey?: string | null },
+    opts?: {
+      tenantId?: string | null;
+      attemptedKey?: string | null;
+      cause?: string | null;
+    },
   ) {
     super(message);
     this.name = "TenantContextError";
     this.code = code;
     this.tenantId = opts?.tenantId ?? null;
     this.attemptedKey = opts?.attemptedKey ?? null;
+    this.cause = opts?.cause ?? null;
   }
 }
 
