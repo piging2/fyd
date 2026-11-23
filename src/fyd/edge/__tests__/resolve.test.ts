@@ -274,7 +274,7 @@ describe("real PING projections (when present)", () => {
         console.warn(`skip: no projection at ${path}`);
         return;
       }
-      const raw = JSON.parse(readFileSync(path, "utf8"));
+      const raw = JSON.parse(readFileSync(path, "utf8")) as ObjectGraph & { graph?: ObjectGraph };
       const graph: ObjectGraph = raw.graph ?? raw;
       const biz = graph.objects.find(
         (o) => o.schema === "ping.social.business@1" && o.visibility === "public",

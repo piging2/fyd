@@ -17,7 +17,7 @@
  *  - DNS resolving a public hostname to a private effective destination
  */
 
-import { isPublicIp, safeFetch, safeFetchPage } from "../safe-fetch";
+import { isPublicIp, safeFetchPage } from "../safe-fetch";
 
 describe("isPublicIp adversarial matrix", () => {
   test.each([
@@ -90,11 +90,11 @@ describe("isPublicIp adversarial matrix", () => {
   });
 });
 
-const PUBLIC_DNS = async (hostname: string) => {
+const PUBLIC_DNS = (hostname: string) => {
   if (hostname === "example.com" || hostname === "example.org") {
-    return [{ address: "93.184.216.34" }];
+    return Promise.resolve([{ address: "93.184.216.34" }]);
   }
-  throw new Error("getaddrinfo ENOTFOUND " + hostname);
+  return Promise.reject(new Error("getaddrinfo ENOTFOUND " + hostname));
 };
 const dnsFor = (address: string) => async (hostname: string) => {
   if (hostname === "evil.example") return [{ address }];
@@ -104,7 +104,7 @@ const dnsFor = (address: string) => async (hostname: string) => {
 function pageFetch(
   handler: (url: string) => Promise<Response>,
 ): jest.Mock<Promise<Response>, [string]> {
-  return jest.fn(async (url: string | URL | Request) => handler(String(url))) as unknown as jest.Mock<
+  return jest.fn(async (url: string | URL | Request) => handler(typeof url === "string" ? url : url instanceof URL ? url.href : url.url)) as unknown as jest.Mock<
     Promise<Response>,
     [string]
   >;
@@ -124,7 +124,7 @@ describe("safeFetch effective-destination boundary (mocked)", () => {
     "http://3232235777/",
     "http://0xc0.0xA8.0x01.0x01/",
   ])("rejects alternate IPv4 encoding %s without fetching", async (url) => {
-    const fetchImpl = pageFetch(async () => OK_PAGE());
+    const fetchImpl = pageFetch(() => Promise.resolve(OK_PAGE()));
     const r = await safeFetchPage(url, {}, { dnsLookup: PUBLIC_DNS, fetchImpl: fetchImpl as unknown as typeof fetch });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toMatch(/not public routable/);
@@ -145,7 +145,7 @@ describe("safeFetch effective-destination boundary (mocked)", () => {
     "http://[2001::1]/",
     "http://[2001:db8::1]/",
   ])("rejects IPv6 literal %s without fetching", async (url) => {
-    const fetchImpl = pageFetch(async () => OK_PAGE());
+    const fetchImpl = pageFetch(() => Promise.resolve(OK_PAGE()));
     const r = await safeFetchPage(url, {}, { dnsLookup: PUBLIC_DNS, fetchImpl: fetchImpl as unknown as typeof fetch });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toMatch(/not public routable/);
@@ -160,11 +160,11 @@ describe("safeFetch effective-destination boundary (mocked)", () => {
     ["http://0x7f.0.0.1/", "alternate encoding"],
     ["http://10.0.0.5/", "plain private"],
   ])("rejects public redirect to private space (%s via %s)", async (target: string) => {
-    const fetchImpl = pageFetch(async (u) => {
+    const fetchImpl = pageFetch((u) => {
       if (u === "http://example.com/") {
-        return new Response(null, { status: 302, headers: { location: target } });
+        return Promise.resolve(new Response(null, { status: 302, headers: { location: target } }));
       }
-      throw new Error("must never fetch " + u);
+      return Promise.reject(new Error("must never fetch " + u));
     });
     const r = await safeFetchPage(
       "http://example.com/",
@@ -186,7 +186,7 @@ describe("safeFetch effective-destination boundary (mocked)", () => {
     ["::a00:1", "compatible"],
     ["10.0.0.5", "plain private"],
   ])("rejects DNS resolving to private space (%s via %s)", async (address: string) => {
-    const fetchImpl = pageFetch(async () => OK_PAGE());
+    const fetchImpl = pageFetch(() => Promise.resolve(OK_PAGE()));
     const r = await safeFetchPage(
       "http://evil.example/",
       {},
@@ -198,11 +198,11 @@ describe("safeFetch effective-destination boundary (mocked)", () => {
   });
 
   test("public -> public redirect chain still works", async () => {
-    const fetchImpl = pageFetch(async (u) => {
+    const fetchImpl = pageFetch((u) => {
       if (u === "http://example.com/") {
-        return new Response(null, { status: 302, headers: { location: "http://example.org/" } });
+        return Promise.resolve(new Response(null, { status: 302, headers: { location: "http://example.org/" } }));
       }
-      return OK_PAGE();
+      return Promise.resolve(OK_PAGE());
     });
     const r = await safeFetchPage(
       "http://example.com/",
@@ -223,11 +223,11 @@ describe("safeFetch effective-destination boundary (mocked)", () => {
       seen.push(hostname);
       return PUBLIC_DNS(hostname);
     };
-    const fetchImpl = pageFetch(async (u) => {
+    const fetchImpl = pageFetch((u) => {
       if (u === "http://example.com/") {
-        return new Response(null, { status: 302, headers: { location: "http://example.org/" } });
+        return Promise.resolve(new Response(null, { status: 302, headers: { location: "http://example.org/" } }));
       }
-      return OK_PAGE();
+      return Promise.resolve(OK_PAGE());
     });
     const r = await safeFetchPage(
       "http://example.com/",

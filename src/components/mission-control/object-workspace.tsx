@@ -41,7 +41,7 @@ export function ObjectWorkspace({ siteId, graph, refreshSignal }: { siteId: stri
       setSelectedId(p.get("object") ?? ""); setQuery(p.get("entityQ") ?? ""); setSchema(p.get("schema") ?? "");
       setObjectView(p.get("objectView") ?? "state");
       setTraceMode(["object", "field", "relationship", "resource"].includes(p.get("trace") ?? "") ? p.get("trace")! : ""); setTraceField(p.get("field") ?? "");
-      try { const values = JSON.parse(p.get("relation") ?? "null"); setTraceRelation(Array.isArray(values) && values.length === 3 && values.every(v => typeof v === "string") ? { subject: values[0], predicate: values[1], object: values[2] } : null); } catch { setTraceRelation(null); }
+      try { const values: unknown = JSON.parse(p.get("relation") ?? "null"); setTraceRelation(Array.isArray(values) && values.length === 3 && values.every(v => typeof v === "string") ? { subject: values[0], predicate: values[1], object: values[2] } : null); } catch { setTraceRelation(null); }
     };
     sync(); window.addEventListener("popstate", sync);
     return () => window.removeEventListener("popstate", sync);
@@ -72,7 +72,7 @@ export function ObjectWorkspace({ siteId, graph, refreshSignal }: { siteId: stri
     if (!selectedId) { setLoading(false); return; }
     const controller = new AbortController(); setLoading(true);
     void fetch(`/api/mc/object?siteId=${encodeURIComponent(siteId)}&id=${encodeURIComponent(selectedId)}`, { signal: controller.signal, cache: "no-store" })
-      .then(async response => { const body = await response.json(); if (!response.ok || body.ok !== true) throw new Error(text(body.error ?? `HTTP ${response.status}`)); return body as Data; })
+      .then(async response => { const body = (await response.json()) as Data & { ok?: unknown; error?: unknown }; if (!response.ok || body.ok !== true) throw new Error(text(body.error ?? `HTTP ${response.status}`)); return body; })
       .then(body => { if (!controller.signal.aborted) setDetail(body); })
       .catch(reason => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Object source unavailable"); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
@@ -105,7 +105,7 @@ export function ObjectWorkspace({ siteId, graph, refreshSignal }: { siteId: stri
         {loading && <p role="status">Reading object evidence…</p>}
         {error && <p role="alert">Object unavailable: {error}</p>}
         {detail && <>
-          <div className="mc-section-label"><div><span className="mc-eyebrow">{text(obj.schema)}</span><h3>{text(obj.title)}</h3><code>{text(obj.id)}</code></div><button className="mc-text-button" type="button" onClick={() => showTrace("object")}>Trace this</button><button className="mc-text-button" type="button" onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); setCopied("Object link copied"); } catch { setCopied("Clipboard unavailable"); } }}>Copy object link</button></div><p role="status" className="mc-muted">{copied}</p>
+          <div className="mc-section-label"><div><span className="mc-eyebrow">{text(obj.schema)}</span><h3>{text(obj.title)}</h3><code>{text(obj.id)}</code></div><button className="mc-text-button" type="button" onClick={() => showTrace("object")}>Trace this</button><button className="mc-text-button" type="button" onClick={() => { void (async () => { try { await navigator.clipboard.writeText(window.location.href); setCopied("Object link copied"); } catch { setCopied("Clipboard unavailable"); } })(); }}>Copy object link</button></div><p role="status" className="mc-muted">{copied}</p>
           <p className="mc-muted">Object provenance: {text(evidence.provenanceKind)}. {evidence.fixtureSource ? "Pinned fixture reference returned." : rows(evidence.journalEvidence).some(item => record(item.lookup).found === true) ? "Journal evidence returned." : "Original source event not returned."}</p>
           <ViewTabs id="object-views" views={views} value={activeView} onChange={changeView} label="Object detail views" />
           <div role="tabpanel" id="object-views-panel" aria-labelledby={`object-views-${activeView}`} tabIndex={0}>
@@ -132,6 +132,6 @@ export function ObjectWorkspace({ siteId, graph, refreshSignal }: { siteId: stri
         {selectedId && !loading && !detail && !error && !selected && <p>Selected object is not in the current graph summary.</p>}
       </div>
     </div>}
-    <RecordInspector open={!!traceMode} title={detail ? traceObject(detail, traceMode as "object" | "field" | "relationship" | "resource", traceField, traceRelation ?? undefined).subject : "Reading object trace"} onClose={closeInspector}>{detail ? <TraceBody trace={traceObject(detail, traceMode as "object" | "field" | "relationship" | "resource", traceField, traceRelation ?? undefined)} /> : <p>{loading ? "Reading object evidence…" : error || "Object evidence not returned."}</p>}<button type="button" className="mc-text-button" onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); setCopied("Trace link copied"); } catch { setCopied("Clipboard unavailable"); } }}>Copy trace link</button><p role="status">{copied}</p></RecordInspector>
+    <RecordInspector open={!!traceMode} title={detail ? traceObject(detail, traceMode as "object" | "field" | "relationship" | "resource", traceField, traceRelation ?? undefined).subject : "Reading object trace"} onClose={closeInspector}>{detail ? <TraceBody trace={traceObject(detail, traceMode as "object" | "field" | "relationship" | "resource", traceField, traceRelation ?? undefined)} /> : <p>{loading ? "Reading object evidence…" : error || "Object evidence not returned."}</p>}<button type="button" className="mc-text-button" onClick={() => { void (async () => { try { await navigator.clipboard.writeText(window.location.href); setCopied("Trace link copied"); } catch { setCopied("Clipboard unavailable"); } })(); }}>Copy trace link</button><p role="status">{copied}</p></RecordInspector>
   </section>;
 }

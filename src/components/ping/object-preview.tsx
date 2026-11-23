@@ -17,7 +17,6 @@ import Link from "next/link";
 import {
   Briefcase,
   Building2,
-  FileText,
   FolderKanban,
   HelpCircle,
   MapPin,

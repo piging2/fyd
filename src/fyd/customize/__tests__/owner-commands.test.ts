@@ -202,7 +202,7 @@ function runCommand(
   over: Partial<DraftContext> = {},
   capability: Parameters<typeof evaluateCapability>[2] = "owner.customize-approve",
 ): { proposal: OwnerProposal; state: ReturnType<typeof emptyOwnerSiteState> } {
-  const ctx = draftCtx(over);
+  draftCtx(over);
   const proposal = draftCommand(text, over);
   const approved = approveOwnerProposal(
     proposal,

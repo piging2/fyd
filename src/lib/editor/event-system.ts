@@ -13,11 +13,17 @@
  * Replay applies events to projection, not re-emits through recording path.
  */
 
-import { slotRegistry } from './slot-registry';
 import { SlotConstraints } from './command-pattern';
 import { sequenceAuthority } from './sequence-authority';
 import { durableEventStore } from './durable-event-store';
 import { ValidationResult, ValidationFailure } from './validation-result';
+
+// Service types for the projection appliers below. The singletons are
+// loaded lazily inside applyToProjection to avoid a circular dependency;
+// these import types are erased at compile time and carry the managers'
+// real shapes without a runtime import.
+type PlacementGraphService = typeof import('./placement-graph').placementGraph;
+type SlotRegistryService = typeof import('./slot-registry').slotRegistry;
 
 export interface Event {
   id: string;
@@ -295,36 +301,36 @@ class EventSystem {
     
     switch (event.type) {
       case 'AssetReplaced':
-        await this.applyAssetReplaced(event as AssetReplacedEvent, placementGraph, slotRegistry);
+        this.applyAssetReplaced(event, placementGraph, slotRegistry);
         break;
       case 'PlacementMoved':
-        await this.applyPlacementMoved(event as PlacementMovedEvent, placementGraph);
+        this.applyPlacementMoved(event, placementGraph);
         break;
       case 'PlacementSwapped':
-        await this.applyPlacementSwapped(event as PlacementSwappedEvent, placementGraph);
+        this.applyPlacementSwapped(event, placementGraph);
         break;
       case 'PlacementDeleted':
-        await this.applyPlacementDeleted(event as PlacementDeletedEvent, placementGraph);
+        this.applyPlacementDeleted(event, placementGraph);
         break;
       case 'PlacementDuplicated':
-        await this.applyPlacementDuplicated(event as PlacementDuplicatedEvent, placementGraph, slotRegistry);
+        this.applyPlacementDuplicated(event, placementGraph, slotRegistry);
         break;
       case 'AssetCropped':
-        await this.applyAssetCropped(event as AssetCroppedEvent, placementGraph);
+        this.applyAssetCropped(event, placementGraph);
         break;
       case 'FocalPointAdjusted':
-        await this.applyFocalPointAdjusted(event as FocalPointAdjustedEvent, placementGraph);
+        this.applyFocalPointAdjusted(event, placementGraph);
         break;
       case 'SlotConstraintsUpdated':
-        await this.applySlotConstraintsUpdated(event as SlotConstraintsUpdatedEvent, slotRegistry);
+        this.applySlotConstraintsUpdated(event, slotRegistry);
         break;
       case 'StagedPublished':
-        await this.applyStagedPublished(event as StagedPublishedEvent, placementGraph);
+        this.applyStagedPublished(event, placementGraph);
         break;
     }
   }
 
-  private async applyAssetReplaced(event: AssetReplacedEvent, placementGraph: any, slotRegistry: any): Promise<void> {
+  private applyAssetReplaced(event: AssetReplacedEvent, placementGraph: PlacementGraphService, slotRegistry: SlotRegistryService): void {
     const existingPlacement = placementGraph.getPlacementForSlot(event.data.slotId);
     
     if (existingPlacement) {
@@ -348,12 +354,12 @@ class EventSystem {
     }
   }
 
-  private async applyPlacementMoved(event: PlacementMovedEvent, placementGraph: any): Promise<void> {
+  private applyPlacementMoved(event: PlacementMovedEvent, placementGraph: PlacementGraphService): void {
     // Pass event sequence to prevent allocation during replay
     placementGraph.movePlacement(event.data.placementId, event.data.newSlotId, event.sequence);
   }
 
-  private async applyPlacementSwapped(event: PlacementSwappedEvent, placementGraph: any): Promise<void> {
+  private applyPlacementSwapped(event: PlacementSwappedEvent, placementGraph: PlacementGraphService): void {
     // Swap placement slots
     const placement1 = placementGraph.getPlacement(event.data.placementId1);
     const placement2 = placementGraph.getPlacement(event.data.placementId2);
@@ -368,11 +374,11 @@ class EventSystem {
     }
   }
 
-  private async applyPlacementDeleted(event: PlacementDeletedEvent, placementGraph: any): Promise<void> {
+  private applyPlacementDeleted(event: PlacementDeletedEvent, placementGraph: PlacementGraphService): void {
     placementGraph.deletePlacement(event.data.placementId);
   }
 
-  private async applyPlacementDuplicated(event: PlacementDuplicatedEvent, placementGraph: any, slotRegistry: any): Promise<void> {
+  private applyPlacementDuplicated(event: PlacementDuplicatedEvent, placementGraph: PlacementGraphService, slotRegistry: SlotRegistryService): void {
     const sourcePlacement = placementGraph.getPlacement(event.data.sourcePlacementId);
     if (sourcePlacement) {
       const slot = slotRegistry.getSlot(event.data.targetSlotId);
@@ -391,7 +397,7 @@ class EventSystem {
     }
   }
 
-  private async applyAssetCropped(event: AssetCroppedEvent, placementGraph: any): Promise<void> {
+  private applyAssetCropped(event: AssetCroppedEvent, placementGraph: PlacementGraphService): void {
     // Update crop metadata on placements using this asset
     // Since getPlacementsForAsset returns deep copies, we need to update the actual placements
     const placements = placementGraph.getPlacementsForAsset(event.data.assetId);
@@ -404,7 +410,7 @@ class EventSystem {
     }
   }
 
-  private async applyFocalPointAdjusted(event: FocalPointAdjustedEvent, placementGraph: any): Promise<void> {
+  private applyFocalPointAdjusted(event: FocalPointAdjustedEvent, placementGraph: PlacementGraphService): void {
     // Update focal point metadata on placements using this asset
     // Since getPlacementsForAsset returns deep copies, we need to update the actual placements
     const placements = placementGraph.getPlacementsForAsset(event.data.assetId);
@@ -417,7 +423,7 @@ class EventSystem {
     }
   }
 
-  private async applySlotConstraintsUpdated(event: SlotConstraintsUpdatedEvent, slotRegistry: any): Promise<void> {
+  private applySlotConstraintsUpdated(event: SlotConstraintsUpdatedEvent, slotRegistry: SlotRegistryService): void {
     // Update slot constraints in registry
     // Since slots are immutable once registered, this event triggers re-registration
     // The updated constraints will be used for future placements
@@ -431,7 +437,7 @@ class EventSystem {
     }
   }
 
-  private async applyStagedPublished(event: StagedPublishedEvent, placementGraph: any): Promise<void> {
+  private applyStagedPublished(event: StagedPublishedEvent, placementGraph: PlacementGraphService): void {
     // Use the event payload to determine which placements to publish
     const placementIds = event.data.placementIds;
     

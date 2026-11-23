@@ -17,6 +17,19 @@
  * No runtime filesystem access.
  */
 
+import servicesV1Json from "../config/services.v1.json";
+import projectsV1Json from "../config/projects.v1.json";
+import mediaV1Json from "../config/media.v1.json";
+import reviewsV1Json from "../config/reviews.v1.json";
+import brandV1Json from "../config/brand.v1.json";
+import navigationV1Json from "../config/navigation.v1.json";
+import faqV1Json from "../config/faq.v1.json";
+import citiesV1Json from "../config/cities.v1.json";
+import materialsV1Json from "../config/materials.v1.json";
+import galleryPresetsV1Json from "../config/gallery-presets.v1.json";
+import manifestV1Json from "../config/manifest.v1.json";
+import tenantPingV1Json from "../config/tenant.ping.v1.json";
+
 // ============================================================================
 // P1.1: Generic AuthorityLoader
 // ============================================================================
@@ -67,19 +80,19 @@ export function loadAuthority<T>({
 
   try {
     // Map path aliases to actual file paths for static imports
-    const pathMap: Record<string, any> = {
-      "@/config/services.v1.json": require("../config/services.v1.json"),
-      "@/config/projects.v1.json": require("../config/projects.v1.json"),
-      "@/config/media.v1.json": require("../config/media.v1.json"),
-      "@/config/reviews.v1.json": require("../config/reviews.v1.json"),
-      "@/config/brand.v1.json": require("../config/brand.v1.json"),
-      "@/config/navigation.v1.json": require("../config/navigation.v1.json"),
-      "@/config/faq.v1.json": require("../config/faq.v1.json"),
-      "@/config/cities.v1.json": require("../config/cities.v1.json"),
-      "@/config/materials.v1.json": require("../config/materials.v1.json"),
-      "@/config/gallery-presets.v1.json": require("../config/gallery-presets.v1.json"),
-      "@/config/manifest.v1.json": require("../config/manifest.v1.json"),
-      "@/config/tenant.ping.v1.json": require("../config/tenant.ping.v1.json"),
+    const pathMap: Record<string, unknown> = {
+      "@/config/services.v1.json": servicesV1Json,
+      "@/config/projects.v1.json": projectsV1Json,
+      "@/config/media.v1.json": mediaV1Json,
+      "@/config/reviews.v1.json": reviewsV1Json,
+      "@/config/brand.v1.json": brandV1Json,
+      "@/config/navigation.v1.json": navigationV1Json,
+      "@/config/faq.v1.json": faqV1Json,
+      "@/config/cities.v1.json": citiesV1Json,
+      "@/config/materials.v1.json": materialsV1Json,
+      "@/config/gallery-presets.v1.json": galleryPresetsV1Json,
+      "@/config/manifest.v1.json": manifestV1Json,
+      "@/config/tenant.ping.v1.json": tenantPingV1Json,
     };
 
     const data = pathMap[path];

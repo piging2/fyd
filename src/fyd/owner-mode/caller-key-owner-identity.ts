@@ -86,10 +86,10 @@ export class CallerKeyOwnerIdentityProvider implements OwnerIdentityProvider {
     return caller ? readableTenants(caller) : null;
   }
 
-  async resolveIdentity(): Promise<OwnerIdentity | null> {
+  resolveIdentity(): Promise<OwnerIdentity | null> {
     const caller = this.resolveCaller();
-    if (!caller) return null;
-    return {
+    if (!caller) return Promise.resolve(null);
+    return Promise.resolve({
       identityId: caller.agent_id,
       verified: true,
       method: "caller-key",
@@ -99,7 +99,7 @@ export class CallerKeyOwnerIdentityProvider implements OwnerIdentityProvider {
         caller.agent_id +
         "'. No password or session was checked beyond the provisioned key; " +
         "tenant entitlement is enforced separately at intake.",
-    };
+    });
   }
 }
 

@@ -14,7 +14,7 @@
  * - the projection never serves the pipeline's source URL (no hotlinking).
  */
 
-import type { Media, PublishedMediaAsset } from "../../types/media";
+import type { Media, PublishedMediaAsset } from "../../../types/media";
 import type { ObjectGraph } from "../../sitespec/types";
 import type { PingObject } from "../../../lib/ping/types";
 import {
@@ -136,7 +136,7 @@ function authorityRecord(id: string, roles: string[]): PublishedMediaAsset {
 
 function fakeProjection(approved: Map<string, Media>): ProjectionDeps {
   return {
-    resolvePublicMedia: async (id: string) => approved.get(id) ?? null,
+    resolvePublicMedia: (id: string) => Promise.resolve(approved.get(id) ?? null),
   };
 }
 
@@ -207,7 +207,7 @@ describe("projectObjectMedia", () => {
   });
 
   test("an approved record with no usable variant URL is skipped", async () => {
-    const { manifest, approved, a } = fullSetup();
+    const { manifest, a } = fullSetup();
     const empty = authorityRecord(a.id, ["hero"]);
     empty.variants = {};
     const list = await projectObjectMedia(
@@ -222,9 +222,7 @@ describe("projectObjectMedia", () => {
   test("a throwing gate is fail-closed, never fatal", async () => {
     const { manifest } = fullSetup();
     const deps: ProjectionDeps = {
-      resolvePublicMedia: async () => {
-        throw new Error("kv down");
-      },
+      resolvePublicMedia: () => Promise.reject(new Error("kv down")),
     };
     const list = await projectObjectMedia(testGraph(), manifest, "biz-1", deps);
     expect(list).toEqual([]);
@@ -388,9 +386,7 @@ describe("projectHero", () => {
   test("throwing gate yields the generated treatment, not an exception", async () => {
     const { manifest } = fullSetup();
     const deps: ProjectionDeps = {
-      resolvePublicMedia: async () => {
-        throw new Error("kv down");
-      },
+      resolvePublicMedia: () => Promise.reject(new Error("kv down")),
     };
     const hero = await projectHero(
       testGraph(),

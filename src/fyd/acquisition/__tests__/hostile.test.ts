@@ -12,11 +12,17 @@ import { runLiveLoop } from "../live-loop";
 import { classifyFetchFailure } from "../errors";
 import type { SafeFetchDeps } from "@/fyd/net/safe-fetch";
 
-const PUBLIC_DNS: SafeFetchDeps["dnsLookup"] = async () => [{ address: "93.184.216.34" }];
-const PRIVATE_DNS: SafeFetchDeps["dnsLookup"] = async () => [{ address: "192.168.1.10" }];
+const PUBLIC_DNS: SafeFetchDeps["dnsLookup"] = () => Promise.resolve([{ address: "93.184.216.34" }]);
+const PRIVATE_DNS: SafeFetchDeps["dnsLookup"] = () => Promise.resolve([{ address: "192.168.1.10" }]);
 
 function stubFetch(handler: (url: string) => Response): SafeFetchDeps["fetchImpl"] {
-  return (async (input: unknown) => handler(String(input))) as SafeFetchDeps["fetchImpl"];
+  return (input: unknown) => {
+    try {
+      return Promise.resolve(handler(String(input)));
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  };
 }
 
 const GOOD_HTML =

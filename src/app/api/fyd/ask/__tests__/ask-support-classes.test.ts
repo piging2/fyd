@@ -34,7 +34,7 @@ afterAll(async () => {
 async function askTrusted(question: string) {
   const resp = await postNested(
     {
-      json: async () => ({ siteId: "happy-place", question, mode: "visitor" }),
+      json: () => ({ siteId: "happy-place", question, mode: "visitor" }),
     } as unknown as NextRequest,
     { params: Promise.resolve({ siteId: "happy-place" }) },
   );

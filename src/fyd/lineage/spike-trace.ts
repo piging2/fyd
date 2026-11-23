@@ -3,7 +3,7 @@
  * Run from the repo root: npx tsx src/fyd/lineage/spike-trace.ts
  */
 import * as React from "react";
-(globalThis as any).React = React;
+Object.assign(globalThis, { React });
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -34,13 +34,26 @@ function checkSourceBytes(slug: string, files: string[], expectedConcat: string)
   }
 }
 
+/** The projection dump document the dumper writes (meta + graph);
+ *  JSON.parse is untyped, so the read is bound to this shape. */
+interface ProjectionDoc {
+  graph: ObjectGraph;
+  meta: {
+    graphDigest: string;
+    dumpedAt: string;
+    dumperVersion: string;
+    baseDigest: string;
+    eventSequences: unknown;
+  };
+}
+
 function checkProjection(siteId: string, fixture: ObjectGraph) {
   const raw = readFileSync(`/home/nolan/ping/var/fyd-projections/${siteId}.json`, "utf8");
-  const doc = JSON.parse(raw);
+  const doc = JSON.parse(raw) as ProjectionDoc;
   const recomputed = sha256(canonicalize(doc.graph));
   console.log(`PROJECTION ${siteId}: graphDigest match=${recomputed === doc.meta.graphDigest}`);
   console.log(`  meta: dumpedAt=${doc.meta.dumpedAt} dumper=${doc.meta.dumperVersion} baseDigest=${String(doc.meta.baseDigest).slice(0, 12)}... eventSequences=${JSON.stringify(doc.meta.eventSequences)}`);
-  const pg = doc.graph as ObjectGraph;
+  const pg = doc.graph;
   console.log(`  objects=${pg.objects.length} rels=${pg.relationships.length} (fixture: ${fixture.objects.length}/${fixture.relationships.length})`);
   return pg;
 }
@@ -65,7 +78,7 @@ function traceFact(siteId: string, graph: ObjectGraph, claim: string, question: 
       if (bound.some((o) => o.id === obj.id) && section.component === "Services") {
         console.log(`  BINDING: page=${page.slug} section=${section.id} component=${section.component} binds=${bound.length} objects`);
         const ctx = buildRenderContext(spec, graph, { viewerId: null, displayName: null });
-        const html = renderToStaticMarkup(renderSection(section, ctx, 0) as any);
+        const html = renderToStaticMarkup(renderSection(section, ctx, 0));
         console.log(`  RENDER: markup ${html.length} chars; claim present=${html.includes(claim)}`);
         const idx = html.indexOf(claim);
         if (idx >= 0) console.log(`  RENDER excerpt: ...${html.slice(Math.max(0, idx - 60), idx + claim.length + 60)}...`);
@@ -86,7 +99,7 @@ function traceFact(siteId: string, graph: ObjectGraph, claim: string, question: 
   const ans = composeAnswer(actx, question);
   console.log(`  Q: ${question}`);
   console.log(`  A: ${ans.answer.slice(0, 500)}`);
-  console.log(`  claimClassifications=${JSON.stringify(ans.claimClassifications.map((c) => ({ cls: c.claimClass })))}`);
+  console.log(`  claimClassifications=${JSON.stringify(ans.claimClassifications.map((c) => ({ cls: c.classification })))}`);
   console.log(`  partial=${ans.partial} unknowns=${JSON.stringify(ans.unknowns)}`);
 }
 

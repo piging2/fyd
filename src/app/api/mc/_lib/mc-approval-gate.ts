@@ -90,7 +90,7 @@ export type ApproverRefused = { ok: false; response: Response };
  * present and differs from the authenticated identity is refused (fail
  * closed, explicit). An absent body approver falls back to the identity.
  */
-export function resolveApprover(caller: CallerContext, body: any): ApproverOk | ApproverRefused {
+export function resolveApprover(caller: CallerContext, body: { approver?: unknown } | null | undefined): ApproverOk | ApproverRefused {
   const bodyApprover = typeof body?.approver === 'string' && body.approver ? body.approver : '';
   if (bodyApprover && bodyApprover !== caller.agent_id) {
     return {

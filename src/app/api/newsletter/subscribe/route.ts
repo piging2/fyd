@@ -41,9 +41,18 @@ import {
   PING_FYD_TENANT_ID,
 } from "@/fyd/owner-mode/submission-outbox";
 
+// The subscribe request body is external JSON; this records exactly
+// the fields the route reads. Fields stay unknown-typed: the route
+// typeof-guards each one before use.
+interface NewsletterSubscribeBody {
+  email?: unknown;
+  firstName?: unknown;
+  source?: unknown;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as NewsletterSubscribeBody;
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const firstName = typeof body.firstName === "string" ? body.firstName.trim() : undefined;
     const source = typeof body.source === "string" ? body.source.trim() : undefined;

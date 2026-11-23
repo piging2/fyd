@@ -222,7 +222,7 @@ export async function getFydTenantGraph(
 
   // Deep-clone the pinned fixture: overlay application mutates, and the
   // module-level fixture must never be polluted across reads.
-  const base = structuredClone(pin.graph) as ObjectGraph;
+  const base = structuredClone(pin.graph);
 
   const baseDigest = sha256Hex(canonicalize(base));
   if (baseDigest !== pin.baseDigest) {
@@ -332,7 +332,7 @@ export function applyTenantOverlays(
             // Keep an existing scalar mirror consistent with the canonical pseudo-field.
             if (field in target.fields) target.fields[field] = value;
           } else {
-            target.fields[field] = value as string | string[];
+            target.fields[field] = value;
           }
           touch(target, eid);
           break;
@@ -398,9 +398,9 @@ export function applyTenantOverlays(
             ["proposalDigest", "approvedBy", "approvedAt", "note"].every((k) =>
               isNonEmptyStr(approval[k]),
             ) &&
-            (approval as Record<string, unknown>).proposalDigest ===
+            (approval).proposalDigest ===
               proposal.proposalDigest &&
-            ((approval as Record<string, unknown>).note as string).includes(
+            ((approval).note as string).includes(
               "DEMO OWNER MODE",
             );
           if (!ok) throw malformed(eid, rawOp, "bad set_presentation_intent");

@@ -1,5 +1,5 @@
 /**
- * Ask FYD context compiler v2 — ADOPT + EXTEND delta of
+ * Ask FYD context compiler v2: ADOPT + EXTEND delta of
  * src/fyd/ask/context-compiler.ts (Pig repo, untracked proposal).
  *
  * ADOPTED (kept from the base file): viewer tier model
@@ -11,7 +11,7 @@
  * unknowns derivation; consumerRules firewall; verifyAnswerClaims grade
  * vocabulary (SUPPORTED/DERIVED/INFERRED/UNKNOWN).
  *
- * EXTENDED (delta, gaps G1..G12 closed — see DELTA.md):
+ * EXTENDED (delta, gaps G1..G12 closed: see DELTA.md):
  * G1  byte budget with priority order + per-section ledger (was count caps only)
  * G2  exclusion ledger is counts-only (was per-record with ids: privacy leak)
  * G3  relevance gate: no question signal -> empty selection + note (was top-N always)
@@ -211,8 +211,6 @@ const EPISTEMIC_RANK: Record<string, number> = {
 export const CLAIM_GRADES = ["SUPPORTED", "DERIVED", "INFERRED", "UNKNOWN"] as const;
 export type ClaimGrade = (typeof CLAIM_GRADES)[number];
 
-// Concierge grade -> epistemic rank, for the B3 check inside verifyAnswerClaims.
-const GRADE_RANK: Record<string, number> = { SUPPORTED: 5, DERIVED: 4, INFERRED: 2, UNKNOWN: 0 };
 
 // Secret-shaped field names (lane L custody rule): never enter a packet (G7).
 const SECRET_FIELD_RE =
@@ -412,11 +410,20 @@ export interface SourceExcerpt {
 
 const DEFAULT_LIMITS = { maxObjects: 8, maxRelationships: 20, maxFieldChars: 500, maxDescChars: 2000 };
 
+/** A field value's text form: strings as-is; numbers and booleans by their
+ *  base stringification (their real display form); null, objects and anything
+ *  else as absent, never "[object Object]". */
+function fieldText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return "";
+}
+
 function textHaystack(o: { title?: string | null; description?: string | { value: string } | null; fields?: Record<string, unknown> }): string {
   const desc = typeof o.description === "string" ? o.description : (o.description?.value ?? "");
   const parts: string[] = [o.title ?? "", desc];
   for (const v of Object.values(o.fields ?? {})) {
-    parts.push(Array.isArray(v) ? v.map(String).join(" ") : String(v ?? ""));
+    parts.push(Array.isArray(v) ? v.map(String).join(" ") : fieldText(v));
   }
   return parts.join(" ").toLowerCase();
 }
@@ -569,7 +576,7 @@ export function compileAskContext(input: CompilerInput): ContextPacket {
   if (target && !selectedIds.has(target.id)) {
     const drop = selected.pop();
     if (drop) excluded.selectionCut++;
-    const tScore = gated.find((s) => s.obj.id === target!.id) ?? scored.find((s) => s.obj.id === target!.id);
+    const tScore = gated.find((s) => s.obj.id === target.id) ?? scored.find((s) => s.obj.id === target.id);
     if (tScore) { selected.push(tScore); selectedIds.add(target.id); }
     selected.sort((a, b) => b.score - a.score || (a.obj.id < b.obj.id ? -1 : a.obj.id > b.obj.id ? 1 : 0));
   }
@@ -840,7 +847,7 @@ export function verifyAnswerClaims(
   for (const c of claims ?? []) {
     const grade = (c as { grade?: string })?.grade;
     const refs = Array.isArray((c as { evidenceRefIds?: unknown })?.evidenceRefIds)
-      ? (c.evidenceRefIds as string[])
+      ? (c.evidenceRefIds)
       : [];
     if (!CLAIM_GRADES.includes(grade as ClaimGrade)) {
       violations.push({ claim: c?.text ?? "", violation: "unknown_grade", detail: String(grade) });

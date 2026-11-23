@@ -25,7 +25,7 @@ export function LikeButton({ objectId, className }: { objectId: string; classNam
       <button
         type="button"
         className={cn("focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4", inert && "opacity-60", className)}
-        onClick={inert ? undefined : retryable ? relationship.retry : relationship.toggle}
+        onClick={inert ? undefined : () => { void (retryable ? relationship.retry() : relationship.toggle()); }}
         aria-disabled={inert || undefined}
         aria-pressed={relationship.state === true}
         aria-busy={pending}

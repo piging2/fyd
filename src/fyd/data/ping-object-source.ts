@@ -124,15 +124,18 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 function validateObject(o: unknown, siteId: string): asserts o is PingObject {
   if (!isRecord(o)) fail(siteId, "object is not a record");
   for (const k of ["id", "schema", "visibility", "title"] as const) {
-    if (typeof o[k] !== "string" || (o[k] as string).length === 0) {
+    if (typeof o[k] !== "string" || (o[k]).length === 0) {
       fail(siteId, `object has bad "${k}"`);
     }
   }
   const prov = o["provenance"];
   if (!isRecord(prov) || typeof prov["ref"] !== "string" || prov["ref"] === "") {
+    // The loop above has already rejected any object whose id is not a
+    // non-empty string, so this narrowing restates an enforced guarantee.
+    const id = o["id"];
     fail(
       siteId,
-      `object "${o["id"]}" lacks provenance ref: no customer fact without a traceable basis`,
+      `object "${typeof id === "string" ? id : ""}" lacks provenance ref: no customer fact without a traceable basis`,
     );
   }
 }
@@ -143,7 +146,7 @@ function validateRelationship(
 ): asserts r is PingRelationship {
   if (!isRecord(r)) fail(siteId, "relationship is not a record");
   for (const k of ["id", "subject", "object", "predicate"] as const) {
-    if (typeof r[k] !== "string" || (r[k] as string).length === 0) {
+    if (typeof r[k] !== "string" || (r[k]).length === 0) {
       fail(siteId, `relationship has bad "${k}"`);
     }
   }
@@ -170,7 +173,7 @@ function validateMeta(meta: unknown, siteId: string): asserts meta is Projection
     "graphDigest",
     "generatedAt",
   ] as const) {
-    if (typeof meta[k] !== "string" || (meta[k] as string).length === 0) {
+    if (typeof meta[k] !== "string" || (meta[k]).length === 0) {
       fail(siteId, `meta has bad "${k}"`);
     }
   }
@@ -220,7 +223,7 @@ function validatePresentationIntent(
     const ap = d["approval"];
     if (!isRecord(ap)) fail(siteId, "presentationIntent directive has bad approval");
     for (const k of ["proposalDigest", "approvedBy", "approvedAt"] as const) {
-      if (typeof ap[k] !== "string" || (ap[k] as string).length === 0)
+      if (typeof ap[k] !== "string" || (ap[k]).length === 0)
         fail(siteId, `presentationIntent directive approval has bad "${k}"`);
     }
   }
@@ -245,8 +248,8 @@ function parseAndVerify(
   if (!isRecord(doc)) fail(siteId, "projection is not a record");
   validateMeta(doc["meta"], siteId);
   validateGraph(doc["graph"], siteId);
-  const meta = doc["meta"] as ProjectionMeta;
-  const graph = doc["graph"] as ObjectGraph;
+  const meta = doc["meta"];
+  const graph = doc["graph"];
   const presentationIntent = validatePresentationIntent(doc["presentationIntent"], meta, siteId);
   const recomputed = createHash("sha256")
     .update(canonicalize(graph), "utf8")

@@ -187,10 +187,14 @@ describe("journal gateway tenant privacy (hostile, both directions)", () => {
   });
 
   test("read with ?tenant= sees only that tenant's events (both directions)", async () => {
-    const ra = await fetch(gw.base + "/events/FYD_SITE_OVERLAY?tenant=tenant-a").then((r) => r.json());
-    const rb = await fetch(gw.base + "/events/FYD_SITE_OVERLAY?tenant=tenant-b").then((r) => r.json());
-    const idsA = (ra.events as { event_id: string; event_data: { siteId: string } }[]).map((e) => e.event_id);
-    const idsB = (rb.events as { event_id: string; event_data: { siteId: string } }[]).map((e) => e.event_id);
+    const ra = (await fetch(gw.base + "/events/FYD_SITE_OVERLAY?tenant=tenant-a").then((r) => r.json())) as {
+      events: { event_id: string; event_data: { siteId: string } }[];
+    };
+    const rb = (await fetch(gw.base + "/events/FYD_SITE_OVERLAY?tenant=tenant-b").then((r) => r.json())) as {
+      events: { event_id: string; event_data: { siteId: string } }[];
+    };
+    const idsA = ra.events.map((e) => e.event_id);
+    const idsB = rb.events.map((e) => e.event_id);
     // No event id appears on both sides: zero cross-tenant content.
     expect(idsA.filter((id) => idsB.includes(id))).toEqual([]);
     expect(idsA).toContain("legacy-a-1");
@@ -198,17 +202,19 @@ describe("journal gateway tenant privacy (hostile, both directions)", () => {
     expect(idsA).not.toContain("legacy-b-1");
     expect(idsB).not.toContain("legacy-a-1");
     // Every returned event actually belongs to the requested tenant.
-    for (const e of ra.events as { event_data: { siteId: string } }[]) {
+    for (const e of ra.events) {
       expect(e.event_data.siteId).toBe("tenant-a");
     }
-    for (const e of rb.events as { event_data: { siteId: string } }[]) {
+    for (const e of rb.events) {
       expect(e.event_data.siteId).toBe("tenant-b");
     }
   });
 
   test("legacy records without tenant_id resolve to their siteId tenant", async () => {
-    const ra = await fetch(gw.base + "/events/FYD_SITE_OVERLAY?tenant=tenant-a").then((r) => r.json());
-    const rec = (ra.events as { event_id: string; tenant_id: string }[]).find(
+    const ra = (await fetch(gw.base + "/events/FYD_SITE_OVERLAY?tenant=tenant-a").then((r) => r.json())) as {
+      events: { event_id: string; tenant_id: string }[];
+    };
+    const rec = ra.events.find(
       (e) => e.event_id === "legacy-a-1",
     );
     expect(rec).toBeDefined();
@@ -237,8 +243,10 @@ describe("journal gateway tenant privacy (hostile, both directions)", () => {
     // Zero disclosure: the original event_id must not leak into the response.
     expect(JSON.stringify(second.doc)).not.toContain(e1);
     // No new event was journaled for B by the retry.
-    const rb = await fetch(gw.base + "/events/FYD_SITE_OVERLAY?tenant=tenant-b").then((r) => r.json());
-    const idsB = (rb.events as { event_id: string }[]).map((e) => e.event_id);
+    const rb = (await fetch(gw.base + "/events/FYD_SITE_OVERLAY?tenant=tenant-b").then((r) => r.json())) as {
+      events: { event_id: string }[];
+    };
+    const idsB = rb.events.map((e) => e.event_id);
     expect(idsB.filter((id) => id !== "legacy-b-1")).toEqual([]);
   });
 });

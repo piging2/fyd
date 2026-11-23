@@ -125,10 +125,10 @@ export function FydOnboardingTool() {
   const [note, setNote] = useState<string | null>(null);
 
   useEffect(() => {
-    getJson("/api/fyd/claims/identity").then(({ json }) => {
+    void getJson("/api/fyd/claims/identity").then(({ json }) => {
       setIdentity((json.identity as Identity | null) ?? null);
     });
-    getJson("/api/fyd/claims/verification-methods").then(({ json }) => {
+    void getJson("/api/fyd/claims/verification-methods").then(({ json }) => {
       setMethods((json.methods as VerifyMethod[]) ?? []);
     });
   }, []);
@@ -175,7 +175,7 @@ export function FydOnboardingTool() {
       setClaim(json.claim as Claim);
       setNote("Saved. This resource is now claimed in demo mode.");
     } else {
-      setNote(String(json.message ?? "Claiming failed."));
+      setNote(String((json as { message?: string }).message ?? "Claiming failed."));
     }
     setBusy(false);
   }, [outcome]);
@@ -194,7 +194,7 @@ export function FydOnboardingTool() {
       setNote("Control verified via " + method + ".");
       setBasis("");
     } else {
-      setNote(String(json.message ?? "Verification failed."));
+      setNote(String((json as { message?: string }).message ?? "Verification failed."));
     }
     setBusy(false);
   }, [outcome, method, basis]);
@@ -212,7 +212,7 @@ export function FydOnboardingTool() {
       setClaim(json.claim as Claim);
       setNote("Claim released. The resource is public evidence only again.");
     } else {
-      setNote(String(json.message ?? "Release failed."));
+      setNote(String((json as { message?: string }).message ?? "Release failed."));
     }
     setBusy(false);
   }, [outcome]);
@@ -354,7 +354,7 @@ export function FydOnboardingTool() {
           )}
 
           {(!claim || claim.state === "observed") && identity && (
-            <button style={buttonStyle} onClick={runClaim} disabled={busy}>
+            <button style={buttonStyle} onClick={() => { void runClaim(); }} disabled={busy}>
               {busy ? "Saving..." : "Claim / Save this resource"}
             </button>
           )}
@@ -388,12 +388,12 @@ export function FydOnboardingTool() {
                 />
               </label>
               <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-                <button style={buttonStyle} onClick={runVerify} disabled={busy || !basis.trim()}>
+                <button style={buttonStyle} onClick={() => { void runVerify(); }} disabled={busy || !basis.trim()}>
                   {busy ? "Verifying..." : "Verify control"}
                 </button>
                 <button
                   style={{ ...buttonStyle, background: "#777" }}
-                  onClick={runRelease}
+                  onClick={() => { void runRelease(); }}
                   disabled={busy}
                 >
                   Release claim
@@ -404,7 +404,7 @@ export function FydOnboardingTool() {
 
           {claim && claim.state === "verified-controlled" && (
             <div style={{ marginTop: 12 }}>
-              <button style={{ ...buttonStyle, background: "#777" }} onClick={runRelease} disabled={busy}>
+              <button style={{ ...buttonStyle, background: "#777" }} onClick={() => { void runRelease(); }} disabled={busy}>
                 Release claim
               </button>
             </div>

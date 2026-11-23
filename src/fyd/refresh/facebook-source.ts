@@ -19,7 +19,7 @@
 
 import { createHash } from "node:crypto";
 import { normalizeClaimValue } from "./types.ts";
-import type { Claim, Observation, SourceKind } from "./types.ts";
+import type { Claim, Observation } from "./types.ts";
 
 export interface FacebookAvailability {
   available: boolean;
@@ -140,7 +140,7 @@ export function fromFacebookCliJson(
       field,
       value,
       normalizedValue: normalized,
-      sourceKind: "facebook" as SourceKind,
+      sourceKind: "facebook",
       sourceUrl: raw.pageUrl,
       observedAt: raw.observedAt,
       evidenceRef: raw.evidenceRef,

@@ -83,7 +83,7 @@ function cleanTarget(raw: string): string {
     .trim();
 }
 
-function unsupported(text: string, normalized: string): CompileOutcome {
+function unsupported(text: string): CompileOutcome {
   return {
     ok: false,
     reason:
@@ -211,9 +211,9 @@ export function compileOwnerCommand(text: string): CompileOutcome {
   // typed intent out; unsupported text stays unsupported).
   const parsed = parseCustomizationIntent(text);
   if (isUnsupported(parsed)) {
-    return unsupported(text, normalized);
+    return unsupported(text);
   }
-  const classic = parsed.intent as ParsedIntent;
+  const classic = parsed.intent;
   switch (classic.kind) {
     case "promote_first":
       return { ok: true, intent: { kind: "promote_first", target: classic.target } };

@@ -106,7 +106,7 @@ const graphs = new Map<string, { graph: TenantGraph; digest16: string }>();
 async function tenantGraph(siteId: string) {
   const cached = graphs.get(siteId);
   if (cached) return cached;
-  const { graph, meta } = await getFydTenantGraph(siteId as never);
+  const { graph, meta } = await getFydTenantGraph(siteId);
   const entry = {
     graph: graph as unknown as TenantGraph,
     digest16: String(meta.graphDigest).slice(0, 16),
@@ -227,7 +227,7 @@ async function leadsView(): Promise<ViewResult> {
   for (const ev of events) {
     const eventId = str(ev.event_id) ?? "unknown";
     const data: Record<string, unknown> =
-      (ev.event_data as Record<string, unknown> | undefined) ?? {};
+      ev.event_data ?? {};
     const siteId = str(data.siteId) ?? "";
     const when = str(ev.timestamp) ?? null;
     const source = str(data.source) ?? null;

@@ -34,7 +34,6 @@
 
 import { sha256Hex } from "@/lib/ping/digest";
 import {
-  existsSync,
   mkdirSync,
   readFileSync,
   renameSync,
@@ -418,7 +417,7 @@ interface BuildPlan {
 }
 
 /** Stage: normalize. Pure + deterministic; always safe to re-run. */
-function stageNormalize(rawUrl: string, deps: CompileTenantDeps): BuildPlan {
+function stageNormalize(rawUrl: string): BuildPlan {
   const normalizedUrl = normalizeUrl(rawUrl);
   const tenantId = claimResourceIdForUrl(normalizedUrl);
   return { tenantId, resourceId: tenantId, normalizedUrl };
@@ -456,12 +455,12 @@ export async function buildTenant(
   // Normalize BEFORE locking: the tenant id is the lock key.
   let plan: BuildPlan;
   try {
-    plan = stageNormalize(rawUrl, deps);
+    plan = stageNormalize(rawUrl);
   } catch (e) {
     const message = e instanceof ClaimError ? e.message : "That URL could not be understood.";
     return { ok: false, tenantId: null, state: "FAILED", code: "invalid-url", message, stage: "normalize" };
   }
-  const { tenantId, normalizedUrl } = plan;
+  const { tenantId } = plan;
 
   if (!acquireLock(deps, tenantId)) {
     // Another build holds the lock: report current state, never duplicate work.
@@ -511,19 +510,19 @@ async function runStages(
     inputDigest: string,
     artifact?: Record<string, unknown>,
   ) => {
-    c!.stages[stage] = { done: true, inputDigest, at: nowIso(deps), artifact };
-    writeCheckpoint(deps, c!);
+    c.stages[stage] = { done: true, inputDigest, at: nowIso(deps), artifact };
+    writeCheckpoint(deps, c);
   };
   const needStage = (stage: StageName, inputDigest: string): boolean => {
-    const r = c!.stages[stage];
+    const r = c.stages[stage];
     if (!r.done || r.inputDigest !== inputDigest) {
       // Input changed (or never ran): invalidate this stage and downstream.
       let clear = false;
       for (const s of STAGES) {
         if (s === stage) clear = true;
-        if (clear) c!.stages[s] = { done: false, inputDigest: "", at: "" };
+        if (clear) c.stages[s] = { done: false, inputDigest: "", at: "" };
       }
-      writeCheckpoint(deps, c!);
+      writeCheckpoint(deps, c);
       return true;
     }
     return false;

@@ -269,7 +269,6 @@ export interface FydCircleProps {
   siteId?: string;
 }
 
-type FollowState = "unknown" | "on" | "off" | "unavailable";
 type AskStatus = "idle" | "asking" | "answered" | "empty";
 
 export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): React.ReactElement {
@@ -473,7 +472,7 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
         <button type="button" className="fydc-act" aria-pressed={follow.state === true}
           aria-busy={busy} title={follow.message} aria-label={retry ? "Retry follow" : "Follow " + name}
           disabled={busy || follow.status === "terminal-error"}
-          onClick={retry ? follow.retry : follow.toggle}>
+          onClick={() => { void (retry ? follow.retry() : follow.toggle()); }}>
           {follow.state ? <IconCheck /> : <IconPlus />}
         </button>
         <span role="status" style={{ fontSize: "0.045em", maxWidth: "3em" }}>{retry ? "Retry" : busy ? "Saving…" : follow.status === "terminal-error" ? "Unavailable" : "Demo"}</span>
@@ -538,7 +537,7 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              submitQuestion(question);
+              void submitQuestion(question);
             }
           }}
           placeholder={"Ask about " + name}
@@ -547,7 +546,7 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
         <button
           type="button"
           className="fydc-act fydc-submit"
-          onClick={() => submitQuestion(question)}
+          onClick={() => { void submitQuestion(question); }}
           aria-label="Send question"
         >
           <IconSend />
@@ -573,7 +572,7 @@ export function FydCircle({ projection, nodeHref, siteId }: FydCircleProps): Rea
               className="fydc-chip"
               onClick={() => {
                 setQuestion(q);
-                submitQuestion(q);
+                void submitQuestion(q);
               }}
             >
               {q}

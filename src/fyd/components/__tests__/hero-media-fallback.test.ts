@@ -54,13 +54,26 @@ const MEDIA: DisplayMedia = {
 // Minimal theme tokens for the client boundary (only ink/accent affect it).
 const THEME = { ink: "#14101f", accent: "#c9a227" } as FYDThemeTokens;
 
+/** The props the tests read off the <img> elements HeroPhotoBlock
+ *  creates. ReactElement's props are any by design, so the collected
+ *  elements are re-typed to the host img shape; ref is declared
+ *  because one test reads it through props to prove it is absent. */
+interface ImgProps {
+  src: string;
+  onError: () => void;
+  ref?: unknown;
+  children?: unknown;
+}
+
+type ImgElement = ReactElement<ImgProps>;
+
 /** Collect the <img> elements out of a directly-invoked function component tree. */
-function imgElements(tree: ReactElement | null): ReactElement[] {
+function imgElements(tree: ReactElement | null): ImgElement[] {
   if (!tree) return [];
-  const kids = tree.props.children as unknown;
+  const kids = (tree.props as { children?: unknown }).children;
   const flat: unknown[] = Array.isArray(kids) ? kids : [kids];
   return flat.filter(
-    (k): k is ReactElement =>
+    (k): k is ImgElement =>
       !!k && typeof k === "object" && (k as ReactElement).type === "img",
   );
 }
@@ -95,7 +108,7 @@ describe("hero media fallback", () => {
     const tree = HeroPhotoBlock({ hero: MEDIA, failed: false, onMediaError });
     const imgs = imgElements(tree);
     expect(imgs).toHaveLength(2);
-    const srcs = imgs.map((i) => i.props.src as string);
+    const srcs = imgs.map((i) => i.props.src);
     expect(srcs).toContain(MEDIA.src);
     expect(srcs).toContain(MEDIA.blurUrl);
     for (const img of imgs) {
@@ -238,8 +251,8 @@ describe("hero hydration race", () => {
       hero: MEDIA,
       failed: false,
       onMediaError: () => {},
-      mainRef: mainRef as never,
-      blurRef: blurRef as never,
+      mainRef: mainRef,
+      blurRef: blurRef,
     });
     const imgs = imgElements(tree);
     expect(imgs).toHaveLength(2);

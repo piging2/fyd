@@ -16,6 +16,7 @@
 
 import { sequenceAuthority } from './sequence-authority';
 import { ValidationFailure, ValidationResult } from './validation-result';
+import type { AnyEvent } from './event-system';
 
 export interface Command {
   id: string;
@@ -386,7 +387,7 @@ class CommandExecutor {
     }
 
     // All validations passed - build all events
-    const events: any[] = [];
+    const events: AnyEvent[] = [];
     for (const cmd of command.commands) {
       const event = await this.commandToEvent(cmd);
       events.push(event);
@@ -413,7 +414,7 @@ class CommandExecutor {
    * Constitutional Law: Every command has exactly one event mapping
    * Constitutional Law: Command and event share same sequence for causal ordering
    */
-  private async commandToEvent(command: AnyCommand): Promise<any> {
+  private async commandToEvent(command: AnyCommand): Promise<AnyEvent> {
     // Lazy import to avoid circular dependency
     const { eventBuilder } = await import('./event-system');
     

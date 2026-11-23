@@ -784,7 +784,7 @@ class GatewayPingObjectReader implements PingObjectReader {
       if (typeof v === "string") {
         if (v.trim() !== "") out[k] = v.slice(0, 500);
       } else if (Array.isArray(v) && v.length > 0 && v.every((e) => typeof e === "string")) {
-        out[k] = (v as string[]).slice(0, 20).map((s) => s.slice(0, 200));
+        out[k] = v.slice(0, 20).map((s) => s.slice(0, 200));
       }
     }
     return out;

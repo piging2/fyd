@@ -15,7 +15,7 @@ import { NextRequest } from "next/server";
 import { applyOwnerCommand } from "@/fyd/object/owner-store";
 import { GET } from "../route";
 
-jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: async () => null }));
+jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: () => null }));
 
 const OBJECT_ID = "happy-place";
 const WARNING =

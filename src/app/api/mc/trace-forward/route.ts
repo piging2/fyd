@@ -124,7 +124,7 @@ export async function GET(request: Request) {
         aggregate_id: hit.aggregate_id,
         event_data: hit.event_data,
       },
-      observation: `Journal overlay op on ${hit.aggregate_id} at ${hit.timestamp}`,
+      observation: `Journal overlay op on ${String(hit.aggregate_id)} at ${String(hit.timestamp)}`,
       affectedEvidence: [{ ref, kind: "journal overlay event" }],
       affectedObjects: affected,
       affectedProjection: affected.map((a) => ({

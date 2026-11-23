@@ -71,7 +71,6 @@ import {
   type Rail,
 } from "./placement";
 import {
-  CIRCLE_MOTION,
   ClusterSlot,
   MarginObject,
   PEEK_H,
@@ -277,12 +276,12 @@ function useDocumentLayout(anchorKeys: string[]): {
     window.addEventListener("load", schedule);
     const t = window.setTimeout(measure, 1200);
     const fonts = (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts;
-    if (fonts?.ready) {
+    if (fonts?.ready !== undefined) {
       fonts.ready.then(() => measure()).catch(() => {});
     }
     const mo = new MutationObserver((mutations) => {
       for (const m of mutations) {
-        const node = m.target as Node;
+        const node = m.target;
         // Ignore the layer's own subtree: its renders must not
         // re-trigger measurement.
         if (layerRef.current && (node === layerRef.current || layerRef.current.contains(node))) {
@@ -306,7 +305,6 @@ function useDocumentLayout(anchorKeys: string[]): {
       window.clearTimeout(t);
       mo.disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keysKey]);
 
   return { layout, layerRef };
@@ -401,7 +399,6 @@ export function useContextAnchor(anchorKeys: string[]): string | null {
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keysKey]);
   return active;
 }
@@ -419,7 +416,6 @@ export function MarginObjectLayer({
   motion?: MotionTokens;
 }) {
   const idsKey = objects.map((o) => o.objectId).join("|");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const anchorKeys = React.useMemo(() => objects.map((o) => o.anchorKey), [idsKey]);
   const { layout, layerRef } = useDocumentLayout(anchorKeys);
 
@@ -523,10 +519,8 @@ export function MarginObjectLayer({
       );
     }
     return placeObjects(inputs, vp, { ...baseOpts, rails });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layout, rails, idsKey]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const byId = React.useMemo(() => new Map(objects.map((o) => [o.objectId, o])), [idsKey]);
 
   /**

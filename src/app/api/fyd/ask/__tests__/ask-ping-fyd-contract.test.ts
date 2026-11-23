@@ -35,14 +35,12 @@ import { startStubJournal, type StubJournal } from "./stub-journal";
 
 let journal: StubJournal;
 let PING_BUNDLE: SiteBundle;
-let DEPS: AnswerAskFydDeps;
 
 beforeAll(async () => {
   journal = await startStubJournal();
   const bundle = await getSiteBundle("ping-fyd");
   if (!bundle) throw new Error("stub journal did not serve ping-fyd");
   PING_BUNDLE = bundle;
-  DEPS = { loadBundle: (id) => (id === "ping-fyd" ? PING_BUNDLE : null) };
 });
 
 afterAll(async () => {
@@ -51,7 +49,7 @@ afterAll(async () => {
 
 function nestedReq(siteId: string, body: unknown) {
   return {
-    req: { json: async () => body } as unknown as NextRequest,
+    req: { json: () => body } as unknown as NextRequest,
     params: Promise.resolve({ siteId }),
   };
 }

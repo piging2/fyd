@@ -55,7 +55,7 @@ export function canonicalJson(value: unknown): string {
     return "[" + value.map(canonicalJson).join(",") + "]";
   }
   if (typeof value === "object") {
-    const keys = Object.keys(value as Record<string, unknown>).sort();
+    const keys = Object.keys(value).sort();
     return (
       "{" +
       keys

@@ -18,7 +18,7 @@ export interface AuditResult {
   component: string;
   status: 'healthy' | 'degraded' | 'missing' | 'error';
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   requiredFor?: string[];
   layers?: {
     configuration: 'pass' | 'fail';

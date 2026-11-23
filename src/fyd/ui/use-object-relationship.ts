@@ -41,7 +41,7 @@ export function createRelationshipController(objectId: string, kind: Relationshi
     update({ state: result.state, scope: result.scope, status: intent.desired === undefined ? "ready" : "success", message: intent.desired === undefined ? "Private preference for this browser." : "Saved for this browser’s private session." });
   }
   return {
-    subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     getSnapshot: () => snapshot,
     load: () => run({}),
     toggle: () => {
@@ -109,12 +109,10 @@ export function useObjectRelationship(objectId: string, kind: RelationshipKind, 
   const key = registryKey(objectId, kind);
   const entry = useMemo(
     () => acquire(objectId, kind),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [key, sessionGeneration],
   );
   useEffect(() => {
     return () => release(objectId, kind);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, sessionGeneration]);
   const controller = entry.controller;
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);

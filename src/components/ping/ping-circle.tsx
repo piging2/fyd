@@ -18,7 +18,7 @@
  */
 
 import * as React from "react";
-import { AlertTriangle, BadgeCheck, Loader2, RefreshCw } from "lucide-react";
+import { AlertTriangle, BadgeCheck, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PingIdentitySummary } from "@/lib/ping/types";
 

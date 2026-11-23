@@ -31,7 +31,7 @@ function episodeImage(slug: string): string {
 
 export const dynamic = "force-static";
 
-export async function generateStaticParams() {
+export function generateStaticParams() {
   return getAllSlugs().map((slug) => ({ slug }));
 }
 

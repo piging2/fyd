@@ -30,12 +30,12 @@ import type { OwnerActor } from "../patch-loop";
 import { projectOwnerState } from "@/fyd/object/owner-events";
 import { invalidateSiteBundle } from "@/fyd/media/site-bundle";
 
-jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: async () => null }));
+jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: () => null }));
 
 function req(body: unknown, objectId = "happy-place") {
   return {
     req: {
-      json: async () => body,
+      json: () => body,
       headers: new Headers({ host: "localhost:3000" }),
     } as unknown as NextRequest,
     params: Promise.resolve({ objectId }),

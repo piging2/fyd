@@ -24,6 +24,7 @@ import {
   canonicalizeModel,
   canonicalizeOverrides,
   RENDER_MODEL_VERSION,
+  type SemanticRenderModel,
 } from "../render-model";
 import { verifyPublicProjection } from "../public-projection";
 import type { FieldVisibilityDecision } from "../field-visibility";
@@ -101,7 +102,7 @@ describe("semantic render determinism", () => {
     }
     // Canonicalization is idempotent across a JSON round-trip.
     expect(canonicalizeModel(model)).toBe(
-      canonicalizeModel(JSON.parse(JSON.stringify(model))),
+      canonicalizeModel(JSON.parse(JSON.stringify(model)) as SemanticRenderModel),
     );
   });
 
@@ -272,7 +273,7 @@ describe("semantic render model mirrors the real render path", () => {
 
   test("owner hiddenObjectIds excludes the object site-wide", () => {
     const { sectionId, ids } = multiObjectSectionIds(buildProbeInput().spec);
-    const hiddenId = ids[0]!;
+    const hiddenId = ids[0];
     const { spec, projection } = specWithMutator((clone) =>
       mutateSection(clone, sectionId, (s) => {
         s.presentation.hiddenObjectIds = [hiddenId];

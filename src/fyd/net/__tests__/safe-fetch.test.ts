@@ -60,9 +60,9 @@ describe("isPublicIp", () => {
   });
 });
 
-const PUBLIC_DNS = async (hostname: string) => {
-  if (hostname === "example.com") return [{ address: "93.184.216.34" }];
-  throw new Error("getaddrinfo ENOTFOUND " + hostname);
+const PUBLIC_DNS = (hostname: string) => {
+  if (hostname === "example.com") return Promise.resolve([{ address: "93.184.216.34" }]);
+  return Promise.reject(new Error("getaddrinfo ENOTFOUND " + hostname));
 };
 const PRIVATE_DNS = async (hostname: string) => {
   if (hostname === "evil.example") return [{ address: "10.0.0.5" }];
@@ -119,12 +119,12 @@ describe("safeFetch fail-closed behavior (mocked network)", () => {
   });
 
   test("rejects redirect chains into private space", async () => {
-    const fetchImpl = jest.fn(async (url: string | URL | Request) => {
-      const u = String(url);
+    const fetchImpl = jest.fn((url: string | URL | Request) => {
+      const u = typeof url === "string" ? url : url instanceof URL ? url.href : url.url;
       if (u === "http://example.com/") {
-        return new Response(null, { status: 302, headers: { location: "http://127.0.0.1/secret" } });
+        return Promise.resolve(new Response(null, { status: 302, headers: { location: "http://127.0.0.1/secret" } }));
       }
-      throw new Error("should never fetch " + u);
+      return Promise.reject(new Error("should never fetch " + u));
     });
     const r = await safeFetchPage("http://example.com/", {}, { dnsLookup: PUBLIC_DNS, fetchImpl: fetchImpl as typeof fetch });
     expect(r.ok).toBe(false);
@@ -144,7 +144,7 @@ describe("safeFetch fail-closed behavior (mocked network)", () => {
         c.close();
       },
     });
-    const fetchImpl = jest.fn(async () => new Response(stream, { headers: { "content-type": "text/html" } }));
+    const fetchImpl = jest.fn(() => Promise.resolve(new Response(stream, { headers: { "content-type": "text/html" } })));
     const r = await safeFetchPage(
       "http://example.com/",
       { maxBytes: 1000 },
@@ -155,8 +155,8 @@ describe("safeFetch fail-closed behavior (mocked network)", () => {
   });
 
   test("rejects declared content-length over the limit", async () => {
-    const fetchImpl = jest.fn(async () =>
-      htmlResponse("<h1>hi</h1>", 200, { "content-length": String(10 * 1024 * 1024) }),
+    const fetchImpl = jest.fn(() =>
+      Promise.resolve(htmlResponse("<h1>hi</h1>", 200, { "content-length": String(10 * 1024 * 1024) })),
     );
     const r = await safeFetchPage(
       "http://example.com/",
@@ -168,8 +168,8 @@ describe("safeFetch fail-closed behavior (mocked network)", () => {
   });
 
   test("rejects disallowed content types", async () => {
-    const fetchImpl = jest.fn(async () =>
-      new Response("binary", { headers: { "content-type": "application/octet-stream" } }),
+    const fetchImpl = jest.fn(() =>
+      Promise.resolve(new Response("binary", { headers: { "content-type": "application/octet-stream" } })),
     );
     const r = await safeFetchPage(
       "http://example.com/",
@@ -181,7 +181,7 @@ describe("safeFetch fail-closed behavior (mocked network)", () => {
   });
 
   test("too many redirects fails closed", async () => {
-    const fetchImpl = jest.fn(async () => new Response(null, { status: 302, headers: { location: "/loop" } }));
+    const fetchImpl = jest.fn(() => Promise.resolve(new Response(null, { status: 302, headers: { location: "/loop" } })));
     const r = await safeFetch(
       "http://example.com/",
       { allowContentTypes: ["text/html"], maxRedirects: 2 },
@@ -193,7 +193,7 @@ describe("safeFetch fail-closed behavior (mocked network)", () => {
   });
 
   test("happy path returns bytes with provenance", async () => {
-    const fetchImpl = jest.fn(async () => htmlResponse("<title>Hi</title>"));
+    const fetchImpl = jest.fn(() => Promise.resolve(htmlResponse("<title>Hi</title>")));
     const r = await safeFetchPage(
       "http://example.com/",
       {},

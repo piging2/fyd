@@ -13,7 +13,7 @@
 
 import type { Presence, PresenceImage } from "./derive-presence";
 
-function LogoMark({ logo, businessName }: { logo: PresenceImage; businessName: string }) {
+function LogoMark({ logo }: { logo: PresenceImage; businessName: string }) {
   return (
     <img
       src={logo.url}
@@ -32,7 +32,7 @@ function LogoMark({ logo, businessName }: { logo: PresenceImage; businessName: s
   );
 }
 
-function GalleryStrip({ gallery, accent }: { gallery: PresenceImage[]; accent: string }) {
+function GalleryStrip({ gallery }: { gallery: PresenceImage[]; accent: string }) {
   if (gallery.length === 0) return null;
   return (
     <div

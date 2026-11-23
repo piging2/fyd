@@ -24,7 +24,7 @@ import { generateDevKeypair, storeFydKeypair } from "./key-custody";
 import { buildSignedEnvelope, submitEnvelope, EnvelopeRejectedError } from "./envelope";
 import { fydActionId, relateActionMaterial } from "./transition-id";
 import { attestRelationshipState, attestObjectCreated } from "./attestation-gate";
-import { readNetRelationships } from "./readers";
+import { asString, readNetRelationships } from "./readers";
 
 export { EnvelopeRejectedError };
 
@@ -78,10 +78,10 @@ export async function createFydIdentity(input: {
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {
     throw new Error(
-      `identity mint rejected: ${String(body.error || `HTTP_${res.status}`)} ${String(body.message || "")}`,
+      `identity mint rejected: ${asString(body.error) || `HTTP_${res.status}`} ${asString(body.message)}`,
     );
   }
-  const identityId = String(body.identityId || "");
+  const identityId = asString(body.identityId);
   assertIdentityId(identityId, "minted identityId");
   storeFydKeypair(identityId, kp);
 
@@ -98,7 +98,7 @@ export async function createFydIdentity(input: {
     identityId,
     displayName,
     handle,
-    eventId: String(body.eventId || ""),
+    eventId: asString(body.eventId),
     profileEventId: submitted.event_id,
   };
 }

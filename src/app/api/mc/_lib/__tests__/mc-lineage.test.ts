@@ -4,7 +4,7 @@
  * source label; no stage may claim MOCK on the real path.
  */
 
-import { missionSpine, SPINE_ORDER, type SpineStage } from '../mc-lineage';
+import { missionSpine, SPINE_ORDER } from '../mc-lineage';
 import type { MissionRecord } from '../mc-dispatch';
 
 function record(over: Partial<MissionRecord> = {}): MissionRecord {

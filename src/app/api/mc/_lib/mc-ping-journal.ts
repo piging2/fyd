@@ -149,7 +149,7 @@ async function query<T>(text: string, params: unknown[] = []): Promise<T[]> {
     throw new Error(`ping_journal_unreachable: ${String(e).slice(0, 120)}`);
   }
   try {
-    const r = await p.query(text, params as unknown[]);
+    const r = await p.query(text, params);
     return r.rows as T[];
   } catch (e) {
     throw new Error(`ping_journal_unreachable: ${String(e).slice(0, 160)}`);
@@ -167,8 +167,10 @@ const MISSION_COLS = `mission_id, mission_type, status, priority, payload, resul
 function iso(v: unknown): string | null {
   if (v === null || v === undefined) return null;
   if (v instanceof Date) return v.toISOString();
-  const d = new Date(String(v));
-  return Number.isNaN(d.getTime()) ? String(v) : d.toISOString();
+  if (typeof v !== "string" && typeof v !== "number") return null;
+  const s = typeof v === "string" ? v : String(v);
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? s : d.toISOString();
 }
 
 function toMissionRow(r: Record<string, unknown>): PingMissionRow {

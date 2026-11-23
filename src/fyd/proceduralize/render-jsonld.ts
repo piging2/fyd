@@ -12,21 +12,21 @@
  * INV-SD-1 (single truth source): the builder is a pure function of the
  * projection (plus an optional ownerObjectId selecting the subject; no
  * second fetch, no second graph query, no hardcoded per-site values, no
- * enrichment). Every factual read goes through visitorField — the SAME
- * reader the visible render uses — so visible truth and structured truth
+ * enrichment). Every factual read goes through visitorField: the SAME
+ * reader the visible render uses: so visible truth and structured truth
  * cannot diverge (INV-SD-3).
  *
  * INV-SD-2 (no invented facts): the emitted key set is the projection's
  * field inventory plus fixed structural keys (@context, @type). Absent
  * from the projection = absent from the JSON-LD. In particular the
  * builder NEVER emits aggregateRating, review, openingHours, license,
- * priceRange, areaServed geography, or availability — there is no code
+ * priceRange, areaServed geography, or availability: there is no code
  * path that can produce them.
  *
  * Visibility: EVIDENCE != VISIBILITY. A hidden address stays in the
  * evidence/object layer and is cut at the projection boundary, so it is
  * absent from the projection graph and therefore absent from BOTH the
- * visible render and this JSON-LD — never lingering in structured data.
+ * visible render and this JSON-LD: never lingering in structured data.
  *
  * INV-SD-4: every emitted factual value is returned as a claim
  * ({objectId, field, value}) so the test suite can run it through the
@@ -134,7 +134,7 @@ export function localBusinessJsonLd(
   const url = claim(business.id, "website", read(business, "website"));
   if (url) node.url = url;
 
-  const address: Record<string, string> = { "@type": "PostalAddress" } as Record<string, string>;
+  const address: Record<string, string> = { "@type": "PostalAddress" };
   for (const [jsonKey, field] of ADDRESS_PARTS) {
     const part = claim(business.id, field, read(business, field));
     if (part) address[jsonKey] = part;

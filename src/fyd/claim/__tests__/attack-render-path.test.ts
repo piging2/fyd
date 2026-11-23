@@ -97,8 +97,8 @@ function auditRenderedClaims(
   return { checked, misses };
 }
 
-const COPPER = COPPERSMITH_GRAPH as ObjectGraph;
-const HAPPY = HAPPY_PLACE_GRAPH as ObjectGraph;
+const COPPER = COPPERSMITH_GRAPH;
+const HAPPY = HAPPY_PLACE_GRAPH;
 const COPPER_BIZ = "website-business-2f1327c09d622175";
 
 describe("render-path claim audit: coppersmith-plumbing", () => {

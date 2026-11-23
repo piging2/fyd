@@ -41,12 +41,12 @@ describe("setFollowing / isFollowing", () => {
     setFollowing("coppersmith-plumbing", true);
     const raw = JSON.parse(
       readFileSync(join(process.env.FYD_FOLLOWS_DIR as string, "local.json"), "utf8"),
-    );
-    const first = raw.following["coppersmith-plumbing"].followedAt as string;
+    ) as { version: number; following: Record<string, { followedAt: string }> };
+    const first = raw.following["coppersmith-plumbing"].followedAt;
     setFollowing("coppersmith-plumbing", true);
     const raw2 = JSON.parse(
       readFileSync(join(process.env.FYD_FOLLOWS_DIR as string, "local.json"), "utf8"),
-    );
+    ) as { version: number; following: Record<string, { followedAt: string }> };
     expect(raw2.following["coppersmith-plumbing"].followedAt).toBe(first);
   });
 
@@ -56,7 +56,7 @@ describe("setFollowing / isFollowing", () => {
     expect(isFollowing("happy-place")).toBe(true);
     const raw = JSON.parse(
       readFileSync(join(process.env.FYD_FOLLOWS_DIR as string, "local.json"), "utf8"),
-    );
+    ) as { version: number; following: Record<string, { followedAt: string }> };
     expect(raw.version).toBe(1);
     expect(raw.following["happy-place"].followedAt).toBeDefined();
   });

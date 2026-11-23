@@ -59,7 +59,7 @@ function obj(partial: Partial<PingObject> & { id: string }): PingObject {
       derivedAt: "2026-09-25T00:00:00Z",
     },
     ...partial,
-  } as PingObject;
+  };
 }
 
 /** The SOURCE graph: street address + evidence/provenance on the location. */

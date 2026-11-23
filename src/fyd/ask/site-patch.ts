@@ -177,13 +177,14 @@ function draftProfessionalize(ctx: AskFydContext): DraftedPatch | { refusal: str
   if (before === "professional") {
     return { refusal: "The site tone is already professional, so there is nothing to change." };
   }
+  const beforeLabel = String(before ?? "unset");
   return {
     operations: [
       { op: "set_presentation", pageSlug: spec.pageSlug, sectionId, field: "tone", before, after: "professional" },
     ],
     affectedObjects: [],
-    evidenceReason: `The request asks for a more professional tone ${cite(ctx, ctx.base.target?.id ?? "")}. This changes only the declared presentation tone from ${before ?? "unset"} to professional; copy and structure are untouched.`,
-    summary: `Set tone to professional (was ${before ?? "unset"}).`,
+    evidenceReason: `The request asks for a more professional tone ${cite(ctx, ctx.base.target?.id ?? "")}. This changes only the declared presentation tone from ${beforeLabel} to professional; copy and structure are untouched.`,
+    summary: `Set tone to professional (was ${beforeLabel}).`,
   };
 }
 

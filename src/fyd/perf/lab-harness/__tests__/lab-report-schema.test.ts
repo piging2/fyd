@@ -13,25 +13,31 @@ import * as path from "path";
 const HARNESS = path.resolve(__dirname, "..");
 const SCHEMA = JSON.parse(
   fs.readFileSync(path.join(HARNESS, "report-schema.json"), "utf8"),
-);
+) as {
+  required: string[];
+  properties: {
+    conditions: { required: string[] };
+    median: { required: string[] };
+  };
+};
 
 function validate(report: unknown): string[] {
   const errors: string[] = [];
   const r = report as Record<string, unknown>;
-  for (const k of SCHEMA.required as string[]) {
+  for (const k of SCHEMA.required) {
     if (!(k in r)) errors.push(`missing required key: ${k}`);
   }
   if (r.label !== "lab") errors.push(`label must be "lab", got ${JSON.stringify(r.label)}`);
   if (r.schema !== "fyd-lab-report@1") errors.push("bad schema tag");
   const cond = (r.conditions ?? {}) as Record<string, unknown>;
-  for (const k of (SCHEMA.properties.conditions.required as string[])) {
+  for (const k of SCHEMA.properties.conditions.required) {
     if (!(k in cond)) errors.push(`missing conditions key: ${k}`);
   }
   if (!("conditions" in r)) errors.push("missing conditions block");
   if (cond.cache !== "disabled") errors.push("cache must be disabled");
   if (!["desktop", "mobile"].includes(r.viewport as string)) errors.push("bad viewport");
   const median = r.median as Record<string, unknown>;
-  for (const k of (SCHEMA.properties.median.required as string[])) {
+  for (const k of SCHEMA.properties.median.required) {
     if (!(k in median)) errors.push(`missing median key: ${k}`);
   }
   return errors;

@@ -37,21 +37,24 @@ class ApiClient {
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    // The response body is untyped network JSON, and T is the
+    // caller-declared response type for the endpoint. This cast is the
+    // client boundary: the one place external data enters typed code.
+    return response.json() as Promise<T>;
   }
 
   async get<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, { method: 'GET' });
   }
 
-  async post<T>(endpoint: string, data: any): Promise<T> {
+  async post<T>(endpoint: string, data: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async put<T>(endpoint: string, data: any): Promise<T> {
+  async put<T>(endpoint: string, data: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -125,7 +128,10 @@ export const projectionApi = {
 // Timeline API
 export const timelineApi = {
   async getEvents(filters?: TimelineFilters) {
-    const params = new URLSearchParams(filters as any).toString();
+    const filterRecord: Record<string, string | undefined> = filters ?? {};
+    const params = new URLSearchParams(
+      Object.entries(filterRecord).map(([key, value]): [string, string] => [key, String(value)]),
+    ).toString();
     return apiClient.get<TimelineEvent[]>(`/timeline${params ? `?${params}` : ''}`);
   },
 
@@ -163,7 +169,7 @@ export const recommendationApi = {
     return apiClient.post<{ success: boolean }>(`/recommendations/${id}/reject`, { reason });
   },
 
-  async modify(id: string, modifications: any) {
+  async modify(id: string, modifications: unknown) {
     return apiClient.post<{ success: boolean; executionPlanId: string }>(`/recommendations/${id}/modify`, modifications);
   },
 };
@@ -282,7 +288,7 @@ export interface ConnectorActivity {
   type: string;
   timestamp: string;
   status: 'success' | 'failed';
-  details?: any;
+  details?: unknown;
 }
 
 export interface ProjectionData {
@@ -292,7 +298,7 @@ export interface ProjectionData {
   status: string;
   health: string;
   lastActivity: string;
-  summary: Record<string, any>;
+  summary: Record<string, unknown>;
 }
 
 export interface TimelineEvent {
@@ -305,12 +311,12 @@ export interface TimelineEvent {
   description: string;
 }
 
-export interface TimelineFilters {
+export type TimelineFilters = {
   entity?: string;
   type?: string;
   startDate?: string;
   endDate?: string;
-}
+};
 
 export interface EvidencePackage {
   id: string;
@@ -318,10 +324,10 @@ export interface EvidencePackage {
   confidence: number;
   generatedAt: string;
   sources: {
-    knowledge: any;
-    vector: any;
-    graph: any;
-    llm: any;
+    knowledge: unknown;
+    vector: unknown;
+    graph: unknown;
+    llm: unknown;
   };
 }
 
@@ -368,8 +374,8 @@ export interface ReplayResult {
 export interface ProjectionComparison {
   projectionId: string;
   projectionName: string;
-  before: any;
-  after: any;
+  before: unknown;
+  after: unknown;
   changed: boolean;
 }
 

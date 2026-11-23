@@ -17,14 +17,21 @@ const HAPPY_CLAIM =
 function link(chain: ReturnType<typeof traceClaim>, stage: string) {
   const l = chain.links.find((x) => x.stage === stage);
   assert.ok(l, `link ${stage} present`);
-  return l!;
+  return l;
+}
+
+interface ChainExpectations {
+  objectId: string;
+  field: string;
+  relationshipId: string;
+  sections: string[];
 }
 
 function assertResolvedChain(
   siteId: string,
   claim: string,
   question: string,
-  expectations: Record<string, string>,
+  expectations: ChainExpectations,
 ) {
   const chain = traceClaim(siteId, claim, question);
   assert.equal(chain.siteId, siteId);

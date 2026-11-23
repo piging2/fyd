@@ -31,32 +31,32 @@ describe('ServiceCardAssignment Validation', () => {
     });
 
     it('should reject numeric actor value', () => {
-      const assignment = { ...baseAssignment, actor: 123 as any };
+      const assignment = { ...baseAssignment, actor: 123 };
       expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
 
     it('should reject object actor value', () => {
-      const assignment = { ...baseAssignment, actor: {} as any };
+      const assignment = { ...baseAssignment, actor: {} };
       expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
 
     it('should reject boolean actor value', () => {
-      const assignment = { ...baseAssignment, actor: true as any };
+      const assignment = { ...baseAssignment, actor: true };
       expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
 
     it('should reject null actor value', () => {
-      const assignment = { ...baseAssignment, actor: null as any };
+      const assignment = { ...baseAssignment, actor: null };
       expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
 
     it('should reject invalid string actor value', () => {
-      const assignment = { ...baseAssignment, actor: 'invalid' as any };
+      const assignment = { ...baseAssignment, actor: 'invalid' };
       expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
 
     it('should reject array actor value', () => {
-      const assignment = { ...baseAssignment, actor: [] as any };
+      const assignment = { ...baseAssignment, actor: [] };
       expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
   });
@@ -68,7 +68,7 @@ describe('ServiceCardAssignment Validation', () => {
     });
 
     it('should reject source that is not "workbench"', () => {
-      const assignment = { ...baseAssignment, source: 'invalid' as any };
+      const assignment = { ...baseAssignment, source: 'invalid' };
       expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
   });
@@ -76,22 +76,22 @@ describe('ServiceCardAssignment Validation', () => {
   describe('required field validation', () => {
     it('should reject missing serviceSlug', () => {
       const { serviceSlug, ...assignment } = baseAssignment;
-      expect(validateServiceCardAssignment(assignment as any)).toBe(false);
+      expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
 
     it('should reject missing mediaId', () => {
       const { mediaId, ...assignment } = baseAssignment;
-      expect(validateServiceCardAssignment(assignment as any)).toBe(false);
+      expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
 
     it('should reject missing updatedAt', () => {
       const { updatedAt, ...assignment } = baseAssignment;
-      expect(validateServiceCardAssignment(assignment as any)).toBe(false);
+      expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
 
     it('should reject missing source', () => {
       const { source, ...assignment } = baseAssignment;
-      expect(validateServiceCardAssignment(assignment as any)).toBe(false);
+      expect(validateServiceCardAssignment(assignment)).toBe(false);
     });
   });
 });

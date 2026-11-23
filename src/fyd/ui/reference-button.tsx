@@ -13,29 +13,29 @@ import { cn } from "@/lib/utils";
 export function ReferenceButton({
   objectId,
   className,
-  compact,
 }: {
   objectId: string;
   className?: string;
   compact?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
+  const copyReference = async () => {
+    const url =
+      window.location.origin + "/o/" + encodeURIComponent(objectId);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable: leave the label unchanged, never fake it.
+    }
+  };
   return (
     <button
       type="button"
       className={cn(className)}
       aria-live="polite"
-      onClick={async () => {
-        const url =
-          window.location.origin + "/o/" + encodeURIComponent(objectId);
-        try {
-          await navigator.clipboard.writeText(url);
-          setCopied(true);
-          window.setTimeout(() => setCopied(false), 2000);
-        } catch {
-          // Clipboard unavailable: leave the label unchanged, never fake it.
-        }
-      }}
+      onClick={() => { void copyReference(); }}
     >
       <Link2 className="h-5 w-5" aria-hidden="true" />
       {copied ? "Link copied" : "Reference"}

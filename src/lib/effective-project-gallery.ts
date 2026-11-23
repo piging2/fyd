@@ -20,6 +20,11 @@ import { Redis } from '@upstash/redis';
 
 const WORKBENCH_STAGING_PREFIX = 'workbench-staging:';
 
+interface StagedGalleryRecord {
+  gallery: string[];
+  currentRevision: number;
+}
+
 /**
  * Get the effective project gallery (deployed + staged mutations)
  *
@@ -32,7 +37,7 @@ const WORKBENCH_STAGING_PREFIX = 'workbench-staging:';
  */
 export async function getEffectiveProjectGallery(projectId: string): Promise<string[]> {
   const manifest = loadProjectsManifest();
-  const project = manifest.projects.find((p: any) => p.id === projectId);
+  const project = manifest.projects.find((p) => p.id === projectId);
   
   if (!project) {
     console.error('[EFFECTIVE_GALLERY] PROJECT_NOT_FOUND', { projectId });
@@ -101,11 +106,11 @@ export async function getEffectiveProjectGallery(projectId: string): Promise<str
 
     // P0 FIX: Upstash automatically deserializes JSON objects
     // Accept both string (needs JSON.parse) and object (already parsed)
-    let parsed: any;
+    let parsed: StagedGalleryRecord;
     if (typeof stagedData === 'string') {
-      parsed = JSON.parse(stagedData);
+      parsed = JSON.parse(stagedData) as StagedGalleryRecord;
     } else if (typeof stagedData === 'object') {
-      parsed = stagedData;
+      parsed = stagedData as StagedGalleryRecord;
     } else {
       console.warn('[EFFECTIVE_GALLERY] STAGED_DATA_INVALID - Returning baseline', {
         projectId,

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { POST } from '@/app/api/fyd/customize/route';
 import { newRequestId } from '../write-boundary';
-jest.mock('@/fyd/projection/regen-trigger',()=>({regenerateSiteProjection:jest.fn(async()=>({ok:true,verified:true,latencyMs:0}))}));
+jest.mock('@/fyd/projection/regen-trigger',()=>({regenerateSiteProjection:jest.fn(()=>Promise.resolve({ok:true,verified:true,latencyMs:0}))}));
 const saved = {...process.env};
 let server: Server;
 let posts: number;

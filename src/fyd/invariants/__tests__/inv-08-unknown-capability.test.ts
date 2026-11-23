@@ -135,7 +135,7 @@ describe("INV-08 unknown capability -> no action button (data seam)", () => {
 
 describe("INV-08 unknown capability -> no action button (render seam)", () => {
   jest.mock("@/fyd/object/by-id", () => {
-    const { hostileObjectView } = require("./hostile-view");
+    const { hostileObjectView } = require("./hostile-view") as typeof import("./hostile-view");
     return {
       loadObjectViewBySlugOrId: () => ({
         view: hostileObjectView(),
@@ -183,7 +183,7 @@ describe("INV-08 unknown capability -> no action button (render seam)", () => {
     const el = await mod.default({
       params: Promise.resolve({ objectId: "hostile-biz" }),
     });
-    const html = renderToStaticMarkup(el as any);
+    const html = renderToStaticMarkup(el);
     // The known call capability renders as an action...
     expect(html).toContain("Call");
     expect(html).toContain("tel:+19705550100");

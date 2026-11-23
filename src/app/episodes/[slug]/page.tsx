@@ -10,7 +10,7 @@ import { EpisodePlayer } from "@/components/episode-player";
 
 export const dynamic = "force-static";
 
-export async function generateStaticParams() {
+export function generateStaticParams() {
   return episodePages.map((e) => ({ slug: e.slug }));
 }
 

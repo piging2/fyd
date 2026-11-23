@@ -417,8 +417,8 @@ export function objectViewToProjection(
   // --- Graph relationship join (the data-gap fix) ---
   // Populated only from real active relationships; without a graph every
   // group stays empty, exactly as before.
-  let people: RelatedRef[] = [];
-  let externalIdentities: RelatedRef[] = [];
+  const people: RelatedRef[] = [];
+  const externalIdentities: RelatedRef[] = [];
   let serviceRefs: RelatedRef[] = [];
   let locationRef: RelatedRef | null = null;
 

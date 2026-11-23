@@ -10,6 +10,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { shouldResetScroll } from "@/components/scroll-to-top";
 import { resolveFragmentAction, performFragmentScroll } from "@/components/lenis-provider";
+import type { ObjectGraph } from "../../sitespec/types";
 
 describe("shouldResetScroll truth table", () => {
   test("pathname changed + no hash + push -> reset", () => {
@@ -106,15 +107,11 @@ test("no unconditional diagnostic logging in scroll-to-top", () => {
   expect(src).not.toContain("SCROLLTOTOP_DIAGNOSTIC");
 });
 
-function sectionIds(graph: unknown): string[] {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { renderToStaticMarkup } = require("react-dom/server");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const React = require("react");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { VisitorExperience } = require("../visitor-experience");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { generateSiteSpec } = require("../../proceduralize/generator");
+function sectionIds(graph: ObjectGraph): string[] {
+  const { renderToStaticMarkup } = require("react-dom/server") as typeof import("react-dom/server");
+  const React = require("react") as typeof import("react");
+  const { VisitorExperience } = require("../visitor-experience") as typeof import("../visitor-experience");
+  const { generateSiteSpec } = require("../../proceduralize/generator") as typeof import("../../proceduralize/generator");
   const spec = generateSiteSpec(graph, { generatedAt: "2026-10-07T00:00:00Z" });
   const ctx = {
     graph,
@@ -128,10 +125,8 @@ function sectionIds(graph: unknown): string[] {
 }
 
 test("deep-link stability: section ids stable across regenerations on both sites", () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { COPPERSMITH_GRAPH } = require("../../proceduralize/__fixtures__/coppersmith-graph");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { HAPPY_PLACE_GRAPH } = require("../../proceduralize/__fixtures__/happy-place-graph");
+  const { COPPERSMITH_GRAPH } = require("../../proceduralize/__fixtures__/coppersmith-graph") as typeof import("../../proceduralize/__fixtures__/coppersmith-graph");
+  const { HAPPY_PLACE_GRAPH } = require("../../proceduralize/__fixtures__/happy-place-graph") as typeof import("../../proceduralize/__fixtures__/happy-place-graph");
   for (const [name, graph] of [
     ["coppersmith", COPPERSMITH_GRAPH],
     ["happy-place", HAPPY_PLACE_GRAPH],

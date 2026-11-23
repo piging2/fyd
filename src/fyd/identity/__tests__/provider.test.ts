@@ -13,7 +13,6 @@ import {
   newNonce,
   newState,
   verifyGoogleIdToken,
-  IdTokenVerificationError,
   OAuthExchangeError,
   type GoogleOidcConfig,
 } from "../provider";
@@ -190,13 +189,13 @@ describe("exchangeCodeForTokens", () => {
     const mock = new MockOidcProvider();
     const config = testConfig(mock);
     const seen: { url?: string; body?: string } = {};
-    const fetchImpl = (async (input: unknown, init?: { body?: unknown }) => {
+    const fetchImpl = ((input: unknown, init?: { body?: unknown }) => {
       seen.url = String(input);
       seen.body = String((init as { body?: unknown }).body);
-      return new Response(
+      return Promise.resolve(new Response(
         JSON.stringify({ id_token: "test-id-token", token_type: "Bearer", expires_in: 3600 }),
         { status: 200, headers: { "content-type": "application/json" } }
-      );
+      ));
     }) as unknown as typeof fetch;
     const tokens = await exchangeCodeForTokens(
       config,
@@ -215,7 +214,7 @@ describe("exchangeCodeForTokens", () => {
   test("maps provider errors to a typed exchange error", async () => {
     const mock = new MockOidcProvider();
     const config = testConfig(mock);
-    const fetchImpl = (async () => new Response("bad", { status: 400 })) as unknown as typeof fetch;
+    const fetchImpl = (() => Promise.resolve(new Response("bad", { status: 400 }))) as unknown as typeof fetch;
     await expect(
       exchangeCodeForTokens(config, { code: "x", codeVerifier: "y", redirectUri: config.redirectUri }, fetchImpl)
     ).rejects.toBeInstanceOf(OAuthExchangeError);

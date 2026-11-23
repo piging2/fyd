@@ -98,10 +98,10 @@ describe("HTTP viewer boundary", () => {
     expect(await response.json()).toMatchObject({ ok: false, code: "SESSION_REQUIRED", retryable: true });
   });
   test("explicit bootstrap mints private cookie once and reuses it", async () => {
-    const response = await session(new NextRequest("https://example.test/api/fyd/relationship-session", { method: "POST" }));
+    const response = session(new NextRequest("https://example.test/api/fyd/relationship-session", { method: "POST" }));
     expect(await response.json()).toMatchObject({ ok: true, scope: "demo-session", accountConnected: false });
     expect(response.headers.get("set-cookie")).toMatch(/fyd_demo_relationships=[a-f0-9]{64}; Path=\/; HttpOnly; SameSite=Strict; Max-Age=2592000; Secure/);
-    const reused = await session(new NextRequest("https://example.test/api/fyd/relationship-session", { method: "POST", headers: { cookie: `fyd_demo_relationships=${a.token}` } }));
+    const reused = session(new NextRequest("https://example.test/api/fyd/relationship-session", { method: "POST", headers: { cookie: `fyd_demo_relationships=${a.token}` } }));
     expect(reused.headers.get("set-cookie")).toBeNull();
   });
   test.each(["fyd_session=unverified", "fyd_session=", "ping_practice_identity=someone"])("account cookie presence blocks demo fallback: %s", async cookie => {

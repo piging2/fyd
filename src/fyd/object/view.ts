@@ -33,7 +33,7 @@ import {
   getPingObjectGraphSync,
   listPingSiteIdsSync,
 } from "@/fyd/data/ping-object-source";
-import { SCHEMA_ROLES, capabilityOptionsForSchema, schemaRole } from "../sitespec/schemas";
+import { SCHEMA_ROLES, capabilityOptionsForSchema } from "../sitespec/schemas";
 import { resolveSafeLink } from "../sitespec/safe-link";
 import type { ObjectGraph } from "../sitespec/types";
 import type { PingObject } from "../../lib/ping/types";

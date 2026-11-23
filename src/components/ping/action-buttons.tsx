@@ -98,9 +98,9 @@ export function ActionButtons({ actions, onAsk, onChanged, className }: ActionBu
             key={key}
             type="button"
             disabled={busy}
-            onClick={() =>
-              mutate(key, () => bff("/api/practice/follow", { method: "POST", body: JSON.stringify({ targetId: t.identityId }) }))
-            }
+            onClick={() => {
+              void mutate(key, () => bff("/api/practice/follow", { method: "POST", body: JSON.stringify({ targetId: t.identityId }) }));
+            }}
             className={cn(BTN, PRIMARY)}
             aria-label={`Follow (reason: ${action.reason})`}
           >
@@ -115,9 +115,9 @@ export function ActionButtons({ actions, onAsk, onChanged, className }: ActionBu
             key={key}
             type="button"
             disabled={busy}
-            onClick={() =>
-              mutate(key, () => bff(`/api/practice/follow?targetId=${encodeURIComponent(t.identityId)}`, { method: "DELETE" }))
-            }
+            onClick={() => {
+              void mutate(key, () => bff(`/api/practice/follow?targetId=${encodeURIComponent(t.identityId)}`, { method: "DELETE" }));
+            }}
             className={cn(BTN, SUBTLE)}
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserMinus className="h-4 w-4" />}
@@ -131,9 +131,9 @@ export function ActionButtons({ actions, onAsk, onChanged, className }: ActionBu
             key={key}
             type="button"
             disabled={busy}
-            onClick={() =>
-              mutate(key, () => bff("/api/practice/like", { method: "POST", body: JSON.stringify({ objectId: t.objectId }) }))
-            }
+            onClick={() => {
+              void mutate(key, () => bff("/api/practice/like", { method: "POST", body: JSON.stringify({ objectId: t.objectId }) }));
+            }}
             className={cn(BTN, SUBTLE)}
             aria-pressed={false}
           >
@@ -148,9 +148,9 @@ export function ActionButtons({ actions, onAsk, onChanged, className }: ActionBu
             key={key}
             type="button"
             disabled={busy}
-            onClick={() =>
-              mutate(key, () => bff(`/api/practice/like?objectId=${encodeURIComponent(t.objectId)}`, { method: "DELETE" }))
-            }
+            onClick={() => {
+              void mutate(key, () => bff(`/api/practice/like?objectId=${encodeURIComponent(t.objectId)}`, { method: "DELETE" }));
+            }}
             className={cn(BTN, SUBTLE)}
             aria-pressed={true}
           >
@@ -194,7 +194,7 @@ export function ActionButtons({ actions, onAsk, onChanged, className }: ActionBu
       case "reference":
         if (t?.kind !== "reference") return null;
         return (
-          <button key={key} type="button" onClick={() => copyReference(t.referenceId)} className={cn(BTN, SUBTLE)}>
+          <button key={key} type="button" onClick={() => { void copyReference(t.referenceId); }} className={cn(BTN, SUBTLE)}>
             {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Quote className="h-4 w-4" aria-hidden="true" />}
             {copied ? "Copied" : "Copy reference"}
           </button>

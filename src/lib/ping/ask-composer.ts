@@ -30,7 +30,6 @@ import type {
   CapabilityPlan,
   PingObject,
   PingRelationship,
-  PlannedAction,
   SitePatchProposalBody,
 } from "./types";
 import {
@@ -287,7 +286,7 @@ function fieldOf(obj: PingObject, ...names: string[]): string | null {
  * Junction, CO") it is coarsened exactly like an address field; a
  * business-name title ("Acme Plumbing") passes through unchanged. A
  * title that IS pure street ("123 Main St") coarsens to "" and returns
- * null so the caller falls back to the locality field — fail closed on
+ * null so the caller falls back to the locality field: fail closed on
  * the title itself. Pure, deterministic, no I/O, no clock.
  */
 function coarsenLocationTitle(title: string | null | undefined): string | null {
@@ -721,7 +720,7 @@ function baseAnswer(
         "propose_update",
         "propose_site_patch",
       ].includes(a.kind),
-    ) as PlannedAction[],
+    ),
   };
 }
 
@@ -1668,7 +1667,7 @@ function composeAnswerInner(ctx: AskContext, question: string, opts: ComposeAnsw
         }
       }
       const locationRefIdx = locationObj
-        ? ctx.evidenceRefs.findIndex((e) => e.id === locationObj!.id)
+        ? ctx.evidenceRefs.findIndex((e) => e.id === locationObj.id)
         : -1;
       if (locationObj && locationName && locationRefIdx >= 0) {
         if (locationSelf)

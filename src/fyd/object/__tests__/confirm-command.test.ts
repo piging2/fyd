@@ -19,8 +19,8 @@ import {
   applyOwnerCommand,
   confirmationSourceDrifted,
   OwnerCommandError,
-  type OwnerCommand,
 } from "../owner-store";
+import type { OwnerCommand } from "../types";
 import {
   changeKindForTier,
   commandConsequenceTier,

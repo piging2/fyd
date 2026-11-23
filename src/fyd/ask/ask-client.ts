@@ -90,8 +90,8 @@ export async function askFydQuestion(req: AskFydRequest): Promise<AskFydResult> 
       ok: false,
       status: res.status,
       transportError: false,
-      kind: typeof data?.kind === "string" ? (data.kind as string) : undefined,
-      error: typeof data?.error === "string" ? (data.error as string) : undefined,
+      kind: typeof data?.kind === "string" ? (data.kind) : undefined,
+      error: typeof data?.error === "string" ? (data.error) : undefined,
       raw: data ?? undefined,
     };
   }
@@ -99,18 +99,18 @@ export async function askFydQuestion(req: AskFydRequest): Promise<AskFydResult> 
     ok: true,
     status: res.status,
     transportError: false,
-    answer: typeof data.answer === "string" ? (data.answer as string) : "",
+    answer: typeof data.answer === "string" ? (data.answer) : "",
     refusal: data.refusal === true,
     responseClass:
       data.responseClass === "DENIAL" || data.responseClass === "PREMISE_REJECTED"
-        ? (data.responseClass as AskFydResponseClass)
+        ? (data.responseClass)
         : "ANSWER",
     citations: Array.isArray(data.citations) ? (data.citations as AskFydCitation[]) : [],
     unknowns: Array.isArray(data.unknowns) ? (data.unknowns as string[]) : [],
-    kind: typeof data.kind === "string" ? (data.kind as string) : undefined,
+    kind: typeof data.kind === "string" ? (data.kind) : undefined,
     answerCheckpoint:
-      typeof data.answerCheckpoint === "string" ? (data.answerCheckpoint as string) : undefined,
-    tenantId: typeof data.tenantId === "string" ? (data.tenantId as string) : undefined,
+      typeof data.answerCheckpoint === "string" ? (data.answerCheckpoint) : undefined,
+    tenantId: typeof data.tenantId === "string" ? (data.tenantId) : undefined,
     raw: data,
   };
 }

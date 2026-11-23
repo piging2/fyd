@@ -157,7 +157,7 @@ export function overlayRelationships(
  * Scroll preservation: saves window.scrollY on mount, restores on unmount.
  * The page behind does not scroll while the overlay is open.
  */
-export function ObjectOverlay({ object, graph, siteId, onClose, visitor = false, onAsk }: ObjectOverlayProps) {
+export function ObjectOverlay({ object, graph, onClose, visitor = false, onAsk }: ObjectOverlayProps) {
   const savedScroll = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
 

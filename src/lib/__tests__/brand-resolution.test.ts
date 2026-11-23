@@ -12,11 +12,10 @@
  * - Brand bootstrap API creates correct runtime assignments
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import { getHomepageHero, getOwnerPortrait } from '../brand';
 import { resolvePublicMedia } from '../media';
 
-const TEST_PREFIX = 'BRAND-RESOLUTION-TEST-';
 
 describe('Brand Media Resolution', () => {
   const hasKv = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);

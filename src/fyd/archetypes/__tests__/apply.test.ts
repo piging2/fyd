@@ -133,7 +133,7 @@ describe("applyArchetype", () => {
   test("mergeThemeTokens skips undefined and never mutates the base", () => {
     const base = baseSpec().themeTokens;
     const before = JSON.stringify(base);
-    const merged = mergeThemeTokens(base, { radius: "sm", accent: undefined as never });
+    const merged = mergeThemeTokens(base, { radius: "sm", accent: undefined });
     expect(merged.radius).toBe("sm");
     expect(merged.accent).toBe(base.accent);
     expect(JSON.stringify(base)).toBe(before);

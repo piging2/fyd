@@ -53,7 +53,7 @@ function discoveryGraph(n: number, rich: boolean): ObjectGraph {
       );
     }
   }
-  return { objects, relationships } as unknown as ObjectGraph;
+  return { objects, relationships };
 }
 
 const homeComponents = (graph: ObjectGraph, ownerIntent?: Parameters<typeof planSite>[0]["ownerIntent"]) =>

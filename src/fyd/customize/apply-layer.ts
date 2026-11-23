@@ -118,7 +118,7 @@ export function applyPresentationIntent(
   block: PresentationIntentBlock | null | undefined,
   graph: ObjectGraph,
 ): LayerResult {
-  let current: FYDSiteSpec = JSON.parse(JSON.stringify(spec));
+  let current: FYDSiteSpec = JSON.parse(JSON.stringify(spec)) as FYDSiteSpec;
   const applied: AppliedDirective[] = [];
   const unresolved: UnresolvedDirective[] = [];
   if (!block || block.directives.length === 0) {

@@ -32,8 +32,8 @@ describe("the /sites routes exist", () => {
 describe("the middleware does not 404 /sites", () => {
   test.each(SITES)(
     "middleware passes %s through (no 404, no rewrite, no redirect)",
-    async (p) => {
-      const res = await middleware(
+    (p) => {
+      const res = middleware(
         new NextRequest(`http://localhost:3000${p}`),
       );
       expect(res.status).not.toBe(404);
@@ -55,7 +55,7 @@ describe("no middleware disable list contains /sites", () => {
   test("the middleware matcher includes /sites/* (and still excludes _next)", () => {
     const matchers = config.matcher;
     expect(Array.isArray(matchers) && matchers.length).toBeGreaterThan(0);
-    for (const m of matchers as string[]) {
+    for (const m of matchers) {
       // Matchers are path patterns anchored at the start; evaluate them the
       // same way Next does for this smoke check.
       const re = new RegExp("^" + m);
@@ -70,10 +70,10 @@ describe("no middleware disable list contains /sites", () => {
 });
 
 describe("the middleware still sets x-pathname for /sites", () => {
-  test.each(SITES)("x-pathname is forwarded for %s", async (p) => {
+  test.each(SITES)("x-pathname is forwarded for %s", (p) => {
     const spy = jest.spyOn(NextResponse, "next");
     try {
-      await middleware(new NextRequest(`http://localhost:3000${p}`));
+      middleware(new NextRequest(`http://localhost:3000${p}`));
       expect(spy).toHaveBeenCalledTimes(1);
       const calls = spy.mock.calls as unknown as Array<
         [{ request?: { headers?: Headers } } | undefined]

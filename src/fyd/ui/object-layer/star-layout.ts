@@ -53,7 +53,7 @@ export function starLayoutFor(count: number): StarLayout {
   const width = Math.max(...widths);
   const height =
     rows.length * STAR_MINI_D + (rows.length - 1) * (STAR_CELL - STAR_MINI_D);
-  const cells: StarCell[] = new Array(count);
+  const cells: StarCell[] = new Array<StarCell>(count);
   let idx = 0;
   rows.forEach((n, ri) => {
     const odd = ri % 2 === 1;

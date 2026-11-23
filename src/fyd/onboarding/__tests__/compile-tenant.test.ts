@@ -44,7 +44,9 @@ import {
   siteSlugFor,
   tenantIdForUrl,
   tenantState,
+  type CompileCtx,
   type CompileTenantDeps,
+  type TenantCheckpoint,
 } from "../compile-tenant";
 import type { PageEvidence } from "../extractor";
 import { getPingObjectGraph } from "../../data/ping-object-source";
@@ -67,10 +69,12 @@ function netFor(
   delayMs = 0,
 ): SafeFetchDeps {
   return {
-    dnsLookup: async (host: string) =>
-      publicHosts.includes(host)
-        ? [{ address: "93.184.216.34" }]
-        : [{ address: "10.0.0.5" }],
+    dnsLookup: (host: string) =>
+      Promise.resolve(
+        publicHosts.includes(host)
+          ? [{ address: "93.184.216.34" }]
+          : [{ address: "10.0.0.5" }],
+      ),
     fetchImpl: (async () => {
       calls.n += 1;
       if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
@@ -78,7 +82,7 @@ function netFor(
         status: 200,
         headers: { "content-type": "text/html; charset=utf-8" },
       });
-    }) as typeof fetch,
+    }),
   };
 }
 
@@ -180,8 +184,8 @@ describe("presence compiler: SUBMIT", () => {
 
     const checkpoint = JSON.parse(
       readFileSync(join(dir, "_compiler", r.tenantId + ".json"), "utf8"),
-    );
-    for (const stage of ["normalize", "acquire", "compile", "project"]) {
+    ) as TenantCheckpoint;
+    for (const stage of ["normalize", "acquire", "compile", "project"] as const) {
       expect(checkpoint.stages[stage].done).toBe(true);
       expect(checkpoint.stages[stage].inputDigest).not.toBe("");
     }
@@ -189,7 +193,7 @@ describe("presence compiler: SUBMIT", () => {
   });
 
   test("the projection loads through the real serving seam", async () => {
-    const { deps, dir } = harness();
+    const { deps } = harness();
     const r = await buildTenant(URL, deps);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
@@ -445,7 +449,7 @@ describe("presence compiler: determinism and invalidation", () => {
       observedAt: "2026-09-27T00:00:00.000Z",
     };
     const g1 = compileGraph(evidence, ctx);
-    const g2 = compileGraph(evidence, JSON.parse(JSON.stringify(ctx)));
+    const g2 = compileGraph(evidence, JSON.parse(JSON.stringify(ctx)) as CompileCtx);
     expect(JSON.stringify(g2)).toBe(JSON.stringify(g1));
     // Service objects carry deterministic ids (no random UUIDs).
     const svc = g1.objects.find((o) => o.title === "Drain cleaning")!;

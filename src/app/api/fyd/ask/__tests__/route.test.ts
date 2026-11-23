@@ -60,7 +60,7 @@ async function postAsk(body: unknown) {
   const record =
     typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
   const siteId = typeof record.siteId === "string" ? record.siteId : "happy-place";
-  const req = { json: async () => body } as unknown as NextRequest;
+  const req = { json: () => body } as unknown as NextRequest;
   return postNested(req, { params: Promise.resolve({ siteId }) });
 }
 
@@ -150,10 +150,10 @@ describe("answerAskFyd", () => {
     const real = HAPPY_BUNDLE;
     expect(real).not.toBeNull();
     const bundle: SiteBundle = {
-      ...(real as SiteBundle),
+      ...real,
       graph: {
-        objects: [...(real as SiteBundle).graph.objects, secret],
-        relationships: (real as SiteBundle).graph.relationships,
+        objects: [...real.graph.objects, secret],
+        relationships: real.graph.relationships,
       },
     };
     const deps: AnswerAskFydDeps = {
@@ -192,7 +192,7 @@ describe("answerAskFyd", () => {
   test("owner-corrected phone is cited as owner field evidence, not a website statement", () => {
     const real = HAPPY_BUNDLE;
     expect(real).not.toBeNull();
-    const objects = (real as SiteBundle).graph.objects.map((o) =>
+    const objects = real.graph.objects.map((o) =>
       o.schema === "ping.social.business@1"
         ? {
             ...o,
@@ -215,8 +215,8 @@ describe("answerAskFyd", () => {
         : o,
     );
     const bundle: SiteBundle = {
-      ...(real as SiteBundle),
-      graph: { objects, relationships: (real as SiteBundle).graph.relationships },
+      ...real,
+      graph: { objects, relationships: real.graph.relationships },
     };
     const deps: AnswerAskFydDeps = {
       loadBundle: (id) => (id === "happy-place-test" ? bundle : null),
@@ -306,7 +306,7 @@ describe("journal read failure (FL: Ask FYD error mapping)", () => {
     // Hermetic isolation (cache): getSiteBundle carries a 60s TTL bundle
     // cache, populated by this suite's beforeAll. Without invalidation the
     // case is served the cached bundle (200) and never reaches the reader
-    // at all — proven in the W3 baseline run, where this case fails with
+    // at all: proven in the W3 baseline run, where this case fails with
     // 200 in BOTH the baseline worktree (no snapshot, old reader) and the
     // candidate. Invalidating the one tenant makes the case exercise the
     // journal-failure path it asserts on.

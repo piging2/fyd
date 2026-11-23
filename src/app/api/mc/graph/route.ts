@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     );
   }
   try {
-    const { graph, meta } = await getFydTenantGraph(siteId as never);
+    const { graph, meta } = await getFydTenantGraph(siteId);
     const predicates: Record<string, number> = {};
     for (const r of graph.relationships) {
       predicates[r.predicate] = (predicates[r.predicate] ?? 0) + 1;

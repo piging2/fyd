@@ -52,8 +52,8 @@ export const FYD_OWNER_GENERATOR = "fyd-owner@1";
  * Vendored P2 (2026-10-11) vocabulary from the owner-mode lane: adds
  * "customer.inquiry-received", a customer-originated quote request
  * admitted through this SAME append-only journal (not a parallel write
- * path). The reducer treats it as an audit line only — no owner-state
- * mutation — and the event carries NO customer contact details: those
+ * path). The reducer treats it as an audit line only: no owner-state
+ * mutation: and the event carries NO customer contact details: those
  * live in the tenant-private inquiry store, and the event's
  * evidence.ref is the opaque protected receipt.
  */
@@ -115,7 +115,7 @@ export type OwnerEventActor =
   | { kind: "demo"; label: string }
   | { kind: "owner"; identityId: string; label: string }
   // Vendored P2 (2026-10-11): an explicitly anonymous, unauthenticated
-  // public actor — a site visitor submitting a quote request. A visitor
+  // public actor: a site visitor submitting a quote request. A visitor
   // actor carries NO credential and NO entitlement; the inquiry intake
   // admits the event on server-side validation, policy, rate limits, and
   // the site's published inquiry capability, never on the actor's say-so.
@@ -194,6 +194,7 @@ export function reduceOwnerEvents(
     lastAt = e.at;
     history.push({ at: e.at, text: e.note });
 
+    const eventType: string = e.type;
     switch (e.type) {
       case "owner.confirmed-fact": {
         // Attestation only by default: no state change. EXCEPTION: a
@@ -407,7 +408,7 @@ export function reduceOwnerEvents(
       }
       default:
         throw new OwnerEventError(
-          "Unknown owner event type '" + (e as OwnerEvent).type + "'.",
+          "Unknown owner event type '" + eventType + "'.",
         );
     }
   }
@@ -747,7 +748,7 @@ export function readOwnerEvents(objectId: string): OwnerEvent[] {
   }
   // isV1File: transparent migration. Synthesize events, assign seqs + IDs
   // now so the returned log is identical to what the first append persists.
-  return finalizeDrafts(objectId, migrateV1ToEvents(parsed as OwnerOverrides));
+  return finalizeDrafts(objectId, migrateV1ToEvents(parsed));
 }
 
 function finalizeDrafts(objectId: string, drafts: OwnerEventDraft[]): OwnerEvent[] {

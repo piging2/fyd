@@ -193,7 +193,7 @@ export function declareSlot(cmd: DeclareSlotCommand): SlotState {
   appendAdsEvent(SLOTS_SUBDIR, SLOT_ENTITY_KIND, cmd.slot.slotId, {
     at: nowIso(cmd.at),
     type: "slot.declared",
-    payload: { ...cmd.slot } as unknown as Record<string, unknown>,
+    payload: { ...cmd.slot },
   });
   const state = readSlotState(cmd.slot.slotId);
   if (state === null) throw new AdsStoreError("Slot vanished after declare.");

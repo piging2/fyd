@@ -28,6 +28,41 @@ const service = COPPERSMITH_GRAPH.objects.find(o => o.title === 'Heating & Cooli
 const sourceValue = service.fields.description as string;
 const correctedValue = 'We maintain furnaces and heat pumps. Ask us about cooling repairs.';
 const refreshedValue = 'We maintain furnaces, cooling units and mini split systems.';
+/** Response body shapes for the real routes driven below, narrowed to
+ *  the fields the tests assert. res.json() is untyped, so each body is
+ *  bound to its shape here and asserted field by field. The propose
+ *  command and digests are opaque tokens the approve call echoes back
+ *  verbatim, so they stay unknown-typed on purpose. */
+interface ObjectGetBody {
+  view: { summary: string };
+  contract: { checkpoint: string };
+}
+
+interface OverridesGetBody {
+  checkpoint: string;
+}
+
+interface ProposeBody {
+  proposal: { command: unknown };
+  digests: Record<string, unknown>;
+}
+
+interface RecordedUnavailableBody {
+  recorded: boolean;
+  code: string;
+  approval: { eventId: string };
+}
+
+interface AskResponseBody {
+  answer?: string;
+  error?: string;
+  answerCheckpoint?: string;
+}
+
+async function bodyAs<T>(res: Response): Promise<T> {
+  return (await res.json()) as T;
+}
+
 let journal: StubJournal;
 const originalOwnerDir = process.env.FYD_OWNER_DIR;
 const originalDemoMode = process.env.NEXT_PUBLIC_FYD_DEMO_OWNER_MODE;
@@ -61,12 +96,12 @@ async function surfaces(expected: string) {
   expect(bundle!.graph.objects.find(o=>o.id===service.id)?.fields.description).toBe(expected);
   const ownerResponse = await getObject(new NextRequest(`http://localhost/api/fyd/objects/${service.id}`),{params:Promise.resolve({objectId:service.id})});
   expect(ownerResponse.status).toBe(200);
-  const owner = await ownerResponse.json();
+  const owner = await bodyAs<ObjectGetBody>(ownerResponse);
   expect(owner.view.summary).toBe(expected);
   expect(owner.contract.checkpoint).toBe(page.projection.provenance.checkpoint);
   const ownerResponse2 = await getOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`, { headers: { host: "localhost" } }), {params:Promise.resolve({objectId:siteId})});
   expect(ownerResponse2.status).toBe(200);
-  expect((await ownerResponse2.json()).checkpoint).toBe(page.projection.provenance.checkpoint);
+  expect((await bodyAs<OverridesGetBody>(ownerResponse2)).checkpoint).toBe(page.projection.provenance.checkpoint);
   expect(loadObjectViewById(bundle!.ownerProjection!, siteId, service.id, bundle!.readOwner)?.summary).toBe(expected);
   return { page, bundle:bundle!, answer, view };
 }
@@ -74,13 +109,13 @@ async function approvedOwnerChange(text: string) {
   const call = (body: unknown) => postOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`, {method:"POST",headers:{"content-type":"application/json",host:"localhost:3106"},body:JSON.stringify(body)}), {params:Promise.resolve({objectId:siteId})});
   const proposalResponse = await call({stage:"propose",text});
   expect(proposalResponse.status).toBe(200);
-  const proposal = await proposalResponse.json();
+  const proposal = await bodyAs<ProposeBody>(proposalResponse);
   const approved = await call({stage:"approve",command:proposal.proposal.command,...proposal.digests});
   expect(approved.status).toBe(200);
 }
 test('owner permission revoked while an approval waits records no correction', async () => {
   const call = (body: unknown) => postOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`, {method:"POST",headers:{"content-type":"application/json",host:"localhost:3106"},body:JSON.stringify(body)}), {params:Promise.resolve({objectId:siteId})});
-  const proposed = await (await call({stage:"propose",text:`Correct description of Heating & Cooling to ${correctedValue}`})).json();
+  const proposed = await bodyAs<ProposeBody>(await call({stage:"propose",text:`Correct description of Heating & Cooling to ${correctedValue}`}));
   const originalFactory = ownerContexts.createOwnerContext;
   jest.spyOn(ownerContexts,"createOwnerContext").mockImplementation(async id => {
     const ctx = await originalFactory(id);
@@ -98,12 +133,12 @@ test('owner permission revoked while an approval waits records no correction', a
 });
 test('a recorded correction with an unavailable refreshed view returns its receipt honestly', async () => {
   const call = (body: unknown) => postOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`, {method:"POST",headers:{"content-type":"application/json",host:"localhost:3106"},body:JSON.stringify(body)}), {params:Promise.resolve({objectId:siteId})});
-  const proposed = await (await call({stage:"propose",text:`Correct description of Heating & Cooling to ${correctedValue}`})).json();
+  const proposed = await bodyAs<ProposeBody>(await call({stage:"propose",text:`Correct description of Heating & Cooling to ${correctedValue}`}));
   const current = await getSiteBundle(siteId);
   jest.spyOn(bundles,"getSiteBundle").mockResolvedValueOnce(current).mockRejectedValueOnce(new Error("journal unavailable after write"));
   const response = await call({stage:"approve",command:proposed.proposal.command,...proposed.digests});
   expect(response.status).toBe(503);
-  const result = await response.json();
+  const result = await bodyAs<RecordedUnavailableBody>(response);
   expect(result.recorded).toBe(true);
   expect(result.code).toBe("recorded_view_unavailable");
   expect(result.approval.eventId).toBeTruthy();
@@ -137,7 +172,7 @@ function askRequest(checkpoint?: string) {
   return new NextRequest(`http://localhost/api/fyd/ask/${siteId}`, {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question:'Can they help with heating?',mode:'visitor',pageCheckpoint:checkpoint})});
 }
 test('a failed required conflict read is unavailable, never a zero-conflict projection', async () => {
-  const available = await getSiteBundle(siteId, {readConflicts:async()=>[]});
+  const available = await getSiteBundle(siteId, {readConflicts:()=>Promise.resolve([])});
   expect(available?.conflictState).toBe('available');
   const spy = jest.spyOn(bundles,'getSiteBundle').mockImplementation(id => id === siteId
     ? Promise.reject(new Error('conflict read unavailable'))
@@ -146,11 +181,11 @@ test('a failed required conflict read is unavailable, never a zero-conflict proj
     await expect(compilePublicSite(siteId)).rejects.toThrow('conflict read unavailable');
     const response = await handleAskRequest(siteId, askRequest());
     expect(response.status).toBe(503);
-    expect((await response.json()).answer).toBeUndefined();
+    expect((await bodyAs<AskResponseBody>(response)).answer).toBeUndefined();
     const owner = await getOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`, { headers: { host: "localhost" } }), {params:Promise.resolve({objectId:siteId})});
     expect(owner.status).toBe(503);
   } finally { spy.mockRestore(); }
-  await expect(getSiteBundle(siteId,{readConflicts:async()=>{throw new Error('conflict read unavailable');}})).rejects.toThrow();
+  await expect(getSiteBundle(siteId,{readConflicts:()=>Promise.reject(new Error('conflict read unavailable'))})).rejects.toThrow();
 });
 test('an unreadable correction log serves no public value', async () => {
   writeFileSync(join(process.env.FYD_OWNER_DIR!,siteId+'.json'),'{broken');
@@ -158,7 +193,7 @@ test('an unreadable correction log serves no public value', async () => {
   await expect(compilePublicSite(siteId)).rejects.toThrow();
   const response = await handleAskRequest(siteId,askRequest());
   expect(response.status).toBe(503);
-  expect((await response.json()).answer).toBeUndefined();
+  expect((await bodyAs<AskResponseBody>(response)).answer).toBeUndefined();
   const owner = await getOwner(new NextRequest(`http://localhost/api/fyd/objects/${siteId}/overrides`, { headers: { host: "localhost" } }), {params:Promise.resolve({objectId:siteId})});
   expect(owner.status).toBe(503);
 });
@@ -167,14 +202,14 @@ test('a stale page checkpoint refuses an answer and a refreshed checkpoint agree
   applyOwnerCommand(siteId,{type:'set-service-description',serviceId:service.id,value:correctedValue},[service.id],new Map([[service.id,service.title]]),{sourceValue});
   const response = await handleAskRequest(siteId,askRequest(before.projection.provenance.checkpoint));
   expect(response.status).toBe(409);
-  const stale = await response.json();
+  const stale = await bodyAs<AskResponseBody>(response);
   expect(stale.error).toBe('Business information changed. Refresh this view.');
   expect(stale.answer).toBeUndefined();
   const after = await compilePublicSite(siteId);
   expect(stale.answerCheckpoint).toBe(after.projection.provenance.checkpoint);
   const fresh = await handleAskRequest(siteId,askRequest(after.projection.provenance.checkpoint));
   expect(fresh.status).toBe(200);
-  expect((await fresh.json()).answerCheckpoint).toBe(after.projection.provenance.checkpoint);
+  expect((await bodyAs<AskResponseBody>(fresh)).answerCheckpoint).toBe(after.projection.provenance.checkpoint);
 });
 
 test('a hidden corrected field and its original observations cannot escape the public projection', async () => {
@@ -191,8 +226,8 @@ test('a hidden corrected field and its original observations cannot escape the p
 });
 test('a disputed description is withheld and conflict changes alter the checkpoint', async () => {
   const conflicts = [{objectId:service.id,field:'description',status:'unresolved' as const,observations:[{value:sourceValue,provenanceKind:'website-ingestion',provenanceRef:'website-ingestion:https://example.com'},{value:'different description',provenanceKind:'website-ingestion',provenanceRef:'website-ingestion:https://example.org'}]}];
-  const a = (await getSiteBundle(siteId,{readConflicts:async()=>conflicts}))!;
-  const b = (await getSiteBundle(siteId,{readConflicts:async()=>[{...conflicts[0],observations:[...conflicts[0].observations,{value:'third observation',provenanceKind:'website-ingestion',provenanceRef:'https://example.net'}]}]}))!;
+  const a = (await getSiteBundle(siteId,{readConflicts:()=>Promise.resolve(conflicts)}))!;
+  const b = (await getSiteBundle(siteId,{readConflicts:()=>Promise.resolve([{...conflicts[0],observations:[...conflicts[0].observations,{value:'third observation',provenanceKind:'website-ingestion',provenanceRef:'https://example.net'}]}])}))!;
   expect(a.graph.objects.find(o=>o.id===service.id)?.description).toBe('');
   expect(a.graph.objects.find(o=>o.id===service.id)?.fields.description).toBeUndefined();
   expect(a.projection?.provenance.checkpoint).not.toBe(b.projection?.provenance.checkpoint);

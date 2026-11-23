@@ -35,7 +35,7 @@ describe.each(SITES)("site metadata verifier wiring (%s)", (siteId) => {
     const title =
       typeof meta.title === "object" && meta.title !== null && "absolute" in meta.title
         ? String((meta.title as { absolute: unknown }).absolute)
-        : String(meta.title);
+        : (typeof meta.title === "string" ? meta.title : "");
 
     // The verifier accepted both factual bindings: the object's own
     // values publish verbatim.

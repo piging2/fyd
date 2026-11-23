@@ -12,6 +12,7 @@
 
 import type { Media } from '@/types/media';
 import { RESPONSIVE_WIDTHS } from './media-constants';
+import * as crypto from 'crypto';
 
 /**
  * Materialization Shape Contract
@@ -105,7 +106,6 @@ export function hasRealContentHash(media: Media): boolean {
     return false;
   }
 
-  const crypto = require('crypto');
   const syntheticHash = crypto.createHash('sha256').update(media.id).digest('hex');
   return media.contentHash !== syntheticHash;
 }
@@ -141,7 +141,7 @@ export async function isPubliclyComplete(media: Media): Promise<boolean> {
       if (!blobMetadata) {
         return false;
       }
-    } catch (error) {
+    } catch {
       // Fail closed if Blob verification fails
       return false;
     }

@@ -98,7 +98,7 @@ test("invalidation is surgical: site B cache survives a site A write", async () 
   expect(b2).toBe(b1); // site B untouched: same cached instance
 });
 
-test("invalidateSiteBundle on an unknown/empty key is a safe no-op", async () => {
+test("invalidateSiteBundle on an unknown/empty key is a safe no-op", () => {
   expect(() => invalidateSiteBundle("no-such-site")).not.toThrow();
   expect(() => invalidateSiteBundle("")).not.toThrow();
 });

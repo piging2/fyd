@@ -126,7 +126,7 @@ describe("applyOwnerCommand", () => {
     applyOwnerCommand("happy-place", { type: "add-service", name: "Patios" }, KNOWN_IDS, KNOWN_NAMES);
     const dir = process.env.FYD_OWNER_DIR as string;
     const raw = readFileSync(join(dir, "happy-place.json"), "utf8");
-    expect(() => JSON.parse(raw)).not.toThrow();
+    expect(() => { JSON.parse(raw); }).not.toThrow();
   });
 });
 

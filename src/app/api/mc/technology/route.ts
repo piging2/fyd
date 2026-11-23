@@ -123,6 +123,30 @@ interface DockerContainer {
   ports: string;
 }
 
+// The docker inspect JSON boundary: inspect output is genuinely external
+// data. These interfaces record the Docker API shapes this route reads;
+// nested blocks the route dereferences carry their own shapes.
+interface DockerHealthLogEntry {
+  Output?: string;
+}
+
+interface DockerHealth {
+  Status?: string;
+  FailingStreak?: number;
+  Log?: DockerHealthLogEntry[];
+}
+
+interface DockerInspect {
+  Name?: string;
+  Image?: string;
+  Created?: string;
+  RestartCount?: number;
+  State?: { Health?: DockerHealth };
+  Config?: { Labels?: Record<string, string>; Env?: string[] };
+  HostConfig?: { RestartPolicy?: { Name?: string } };
+  Mounts?: { Destination?: string; Source?: string }[];
+}
+
 async function dockerPs(): Promise<DockerContainer[] | null> {
   const out = await sh("docker", [
     "ps",
@@ -139,12 +163,11 @@ async function dockerPs(): Promise<DockerContainer[] | null> {
     });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function dockerInspect(...names: string[]): Promise<any[] | null> {
+async function dockerInspect(...names: string[]): Promise<DockerInspect[] | null> {
   const out = await sh("docker", ["inspect", ...names]);
   if (!out) return null;
   try {
-    return JSON.parse(out) as unknown[];
+    return JSON.parse(out) as DockerInspect[];
   } catch {
     return null;
   }
@@ -177,7 +200,11 @@ async function ledgerGatewayMentions(): Promise<string[]> {
       .slice(-6)
       .map((l) => {
         try {
-          const r = JSON.parse(l) as Record<string, unknown>;
+          const r = JSON.parse(l) as {
+            at?: string;
+            worker?: string;
+            category?: string;
+          };
           return `${r.at ?? "?"} ${r.worker ?? "?"} ${r.category ?? ""}`.trim();
         } catch {
           return l.slice(0, 120);
@@ -232,16 +259,14 @@ export async function GET() {
     "ping-postgres",
     "ping-redis"
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const inspByName = new Map<string, any>(
-    (inspected ?? []).map((d) => [
+  const inspByName = new Map<string, DockerInspect>(
+    (inspected ?? []).map((d): [string, DockerInspect] => [
       String(d.Name ?? "").replace(/^\//, ""),
       d,
     ])
   );
   for (const c of containers) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const d: any = inspByName.get(c.name);
+    const d = inspByName.get(c.name);
     const health = d?.State?.Health?.Status ?? null;
     const restartCount = d?.RestartCount ?? null;
     const unhealthy = /unhealthy/i.test(c.status);
@@ -594,7 +619,7 @@ export async function GET() {
     "-c",
     "systemctl list-timers --all --no-pager 2>/dev/null | grep -i -E 'backup|snapshot|pg-' | head -5",
   ]);
-  const crontab = await sh("bash", ["-c", "crontab -l 2>/dev/null | head -8"]);
+  await sh("bash", ["-c", "crontab -l 2>/dev/null | head -8"]);
   const dumpFind = await sh("bash", [
     "-c",
     "find /home/nolan /opt /var/backups -maxdepth 3 \\( -name '*.dump' -o -name '*pg-backup*' \\) 2>/dev/null | head -5",

@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { MaturityLabel, type Maturity } from "@/components/maturity-label";
 
 /**

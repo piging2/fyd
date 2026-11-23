@@ -72,8 +72,8 @@ export interface OwnerIdentityProvider {
 export class DemoIdentityProvider implements OwnerIdentityProvider {
   readonly name = "demo-seeded (unverified)";
 
-  async resolveIdentity(): Promise<OwnerIdentity> {
-    return {
+  resolveIdentity(): Promise<OwnerIdentity> {
+    return Promise.resolve({
       identityId: "demo-owner",
       verified: false,
       method: "demo-seeded",
@@ -81,7 +81,7 @@ export class DemoIdentityProvider implements OwnerIdentityProvider {
         "DEMO ONLY: no identity was verified. The seeded demo actor is a " +
         "label, not a person. Production must bind a real provider via " +
         "bindIdentityProvider() before any owner capability is trusted.",
-    };
+    });
   }
 }
 

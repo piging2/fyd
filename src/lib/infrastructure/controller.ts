@@ -292,7 +292,7 @@ export class InfrastructureController {
         } else {
           missing.push('Reviews Sheet');
         }
-      } catch (error) {
+      } catch {
         missing.push('Reviews Sheet');
       }
 
@@ -309,7 +309,7 @@ export class InfrastructureController {
         } else {
           missing.push('Happy Place Drive folder');
         }
-      } catch (error) {
+      } catch {
         missing.push('Happy Place Drive folder');
       }
 
@@ -323,7 +323,7 @@ export class InfrastructureController {
   /**
    * Auto-configure discovered resources
    */
-  async autoConfigure(discovered: Record<string, string>): Promise<void> {
+  autoConfigure(discovered: Record<string, string>): void {
     // In a real implementation, this would update environment variables
     // or secure storage with discovered IDs
     console.log('Auto-configuring discovered resources:', discovered);

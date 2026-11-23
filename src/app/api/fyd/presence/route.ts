@@ -156,7 +156,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   return NextResponse.json({ ok: true, ...state }, { status: 202 });
 }
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
+export function GET(req: NextRequest): NextResponse {
   const tenantId = new URL(req.url).searchParams.get("tenantId") ?? "";
   if (!isValidTenantId(tenantId)) {
     return NextResponse.json(

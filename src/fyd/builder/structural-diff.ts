@@ -56,7 +56,7 @@ function tokenEntries(spec: FYDSiteSpec): Record<string, string> {
       flat[prefix] = String(v);
       return;
     }
-    for (const k of Object.keys(v as Record<string, unknown>).sort()) {
+    for (const k of Object.keys(v).sort()) {
       walk(prefix === "" ? k : prefix + "." + k, (v as Record<string, unknown>)[k]);
     }
   };

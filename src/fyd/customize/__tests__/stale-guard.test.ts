@@ -21,10 +21,10 @@ import {
   verifyStaleGuard,
   StaleGuardError,
   type JournaledDirectiveRef,
-  type PresentationIntentOverlayOp,
   type StaleGuardJournalReader,
   type StaleGuardPrecondition,
 } from "../server";
+import type { PresentationIntentOverlayOp } from "../types";
 import type { FydJournalOverlay } from "@/lib/ping/ping-object-reader";
 
 const BASE_AT_APPROVAL = "aa".repeat(32);
@@ -57,10 +57,27 @@ function precondition(overrides: Partial<StaleGuardPrecondition> = {}): StaleGua
   };
 }
 
-const readerFor = (baseSpecDigest: string) => async () => ({
-  baseSpecDigest,
-  specDigest: "ee".repeat(32),
-});
+const readerFor = (baseSpecDigest: string) => () =>
+  Promise.resolve({ baseSpecDigest, specDigest: "ee".repeat(32) });
+
+/** Return a call's rejection as an Error; a resolution is a failure. */
+async function rejectionOf(p: Promise<unknown>): Promise<Error> {
+  try {
+    await p;
+  } catch (e) {
+    if (e instanceof Error) return e;
+    throw e;
+  }
+  throw new Error("expected the call to reject, but it resolved");
+}
+
+/** rejectionOf for the sites that assert a StaleGuardError: the
+ *  rejection is returned on its exact type, anything else rethrows. */
+async function staleGuardRejection(p: Promise<unknown>): Promise<StaleGuardError> {
+  const err = await rejectionOf(p);
+  if (err instanceof StaleGuardError) return err;
+  throw err;
+}
 
 describe("verifyStaleGuard (unit, injected base-state reader)", () => {
   test("matching precondition verifies cleanly", async () => {
@@ -69,9 +86,7 @@ describe("verifyStaleGuard (unit, injected base-state reader)", () => {
   });
 
   test("drifted base -> STALE_APPROVAL", async () => {
-    const err = await verifyStaleGuard("synthetic-site", [setOp()], precondition(), readerFor(BASE_DRIFTED)).catch(
-      (e) => e,
-    );
+    const err = await staleGuardRejection(verifyStaleGuard("synthetic-site", [setOp()], precondition(), readerFor(BASE_DRIFTED)));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("STALE_APPROVAL");
     expect(err.message).toMatch(/Nothing was executed/);
@@ -87,20 +102,18 @@ describe("verifyStaleGuard (unit, injected base-state reader)", () => {
         note: "rebased",
       },
     });
-    const err = await verifyStaleGuard("synthetic-site", [rebased], precondition(), readerFor(BASE_AT_APPROVAL)).catch(
-      (e) => e,
-    );
+    const err = await staleGuardRejection(verifyStaleGuard("synthetic-site", [rebased], precondition(), readerFor(BASE_AT_APPROVAL)));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("PRECONDITION_CHANGED");
   });
 
   test("op count change vs approved -> PRECONDITION_CHANGED", async () => {
-    const err = await verifyStaleGuard(
+    const err = await staleGuardRejection(verifyStaleGuard(
       "synthetic-site",
       [setOp(), setOp({ intentId: "pi-synthetic-guard-2" })],
       precondition(),
       readerFor(BASE_AT_APPROVAL),
-    ).catch((e) => e);
+    ));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("PRECONDITION_CHANGED");
   });
@@ -114,9 +127,7 @@ describe("verifyStaleGuard (unit, injected base-state reader)", () => {
         note: "spoofed authority",
       },
     });
-    const err = await verifyStaleGuard("synthetic-site", [swapped], precondition(), readerFor(BASE_AT_APPROVAL)).catch(
-      (e) => e,
-    );
+    const err = await staleGuardRejection(verifyStaleGuard("synthetic-site", [swapped], precondition(), readerFor(BASE_AT_APPROVAL)));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("PRECONDITION_CHANGED");
   });
@@ -127,9 +138,7 @@ describe("verifyStaleGuard (unit, injected base-state reader)", () => {
     const baseOnly = precondition({ proposalDigests: undefined, authority: undefined });
     const ok = await verifyStaleGuard("synthetic-site", [clearOp], baseOnly, readerFor(BASE_AT_APPROVAL));
     expect(ok.baseSpecDigest).toBe(BASE_AT_APPROVAL);
-    const err = await verifyStaleGuard("synthetic-site", [clearOp], baseOnly, readerFor(BASE_DRIFTED)).catch(
-      (e) => e,
-    );
+    const err = await staleGuardRejection(verifyStaleGuard("synthetic-site", [clearOp], baseOnly, readerFor(BASE_DRIFTED)));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("STALE_APPROVAL");
   });
@@ -172,7 +181,7 @@ describe("emitOverlayEvent stale guard (integration, fake gateway)", () => {
   });
 
   afterAll((done) => {
-    server.close(() => done());
+    server.close(() => { done(); });
   });
 
   beforeEach(() => {
@@ -181,11 +190,11 @@ describe("emitOverlayEvent stale guard (integration, fake gateway)", () => {
   });
 
   test("drift -> STALE_APPROVAL with ZERO writes", async () => {
-    const err = await emitOverlayEvent("synthetic-site", [setOp()], {
+    const err = await staleGuardRejection(emitOverlayEvent("synthetic-site", [setOp()], {
       timeoutMs: 5000,
       staleGuard: precondition(),
       staleGuardReadBaseState: readerFor(BASE_DRIFTED),
-    }).catch((e) => e);
+    }));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("STALE_APPROVAL");
     expect(posts).toHaveLength(0);
@@ -193,7 +202,7 @@ describe("emitOverlayEvent stale guard (integration, fake gateway)", () => {
 
   test("authorization revoked while queued -> zero external writes", async () => {
     let authorized = true;
-    const resolveCurrent = jest.fn(async () => { if (!authorized) throw new Error("authorization revoked"); });
+    const resolveCurrent = jest.fn(() => { if (!authorized) return Promise.reject(new Error("authorization revoked")); return Promise.resolve(); });
     // Authorization at queue time exists; the source read models the wait
     // before consequential execution, during which the grant is revoked.
     await resolveCurrent();
@@ -233,11 +242,11 @@ describe("emitOverlayEvent stale guard (integration, fake gateway)", () => {
 
   test("Q-P0-04 regression: WRONG_JOURNAL preflight still fires first, zero POSTs", async () => {
     marker = "evil-journal@fake";
-    const err = await emitOverlayEvent("synthetic-site", [setOp()], {
+    const err = await rejectionOf(emitOverlayEvent("synthetic-site", [setOp()], {
       timeoutMs: 5000,
       staleGuard: precondition(),
       staleGuardReadBaseState: readerFor(BASE_DRIFTED),
-    }).catch((e) => e);
+    }));
     expect(err).not.toBeInstanceOf(StaleGuardError);
     expect(err.message).toMatch(/WRONG_JOURNAL/);
     expect(posts).toHaveLength(0);
@@ -246,13 +255,13 @@ describe("emitOverlayEvent stale guard (integration, fake gateway)", () => {
   test("H2: concurrent approve between derive and execute -> STALE_APPROVAL with ZERO writes", async () => {
     const refA = h2Ref("pi-A", "11", "evt-1", "2026-09-28T02:00:00Z");
     const refB = h2Ref("pi-B", "22", "evt-2", "2026-09-28T02:01:00Z");
-    const err = await emitOverlayEvent("synthetic-site", [setOp()], {
+    const err = await staleGuardRejection(emitOverlayEvent("synthetic-site", [setOp()], {
       timeoutMs: 5000,
       staleGuard: h2Precondition([refA]),
       staleGuardReadBaseState: readerFor(BASE_AT_APPROVAL),
       // The journal moved after derive: a second approval landed first.
-      staleGuardReadJournal: async () => [refA, refB],
-    }).catch((e) => e);
+      staleGuardReadJournal: () => Promise.resolve([refA, refB]),
+    }));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("STALE_APPROVAL");
     expect(posts).toHaveLength(0);
@@ -261,13 +270,13 @@ describe("emitOverlayEvent stale guard (integration, fake gateway)", () => {
   test("H2: concurrent clear between derive and execute -> STALE_APPROVAL with ZERO writes", async () => {
     const refA = h2Ref("pi-A", "11", "evt-1", "2026-09-28T02:00:00Z");
     const refB = h2Ref("pi-B", "22", "evt-2", "2026-09-28T02:01:00Z");
-    const err = await emitOverlayEvent("synthetic-site", [setOp()], {
+    const err = await staleGuardRejection(emitOverlayEvent("synthetic-site", [setOp()], {
       timeoutMs: 5000,
       staleGuard: h2Precondition([refA, refB]),
       staleGuardReadBaseState: readerFor(BASE_AT_APPROVAL),
       // A clear removed pi-B from the journaled set after derive.
-      staleGuardReadJournal: async () => [refA],
-    }).catch((e) => e);
+      staleGuardReadJournal: () => Promise.resolve([refA]),
+    }));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("STALE_APPROVAL");
     expect(posts).toHaveLength(0);
@@ -279,7 +288,7 @@ describe("emitOverlayEvent stale guard (integration, fake gateway)", () => {
       timeoutMs: 5000,
       staleGuard: h2Precondition([refA]),
       staleGuardReadBaseState: readerFor(BASE_AT_APPROVAL),
-      staleGuardReadJournal: async () => [refA],
+      staleGuardReadJournal: () => Promise.resolve([refA]),
     });
     expect(result.eventId).toBe("fyd-ovl-synthetic-guard-1");
     expect(posts).toHaveLength(1);
@@ -323,8 +332,8 @@ function h2Precondition(refs: JournaledDirectiveRef[]): StaleGuardPrecondition {
 
 const h2JournalFor =
   (refs: JournaledDirectiveRef[]): StaleGuardJournalReader =>
-  async () =>
-    refs;
+  () =>
+    Promise.resolve(refs);
 
 function h2JournalOverlay(
   eventId: string,
@@ -413,13 +422,13 @@ describe("H2 layered drift key (verifyStaleGuard, injected journal reader)", () 
   test("concurrent approve (new directive) between derive and execute -> STALE_APPROVAL", async () => {
     const refA = h2Ref("pi-A", "11", "evt-1", "2026-09-28T02:00:00Z");
     const refB = h2Ref("pi-B", "22", "evt-2", "2026-09-28T02:01:00Z");
-    const err = await verifyStaleGuard(
+    const err = await staleGuardRejection(verifyStaleGuard(
       "synthetic-site",
       [setOp()],
       h2Precondition([refA]),
       readerFor(BASE_AT_APPROVAL),
       h2JournalFor([refA, refB]),
-    ).catch((e) => e);
+    ));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("STALE_APPROVAL");
     expect(err.message).toMatch(/directive set moved/);
@@ -429,13 +438,13 @@ describe("H2 layered drift key (verifyStaleGuard, injected journal reader)", () 
   test("concurrent clear (directive removed) -> STALE_APPROVAL", async () => {
     const refA = h2Ref("pi-A", "11", "evt-1", "2026-09-28T02:00:00Z");
     const refB = h2Ref("pi-B", "22", "evt-2", "2026-09-28T02:01:00Z");
-    const err = await verifyStaleGuard(
+    const err = await staleGuardRejection(verifyStaleGuard(
       "synthetic-site",
       [setOp()],
       h2Precondition([refA, refB]),
       readerFor(BASE_AT_APPROVAL),
       h2JournalFor([refA]),
-    ).catch((e) => e);
+    ));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("STALE_APPROVAL");
   });
@@ -444,13 +453,13 @@ describe("H2 layered drift key (verifyStaleGuard, injected journal reader)", () 
     const refA = h2Ref("pi-A", "11", "evt-1", "2026-09-28T02:00:00Z");
     const refB = h2Ref("pi-B", "22", "evt-2", "2026-09-28T02:01:00Z");
     const refA2 = h2Ref("pi-A", "33", "evt-3", "2026-09-28T02:02:00Z");
-    const err = await verifyStaleGuard(
+    const err = await staleGuardRejection(verifyStaleGuard(
       "synthetic-site",
       [setOp()],
       h2Precondition([refA, refB]),
       readerFor(BASE_AT_APPROVAL),
       h2JournalFor([refB, refA2]),
-    ).catch((e) => e);
+    ));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("STALE_APPROVAL");
   });
@@ -469,16 +478,15 @@ describe("H2 layered drift key (verifyStaleGuard, injected journal reader)", () 
 
   test("journal read failure fails closed (throws, no silent skip)", async () => {
     const refA = h2Ref("pi-A", "11", "evt-1", "2026-09-28T02:00:00Z");
-    const boom: StaleGuardJournalReader = async () => {
-      throw new Error("journal down");
-    };
-    const err = await verifyStaleGuard(
+    const boom: StaleGuardJournalReader = () =>
+      Promise.reject(new Error("journal down"));
+    const err = await rejectionOf(verifyStaleGuard(
       "synthetic-site",
       [setOp()],
       h2Precondition([refA]),
       readerFor(BASE_AT_APPROVAL),
       boom,
-    ).catch((e) => e);
+    ));
     expect(err).not.toBeInstanceOf(StaleGuardError);
     expect(err.message).toMatch(/journal down/);
   });
@@ -493,13 +501,13 @@ describe("H2 layered drift key (verifyStaleGuard, injected journal reader)", () 
         note: "timestamp swapped",
       },
     });
-    const err = await verifyStaleGuard(
+    const err = await staleGuardRejection(verifyStaleGuard(
       "synthetic-site",
       [swapped],
       h2Precondition([refA]),
       readerFor(BASE_AT_APPROVAL),
       h2JournalFor([refA]),
-    ).catch((e) => e);
+    ));
     expect(err).toBeInstanceOf(StaleGuardError);
     expect(err.code).toBe("PRECONDITION_CHANGED");
   });

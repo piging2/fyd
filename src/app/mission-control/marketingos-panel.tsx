@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * MarketingOS projection panel — rendered as a tab on the EXISTING Mission
+ * MarketingOS projection panel: rendered as a tab on the EXISTING Mission
  * Control page (one MC surface; no sibling dashboard).
  *
  * Reads the deterministic projectMarketingOS projection from
@@ -142,6 +142,26 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
+// The two marketingos API responses are external JSON; these record
+// exactly the fields this panel reads, with the producing routes'
+// own types for the string fields; the two payload fields stay
+// unknown-typed and are cast to the panel's own types at consumption.
+interface MissionsResponse {
+  ok?: boolean;
+  error?: string;
+  detail?: string | null;
+  missions?: unknown;
+}
+
+interface ProjectionResponse {
+  ok?: boolean;
+  error?: string;
+  detail?: string | null;
+  as_of?: string;
+  journal?: string;
+  projection?: unknown;
+}
+
 export default function MarketingOSPanel() {
   const [missions, setMissions] = useState<MissionSummary[] | null>(null);
   const [missionsErr, setMissionsErr] = useState<string | null>(null);
@@ -154,7 +174,7 @@ export default function MarketingOSPanel() {
 
   useEffect(() => {
     fetch("/api/mc/marketingos/missions", { cache: "no-store" })
-      .then((r) => r.json().then((j) => ({ http: r.status, j })))
+      .then((r) => r.json().then((j: MissionsResponse) => ({ http: r.status, j })))
       .then(({ http, j }) => {
         if (http !== 200 || !j.ok) {
           setMissionsErr(`missions list failed: ${String(j.error ?? http)} ${String(j.detail ?? "")}`);
@@ -171,7 +191,6 @@ export default function MarketingOSPanel() {
         }
       })
       .catch((e) => setMissionsErr(`missions list error: ${String(e)}`));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadProjection = useCallback((missionId: string | null) => {
@@ -179,7 +198,7 @@ export default function MarketingOSPanel() {
     setProjErr(null);
     const qs = missionId ? `?mission_id=${encodeURIComponent(missionId)}` : "";
     fetch(`/api/mc/marketingos${qs}`, { cache: "no-store" })
-      .then((r) => r.json().then((j) => ({ http: r.status, j })))
+      .then((r) => r.json().then((j: ProjectionResponse) => ({ http: r.status, j })))
       .then(({ http, j }) => {
         setLoading(false);
         if (http !== 200 || !j.ok) {
@@ -205,12 +224,12 @@ export default function MarketingOSPanel() {
   const p = projection;
   const emptyState =
     p !== null &&
-    (p.mission as Field).state === "NOT_STARTED" &&
-    (p.mission as Field).reason === "NO_REACHED_MISSION";
+    p.mission.state === "NOT_STARTED" &&
+    p.mission.reason === "NO_REACHED_MISSION";
 
   return (
     <>
-      <Card title="MarketingOS projection — live PING journal (read-only)">
+      <Card title="MarketingOS projection: live PING journal (read-only)">
         <p style={{ fontSize: 12, color: "#9a97b5", marginTop: 0 }}>
           Deterministic projection of INTELLIGENCE_RESEARCH missions from the live
           journal. The projection never writes, never invents: every KNOWN field cites
@@ -234,7 +253,7 @@ export default function MarketingOSPanel() {
                   fontSize: 12,
                 }}
               >
-                <option value="">(none) — honest empty state</option>
+                <option value="">(none): honest empty state</option>
                 {missions.map((m) => (
                   <option key={m.mission_id} value={m.mission_id}>
                     {m.mission_id.slice(0, 13)}… · {m.status} · {m.tenant_id} · {m.event_count ?? 0} events
@@ -275,7 +294,7 @@ export default function MarketingOSPanel() {
       {projErr && <p style={{ color: "#ff8a8a", fontSize: 13 }}>{projErr}</p>}
 
       {p && emptyState && (
-        <Card title="Empty state — honest, no mission">
+        <Card title="Empty state: honest, no mission">
           <p style={{ fontSize: 13, color: "#eceaf6" }}>
             No reached INTELLIGENCE_RESEARCH mission exists for this objective. Research
             state: NOT STARTED. Evidence: NONE. Claims: NONE. Opportunity assessment:
@@ -302,7 +321,13 @@ export default function MarketingOSPanel() {
             {p.research.claims.state === "KNOWN" &&
               (((p.research.claims.data as { claims: Array<Record<string, unknown>> })?.claims) ?? []).map(
                 (c) => {
-                  const verdict = String(c.verdict ?? "UNCLEAR");
+                  const claim = c as {
+                    verdict?: string;
+                    subject?: string | null;
+                    text?: string | null;
+                    source?: { upstream_event_id?: string };
+                  };
+                  const verdict = claim.verdict ?? "UNCLEAR";
                   return (
                     <div
                       key={String(c.claim_id)}
@@ -316,14 +341,14 @@ export default function MarketingOSPanel() {
                     >
                       <Badge text={verdict} style={VERDICT_STYLE[verdict] ?? VERDICT_STYLE.UNCLEAR} />
                       <span style={{ fontSize: 12, color: "#9a97b5", fontFamily: "monospace" }}>
-                        {String(c.claim_id).slice(0, 13)} · {String(c.subject ?? "")}
+                        {String(c.claim_id).slice(0, 13)} · {claim.subject ?? ""}
                       </span>
                       <p style={{ fontSize: 13, color: "#eceaf6", margin: "6px 0" }}>
-                        {String(c.text ?? "")}
+                        {claim.text ?? ""}
                       </p>
                       <div style={{ fontSize: 11, color: "#6a6785", fontFamily: "monospace" }}>
                         drill-down: claim {String(c.claim_id).slice(0, 13)} → upstream{" "}
-                        {String((c.source as Record<string, unknown>)?.upstream_event_id ?? "").slice(0, 13)} →
+                        {String(claim.source?.upstream_event_id ?? "").slice(0, 13)} →
                         observations{" "}
                         {JSON.stringify(
                           ((c.source as Record<string, unknown>)?.observation_event_ids as string[] ?? []).map(

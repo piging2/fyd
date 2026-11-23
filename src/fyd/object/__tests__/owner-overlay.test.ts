@@ -171,14 +171,14 @@ describe("owner overlay composition", () => {
     const before = JSON.stringify(source);
     applyOwnerFieldCorrections(source, SITE);
     expect(JSON.stringify(source)).toBe(before);
-    expect(rawFieldValue(source.objects[0] as PingObject, "phone")).toBe(SOURCE_PHONE);
+    expect(rawFieldValue(source.objects[0], "phone")).toBe(SOURCE_PHONE);
   });
 
   test("no correction composes nothing", () => {
     const { graph, applied } = applyOwnerFieldCorrections(graphWith(SOURCE_PHONE), SITE);
     expect(applied).toEqual([]);
-    expect(rawFieldValue(graph.objects[0] as PingObject, "phone")).toBe(SOURCE_PHONE);
-    expect((graph.objects[0] as PingObject).ownerFieldCorrections).toBeUndefined();
+    expect(rawFieldValue(graph.objects[0], "phone")).toBe(SOURCE_PHONE);
+    expect((graph.objects[0]).ownerFieldCorrections).toBeUndefined();
   });
 
   test("source re-observation does not erase the owner value; drift is flagged", () => {

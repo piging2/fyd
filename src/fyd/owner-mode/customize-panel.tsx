@@ -99,7 +99,7 @@ export function CustomizePanel({ siteId, compact = false }: { siteId: string; co
       const res = await fetch("/api/fyd/customize?siteId=" + encodeURIComponent(siteId) + "&view=inspect");
       const doc = (await res.json()) as (InspectData & { ok: boolean }) | ApiError;
       if ("ok" in doc && doc.ok) {
-        setInspect(doc as InspectData);
+        setInspect(doc);
         setInspectError(null);
       } else {
         setInspectError((doc as ApiError).error ?? "inspect failed");
@@ -126,7 +126,7 @@ export function CustomizePanel({ siteId, compact = false }: { siteId: string; co
       });
       const doc = (await res.json()) as (ParsedProposal & { ok: boolean }) | ApiError;
       if ("ok" in doc && doc.ok) {
-        setProposal(doc as ParsedProposal);
+        setProposal(doc);
         setPhase("proposed");
       } else {
         setError(doc as ApiError);
@@ -156,7 +156,7 @@ export function CustomizePanel({ siteId, compact = false }: { siteId: string; co
         setPhase("done");
         void refreshInspect();
       } else {
-        setError(doc as ApiError);
+        setError(doc);
         setPhase("proposed");
       }
     } catch (e) {
@@ -211,7 +211,7 @@ export function CustomizePanel({ siteId, compact = false }: { siteId: string; co
         />
         <button
           type="button"
-          onClick={runParse}
+          onClick={() => { void runParse(); }}
           disabled={!text.trim() || phase === "proposing" || phase === "approving"}
           style={{
             background: compact ? "#142d31" : "#f5c518",
@@ -293,7 +293,7 @@ export function CustomizePanel({ siteId, compact = false }: { siteId: string; co
           </div>}
           <button
             type="button"
-            onClick={runApprove}
+            onClick={() => { void runApprove(); }}
             disabled={phase !== "proposed"}
             style={{
               marginTop: 12,
@@ -383,7 +383,7 @@ export function CustomizePanel({ siteId, compact = false }: { siteId: string; co
                   ) : null}
                   <button
                     type="button"
-                    onClick={() => runClear(d.intentId)}
+                    onClick={() => { void runClear(d.intentId); }}
                     style={{
                       background: "transparent",
                       color: "#f5c518",

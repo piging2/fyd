@@ -169,9 +169,8 @@ export function tenantScopedDir(baseDir: string, tenantId: string): string {
     );
   }
   // join() with a validated slug cannot escape baseDir.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { join } = require("node:path") as typeof import("node:path");
-  return join(baseDir, tenantId);
+  const path = require("node:path") as typeof import("node:path");
+  return path.join(baseDir, tenantId);
 }
 
 /**

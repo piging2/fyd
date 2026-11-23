@@ -242,8 +242,8 @@ function claimClassFor(obj: PingObject, isRelationship: boolean): string {
   if (kind === "overlay-authored") return "DEMO_SYNTHETIC";
   if (kind === "canonical-journal") return "DIRECT_FACT";
   if (kind === "owner" || kind === "owner-asserted") return "owner_authorship";
-  if (typeof obj.fields["claimKind"] === "string" && (obj.fields["claimKind"] as string).length > 0) {
-    return obj.fields["claimKind"] as string;
+  if (typeof obj.fields["claimKind"] === "string" && (obj.fields["claimKind"]).length > 0) {
+    return obj.fields["claimKind"];
   }
   return "website_statement";
 }
@@ -500,7 +500,7 @@ function claimsServices(target: PingObject, view: GraphView): GradedClaim[] {
     if (rel) evidence.push(evidenceForRelationship(rel, view.byId));
     return {
       text: `Offers: ${s.title || s.id}.`,
-      grade: "SUPPORTED" as ConciergeGrade,
+      grade: "SUPPORTED",
       evidence,
       bindings: [bindTitle(target), bindTitle(s)],
       relationshipIds: rel ? [rel.id] : [],
@@ -814,7 +814,7 @@ function claimsUnknowns(target: PingObject, view: GraphView): { claims: GradedCl
   const missing = UNKNOWN_PROBES.filter((p) => !p.has(view));
   const claims: GradedClaim[] = missing.map((p) => ({
     text: `${p.fact}: unknown. The site data has no record of it, so I will not guess.`,
-    grade: "UNKNOWN" as ConciergeGrade,
+    grade: "UNKNOWN",
     evidence: [],
   }));
   if (missing.length === 0) {

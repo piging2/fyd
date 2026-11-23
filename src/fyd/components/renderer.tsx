@@ -16,7 +16,6 @@ import type { CSSProperties, ReactNode } from "react";
 import { getComponentDef } from "./registry";
 import { AskFydWidget } from "./ask-fyd-widget";
 import { ObjectRail, pingObjectToView, richestObject } from "./object-rail";
-import { ObjectCard } from "../object/card";
 import { ObjectCircle } from "../ui/object-circle";
 import { WhyThis, mediaWhyThisSteps, type EvidenceStep } from "../ui/why-this";
 import { whyThisClaimChainFor } from "../object/why-this-steps";
@@ -39,7 +38,7 @@ import {
 } from "../object/object-projection";
 import { FydContactLink } from "./contact-link";
 import { HeroSection } from "./hero-section";
-import { schemaRole, ownerRelationshipTarget } from "../sitespec/schemas";
+import { schemaRole } from "../sitespec/schemas";
 import {
   entranceDurationMs,
   motionTokensForTheme,
@@ -57,7 +56,6 @@ import {
 import type { DisplayMedia } from "../media/select";
 import type {
   FYDPage,
-  FYDQuery,
   FYDPresentation,
   FYDSection,
   FYDSiteSpec,
@@ -344,7 +342,7 @@ function characterOf(theme: FYDThemeTokens): FYDLayoutCharacter {
  * warning, and the browser honors it.
  */
 function vtNameStyle(name: string | undefined): CSSProperties {
-  return name ? ({ viewTransitionName: name } as unknown as CSSProperties) : {};
+  return name ? ({ viewTransitionName: name }) : {};
 }
 
 /**
@@ -1033,7 +1031,7 @@ function SectionShell({
           // section's identity across generated pages when MORPH is active.
           viewTransitionName:
             sectionId && morph ? sectionViewTransitionName(sectionId) : undefined,
-        } as CSSProperties
+        }
       }
     >
       {heading && (
@@ -1152,7 +1150,7 @@ function Hero({ objects, presentation, theme, ctx }: SectionProps) {
       </div>    </HeroSection>
   );
 }
-function BusinessSummary({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
+function BusinessSummary({ section, objects, presentation, theme, ctx }: SectionProps) {
   const o = objects[0];
   if (!o) return null;
   const title = boundTitle(ctx, o);
@@ -1313,7 +1311,7 @@ function ProductsSection(props: SectionProps) {
   );
 }
 
-function LocationsSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
+function LocationsSection({ section, objects, presentation, theme, ctx }: SectionProps) {
   if (objects.length === 0) return null;
   return (
     <SectionShell
@@ -1869,7 +1867,7 @@ function boundOwnerTitle(ctx: RenderContext): string {
  * the verified values, never the raw object fields. An unbound object never
  * features: no binding, no factual output.
  */
-function ObjectRailSection({ section, objects, presentation, theme, ctx, motionIndex }: SectionProps) {
+function ObjectRailSection({ objects, presentation, theme, ctx }: SectionProps) {
   // Item 4: muted copy binds the mutedForeground role, never opacity-faded ink.
   const roles = resolveThemeRoles(theme);
   const bound = objects.filter((o) => boundTitle(ctx, o) !== undefined);

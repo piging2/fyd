@@ -187,7 +187,6 @@ export function resolveQueryObjects(
   ownerId: string,
 ): PingObject[] {
   const byId = new Map(graph.objects.map((o) => [o.id, o]));
-  const pub = (o: PingObject) => (o.visibility === "public" ? o : null);
   switch (query.kind) {
     case "owner": {
       const o = byId.get(ownerId);

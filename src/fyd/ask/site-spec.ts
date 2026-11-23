@@ -40,8 +40,8 @@ export interface SiteSpecProvider {
 }
 
 const nullProvider: SiteSpecProvider = {
-  async getSummary() {
-    return null;
+  getSummary() {
+    return Promise.resolve(null);
   },
 };
 

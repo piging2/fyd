@@ -46,11 +46,10 @@ import { installDirOverrides, makeTempDir } from "./helpers";
  * under test; every other renameSync delegates to the real one.
  */
 declare global {
-  // eslint-disable-next-line no-var
   var __fydCrashAtRename: boolean | undefined;
 }
 jest.mock("node:fs", () => {
-  const actual = jest.requireActual("node:fs") as typeof import("node:fs");
+  const actual = jest.requireActual<typeof import("node:fs")>("node:fs");
   return {
     ...actual,
     renameSync: (oldPath: string, newPath: string) => {
@@ -422,7 +421,7 @@ describe("crash window: owner event log commit boundary", () => {
 
     // Recovery: the next successful append continues the sequence with no
     // gap and no duplicate.
-    const beforeEvents = JSON.parse(beforeA).events as unknown[];
+    const beforeEvents = (JSON.parse(beforeA) as { events: unknown[] }).events;
     const applied = applyOwnerCommand(
       "site-a",
       { type: "set-contact-field", field: "phone", value: "555-000-0000" },
@@ -430,8 +429,9 @@ describe("crash window: owner event log commit boundary", () => {
       new Map(),
       { actorLabel: "crash-window-test" },
     );
-    const afterEvents = JSON.parse(readFileSync(join(dir, "site-a.json"), "utf8"))
-      .events as { seq: number }[];
+    const afterEvents = (
+      JSON.parse(readFileSync(join(dir, "site-a.json"), "utf8")) as { events: { seq: number }[] }
+    ).events;
     expect(afterEvents).toHaveLength(beforeEvents.length + 1);
     expect(afterEvents[afterEvents.length - 1].seq).toBe(beforeEvents.length);
     expect(applied.fieldCorrections?.["phone"]?.ownerValue).toBe("555-000-0000");

@@ -11,7 +11,7 @@
  */
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { ClaimError, type ClaimState, type ResourceClaim } from "./types";
+import { ClaimError, type ResourceClaim } from "./types";
 import { isValidResourceId } from "./machine";
 
 const CLAIM_STATES: ReadonlySet<string> = new Set([
@@ -42,7 +42,7 @@ function isValidClaim(v: unknown): v is ResourceClaim {
     typeof r.resourceId === "string" &&
     r.kind === "fyd-site" &&
     typeof state === "string" &&
-    CLAIM_STATES.has(state as ClaimState) &&
+    CLAIM_STATES.has(state) &&
     (r.sourceUrl === null || typeof r.sourceUrl === "string") &&
     typeof r.observedAt === "string" &&
     (r.claimedBy === null || typeof r.claimedBy === "object") &&

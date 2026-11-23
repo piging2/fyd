@@ -8,6 +8,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 // Set environment variables before importing modules
 process.env.KV_REST_API_URL = 'https://test.redis.com';
@@ -43,8 +45,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
 
   describe('getAssignment Action', () => {
     it('should implement getAssignment action', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -52,8 +52,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should require slotSlug parameter', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -62,8 +60,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should return revision 0 for missing assignment', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -71,8 +67,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should return current revision for existing assignment', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -82,8 +76,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
 
   describe('Visual Slot Authority Mapping', () => {
     it('should map hero-background to brand-hero-background', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -91,8 +83,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should map homepage-owner-portrait-slot to brand-portrait-homepage', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -100,8 +90,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should map service-card-{slug} to {slug}', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -110,8 +98,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should resolve on server-side, not client-side', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -120,8 +106,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should reject unknown target slots', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -132,8 +116,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
 
   describe('CAS Revision Read Integration', () => {
     it('should return assignmentKey in response', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -141,8 +123,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should return slotSlug in response for verification', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -150,8 +130,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should call getServiceCardAssignment with resolved key', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -161,8 +139,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
 
   describe('Workbench Authentication Boundary', () => {
     it('should require Workbench authentication for getAssignment', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -172,8 +148,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should check authentication before processing any action', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -189,8 +163,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
 
   describe('Existing Actions Still Functional', () => {
     it('should still implement getPublishedMediaAssets action', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -199,8 +171,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should still implement list action', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 
@@ -208,8 +178,6 @@ describe.skip('Removed Workbench media-authority route (legacy assertions retain
     });
 
     it('should still implement getByDriveFileId action', () => {
-      const fs = require('fs');
-      const path = require('path');
       const routePath = path.join(__dirname, '../../app/api/workbench/media-authority/route.ts');
       const routeCode = fs.readFileSync(routePath, 'utf8');
 

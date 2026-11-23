@@ -343,7 +343,7 @@ export async function resolvePublicMedia(id: string): Promise<Media | null> {
   }
 
   // ADDITIONAL VALIDATION: Check for Drive URLs in variants
-  const checkForDriveUrl = (obj: any): boolean => {
+  const checkForDriveUrl = (obj: unknown): boolean => {
     if (!obj) return false;
     if (typeof obj === 'string' && obj.startsWith('/api/drive/')) {
       return true;
@@ -360,8 +360,8 @@ export async function resolvePublicMedia(id: string): Promise<Media | null> {
   }
 
   // REJECT: Media with thumbnailProxyUrl (Drive reference)
-  if ((media as any).thumbnailProxyUrl) {
-    console.error('[PUBLIC_MEDIA_GATE] REJECTED: contains thumbnailProxyUrl', { id, thumbnailProxyUrl: (media as any).thumbnailProxyUrl });
+  if ((media as Media & { thumbnailProxyUrl?: string }).thumbnailProxyUrl) {
+    console.error('[PUBLIC_MEDIA_GATE] REJECTED: contains thumbnailProxyUrl', { id, thumbnailProxyUrl: (media as Media & { thumbnailProxyUrl?: string }).thumbnailProxyUrl });
     return null;
   }
 
@@ -437,7 +437,7 @@ export function getProjectBeforeAfter(projectId: string): { before: Media | null
  */
 export function getProjectMediaByRole(projectId: string, role: string): Media | null {
   const projectMedia = getProjectMedia(projectId);
-  return projectMedia.find((m: Media) => m.roles.includes(role as any)) || null;
+  return projectMedia.find((m: Media) => m.roles.some((r) => r === role)) || null;
 }
 
 /**
@@ -450,7 +450,7 @@ export function getProjectMediaByRole(projectId: string, role: string): Media | 
  * 3. Null (intentional empty state)
  */
 export async function getFeaturedServiceMedia(serviceSlug: string): Promise<Media | null> {
-  const manifest = loadMediaManifest();
+  loadMediaManifest();
   
   // Get projects for this service from Projects Authority
   const projects = getProjectsByServiceSlug(serviceSlug);

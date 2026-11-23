@@ -391,7 +391,7 @@ export function applyExtendedSitePatch(spec: FYDSiteSpec, proposal: SitePatchBod
     diff["query"] !== undefined;
   if (!hasExtended) return applySitePatch(spec, proposal);
 
-  const next: FYDSiteSpec = JSON.parse(JSON.stringify(spec));
+  const next: FYDSiteSpec = JSON.parse(JSON.stringify(spec)) as FYDSiteSpec;
   if (diff["addPage"] !== undefined) {
     const p = diff["addPage"] as { slug: string; title: string; navLabel: string };
     if (!next.pages.some((pg) => pg.slug === p.slug)) {
@@ -495,7 +495,7 @@ export function previewSitePatch(spec: FYDSiteSpec, op: SitePatchOp): PreviewCar
     }
     case "SET_FEATURED_OBJECT": {
       const sec = findPage(spec, op.pageSlug)?.sections.find((s) => s.id === op.sectionId);
-      const cur = Array.isArray(sec?.presentation.featuredIds) ? sec!.presentation.featuredIds! : [];
+      const cur = Array.isArray(sec?.presentation.featuredIds) ? sec.presentation.featuredIds : [];
       return {
         title: "Set featured objects in '" + op.sectionId + "'",
         before: ["Featured: " + (cur.join(", ") || "(none)")],

@@ -23,6 +23,7 @@ import {
 import { planSite } from "@/fyd/builder/planner";
 import { strategyForSite } from "@/fyd/builder/strategy-for-site";
 import type { ObjectGraph } from "@/fyd/sitespec/types";
+import type { PingObject } from "@/lib/ping/types";
 import type { PingProjection } from "@/fyd/data/ping-object-source";
 
 const SITE_ID = "ping-fyd";
@@ -87,8 +88,9 @@ test("conflicting observation (duplicate id, disagreeing title) is rejected: not
   const business = tainted.objects.find((o) => o.id === "ping-fyd-business");
   expect(business).toBeDefined();
   // A second source asserts a conflicting identity for the same id.
+  const businessClone = JSON.parse(JSON.stringify(business)) as PingObject;
   tainted.objects.push({
-    ...JSON.parse(JSON.stringify(business)),
+    ...businessClone,
     title: "PING Social (totally different business)",
   });
   let spec: unknown = "unreached-sentinel";

@@ -1,5 +1,5 @@
 /**
- * P0 W4: /api/mc/approvals — the harvested ApprovalRequest primitive
+ * P0 W4: /api/mc/approvals: the harvested ApprovalRequest primitive
  * (dormant branch mc/approval-request, canonical model) exposed over HTTP
  * as the Mission Control surface.
  *
@@ -70,6 +70,46 @@ const STORE_PATH = '/home/nolan/projects/ping/var/mc-approvals.json';
 const OUTREACH_PATH = '/home/nolan/workspace/outreach';
 const DIGEST_RE = /^[0-9a-f]{64}$/;
 
+// The approval_cli JSON boundary: the CLI's stdout and the on-disk store
+// are genuinely external data. These interfaces record exactly the shape
+// this route reads from them; fields are unknown-typed because the route
+// re-validates or null-coalesces every value it consumes.
+interface ApprovalRecord {
+  status?: unknown;
+  tenant?: unknown;
+  capability?: unknown;
+  actor?: unknown;
+  proposal_digest?: unknown;
+  decided_at?: unknown;
+  decided_by?: unknown;
+}
+
+interface ApprovalStore {
+  records?: Record<string, ApprovalRecord>;
+}
+
+interface ApprovalCliResult {
+  ok?: unknown;
+  record?: ApprovalRecord;
+  idempotent?: unknown;
+  how?: unknown;
+  event?: unknown;
+  reason?: unknown;
+  [key: string]: unknown;
+}
+
+type CliOutcome =
+  | { ok: true; result: ApprovalCliResult }
+  | { ok: false; error: string };
+
+interface ApprovalDecisionBody {
+  proposal_id?: unknown;
+  digest?: unknown;
+  decision?: unknown;
+  reason?: unknown;
+  approver?: unknown;
+}
+
 function bad(status: number, error: string, detail?: string) {
   return Response.json({ ok: false, error, detail: detail ?? null }, { status });
 }
@@ -78,7 +118,7 @@ function bad(status: number, error: string, detail?: string) {
 // invocation. approval_cli re-verifies principal -> tenant -> capability at
 // the effect site against the same caller registry; pass the
 // already-validated caller key through the environment (never argv).
-function runCli(args: string[], callerKey = ''): { ok: boolean; result?: any; error?: string } {
+function runCli(args: string[], callerKey = ''): CliOutcome {
   let r;
   try {
     r = spawnSync('python3', ['approval_cli.py', ...args], {
@@ -98,7 +138,7 @@ function runCli(args: string[], callerKey = ''): { ok: boolean; result?: any; er
     return { ok: false, error: `approval_cli exited ${r.status}: ${(r.stderr || '').slice(0, 300)}` };
   }
   try {
-    return { ok: true, result: JSON.parse((r.stdout || '').trim()) };
+    return { ok: true, result: JSON.parse((r.stdout || '').trim()) as ApprovalCliResult };
   } catch {
     return { ok: false, error: `approval_cli returned unparsable output: ${(r.stdout || '').slice(0, 200)}` };
   }
@@ -110,16 +150,16 @@ function runCli(args: string[], callerKey = ''): { ok: boolean; result?: any; er
  * GET-only; the POST approval boundary below is untouched.
  */
 function listProposals() {
-  let store: any;
+  let store: ApprovalStore;
   try {
-    store = JSON.parse(readFileSync(STORE_PATH, 'utf8'));
+    store = JSON.parse(readFileSync(STORE_PATH, 'utf8')) as ApprovalStore;
   } catch (e) {
     return bad(500, 'approval_store_unreadable', String(e).slice(0, 200));
   }
-  const records =
+  const records: Record<string, ApprovalRecord> =
     store && store.records && typeof store.records === 'object' ? store.records : {};
   const proposals = Object.keys(records).map((id) => {
-    const r = records[id] || {};
+    const r: ApprovalRecord = records[id] || {};
     return {
       proposal_id: id,
       status: r.status ?? null,
@@ -134,7 +174,7 @@ function listProposals() {
   return Response.json({ ok: true, count: proposals.length, proposals });
 }
 
-export async function GET(req: Request) {
+export function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const proposalId = searchParams.get('proposal_id') || '';
   if (!proposalId) {
@@ -154,9 +194,9 @@ export async function POST(req: Request) {
   const gate = gateApprovalCaller(req);
   if (!gate.ok) return gate.response;
 
-  let body: any;
+  let body: ApprovalDecisionBody;
   try {
-    body = await req.json();
+    body = (await req.json()) as ApprovalDecisionBody;
   } catch {
     return bad(400, 'bad_json', 'Request body must be JSON.');
   }

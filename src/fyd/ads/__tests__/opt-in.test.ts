@@ -56,7 +56,35 @@ import {
   readSlot,
 } from "../inventory-store";
 import { OptInControls } from "../opt-in-client";
-import { readOptInState, slotReadback } from "../opt-in";
+import {
+  readOptInState,
+  slotReadback,
+  type OptInReadback,
+  type OptInSlotReadback,
+} from "../opt-in";
+
+/** Response body shapes for the opt-in route handlers driven below,
+ *  bound to the route module's exported readback types. res.json() is
+ *  untyped, so each body is bound to its shape here. */
+interface OptInPostBody {
+  ok: boolean;
+  slot: OptInSlotReadback;
+}
+
+interface OptInGetBody {
+  ok: boolean;
+  state: OptInReadback;
+}
+
+interface RouteErrorBody {
+  ok: boolean;
+  code: string;
+  message: string;
+}
+
+async function bodyAs<T>(res: Response): Promise<T> {
+  return (await res.json()) as T;
+}
 import {
   BUDGET_WINDOW_MS,
   DAILY_CLICKS_CAP,
@@ -149,7 +177,7 @@ describe("grant flow", () => {
       requestFor("POST", grantBody(), cookieFor(PUBLISHER_IDENTITY)),
     );
     expect(res.status).toBe(200);
-    const json = await res.json();
+    const json = await bodyAs<OptInPostBody>(res);
     expect(json.ok).toBe(true);
     expect(json.slot.consentStatus).toBe("active");
     expect(json.slot.disclosureTextVersion).toBe(DISCLOSURE_TEXT_VERSION);
@@ -182,7 +210,7 @@ describe("grant flow", () => {
       ),
     );
     expect(res.status).toBe(400);
-    const json = await res.json();
+    const json = await bodyAs<RouteErrorBody>(res);
     expect(json.code).toBe("opt-in-rejected");
     // Fail-closed BEFORE any write: no slot log, no projection.
     expect(existsSync(join(adsDir, "slots", SLOT_ID + ".json"))).toBe(false);
@@ -265,7 +293,7 @@ describe("revoke stops delivery", () => {
       ),
     );
     expect(revokeRes.status).toBe(200);
-    const revokeJson = await revokeRes.json();
+    const revokeJson = await bodyAs<OptInPostBody>(revokeRes);
     expect(revokeJson.slot.consentStatus).toBe("revoked");
 
     const log = slotLogText();
@@ -304,7 +332,7 @@ describe("identity is server-side only", () => {
       ),
     );
     expect(res.status).toBe(400);
-    const json = await res.json();
+    const json = await bodyAs<RouteErrorBody>(res);
     expect(json.code).toBe("invalid-opt-in-request");
     expect(listSlots(PUBLISHER)).toEqual([]);
   });
@@ -315,7 +343,7 @@ describe("identity is server-side only", () => {
       requestFor("POST", grantBody(), cookieFor(OTHER_IDENTITY)),
     );
     expect(res.status).toBe(403);
-    expect((await res.json()).code).toBe("not-loop-publisher");
+    expect((await bodyAs<RouteErrorBody>(res)).code).toBe("not-loop-publisher");
     expect(listSlots("other-tenant")).toEqual([]);
     expect(listSlots(PUBLISHER)).toEqual([]);
 
@@ -349,7 +377,7 @@ describe("flag gate", () => {
       requestFor("POST", grantBody(), cookieFor(PUBLISHER_IDENTITY)),
     );
     expect(res.status).toBe(404);
-    expect((await res.json()).code).toBe("ads-loop-disabled");
+    expect((await bodyAs<RouteErrorBody>(res)).code).toBe("ads-loop-disabled");
     expect(listSlots(PUBLISHER)).toEqual([]);
 
     const get = createAdsOptInGetHandler(offDeps);
@@ -368,7 +396,7 @@ describe("readback accuracy", () => {
 
     const before = await get(requestFor("GET", undefined, cookie));
     expect(before.status).toBe(200);
-    const beforeJson = await before.json();
+    const beforeJson = await bodyAs<OptInGetBody>(before);
     expect(beforeJson.state.publisherTenantId).toBe(PUBLISHER);
     expect(beforeJson.state.disclosureTextVersion).toBe(
       DISCLOSURE_TEXT_VERSION,
@@ -377,7 +405,7 @@ describe("readback accuracy", () => {
 
     await post(requestFor("POST", grantBody(), cookie));
     const granted = await get(requestFor("GET", undefined, cookie));
-    const grantedJson = await granted.json();
+    const grantedJson = await bodyAs<OptInGetBody>(granted);
     expect(grantedJson.state.slots).toHaveLength(1);
     expect(grantedJson.state.slots[0]).toMatchObject({
       slotId: SLOT_ID,
@@ -397,7 +425,7 @@ describe("readback accuracy", () => {
       ),
     );
     const revoked = await get(requestFor("GET", undefined, cookie));
-    const revokedJson = await revoked.json();
+    const revokedJson = await bodyAs<OptInGetBody>(revoked);
     expect(revokedJson.state.slots[0].consentStatus).toBe("revoked");
     expect(revokedJson.state.slots[0].revokedAt).not.toBeNull();
     expect(revokedJson.state.slots[0].disclosureTextVersion).toBe(

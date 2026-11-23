@@ -1,0 +1,19 @@
+{
+  "description": "S8-01 T3 warning baseline for the remainder of src (src/app, src/motion, src/services, src/types, src/config, src/__tests__, src root files) under typescript-eslint recommended-type-checked (T3 severity split, T2-shape test-file carve-out). Measurement artifact for burn-down comparison by later tranches; not a suppression mechanism. Regenerate with: node tools/lint-baseline-app-remainder.mjs",
+  "scope": "src/app/**/*.ts(x), src/motion/**/*.ts(x), src/services/**/*.ts(x), src/types/**/*.ts(x), src/config/**/*.ts(x), src/__tests__/**/*.ts(x), src/*.ts, src/*.tsx",
+  "date": "2026-11-20",
+  "errorRules": {
+    "@typescript-eslint/no-floating-promises": 0,
+    "@typescript-eslint/no-misused-promises": 0
+  },
+  "totalWarnings": 18,
+  "warningsByRule": {
+    "@typescript-eslint/require-await": 7,
+    "@typescript-eslint/no-unnecessary-type-assertion": 4,
+    "@typescript-eslint/no-unsafe-call": 2,
+    "@typescript-eslint/no-unused-vars": 2,
+    "@typescript-eslint/no-require-imports": 1,
+    "@typescript-eslint/no-unsafe-assignment": 1,
+    "@typescript-eslint/no-unsafe-return": 1
+  }
+}

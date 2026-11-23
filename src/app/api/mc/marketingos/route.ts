@@ -1,5 +1,5 @@
 /**
- * Lane MarketingOS: GET /api/mc/marketingos — the MarketingOS projection
+ * Lane MarketingOS: GET /api/mc/marketingos: the MarketingOS projection
  * served from the EXISTING Mission Control surface.
  *
  * projectMarketingOS(objective, mission_id, canonical_state, as_of) over the
@@ -25,6 +25,7 @@ import {
   canonicalJson,
   emptyMarketingOSProjection,
   projectMarketingOS,
+  type MarketingOSProjection,
 } from '../_lib/mc-marketingos';
 import { callerScope } from '../_lib/mc-tenant-gate';
 import { nowIso } from '../_lib/mc-dispatch';
@@ -53,7 +54,7 @@ export async function GET(req: Request) {
       as_of: asOf,
       journal: PING_JOURNAL_SOURCE,
       scope: scope.kind === 'tenant' ? { tenant: scope.tenant } : { operator: true },
-      projection: JSON.parse(canonicalJson(emptyMarketingOSProjection(objective))),
+      projection: JSON.parse(canonicalJson(emptyMarketingOSProjection(objective))) as MarketingOSProjection,
     });
   }
 
@@ -94,6 +95,6 @@ export async function GET(req: Request) {
     as_of: asOf,
     journal: PING_JOURNAL_SOURCE,
     scope: scope.kind === 'tenant' ? { tenant: scope.tenant } : { operator: true },
-    projection: JSON.parse(canonicalJson(projection)),
+    projection: JSON.parse(canonicalJson(projection)) as MarketingOSProjection,
   });
 }

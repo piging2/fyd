@@ -53,7 +53,7 @@ async function run(html: string, controllerId = "runner-test") {
     sourceUrl: "https://testco.example/",
     observedAt: TS,
     controllerId,
-  } as never);
+  });
 }
 
 test("every drop carries a terminal outcome from the vocabulary", async () => {
@@ -97,7 +97,7 @@ test("duplicate identical triples terminate as DUPLICATE, first wins", async () 
   // Same page twice: identical candidates emitted twice.
   const out = await runExtractionPipeline(
     [page("https://testco.example/", HTML), page("https://testco.example/", HTML)],
-    { sourceUrl: "https://testco.example/", observedAt: TS, controllerId: "runner-test" } as never,
+    { sourceUrl: "https://testco.example/", observedAt: TS, controllerId: "runner-test" },
   );
   const dups = out.report.relationshipDrops.filter((d) => d.outcome === "DUPLICATE");
   expect(dups.length).toBeGreaterThan(0);

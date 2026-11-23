@@ -19,7 +19,7 @@ function parseStagingValue(value: unknown): { mediaId: string; expectedRevision:
   if (typeof value === 'string') {
     try {
       parsed = JSON.parse(value);
-    } catch (e) {
+    } catch {
       throw new Error(`Invalid staging value: string is not valid JSON and legacy format is not supported`);
     }
   } else if (typeof value === 'object' && value !== null) {

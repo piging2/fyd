@@ -3,7 +3,7 @@ import type { MissionSummary } from "./evidence-model";
 import { compareCohort, groupFailures, MISSING_DIMENSION, type CohortFilter } from "./mission-analysis";
 type Filters = CohortFilter & { query: string };
 export function CohortAnalysis({ baseline, cohort, filters, changeFilter, selectMission }: { baseline: MissionSummary[]; cohort: MissionSummary[]; filters: Filters; changeFilter: (changes: Partial<Filters>) => void; selectMission: (id: string) => void }) {
-  const values = (field: "agent" | "capability" | "tenant") => [...new Set(baseline.flatMap(m => m[field] ? [m[field]!] : []))].sort();
+  const values = (field: "agent" | "capability" | "tenant") => [...new Set(baseline.flatMap(m => m[field] ? [m[field]] : []))].sort();
   const groups = groupFailures(cohort); const dimensions = compareCohort(baseline, cohort);
   const format = (n: number | null) => n === null ? "—" : `${n.toFixed(1)}%`;
   return <section className="mc-cohort" aria-label="Mission cohorts and failure groups"><details className="mc-cohort-filters"><summary>Why these? · {cohort.length} selected / {baseline.length} baseline missions</summary><p>What is different about these? Compare returned dimensions in the current dataset. Frequencies do not establish why a mission failed.</p><div className="mc-cohort-inputs">

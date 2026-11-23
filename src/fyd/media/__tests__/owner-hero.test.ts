@@ -18,6 +18,7 @@ import { resolveHeroMedia } from "../owner-hero";
 import { heroMediaFor } from "../select";
 import type { ObjectGraph } from "../../sitespec/types";
 import type { PingObject } from "@/lib/ping/types";
+import type { FydMediaObject, FydMediaRole } from "../types";
 
 const TS = "2026-09-21T00:00:00.000Z";
 const FIXTURE_SITE = "__test-owner-hero";
@@ -41,7 +42,7 @@ function testGraph(): ObjectGraph {
   return { objects: [businessObject("biz-test-1")], relationships: [] };
 }
 
-function fixtureMedia(id: string, roles: string[]): any {
+function fixtureMedia(id: string, roles: FydMediaRole[]): FydMediaObject {
   return {
     id,
     schema: "ping.social.media@1",
@@ -100,7 +101,7 @@ function fixtureManifestPath(): string {
   );
 }
 
-function withFixtureManifest(media: any[], fn: () => void): void {
+function withFixtureManifest(media: FydMediaObject[], fn: () => void): void {
   const manifest = {
     siteId: FIXTURE_SITE,
     generatedAt: TS,

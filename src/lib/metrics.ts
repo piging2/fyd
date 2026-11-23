@@ -16,9 +16,14 @@
  * - Accessibility Completeness: Alt text, ARIA labels, keyboard navigation
  */
 
-import type { AnalysisResults } from "./analysis";
+import type {
+  AnalysisResults,
+  BrandAnalysis,
+  MediaAnalysis,
+  ProjectAnalysis,
+  ReviewAnalysis,
+} from "./analysis";
 import type { Finding, FindingsSummary } from "./findings";
-import { loadHealthRules, checkThreshold } from "./health-rules";
 import { calculateHealthScore, summarizeFindings } from "./findings";
 
 export interface Metrics {
@@ -219,13 +224,12 @@ export function generateMetrics({
   const overallCategory = getCategoryFromScore(overallScore);
 
   // Generate legacy metrics for backward compatibility
-  const rules = loadHealthRules();
-  const repositoryMetrics = generateRepositoryMetricsLegacy(analysis, findings, rules);
-  const mediaMetrics = generateMediaMetricsLegacy(analysis.media, findings, rules);
-  const projectMetrics = generateProjectMetricsLegacy(analysis.projects, findings, rules);
-  const reviewMetrics = generateReviewMetricsLegacy(analysis.reviews, findings, rules);
-  const brandMetrics = generateBrandMetricsLegacy(analysis.brand, findings, rules);
-  const healthMetrics = generateHealthMetricsLegacy(findings, rules);
+  const repositoryMetrics = generateRepositoryMetricsLegacy();
+  const mediaMetrics = generateMediaMetricsLegacy(analysis.media);
+  const projectMetrics = generateProjectMetricsLegacy(analysis.projects);
+  const reviewMetrics = generateReviewMetricsLegacy(analysis.reviews);
+  const brandMetrics = generateBrandMetricsLegacy(analysis.brand);
+  const healthMetrics = generateHealthMetricsLegacy(findings);
 
   return {
     constitutional: {
@@ -461,7 +465,7 @@ function getCategoryFromScore(score: number): "excellent" | "good" | "fair" | "p
  * These will be removed once all consumers migrate to constitutional metrics
  */
 
-function generateRepositoryMetricsLegacy(analysis: AnalysisResults, findings: Finding[], rules: any): RepositoryMetrics {
+function generateRepositoryMetricsLegacy(): RepositoryMetrics {
   return {
     totalAuthorities: 4,
     healthyAuthorities: 4,
@@ -471,7 +475,7 @@ function generateRepositoryMetricsLegacy(analysis: AnalysisResults, findings: Fi
   };
 }
 
-function generateMediaMetricsLegacy(analysis: any, findings: Finding[], rules: any): MediaMetrics {
+function generateMediaMetricsLegacy(analysis: MediaAnalysis): MediaMetrics {
   return {
     total: analysis.total || 0,
     missingAltText: analysis.missingAltText || 0,
@@ -489,7 +493,7 @@ function generateMediaMetricsLegacy(analysis: any, findings: Finding[], rules: a
   };
 }
 
-function generateProjectMetricsLegacy(analysis: any, findings: Finding[], rules: any): ProjectMetrics {
+function generateProjectMetricsLegacy(analysis: ProjectAnalysis): ProjectMetrics {
   return {
     total: analysis.total || 0,
     byStatus: {},
@@ -511,7 +515,7 @@ function generateProjectMetricsLegacy(analysis: any, findings: Finding[], rules:
   };
 }
 
-function generateReviewMetricsLegacy(analysis: any, findings: Finding[], rules: any): ReviewMetrics {
+function generateReviewMetricsLegacy(analysis: ReviewAnalysis): ReviewMetrics {
   return {
     total: analysis.total || 0,
     missingRating: 0,
@@ -526,7 +530,7 @@ function generateReviewMetricsLegacy(analysis: any, findings: Finding[], rules: 
   };
 }
 
-function generateBrandMetricsLegacy(analysis: any, findings: Finding[], rules: any): BrandMetrics {
+function generateBrandMetricsLegacy(analysis: BrandAnalysis): BrandMetrics {
   return {
     hasHomepageHero: analysis.hasHomepageHero || true,
     hasOwnerPortrait: analysis.hasOwnerPortrait || true,
@@ -535,7 +539,7 @@ function generateBrandMetricsLegacy(analysis: any, findings: Finding[], rules: a
   };
 }
 
-function generateHealthMetricsLegacy(findings: Finding[], rules: any): HealthMetrics {
+function generateHealthMetricsLegacy(findings: Finding[]): HealthMetrics {
   const findingsSummary = summarizeFindings(findings);
   const healthScoreResult = calculateHealthScore(findings);
 
@@ -553,186 +557,3 @@ function generateHealthMetricsLegacy(findings: Finding[], rules: any): HealthMet
   };
 }
 
-/**
- * Generate media metrics
- */
-function generateMediaMetrics(
-  analysis: any,
-  findings: Finding[],
-  rules: any
-): MediaMetrics {
-  const total = analysis.total;
-  const altTextCoverage = total > 0 ? ((total - analysis.missingAltText) / total) * 100 : 0;
-  const variantCoverage = total > 0 ? ((total - analysis.missingVariants) / total) * 100 : 0;
-
-  // Determine health based on rules
-  const altTextThreshold = checkThreshold(analysis.missingAltText, total, rules.media.missingAltText);
-  const variantsThreshold = checkThreshold(analysis.missingVariants, total, rules.media.missingVariants);
-
-  let health: "healthy" | "warning" | "critical";
-  if (altTextThreshold === "critical" || variantsThreshold === "critical") {
-    health = "critical";
-  } else if (altTextThreshold === "warning" || variantsThreshold === "warning") {
-    health = "warning";
-  } else {
-    health = "healthy";
-  }
-
-  // Calculate score
-  let score = 100;
-  score -= (analysis.missingAltText / total) * 40;
-  score -= (analysis.missingVariants / total) * 30;
-  score -= (analysis.orphaned / total) * 30;
-  score = Math.max(0, Math.round(score));
-
-  return {
-    total,
-    missingAltText: analysis.missingAltText,
-    missingVariants: analysis.missingVariants,
-    missingWebVariant: analysis.missingWebVariant,
-    missingThumbnail: analysis.missingThumbnail,
-    missingBlurPlaceholder: analysis.missingBlurPlaceholder,
-    orphaned: analysis.orphaned,
-    invalidOrientation: analysis.invalidOrientation,
-    brokenUrls: analysis.brokenUrls,
-    altTextCoverage: Math.round(altTextCoverage),
-    variantCoverage: Math.round(variantCoverage),
-    health,
-    score,
-  };
-}
-
-/**
- * Generate project metrics
- */
-function generateProjectMetrics(
-  analysis: any,
-  findings: Finding[],
-  rules: any
-): ProjectMetrics {
-  const total = analysis.total;
-  const heroCoverage = total > 0 ? ((total - analysis.missingHero) / total) * 100 : 0;
-  const storyCoverage = total > 0 ? ((total - analysis.missingStory) / total) * 100 : 0;
-
-  // Determine health based on rules
-  const heroThreshold = checkThreshold(analysis.missingHero, total, rules.projects.missingHero);
-  const storyThreshold = checkThreshold(analysis.missingStory, total, rules.projects.missingStory);
-
-  let health: "healthy" | "warning" | "critical";
-  if (heroThreshold === "critical" || storyThreshold === "critical") {
-    health = "critical";
-  } else if (heroThreshold === "warning" || storyThreshold === "warning") {
-    health = "warning";
-  } else {
-    health = "healthy";
-  }
-
-  // Calculate score
-  let score = 100;
-  score -= (analysis.missingHero / total) * 40;
-  score -= (analysis.missingStory / total) * 30;
-  score -= (analysis.unused / total) * 30;
-  score = Math.max(0, Math.round(score));
-
-  return {
-    total,
-    byStatus: analysis.byStatus,
-    byService: analysis.byService,
-    missingHero: analysis.missingHero,
-    missingStory: analysis.missingStory,
-    missingLocation: analysis.missingLocation,
-    missingSlug: analysis.missingSlug,
-    missingSeoDescription: analysis.missingSeoDescription,
-    unused: analysis.unused,
-    featured: analysis.featured,
-    homepageEligible: analysis.homepageEligible,
-    withBeforeAfter: analysis.withBeforeAfter,
-    withGallery: analysis.withGallery,
-    heroCoverage: Math.round(heroCoverage),
-    storyCoverage: Math.round(storyCoverage),
-    health,
-    score,
-  };
-}
-
-/**
- * Generate review metrics
- */
-function generateReviewMetrics(
-  analysis: any,
-  findings: Finding[],
-  rules: any
-): ReviewMetrics {
-  const total = analysis.total;
-  const ratingCoverage = total > 0 ? ((total - analysis.missingRating) / total) * 100 : 0;
-
-  // Determine health based on rules
-  const ratingThreshold = checkThreshold(analysis.missingRating, total, rules.reviews.missingRating);
-
-  let health: "healthy" | "warning" | "critical";
-  if (ratingThreshold === "critical") {
-    health = "critical";
-  } else if (ratingThreshold === "warning") {
-    health = "warning";
-  } else {
-    health = "healthy";
-  }
-
-  // Calculate score
-  let score = 100;
-  score -= (analysis.missingRating / total) * 50;
-  score -= (analysis.missingBody / total) * 50;
-  score = Math.max(0, Math.round(score));
-
-  return {
-    total,
-    missingRating: analysis.missingRating,
-    missingBody: analysis.missingBody,
-    missingProjectReference: analysis.missingProjectReference,
-    byRating: analysis.byRating,
-    bySource: analysis.bySource,
-    averageRating: Math.round(analysis.averageRating * 10) / 10,
-    ratingCoverage: Math.round(ratingCoverage),
-    health,
-    score,
-  };
-}
-
-/**
- * Generate brand metrics
- */
-function generateBrandMetrics(
-  analysis: any,
-  findings: Finding[],
-  rules: any
-): BrandMetrics {
-  const hasHomepageHero = analysis.hasHomepageHero;
-  const hasOwnerPortrait = analysis.hasOwnerPortrait;
-
-  let health: "healthy" | "warning" | "critical" = "healthy";
-  let score = 100;
-
-  if (!hasHomepageHero) {
-    health = "critical";
-    score -= 50;
-  }
-  if (!hasOwnerPortrait) {
-    health = "critical";
-    score -= 50;
-  }
-
-  if (hasHomepageHero && hasOwnerPortrait) {
-    health = "healthy";
-  }
-
-  score = Math.max(0, score);
-
-  return {
-    hasHomepageHero,
-    hasOwnerPortrait,
-    homepageHeroMediaId: analysis.homepageHeroMediaId,
-    ownerPortraitMediaId: analysis.ownerPortraitMediaId,
-    health,
-    score,
-  };
-}

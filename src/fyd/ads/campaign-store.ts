@@ -199,7 +199,7 @@ export function createCampaign(cmd: CreateCampaignCommand): CampaignState {
   appendAdsEvent(CAMPAIGNS_SUBDIR, CAMPAIGN_ENTITY_KIND, cmd.campaign.campaignId, {
     at: nowIso(cmd.at),
     type: "campaign.created",
-    payload: { ...cmd.campaign } as unknown as Record<string, unknown>,
+    payload: { ...cmd.campaign },
   });
   const state = readCampaignState(cmd.campaign.campaignId);
   if (state === null) throw new AdsStoreError("Campaign vanished after create.");

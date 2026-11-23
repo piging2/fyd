@@ -49,7 +49,7 @@ async function businessId(
     sourceUrl,
     observedAt: TS,
     controllerId,
-  } as never);
+  });
   const biz = out.graph.objects.find((o) => o.schema === "ping.social.business@1");
   if (!biz) throw new Error("no business object generated");
   return biz.id;
@@ -101,7 +101,7 @@ describe("business entity id stability (hostile)", () => {
     // Different seed AND different self-declared canonical -> different entity.
     const out = await runExtractionPipeline(
       [page("https://gearjunction.example.com/", html("555-0100", "Bike shop.", "https://gearjunction.example.com/"))],
-      { sourceUrl: "https://gearjunction.example.com/", observedAt: TS, controllerId: "runner-alpha" } as never,
+      { sourceUrl: "https://gearjunction.example.com/", observedAt: TS, controllerId: "runner-alpha" },
     );
     const b = out.graph.objects.find((o) => o.schema === "ping.social.business@1")!.id;
     expect(b).not.toBe(a);
@@ -112,7 +112,7 @@ describe("business entity id stability (hostile)", () => {
     // the entity resolves to the declared canonical.
     const out = await runExtractionPipeline(
       [page("https://gearjunction.example.com/", html("555-0100", "Bike shop.", "https://bemiselectric.com/"))],
-      { sourceUrl: "https://gearjunction.example.com/", observedAt: TS, controllerId: "runner-alpha" } as never,
+      { sourceUrl: "https://gearjunction.example.com/", observedAt: TS, controllerId: "runner-alpha" },
     );
     const b = out.graph.objects.find((o) => o.schema === "ping.social.business@1")!.id;
     const a = await businessId("runner-beta", "https://bemiselectric.com/", "555-0100", "Family-run electricians.");
@@ -122,7 +122,7 @@ describe("business entity id stability (hostile)", () => {
   test("runner stays in provenance, not in identity", async () => {
     const out = await runExtractionPipeline(
       [page("https://bemiselectric.com/", html("555-0100", "Family-run electricians."))],
-      { sourceUrl: "https://bemiselectric.com/", observedAt: TS, controllerId: "runner-gamma" } as never,
+      { sourceUrl: "https://bemiselectric.com/", observedAt: TS, controllerId: "runner-gamma" },
     );
     const biz = out.graph.objects.find((o) => o.schema === "ping.social.business@1")!;
     expect(biz.controllerId).toBe("runner-gamma");

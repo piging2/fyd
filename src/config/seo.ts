@@ -1,4 +1,3 @@
-import type { SeoMeta } from "@/types";
 import { getTenant } from "@/lib/tenant-config";
 
 /**

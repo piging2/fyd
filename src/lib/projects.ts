@@ -7,7 +7,7 @@
  * All project data hangs from projects.v1.json.
  */
 
-import { Project, ProjectsManifest, ProjectService, ProjectStatus } from "@/types/projects";
+import { Project, ProjectsManifest, ProjectService } from "@/types/projects";
 import { loadAuthority, clearAuthorityCache, queryProjects, findById, findBySlug, filterFeatured, filterHomepageEligible, filterHeroEligible, filterNonArchived } from "./authority-loader";
 import { resolvePublicMedia } from "./media";
 import type { Media } from "@/types/media";

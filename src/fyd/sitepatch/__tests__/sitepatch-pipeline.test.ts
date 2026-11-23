@@ -14,7 +14,6 @@ import { emitGateProposal, verifyGateDecision } from "../approval-seam";
 import {
   applyExtendedSitePatch,
   capabilityForOp,
-  previewSitePatch,
   proposeForOp,
   runSitePatchPipeline,
   validateSitePatchOp,

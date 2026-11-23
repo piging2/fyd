@@ -2,7 +2,7 @@
  * REGRESSION CORPUS: Happy Place AND Coppersmith raw material through the
  * SAME pipeline (runExtractionPipeline). Per-source report: structured
  * facts discovered, objects generated, relationships generated,
- * unsupported evidence. Green only when BOTH pass generically — no
+ * unsupported evidence. Green only when BOTH pass generically: no
  * site-specific hacks; the JSON-LD @graph path is what makes Coppersmith
  * work, and the flat LocalBusiness path is what makes Happy Place work.
  *
@@ -86,7 +86,7 @@ describe("regression corpus", () => {
 
     const business = businessOf(graph);
     const fields = business.fields as Record<string, string | string[]>;
-    const classes = graph.fieldClasses![business.id];
+    const classes = graph.fieldClasses![business.id as string];
     // RUN-NOTES #3 proven on real data: the org's JSON-LD name outranks
     // og:title ("Coppersmith Plumbing & HVAC") and the RSS channel title
     // ("Coppersmith Plumbing").
@@ -150,7 +150,7 @@ describe("regression corpus", () => {
 
     const business = businessOf(graph);
     const fields = business.fields as Record<string, string | string[]>;
-    const classes = graph.fieldClasses![business.id];
+    const classes = graph.fieldClasses![business.id as string];
     // JSON-LD name outranks the <title> tag.
     expect(fields["title"]).toBe("Happy Place Carpentry LLC");
     expect(classes["title"]).toBe("DIRECT_FACT");

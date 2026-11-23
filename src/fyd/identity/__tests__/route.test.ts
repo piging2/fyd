@@ -53,7 +53,7 @@ describe("auth routes", () => {
   }
 
   test("session: anonymous without a cookie", async () => {
-    const res = await sessionGet(new NextRequest("http://localhost/api/fyd/auth/session"));
+    const res = sessionGet(new NextRequest("http://localhost/api/fyd/auth/session"));
     const json = (await res.json()) as { authenticated: boolean };
     expect(json.authenticated).toBe(false);
   });
@@ -65,7 +65,7 @@ describe("auth routes", () => {
     const req = new NextRequest("http://localhost/api/fyd/auth/session", {
       headers: { cookie: SESSION_COOKIE_NAME + "=" + encodeURIComponent(value) },
     });
-    const res = await sessionGet(req);
+    const res = sessionGet(req);
     const json = (await res.json()) as { authenticated: boolean; identityId: string; accounts: unknown[] };
     expect(json.authenticated).toBe(true);
     expect(json.identityId).toBe(identityId);
@@ -123,7 +123,7 @@ describe("auth routes", () => {
     expect(json.remaining).toBe(1);
   });
 
-  test("signout: clears the session cookie", async () => {
+  test("signout: clears the session cookie", () => {
     const store = new FileIdentityBindingStore();
     const { identityId } = signInOrSignUp(store, google("sub-1"));
     const value = createSessionValue(identityId, SECRET);
@@ -131,7 +131,7 @@ describe("auth routes", () => {
       method: "POST",
       headers: { cookie: SESSION_COOKIE_NAME + "=" + encodeURIComponent(value) },
     });
-    const res = await signoutPost(req);
+    const res = signoutPost(req);
     const setCookie = res.headers.get("Set-Cookie") || "";
     expect(setCookie).toContain(SESSION_COOKIE_NAME + "=");
     expect(setCookie).toContain("Max-Age=0");

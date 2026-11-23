@@ -1,5 +1,5 @@
 /**
- * INV-12 / read-path leak closure — the three audit surfaces beyond the P0.
+ * INV-12 / read-path leak closure: the three audit surfaces beyond the P0.
  *
  * The 2026-09-25 read-path audit found three leak surfaces beyond the
  * contained P0 (projection route, objects history):
@@ -20,10 +20,10 @@
  *
  *  3. Social feed fail-open default: (p.visibility || "public") ===
  *     "public" published journal posts with missing visibility.
- *     Fix: fail-closed — only visibility === "public" is served.
+ *     Fix: fail-closed: only visibility === "public" is served.
  *     (Media pipeline audited: FydMediaObject.visibility is a hardcoded
  *     "public" literal, ingest never reads the object graph, and the
- *     provenance API carries no depicted-object linkage — no change
+ *     provenance API carries no depicted-object linkage: no change
  *     needed. See finding record in the mission report.)
  *
  * Laws: existing gates extended, no new authority created. Owner-side
@@ -83,14 +83,14 @@ describe("surface 1: GET /api/fyd/customize?view=inspect is owner-gated", () => 
 const realFetch = global.fetch;
 
 function stubJournal(events: unknown[]) {
-  (global as unknown as { fetch: unknown }).fetch = async (url: unknown) => {
+  (global as unknown as { fetch: unknown }).fetch = (url: unknown) => {
     const u = String(url);
     const payload = u.includes("/events/OBJECT_CREATED") ? events : [];
-    return {
+    return Promise.resolve({
       ok: true,
       status: 200,
-      json: async () => ({ events: payload }),
-    };
+      json: () => Promise.resolve({ events: payload }),
+    });
   };
 }
 

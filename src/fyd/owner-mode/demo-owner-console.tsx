@@ -39,7 +39,6 @@ import {
   applyCorrections,
   assertCorrection,
   type CorrectionOp,
-  type OwnerAssertion,
 } from "./corrections";
 import { demoProvenance } from "./provenance";
 import { extractSiteFacts, factLabel, type SiteFact } from "./facts";

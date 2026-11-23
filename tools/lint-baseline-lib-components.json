@@ -1,0 +1,17 @@
+{
+  "description": "S8-01 T2 warning baseline for src/lib + src/components under typescript-eslint recommended-type-checked (T2 severity split, test-file carve-out: unsafe-* off in test files). Measurement artifact for burn-down comparison by later tranches; not a suppression mechanism. Regenerate with: node tools/lint-baseline-lib-components.mjs",
+  "scope": "src/lib/**/*.ts, src/lib/**/*.tsx, src/components/**/*.ts, src/components/**/*.tsx",
+  "date": "2026-11-20",
+  "errorRules": {
+    "@typescript-eslint/no-floating-promises": 0,
+    "@typescript-eslint/no-misused-promises": 0
+  },
+  "totalWarnings": 63,
+  "warningsByRule": {
+    "@typescript-eslint/no-unused-vars": 30,
+    "@typescript-eslint/require-await": 29,
+    "@typescript-eslint/ban-ts-comment": 2,
+    "@typescript-eslint/no-base-to-string": 1,
+    "@typescript-eslint/no-require-imports": 1
+  }
+}

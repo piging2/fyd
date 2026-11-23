@@ -105,8 +105,8 @@ export default function BuildMyFydClient() {
         }),
       });
       if (!res.ok || !res.body) {
-        const payload = await res.json().catch(() => null);
-        setError((payload as { error?: string } | null)?.error ?? "Build request failed (" + res.status + ").");
+        const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(payload?.error ?? "Build request failed (" + res.status + ").");
         return;
       }
       const reader = res.body.getReader();
@@ -157,7 +157,7 @@ export default function BuildMyFydClient() {
         your business presence. You can review the build report when it finishes.
       </p>
 
-      <form onSubmit={onBuild} className="mt-8 space-y-6">
+      <form onSubmit={(e) => { void onBuild(e); }} className="mt-8 space-y-6">
         <div>
           <label htmlFor="fyd-url" className="block text-sm font-medium">
             Website URL

@@ -135,7 +135,7 @@ export class IngestionPipeline {
       const linked = await this.link(validated);
       
       // Stage 5: Metrics
-      const metrics = await this.generateMetrics(linked);
+      const metrics = this.generateMetrics(linked);
 
       this.state.status = "completed";
       this.state.completedAt = new Date().toISOString();
@@ -245,7 +245,7 @@ export class IngestionPipeline {
   /**
    * Stage 5: Metrics
    */
-  private async generateMetrics(items: ProcessedItem[]): Promise<PipelineMetrics> {
+  private generateMetrics(items: ProcessedItem[]): PipelineMetrics {
     return {
       totalItems: items.length,
       successfulItems: items.filter(i => !i.errors?.length).length,

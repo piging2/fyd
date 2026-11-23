@@ -33,15 +33,15 @@ const HTML =
 
 function netFor(publicHosts: string[], calls: { n: number }): SafeFetchDeps {
   return {
-    dnsLookup: async (host: string) =>
-      publicHosts.includes(host) ? [{ address: "93.184.216.34" }] : [{ address: "10.0.0.5" }],
-    fetchImpl: (async () => {
+    dnsLookup: (host: string) =>
+      Promise.resolve(publicHosts.includes(host) ? [{ address: "93.184.216.34" }] : [{ address: "10.0.0.5" }]),
+    fetchImpl: (() => {
       calls.n += 1;
-      return new Response(HTML, {
+      return Promise.resolve(new Response(HTML, {
         status: 200,
         headers: { "content-type": "text/html; charset=utf-8" },
-      });
-    }) as typeof fetch,
+      }));
+    }),
   };
 }
 

@@ -91,7 +91,7 @@ const COPPER_PERSON = "website-business-2f1327c09d622175-person-377048d67856";
 const COPPER_EXT = "website-business-2f1327c09d622175-ext-89604af059c2";
 
 function flatReq(body: unknown): NextRequest {
-  return { json: async () => body } as unknown as NextRequest;
+  return { json: () => body } as unknown as NextRequest;
 }
 
 function nestedCtx(routeSiteId: string, body: unknown) {
@@ -313,10 +313,10 @@ describe("object-scoped ask: tenant and visibility gates", () => {
     const real = HAPPY_BUNDLE;
     expect(real).not.toBeNull();
     const bundle: SiteBundle = {
-      ...(real as SiteBundle),
+      ...real,
       graph: {
-        objects: [...(real as SiteBundle).graph.objects, secret],
-        relationships: (real as SiteBundle).graph.relationships,
+        objects: [...real.graph.objects, secret],
+        relationships: real.graph.relationships,
       },
     };
     const deps: AnswerAskFydDeps = {

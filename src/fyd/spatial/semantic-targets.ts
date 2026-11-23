@@ -55,8 +55,6 @@ export function proximityScore(
   if (!target) return 0.25;
   const tx = target.x + target.width / 2;
   const ty = target.y + target.height / 2;
-  const sx = slot.x + slot.width / 2;
-  const sy = slot.y + slot.height / 2;
   const inside =
     tx >= slot.x && tx <= slot.x + slot.width && ty >= slot.y && ty <= slot.y + slot.height;
   if (inside) return 1;

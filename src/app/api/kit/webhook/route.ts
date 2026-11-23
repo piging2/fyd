@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { logEvent } from "@/lib/events";
+import type { HPPEventType } from "@/types/events";
 
 /**
  * Kit Webhook Handler
@@ -19,13 +20,34 @@ import { logEvent } from "@/lib/events";
  */
 
 // Kit event name to HPP event type mapping
-const KIT_EVENT_MAPPING: Record<string, string> = {
+const KIT_EVENT_MAPPING: Record<string, HPPEventType> = {
   "subscriber.subscriber_activate": "NewsletterConfirmed",
   "subscriber.subscriber_unsubscribe": "NewsletterUnsubscribed",
   "subscriber.form_subscribe": "NewsletterSignup",
   "subscriber.link_click": "EmailClicked",
   "subscriber.product_purchase": "CustomerCreated",
 };
+
+// Kit webhook payload shape, as read by the handler below. Fields the
+// handler consumes as data are unknown-typed; the event name is the
+// mapping key the handler looks up, declared as the string Kit sends.
+interface KitWebhookEvent {
+  name: string;
+  [key: string]: unknown;
+}
+
+interface KitWebhookSubscriber {
+  email_address: unknown;
+  id: unknown;
+  first_name: unknown;
+  state: unknown;
+  [key: string]: unknown;
+}
+
+interface KitWebhookBody {
+  event?: KitWebhookEvent;
+  subscriber?: KitWebhookSubscriber;
+}
 
 function signaturesMatch(rawBody: string, header: string, secrets: string[]): boolean {
   // Header shape: "v1=<hex>[,v1=<hex>]". Accept if ANY entry verifies
@@ -74,7 +96,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
     }
 
-    const body = JSON.parse(rawBody);
+    const body = JSON.parse(rawBody) as KitWebhookBody;
 
     // Kit webhook structure
     const { event, subscriber } = body;
@@ -88,7 +110,7 @@ export async function POST(request: NextRequest) {
 
     if (eventType) {
       // Map Kit event to HPP event
-      logEvent(eventType as any, {
+      void logEvent(eventType, {
         kitEventName: eventName,
         email: subscriber.email_address,
         subscriberId: subscriber.id,
@@ -111,6 +133,6 @@ export async function POST(request: NextRequest) {
 }
 
 // Kit webhooks require GET endpoint for verification
-export async function GET(request: NextRequest) {
+export function GET(request: NextRequest) {
   return NextResponse.json({ status: "Kit webhook endpoint active" });
 }

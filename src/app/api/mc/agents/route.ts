@@ -200,7 +200,7 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     generatedAt: new Date().toISOString(),
-    status: (degraded.length ? "DEGRADED" : "PROVEN") as Health,
+    status: (degraded.length ? "DEGRADED" : "PROVEN"),
     degraded,
     scheduledAgents: scheduled,
     operations,

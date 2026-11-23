@@ -22,15 +22,24 @@ import {
 } from "../storage-shim";
 
 /** Minimal window stand-in. storageUsable/installFallback only touch
- *  window[kind], Object.defineProperty, Object.keys and String. */
-function fakeWindow(): any {
-  const win: any = {};
+ *  window[kind], Object.defineProperty, Object.keys and String. The storage
+ *  accessors are installed by the specialised builders below (throwing
+ *  getters, or a working in-memory store), so they are declared here and
+ *  populated before any test reads them. */
+interface FakeWindow {
+  window: FakeWindow;
+  localStorage: Storage;
+  sessionStorage: Storage;
+}
+
+function fakeWindow(): FakeWindow {
+  const win = {} as FakeWindow;
   win.window = win;
   return win;
 }
 
 /** Window whose storage accessors throw, like a sandboxed cross-origin iframe. */
-function deniedWindow(): any {
+function deniedWindow(): FakeWindow {
   const win = fakeWindow();
   const denied = () => {
     throw new Error("SecurityError: access to storage is denied");
@@ -41,7 +50,7 @@ function deniedWindow(): any {
 }
 
 /** Window with genuinely working storage, like a normal top-level page. */
-function workingWindow(): { win: any; native: any } {
+function workingWindow(): { win: FakeWindow; native: Storage } {
   const win = fakeWindow();
   const store: Record<string, string> = {};
   const native = {
@@ -58,9 +67,9 @@ function workingWindow(): { win: any; native: any } {
 }
 
 /** Run the shim payload in a window context; must never throw. */
-function runShim(win: any): void {
+function runShim(win: FakeWindow): void {
   const ctx = vm.createContext(win);
-  expect(() => vm.runInContext(STORAGE_SHIM_JS, ctx)).not.toThrow();
+  expect(() => { vm.runInContext(STORAGE_SHIM_JS, ctx); }).not.toThrow();
 }
 
 describe("storage shim payload", () => {
@@ -151,31 +160,54 @@ describe("injectStorageShim", () => {
   });
 });
 
+/** Message shape the crash beacon posts to the parent frame. */
+interface BeaconMessage {
+  type?: string;
+  reason?: string;
+}
+
+/** Synthetic window event the beacon listeners are fired with in tests. */
+interface BeaconEvent {
+  error?: unknown;
+  message?: string;
+  reason?: unknown;
+}
+
+type BeaconListener = (ev: BeaconEvent) => void;
+
 /** Fake window for the crash beacon: records postMessages and event listeners. */
-function beaconWindow(): any {
-  const win: any = {};
+interface BeaconWindow {
+  window: BeaconWindow;
+  posted: Array<{ msg: BeaconMessage; target: string }>;
+  parent: { postMessage: (msg: BeaconMessage, target: string) => void } | null;
+  listeners: Record<string, BeaconListener[]>;
+  addEventListener: (type: string, fn: BeaconListener) => void;
+}
+
+function beaconWindow(): BeaconWindow {
+  const win = {} as BeaconWindow;
   win.window = win;
-  win.posted = [] as Array<{ msg: any; target: string }>;
+  win.posted = [];
   win.parent = {
-    postMessage: (msg: any, target: string) => {
+    postMessage: (msg: BeaconMessage, target: string) => {
       win.posted.push({ msg, target });
     },
   };
-  win.listeners = {} as Record<string, Array<(ev: any) => void>>;
-  win.addEventListener = (type: string, fn: (ev: any) => void) => {
+  win.listeners = {};
+  win.addEventListener = (type: string, fn: BeaconListener) => {
     (win.listeners[type] = win.listeners[type] || []).push(fn);
   };
   return win;
 }
 
 /** Run the beacon payload in a window context; must never throw. */
-function runBeacon(win: any): void {
+function runBeacon(win: BeaconWindow): void {
   const ctx = vm.createContext(win);
-  expect(() => vm.runInContext(CRASH_BEACON_JS, ctx)).not.toThrow();
+  expect(() => { vm.runInContext(CRASH_BEACON_JS, ctx); }).not.toThrow();
 }
 
 /** Fire a synthetic window "error" event carrying the given error value. */
-function fireWindowError(win: any, err: any): void {
+function fireWindowError(win: BeaconWindow, err: unknown): void {
   for (const fn of win.listeners["error"] || []) {
     expect(() =>
       fn({ error: err, message: err instanceof Error ? err.message : String(err) }),

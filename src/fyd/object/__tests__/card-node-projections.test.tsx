@@ -35,13 +35,6 @@ import { ObjectCard } from "../card";
 import { ObjectNode } from "../node";
 /** Anonymous verified projection for a fixture slug (null when unknown). */
 const proj = (slug: string) => getVerifiedPublicProjectionSync(slug, "anonymous");
-const projOrNull = (slug: string) => {
-  try {
-    return proj(slug);
-  } catch {
-    return null;
-  }
-};
 
 const PROJECTIONS = join(
   process.cwd(),

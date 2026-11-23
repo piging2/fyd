@@ -66,7 +66,7 @@ describe("GET /api/readyz", () => {
       throw Object.assign(new Error("fetch failed"), {
         cause: { code: "ECONNREFUSED" },
       });
-    }) as unknown as typeof fetch;
+    });
 
     const res = await GET();
     expect(res.status).toBe(503);

@@ -194,7 +194,7 @@ export function ObjectCircle({ view, nodeHref, className }: ObjectCircleProps) {
   }, [dialogOpen, closeDialog]);
 
   const onTriggerBlur = (e: React.FocusEvent) => {
-    if (!wrapperRef.current?.contains(e.relatedTarget as Node | null)) closeCard();
+    if (!wrapperRef.current?.contains(e.relatedTarget)) closeCard();
   };
 
   const subline = [view.category, view.locationLabel].filter(Boolean).join(" · ");

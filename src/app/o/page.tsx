@@ -49,7 +49,7 @@ export default function ObjectsIndexPage() {
         </p>
         <div className="mt-8 space-y-4">
           {views.map((view) => (
-            <ObjectCircle key={view!.id} view={view!} />
+            <ObjectCircle key={view.id} view={view} />
           ))}
         </div>
         <p className="mt-10 text-xs text-stone-400">

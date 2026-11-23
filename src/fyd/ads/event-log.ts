@@ -140,7 +140,7 @@ function isValidEvent(v: unknown): v is AdsEvent {
     typeof r.id === "string" &&
     typeof r.seq === "number" &&
     Number.isInteger(r.seq) &&
-    (r.seq as number) >= 0 &&
+    (r.seq) >= 0 &&
     typeof r.at === "string" &&
     typeof r.type === "string" &&
     typeof r.payload === "object" &&

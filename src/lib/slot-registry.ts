@@ -25,6 +25,18 @@ export interface RegisteredSlot {
   component: string;
 }
 
+// Inbound Workbench protocol messages. postMessage payloads are untyped
+// wire data; these are the shapes this registry actually reads. The slot
+// payload travels without its element (an HTMLElement cannot cross the
+// frame boundary); the SLOT_REGISTER branch restores element: null,
+// mirroring the outbound SLOT_REGISTER send in register().
+type SlotRegistryMessage =
+  | { type: 'SLOT_REGISTER'; slot: Omit<RegisteredSlot, 'element'> }
+  | { type: 'SLOT_UNREGISTER'; slotId: string }
+  | { type: 'SLOT_CLICK'; slot: Omit<RegisteredSlot, 'element'> }
+  | { type: 'delete-gallery'; slotId: string }
+  | { type: 'add-to-gallery'; slotId: string; projectId: string };
+
 // Origin security for cross-frame Workbench messaging.
 // Dev is permissive (matches the existing NODE_ENV==='development' auth bypass);
 // production requires the peer origin to be in an allowlist (default: same-origin).
@@ -89,18 +101,26 @@ class SlotRegistry {
     }
   }
 
+  // Public read of the instance id: forensic logging in consumer
+  // components (e.g. VisualSlot) identifies which registry singleton
+  // handled a registration without reaching into private state.
+  getInstanceId(): string {
+    return this.instanceId;
+  }
+
   // Use composite key (route + slotId) to prevent collisions across different pages
   private makeKey(slot: RegisteredSlot): string {
     return `${slot.route}:${slot.id}`;
   }
 
   private handleMessage = (event: MessageEvent) => {
+    const data = event.data as SlotRegistryMessage;
     // Filter: Only process Workbench protocol messages
-    if (!event.data || typeof event.data.type !== 'string') {
+    if (!data || typeof data.type !== 'string') {
       return;
     }
 
-    const messageType = event.data.type;
+    const messageType = data.type;
 
     // Reject messages from unauthorized origins (production only; dev is permissive)
     if (!isAllowedOrigin(event.origin)) {
@@ -115,42 +135,42 @@ class SlotRegistry {
       console.log('[FORENSIC] SLOT REGISTRY MESSAGE RECEIVED', {
         type: messageType,
         origin: event.origin,
-        slotId: event.data.slot?.id,
+        slotId: data.slot?.id,
       });
       // Reconstruct slot with element as null (cannot send HTMLElement across iframe)
-      this.register({ ...event.data.slot, element: null });
+      this.register({ ...data.slot, element: null });
     } else if (messageType === 'SLOT_UNREGISTER') {
       console.log('[FORENSIC] SLOT REGISTRY MESSAGE RECEIVED', {
         type: messageType,
         origin: event.origin,
-        slotId: event.data.slotId,
+        slotId: data.slotId,
       });
-      this.unregister(event.data.slotId);
+      this.unregister(data.slotId);
     } else if (messageType === 'SLOT_CLICK') {
       console.log('[FORENSIC] SLOT REGISTRY MESSAGE RECEIVED', {
         type: messageType,
         origin: event.origin,
-        slotId: event.data.slot?.id,
+        slotId: data.slot?.id,
       });
       // Forward slot click events to window for workbench to handle
-      window.dispatchEvent(new CustomEvent('slot-click', { detail: event.data.slot }));
+      window.dispatchEvent(new CustomEvent('slot-click', { detail: data.slot }));
     } else if (messageType === 'delete-gallery') {
       console.log('[FORENSIC] GALLERY DELETE MESSAGE RECEIVED', {
         type: messageType,
         origin: event.origin,
-        slotId: event.data.slotId,
+        slotId: data.slotId,
       });
       // Forward gallery delete events to window for workbench to handle
-      window.dispatchEvent(new CustomEvent('delete-gallery', { detail: event.data }));
+      window.dispatchEvent(new CustomEvent('delete-gallery', { detail: data }));
     } else if (messageType === 'add-to-gallery') {
       console.log('[FORENSIC] GALLERY ADD MESSAGE RECEIVED', {
         type: messageType,
         origin: event.origin,
-        slotId: event.data.slotId,
-        projectId: event.data.projectId,
+        slotId: data.slotId,
+        projectId: data.projectId,
       });
       // Forward gallery add events to window for workbench to handle
-      window.dispatchEvent(new CustomEvent('add-to-gallery', { detail: event.data }));
+      window.dispatchEvent(new CustomEvent('add-to-gallery', { detail: data }));
     }
     // Ignore all other message types (Next.js HMR, devtools, etc.)
   };
@@ -302,11 +322,17 @@ class SlotRegistry {
   }
 }
 
+declare global {
+  interface Window {
+    __SLOT_REGISTRY__?: SlotRegistry;
+  }
+}
+
 // Singleton instance with browser-global singleton for chunk deduplication
 function getSlotRegistrySingleton(): SlotRegistry {
   console.log('[REGISTRY] SINGLETON_ACCESS', {
     isBrowser: typeof window !== 'undefined',
-    hasWindowGlobal: typeof window !== 'undefined' && (window as any).__SLOT_REGISTRY__,
+    hasWindowGlobal: typeof window !== 'undefined' && window.__SLOT_REGISTRY__,
   });
   
   if (typeof window === 'undefined') {
@@ -316,18 +342,18 @@ function getSlotRegistrySingleton(): SlotRegistry {
   }
   
   // Browser-side: use window singleton to ensure single instance across chunks
-  if (!(window as any).__SLOT_REGISTRY__) {
+  if (!window.__SLOT_REGISTRY__) {
     console.log('[REGISTRY] SINGLETON_CREATING_BROWSER_GLOBAL');
-    (window as any).__SLOT_REGISTRY__ = new SlotRegistry();
+    window.__SLOT_REGISTRY__ = new SlotRegistry();
   } else {
     console.log('[REGISTRY] SINGLETON_REUSE_BROWSER_GLOBAL');
   }
   
   console.log('[REGISTRY] SINGLETON_RETURN', {
-    instanceId: (window as any).__SLOT_REGISTRY__.instanceId,
+    instanceId: window.__SLOT_REGISTRY__.getInstanceId(),
   });
   
-  return (window as any).__SLOT_REGISTRY__;
+  return window.__SLOT_REGISTRY__;
 }
 
 export const slotRegistry = getSlotRegistrySingleton();

@@ -35,6 +35,19 @@ export function asSequence(value: unknown): number | null {
   return null;
 }
 
+/** Journal string fields: a present string reads as itself, anything else as absent. */
+export function asString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+/** First present string among the values (nullish-skipping; an empty string counts as present). */
+export function firstString(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === "string") return value;
+  }
+  return "";
+}
+
 export async function readJournalEvents(
   eventType: string,
   limit = 1000,
@@ -51,11 +64,11 @@ export async function readJournalEvents(
   return events.map((e) => {
     const ev = e as Record<string, unknown>;
     return {
-      event_id: String(ev.event_id || ""),
-      event_type: String(ev.event_type || eventType),
-      source: String(ev.source || ""),
-      timestamp: String(ev.timestamp || ""),
-      created_at: String(ev.created_at || ev.timestamp || ""),
+      event_id: asString(ev.event_id),
+      event_type: asString(ev.event_type) || eventType,
+      source: asString(ev.source),
+      timestamp: asString(ev.timestamp),
+      created_at: asString(ev.created_at) || asString(ev.timestamp),
       sequence: asSequence(ev.sequence),
       payload: (ev.payload || {}) as Record<string, unknown>,
       metadata: (ev.metadata || {}) as Record<string, unknown>,
@@ -96,7 +109,7 @@ export async function readNetRelationships(filter?: {
     }
     const key = `${p.subject}|${p.predicate}|${p.object}`;
     const row: NetRelationship = {
-      relationship_id: String(p.relationship_id || ""),
+      relationship_id: asString(p.relationship_id),
       subject: p.subject,
       predicate: p.predicate,
       object: p.object,
@@ -176,10 +189,10 @@ export async function readIdentityView(identityId: string): Promise<{
     );
   const content = (profilePayload?.content || {}) as Record<string, unknown>;
   const profile: FydProfileView = {
-    displayName: String(content.display_name ?? profilePayload?.displayName ?? ""),
-    handle: String(content.handle ?? profilePayload?.handle ?? ""),
-    bio: String(content.bio ?? profilePayload?.bio ?? ""),
-    objectId: String(profilePayload?.object_id ?? ""),
+    displayName: firstString(content.display_name, profilePayload?.displayName),
+    handle: firstString(content.handle, profilePayload?.handle),
+    bio: firstString(content.bio, profilePayload?.bio),
+    objectId: asString(profilePayload?.object_id),
     found: Boolean(profilePayload),
   };
   // The identity list endpoint only carries display_name; fall back to the
@@ -282,12 +295,12 @@ export async function readFeed(
     )
     .map((p) => {
       const content = (p.content || {}) as Record<string, unknown>;
-      const objectId = String(p.object_id || "");
+      const objectId = asString(p.object_id);
       return {
         objectId,
-        authorId: String(p.controller || ""),
-        text: String(content.text ?? p.text ?? ""),
-        createdAt: String(p.created_at || ""),
+        authorId: asString(p.controller),
+        text: firstString(content.text, p.text),
+        createdAt: asString(p.created_at),
         likeCount: likeCount.get(objectId) || 0,
         source: "ping_events" as const,
       };

@@ -99,20 +99,20 @@ describe("DedupCache", () => {
     let now = 0;
     const cache = new DedupCache<string>({ ttlMs: 1000 }, () => now);
     let calls = 0;
-    const ok = await cache.getOrFetch("k", async () => {
+    const ok = await cache.getOrFetch("k", () => {
       calls++;
-      return "v";
+      return Promise.resolve("v");
     });
     expect(ok).toBe("v");
-    await cache.getOrFetch("k", async () => {
+    await cache.getOrFetch("k", () => {
       calls++;
-      return "v2";
+      return Promise.resolve("v2");
     });
     expect(calls).toBe(1);
     now += 2000;
-    await cache.getOrFetch("k", async () => {
+    await cache.getOrFetch("k", () => {
       calls++;
-      return "v3";
+      return Promise.resolve("v3");
     });
     expect(calls).toBe(2);
   });
@@ -120,23 +120,23 @@ describe("DedupCache", () => {
     const cache = new DedupCache<string>();
     let calls = 0;
     await expect(
-      cache.getOrFetch("k", async () => {
+      cache.getOrFetch("k", () => {
         calls++;
-        throw new Error("boom");
+        return Promise.reject(new Error("boom"));
       }),
     ).rejects.toThrow("boom");
-    const v = await cache.getOrFetch("k", async () => {
+    const v = await cache.getOrFetch("k", () => {
       calls++;
-      return "recovered";
+      return Promise.resolve("recovered");
     });
     expect(v).toBe("recovered");
     expect(calls).toBe(2);
   });
   test("hard entry cap evicts oldest", async () => {
     const cache = new DedupCache<string>({ maxEntries: 2 });
-    await cache.getOrFetch("a", async () => "a");
-    await cache.getOrFetch("b", async () => "b");
-    await cache.getOrFetch("c", async () => "c");
+    await cache.getOrFetch("a", () => Promise.resolve("a"));
+    await cache.getOrFetch("b", () => Promise.resolve("b"));
+    await cache.getOrFetch("c", () => Promise.resolve("c"));
     expect(cache.size()).toBe(2);
   });
 });

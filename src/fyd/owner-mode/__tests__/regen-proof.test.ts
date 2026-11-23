@@ -94,7 +94,6 @@ describe("LANE-REG regeneration proof", () => {
     expect(facts1.length).toBeGreaterThan(0);
     expect(spec1.ownerObjectId).toBe("cw-biz-01");
     expect(digest1).toMatch(/^[0-9a-f]{64}$/);
-    // eslint-disable-next-line no-console
     console.log(
       "REG-PROOF digest1 (step 1 spec) = " + digest1 + " facts=" + facts1.length,
     );
@@ -156,7 +155,6 @@ describe("LANE-REG regeneration proof", () => {
       sourceValueSeen: sourceHours,
     });
     expect(again.assertionId).toBe(A2.assertionId);
-    // eslint-disable-next-line no-console
     console.log(
       "REG-PROOF journal = " +
         journal.map((a) => a.assertionId + ":" + a.op).join(", "),
@@ -170,7 +168,6 @@ describe("LANE-REG regeneration proof", () => {
 
   test("step 3: regenerated SiteSpec digest matches the original", () => {
     expect(digest2).toBe(digest1);
-    // eslint-disable-next-line no-console
     console.log("REG-PROOF digest2 (step 3 spec) = " + digest2);
   });
 

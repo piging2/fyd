@@ -64,7 +64,7 @@ function serviceGraph(
       );
     }
   }
-  return { objects, relationships } as ObjectGraph;
+  return { objects, relationships };
 }
 
 describe("serviceSignal cardinality tiers", () => {
@@ -127,7 +127,7 @@ describe("serviceSignal determinism", () => {
     const shuffled: ObjectGraph = {
       objects: [...g.objects].reverse(),
       relationships: [...g.relationships].reverse(),
-    } as ObjectGraph;
+    };
     const a = serviceSignal(g, "biz");
     const b = serviceSignal(shuffled, "biz");
     expect(b).toEqual(a);
@@ -168,7 +168,7 @@ describe("live-site signal snapshots (guards the constant-vector regression)", (
   }
 
   test("coppersmith: 4 strong services -> strong", () => {
-    const s = serviceSignal(COPPERSMITH_GRAPH as ObjectGraph, ownerOf(COPPERSMITH_GRAPH as ObjectGraph));
+    const s = serviceSignal(COPPERSMITH_GRAPH, ownerOf(COPPERSMITH_GRAPH));
     expect(s.tier).toBe("strong");
     expect(s.cardinality).toBe(4);
     expect(s.score).toBe(13.36);
@@ -177,7 +177,7 @@ describe("live-site signal snapshots (guards the constant-vector regression)", (
   });
 
   test("happy-place: 5 strong services -> strong", () => {
-    const s = serviceSignal(HAPPY_PLACE_GRAPH as ObjectGraph, ownerOf(HAPPY_PLACE_GRAPH as ObjectGraph));
+    const s = serviceSignal(HAPPY_PLACE_GRAPH, ownerOf(HAPPY_PLACE_GRAPH));
     expect(s.tier).toBe("strong");
     expect(s.cardinality).toBe(5);
     expect(s.score).toBe(14.736);

@@ -28,7 +28,7 @@ function json(
   return NextResponse.json(body, { status, headers: CORS_HEADERS });
 }
 
-export async function OPTIONS(): Promise<NextResponse> {
+export function OPTIONS(): NextResponse {
   return new NextResponse(null, {
     status: 204,
     headers: {
@@ -39,7 +39,7 @@ export async function OPTIONS(): Promise<NextResponse> {
   });
 }
 
-export async function GET(request: Request): Promise<NextResponse> {
+export function GET(request: Request): NextResponse {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   if (!id || id.trim().length === 0) {

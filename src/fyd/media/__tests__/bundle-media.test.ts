@@ -18,12 +18,16 @@
 import { writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { getPipelineManifest, validatePipelineManifest } from "../bundle-media";
-import { MEDIA_MODULE_VERSION } from "../types";
+import {
+  MEDIA_MODULE_VERSION,
+  type FydMediaObject,
+  type MediaManifest,
+} from "../types";
 
 const TS = "2026-09-21T00:00:00.000Z";
 const SITE = "__test-manifest-guard";
 
-function item(overrides: Record<string, unknown> = {}): any {
+function item(overrides: Record<string, unknown> = {}): FydMediaObject {
   return {
     id: "fyd-media-test",
     schema: "ping.social.media@1",
@@ -62,7 +66,7 @@ function item(overrides: Record<string, unknown> = {}): any {
   };
 }
 
-function manifest(overrides: Record<string, unknown> = {}): any {
+function manifest(overrides: Record<string, unknown> = {}): MediaManifest {
   return {
     siteId: SITE,
     generatedAt: TS,
@@ -87,7 +91,7 @@ describe("validatePipelineManifest", () => {
   });
 
   test("rejects a manifest missing the generator stamp", () => {
-    const m = manifest();
+    const m: Partial<MediaManifest> = manifest();
     delete m.generator;
     expect(validatePipelineManifest(m, SITE)).toBeNull();
   });
@@ -99,7 +103,7 @@ describe("validatePipelineManifest", () => {
   });
 
   test("rejects a manifest missing the ingest run id", () => {
-    const m = manifest();
+    const m: Partial<MediaManifest> = manifest();
     delete m.ingestRunId;
     expect(validatePipelineManifest(m, SITE)).toBeNull();
   });
@@ -164,7 +168,7 @@ describe("getPipelineManifest read path", () => {
   });
 
   test("a file missing pipeline provenance is ignored by the read path", () => {
-    const m = manifest();
+    const m: Partial<MediaManifest> = manifest();
     delete m.generator;
     delete m.ingestRunId;
     delete m.pipelineVersion;

@@ -11,7 +11,7 @@ import { resolveClaimIdentity } from "@/fyd/claim/identity";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(): Promise<NextResponse> {
+export function GET(): NextResponse {
   const identity = resolveClaimIdentity();
   return NextResponse.json({ ok: true, identity });
 }

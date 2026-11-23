@@ -13,15 +13,18 @@
  * - Enforced for sequence monotonicity
  */
 
-import { AnyEvent, Event } from './event-system';
-import { sequenceAuthority } from './sequence-authority';
+import { Event } from './event-system';
 import { ValidationFailure, ValidationResult } from './validation-result';
 
-interface PersistedEventStore {
-  events: Event[];
-  version: number;
-  lastSequence: number;
+/**
+ * Deep copy of an event via JSON round-trip. Events are JSON-plain data,
+ * so the parsed value carries the Event type; the assertion sits here at
+ * the production site instead of at callers.
+ */
+function deepCopyEvent(event: Event): Event {
+  return JSON.parse(JSON.stringify(event)) as Event;
 }
+
 
 class DurableEventStore {
   private static instance: DurableEventStore;
@@ -54,7 +57,7 @@ class DurableEventStore {
 
     // Recursively freeze nested objects
     for (const key of Object.keys(obj)) {
-      const value = (obj as any)[key];
+      const value = (obj as Record<string, unknown>)[key];
       if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
         this.deepFreeze(value);
       }
@@ -168,7 +171,7 @@ class DurableEventStore {
    * Returns deep copies to prevent mutation
    */
   getAll(): Event[] {
-    return this.events.map(e => JSON.parse(JSON.stringify(e)));
+    return this.events.map(e => deepCopyEvent(e));
   }
 
   /**
@@ -178,7 +181,7 @@ class DurableEventStore {
   getFromSequence(fromSequence: number): Event[] {
     return this.events
       .filter(e => e.sequence >= fromSequence)
-      .map(e => JSON.parse(JSON.stringify(e)));
+      .map(e => deepCopyEvent(e));
   }
 
   /**

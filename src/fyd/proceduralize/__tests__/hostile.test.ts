@@ -22,12 +22,15 @@ const FIXTURE = readFileSync(
   "utf8"
 );
 
+/** A parsed microdata value's text form: a present string as itself, anything else as absent. */
+const fieldText = (v: unknown): string => (typeof v === "string" ? v : "");
+
 describe("hostile microdata extraction", () => {
   test("script tags in names are neutralized (stripped, not executed)", () => {
     const items = extractMicrodata(FIXTURE);
     const business = items.find((i) => i.parsed["@type"] === "LocalBusiness");
     expect(business).toBeDefined();
-    const name = String(business!.parsed["name"] ?? "");
+    const name = fieldText(business!.parsed["name"]);
     // The parser strips the script tags; the key assertion is that
     // no executable markup survives into the object graph
     expect(name).not.toContain("<script>");
@@ -40,7 +43,7 @@ describe("hostile microdata extraction", () => {
     const items = extractMicrodata(FIXTURE);
     const business = items.find((i) => i.parsed["@type"] === "LocalBusiness");
     expect(business).toBeDefined();
-    const url = String(business!.parsed["url"] ?? "");
+    const url = fieldText(business!.parsed["url"]);
     // The render boundary must refuse it
     const verdict = resolveSafeLink(url, "navigate");
     expect(verdict.kind).toBe("non_navigable");
@@ -50,7 +53,7 @@ describe("hostile microdata extraction", () => {
     const items = extractMicrodata(FIXTURE);
     const business = items.find((i) => i.parsed["@type"] === "LocalBusiness");
     expect(business).toBeDefined();
-    const phone = String(business!.parsed["telephone"] ?? "");
+    const phone = fieldText(business!.parsed["telephone"]);
     expect(phone).toContain("DROP TABLE");
     // It's just a string in the object graph, never a query
     expect(typeof phone).toBe("string");
@@ -60,7 +63,7 @@ describe("hostile microdata extraction", () => {
     const items = extractMicrodata(FIXTURE);
     const business = items.find((i) => i.parsed["@type"] === "LocalBusiness");
     expect(business).toBeDefined();
-    const desc = String(business!.parsed["description"] ?? "");
+    const desc = fieldText(business!.parsed["description"]);
     expect(desc).toContain("Ignore previous instructions");
     // The Ask FYD context projection (not tested here) must exclude
     // or neutralize this; at the object level it is inert text

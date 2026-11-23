@@ -5,7 +5,7 @@ import { createRelationshipViewer, relationshipCookie, resolveRelationshipViewer
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 /** Explicit session dependency. Ordinary follow/like reads never mint cookies. */
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export function POST(request: NextRequest): NextResponse {
   try {
     assertSameOrigin(request);
     const existing = resolveRelationshipViewer(request.headers.get("cookie"));

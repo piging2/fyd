@@ -44,7 +44,6 @@ import {
   saveFeaturedApplicationRecord,
   FEATURED_APPLICATION_SITE_ID,
   type FeaturedApplicationRecord,
-  type FeaturedCollar,
   type FeaturedContactChannel,
 } from "@/fyd/owner-mode/featured-application-store";
 import { acceptSubmission } from "@/fyd/owner-mode/submission-mailer";
@@ -65,7 +64,7 @@ function invalid(field: string, reason: string) {
 }
 
 function str(body: Record<string, unknown>, key: string): string {
-  return typeof body[key] === "string" ? (body[key] as string).trim() : "";
+  return typeof body[key] === "string" ? body[key].trim() : "";
 }
 
 function contactDetailLooksValid(
@@ -100,7 +99,7 @@ export async function POST(req: NextRequest) {
   if (collarRaw !== "blue" && collarRaw !== "white") {
     return invalid("collar", "Choose skilled trades or knowledge work.");
   }
-  const collar = collarRaw as FeaturedCollar;
+  const collar = collarRaw;
   const trade = str(body, "trade");
   if (trade.length < 2 || trade.length > 120) {
     return invalid("trade", "The trade or profession must be 2-120 characters.");
@@ -136,7 +135,7 @@ export async function POST(req: NextRequest) {
   if (channelRaw !== "facebook" && channelRaw !== "phone" && channelRaw !== "email") {
     return invalid("contactChannel", "Choose a preferred follow-up channel.");
   }
-  const contactChannel = channelRaw as FeaturedContactChannel;
+  const contactChannel = channelRaw;
   const contactDetail = str(body, "contactDetail");
   if (!contactDetailLooksValid(contactChannel, contactDetail)) {
     return invalid(

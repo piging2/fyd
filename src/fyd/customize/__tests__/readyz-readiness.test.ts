@@ -89,8 +89,8 @@ describe("buildCommitSha", () => {
 
 describe("deploymentReadiness in journal mode", () => {
   it("is ready when the gateway answers with the journal marker", async () => {
-    global.fetch = jest.fn(async () => ({
-      json: async () => ({ journal: "fyd-demo-journal@derived1" }),
+    global.fetch = jest.fn(() => Promise.resolve({
+      json: () => Promise.resolve({ journal: "fyd-demo-journal@derived1" }),
     })) as unknown as typeof fetch;
     const r = await deploymentReadiness();
     expect(r.mode).toBe("journal");
@@ -100,11 +100,9 @@ describe("deploymentReadiness in journal mode", () => {
   });
 
   it("is not ready when the gateway is unreachable, reason preserved", async () => {
-    global.fetch = jest.fn(async () => {
-      throw Object.assign(new Error("fetch failed"), {
-        cause: { code: "ECONNREFUSED" },
-      });
-    }) as unknown as typeof fetch;
+    global.fetch = jest.fn(() => Promise.reject(Object.assign(new Error("fetch failed"), {
+      cause: { code: "ECONNREFUSED" },
+    })));
     const r = await deploymentReadiness();
     expect(r.mode).toBe("journal");
     expect(r.ready).toBe(false);

@@ -6,7 +6,7 @@
  * Pipeline:
  *   (graph, objectId, viewer)
  *     -> applyPublicVisibilityGate (THE privacy gate: the same rule the
- *        site pages use — spec-pipeline.publicGraph: only visibility
+ *        site pages use: spec-pipeline.publicGraph: only visibility
  *        "public" objects, only relationships between public objects.
  *        Nothing in this module does its own visibility check)
  *     -> resolve target object (absent/invisible -> null; the HTTP layer
@@ -330,7 +330,7 @@ function buildClaims(object: PingObject): SheetClaim[] {
       }),
       evidenceRef:
         typeof object.fields["evidence_ref"] === "string"
-          ? (object.fields["evidence_ref"] as string)
+          ? (object.fields["evidence_ref"])
           : undefined,
     });
   };

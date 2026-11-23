@@ -40,7 +40,7 @@
  */
 
 import { Redis } from '@upstash/redis';
-import { getEnvironment, getKvNamespace } from '@/lib/environment';
+import { getKvNamespace } from '@/lib/environment';
 
 /**
  * P0 FIX: Eliminate process-global mutable state
@@ -254,6 +254,28 @@ function getTransactionKey(transactionId: string): string {
  * This supports bulk assignments: multiple assignments share one transaction ID
  * but each contributes its own staging key to the transaction record
  */
+
+/**
+ * Reply shapes of the Lua transaction scripts below. Each script returns
+ * a flat table: either {err = code} or {ok = status, ...}; the Upstash
+ * client surfaces that table as an object carrying these members.
+ */
+interface TransactionScriptErrorReply {
+  err: string;
+}
+
+type CreateTransactionScriptResult =
+  | TransactionScriptErrorReply
+  | { ok: 'CREATED' }
+  | { ok: 'MERGED'; data: string; stagingKeysCount: number }
+  // Legacy fallback the consumer still handles; the current script
+  // returns CREATED or MERGED only.
+  | { ok: 'EXISTS'; data: string };
+
+type StateTransitionScriptResult =
+  | TransactionScriptErrorReply
+  | { ok: 'TRANSITIONED' };
+
 const CREATE_TRANSACTION_SCRIPT = `
   local key = KEYS[1]
   local transactionData = ARGV[1]
@@ -438,26 +460,26 @@ export async function createDeploymentTransaction(
   console.log('[DEPLOYMENT_TRANSACTION] CREATING_OR_MERGING', { transactionId, stagingKeysCount: stagingKeys.length, files });
 
   try {
-    const result = await client.eval(
+    const result = await client.eval<string[], CreateTransactionScriptResult>(
       CREATE_TRANSACTION_SCRIPT,
       [key],
       [JSON.stringify(transaction), JSON.stringify(stagingKeys)]
     );
 
     if (result && typeof result === 'object' && 'err' in result) {
-      throw new Error(`Failed to create/merge transaction: ${normalizeRedisError((result as any).err)}`);
+      throw new Error(`Failed to create/merge transaction: ${normalizeRedisError(result.err)}`);
     }
 
     // If transaction was created fresh
-    if (result && typeof result === 'object' && 'ok' in result && (result as any).ok === 'CREATED') {
+    if (result && typeof result === 'object' && 'ok' in result && result.ok === 'CREATED') {
       console.log('[DEPLOYMENT_TRANSACTION] CREATED', { transactionId, stagingKeysCount: stagingKeys.length });
       return transaction;
     }
 
     // If transaction already existed and staging keys were merged
-    if (result && typeof result === 'object' && 'ok' in result && (result as any).ok === 'MERGED') {
-      const merged = JSON.parse((result as any).data) as DeploymentTransaction;
-      const stagingKeysCount = (result as any).stagingKeysCount;
+    if (result && typeof result === 'object' && 'ok' in result && result.ok === 'MERGED') {
+      const merged = JSON.parse(result.data) as DeploymentTransaction;
+      const stagingKeysCount = result.stagingKeysCount;
       console.log('[DEPLOYMENT_TRANSACTION] MERGED_STAGING_KEYS', {
         transactionId,
         state: merged.state,
@@ -468,8 +490,8 @@ export async function createDeploymentTransaction(
     }
 
     // Fallback for legacy 'EXISTS' behavior (should not occur with new script)
-    if (result && typeof result === 'object' && 'ok' in result && (result as any).ok === 'EXISTS') {
-      const existing = JSON.parse((result as any).data) as DeploymentTransaction;
+    if (result && typeof result === 'object' && 'ok' in result && result.ok === 'EXISTS') {
+      const existing = JSON.parse(result.data) as DeploymentTransaction;
       console.log('[DEPLOYMENT_TRANSACTION] RETURNED_EXISTING', { transactionId, state: existing.state });
       return existing;
     }
@@ -510,7 +532,7 @@ export async function claimDeploymentTransaction(
       claimedAt: new Date().toISOString(),
     };
     
-    const result = await client.eval(
+    const result = await client.eval<string[], StateTransitionScriptResult>(
       STATE_TRANSITION_SCRIPT,
       [key],
       [
@@ -523,7 +545,7 @@ export async function claimDeploymentTransaction(
     );
     
     if (result && typeof result === 'object' && 'err' in result) {
-      const err = (result as any).err;
+      const err = result.err;
       if (err.includes('ALREADY_CLAIMED')) {
         throw new Error(`Transaction already claimed by another process: ${transactionId}`);
       }
@@ -586,7 +608,7 @@ export async function setGitCommitSha(
       // Remain in committing state - transition to committed happens after Redis promotion
     };
     
-    const result = await client.eval(
+    const result = await client.eval<string[], StateTransitionScriptResult>(
       STATE_TRANSITION_SCRIPT,
       [key],
       [
@@ -599,7 +621,7 @@ export async function setGitCommitSha(
     );
     
     if (result && typeof result === 'object' && 'err' in result) {
-      const err = (result as any).err;
+      const err = result.err;
       if (err.includes('OWNER_MISMATCH')) {
         throw new Error(`Ownership verification failed: ${normalizeRedisError(err)}`);
       }
@@ -657,7 +679,7 @@ export async function commitDeploymentTransaction(
       // commitSha and commitUrl are already set
     };
     
-    const result = await client.eval(
+    const result = await client.eval<string[], StateTransitionScriptResult>(
       STATE_TRANSITION_SCRIPT,
       [key],
       [
@@ -670,7 +692,7 @@ export async function commitDeploymentTransaction(
     );
     
     if (result && typeof result === 'object' && 'err' in result) {
-      const err = (result as any).err;
+      const err = result.err;
       if (err.includes('OWNER_MISMATCH')) {
         throw new Error(`Ownership verification failed: ${normalizeRedisError(err)}`);
       }
@@ -724,7 +746,7 @@ export async function consumeDeploymentTransaction(
       consumedAt: new Date().toISOString(),
     };
     
-    const result = await client.eval(
+    const result = await client.eval<string[], StateTransitionScriptResult>(
       STATE_TRANSITION_SCRIPT,
       [key],
       [
@@ -737,7 +759,7 @@ export async function consumeDeploymentTransaction(
     );
     
     if (result && typeof result === 'object' && 'err' in result) {
-      const err = (result as any).err;
+      const err = result.err;
       if (err.includes('OWNER_MISMATCH')) {
         throw new Error(`Ownership verification failed: ${normalizeRedisError(err)}`);
       }
@@ -788,7 +810,7 @@ export async function failDeploymentTransaction(
       failedAt: new Date().toISOString(),
     };
     
-    const result = await client.eval(
+    const result = await client.eval<string[], StateTransitionScriptResult>(
       STATE_TRANSITION_SCRIPT,
       [key],
       [
@@ -801,7 +823,7 @@ export async function failDeploymentTransaction(
     );
     
     if (result && typeof result === 'object' && 'err' in result) {
-      const err = (result as any).err;
+      const err = result.err;
       if (err.includes('TRANSACTION_NOT_FOUND')) {
         throw new Error(`Transaction not found: ${transactionId}. Use createDeploymentTransaction first.`);
       }
@@ -901,7 +923,7 @@ export async function retryDeploymentTransaction(transactionId: string): Promise
       failedAt: undefined,
     };
     
-    const result = await client.eval(
+    const result = await client.eval<string[], StateTransitionScriptResult>(
       STATE_TRANSITION_SCRIPT,
       [key],
       [
@@ -914,7 +936,7 @@ export async function retryDeploymentTransaction(transactionId: string): Promise
     );
     
     if (result && typeof result === 'object' && 'err' in result) {
-      const err = (result as any).err;
+      const err = result.err;
       if (err.includes('ILLEGAL_TRANSITION')) {
         throw new Error(`Cannot retry transaction: ${normalizeRedisError(err)}`);
       }

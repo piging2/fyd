@@ -106,7 +106,7 @@ describe("context compiler on the Happy Place fixture", () => {
 
   test("unanswerable question: roof claim cannot bind, UNKNOWN passes", () => {
     const p = compileAskContext(base({ question: "Do you do roofing?" }));
-    const hay = p.objects.map((o) => `${o.title} ${o.description}`.toLowerCase()).join(" ");
+    const hay = p.objects.map((o) => `${o.title} ${o.description.value}`.toLowerCase()).join(" ");
     expect(hay).not.toContain("roof");
     const bad = verifyAnswerClaims(p, [
       { text: "We do roofing.", grade: "SUPPORTED", evidenceRefIds: [] },

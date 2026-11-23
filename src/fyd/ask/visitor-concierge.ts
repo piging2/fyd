@@ -30,10 +30,8 @@ import {
   forcedUnknownFor,
   missingObligations,
   normalizeQuestion,
-  type Obligation,
   type ObligationKind,
   type ObligationResolution,
-  type ObligationStatus,
 } from './obligations';
 
 type Claim = { text: string; bindings: PresentationBinding[]; relationships: PingRelationship[] };
@@ -236,7 +234,7 @@ export function answerVisitorConcierge(ctx: AskFydContext, question: string): As
   // pipeline bug and fails closed before serving).
   const resolutions: ObligationResolution[] = perObligation.map(({ obligation, acc }) => ({
     obligation,
-    status: (acc === null ? "declined" : acc.claims.length > 0 ? "supported" : "unknown") as ObligationStatus,
+    status: (acc === null ? "declined" : acc.claims.length > 0 ? "supported" : "unknown"),
     claimCount: acc ? acc.claims.length : 0,
     unknowns: acc ? [...acc.unknowns] : [],
   }));
@@ -247,7 +245,7 @@ export function answerVisitorConcierge(ctx: AskFydContext, question: string): As
   const covered: ObligationResolution[] = resolutions.map((r) => {
     const forced = missingObligations([r.obligation], [r]).length > 0;
     return forced
-      ? { ...r, status: "unknown" as ObligationStatus, unknowns: [...r.unknowns, forcedUnknownFor(r.obligation)] }
+      ? { ...r, status: "unknown", unknowns: [...r.unknowns, forcedUnknownFor(r.obligation)] }
       : r;
   });
   assertObligationCoverage(obligations, covered);

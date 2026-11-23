@@ -9,7 +9,7 @@
 import { Redis } from '@upstash/redis';
 import crypto from 'crypto';
 import type { Media } from '@/types/media';
-import { verifyBlobHash, type BlobHashVerificationResult } from '@/lib/blob-storage';
+import { verifyBlobHash } from '@/lib/blob-storage';
 import { getEnvironment, getKvNamespace } from '@/lib/environment';
 
 /**
@@ -69,7 +69,6 @@ function createRedisClient(): Redis {
   // Check integration-generated variables
   const integrationUrl = process.env.KV_REST_API__KV_REST_API_URL || process.env.KV_REST_API__REDIS_URL || process.env.KV_REST_API__KV_URL;
   const integrationToken = process.env.KV_REST_API__KV_REST_API_TOKEN;
-  const readOnlyToken = process.env.KV_REST_API__KV_REST_API_READ_ONLY_TOKEN;
   
   // Use integration credentials if primary not set
   if (!url && integrationUrl) {
@@ -119,8 +118,6 @@ function createRedisClient(): Redis {
 const MEDIA_PREFIX = 'media:';
 const CONTENT_HASH_PREFIX = 'content_hash:';
 const BLOB_METADATA_PREFIX = 'blob_metadata:';
-const STALE_INDEX_PREFIX = 'stale_index:';
-const MEDIA_QUARANTINE_PREFIX = 'media_quarantine:';
 
 /**
  * Compute synthetic content hash (SHA256 of canonical ID)
@@ -395,14 +392,14 @@ export async function getMedia(id: string): Promise<Media | null> {
       return null;
     }
     
-    const data = await client.get(namespacedKey(`media:${id}`));
+    const data = await client.get<Media | string>(namespacedKey(`media:${id}`));
     
     if (!data) {
       return null;
     }
     
     // Handle both JSON strings and already-deserialized objects
-    const media = typeof data === 'string' ? JSON.parse(data) : data;
+    const media: Media = typeof data === 'string' ? (JSON.parse(data) as Media) : data;
     
     // Verify public media authority before returning (strict public gate)
     if (media.lifecycleState === 'published' && media.source === 'local') {
@@ -470,16 +467,16 @@ async function getMediaBatchInner(ids: string[], result: Map<string, Media>): Pr
   const client = createRedisClient();
   const CHUNK = 100;
 
-  const raw: Array<{ id: string; media: any }> = [];
+  const raw: Array<{ id: string; media: Media }> = [];
   for (let i = 0; i < ids.length; i += CHUNK) {
     const slice = ids.slice(i, i + CHUNK);
-    const values = await client.mget<any[]>(...slice.map(id => namespacedKey(`media:${id}`)));
+    const values = await client.mget<Array<Media | string | null>>(...slice.map(id => namespacedKey(`media:${id}`)));
     slice.forEach((id, idx) => {
       const data = values?.[idx];
       if (!data) return;
       try {
-        raw.push({ id, media: typeof data === 'string' ? JSON.parse(data) : data });
-      } catch (error) {
+        raw.push({ id, media: (typeof data === 'string' ? JSON.parse(data) : data) as Media });
+      } catch {
         console.error('[MEDIA_KV] BATCH_PARSE_FAILED', { id });
       }
     });
@@ -495,7 +492,7 @@ async function getMediaBatchInner(ids: string[], result: Map<string, Media>): Pr
   const blobMetadataLookup = new Map<string, unknown>();
   for (let i = 0; i < hashes.length; i += CHUNK) {
     const slice = hashes.slice(i, i + CHUNK);
-    const values = await client.mget<any[]>(...slice.map(h => namespacedKey(`${BLOB_METADATA_PREFIX}${h}`)));
+    const values = await client.mget<unknown[]>(...slice.map(h => namespacedKey(`${BLOB_METADATA_PREFIX}${h}`)));
     slice.forEach((h, idx) => blobMetadataLookup.set(h, values?.[idx] ?? null));
   }
 
@@ -515,7 +512,7 @@ async function getMediaBatchInner(ids: string[], result: Map<string, Media>): Pr
       continue;
     }
 
-    result.set(id, media as Media);
+    result.set(id, media);
   }
 
   return result;
@@ -540,14 +537,14 @@ export async function getMediaRecordRaw(id: string): Promise<Media | null> {
       return null;
     }
     
-    const data = await client.get(namespacedKey(`media:${id}`));
+    const data = await client.get<Media | string>(namespacedKey(`media:${id}`));
     
     if (!data) {
       return null;
     }
     
     // Handle both JSON strings and already-deserialized objects
-    const media = typeof data === 'string' ? JSON.parse(data) : data;
+    const media: Media = typeof data === 'string' ? (JSON.parse(data) as Media) : data;
     
     // NO constitutional proof verification - return raw authoritative record
     // This allows reconciliation to inspect DriveReference records and poisoned PublishedMediaAsset records
@@ -610,7 +607,7 @@ export async function saveMedia(media: Media): Promise<void> {
       
       // Storage must be either static or blob
       if (media.storage !== 'static' && media.storage !== 'blob') {
-        throw new Error(`Cannot save media ${media.id}: Published local media storage must be 'static' or 'blob', got '${media.storage}'`);
+        throw new Error(`Cannot save media ${media.id}: Published local media storage must be 'static' or 'blob', got '${String(media.storage)}'`);
       }
       
       // Static storage must have valid static path
@@ -731,11 +728,11 @@ export async function updateStorageFieldCAS(
       return 'OK'
     `;
     
-    const result = await client.eval(
+    const result = await client.eval<string[], string>(
       casScript,
       [namespacedKey(`${MEDIA_PREFIX}${mediaId}`)],
       [expectedContentHash, proposedStorage]
-    ) as string;
+    );
     
     if (result === 'OK') {
       console.log('[MEDIA_KV] CAS update successful', { mediaId, storage: proposedStorage });

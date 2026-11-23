@@ -373,7 +373,7 @@ describe("owner-facing language law", () => {
   });
 
   test("no em dashes in any owner-facing string", () => {
-    for (const { label, text } of allConsequences) {
+    for (const { text } of allConsequences) {
       expect(text).not.toMatch(/[\u2014\u2013]/);
     }
   });

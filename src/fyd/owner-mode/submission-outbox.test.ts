@@ -32,21 +32,22 @@ import {
 function memoryClient() {
   const blobs = new Map<string, OutboxRecord>();
   const client: OutboxBlobClient = {
-    async head(pathname: string): Promise<boolean> {
-      return blobs.has(pathname);
+    head(pathname: string): Promise<boolean> {
+      return Promise.resolve(blobs.has(pathname));
     },
-    async getJson(pathname: string): Promise<OutboxRecord | null> {
-      return blobs.get(pathname) ?? null;
+    getJson(pathname: string): Promise<OutboxRecord | null> {
+      return Promise.resolve(blobs.get(pathname) ?? null);
     },
-    async putJson(
+    putJson(
       pathname: string,
       record: OutboxRecord,
       opts: { allowOverwrite: boolean },
     ): Promise<void> {
       if (blobs.has(pathname) && !opts.allowOverwrite) {
-        throw new Error("blob already exists (simulated)");
+        return Promise.reject(new Error("blob already exists (simulated)"));
       }
       blobs.set(pathname, record);
+      return Promise.resolve();
     },
   };
   return { blobs, client };
@@ -150,14 +151,14 @@ describe("persistToOutbox", () => {
 
   it("surfaces a persist failure honestly instead of faking success", async () => {
     const failing: OutboxBlobClient = {
-      async head() {
-        return false;
+      head() {
+        return Promise.resolve(false);
       },
-      async getJson() {
-        return null;
+      getJson() {
+        return Promise.resolve(null);
       },
-      async putJson() {
-        throw new Error("store suspended (simulated)");
+      putJson() {
+        return Promise.reject(new Error("store suspended (simulated)"));
       },
     };
     const result = await persistToOutbox({
@@ -247,18 +248,18 @@ describe("acceptSubmission relay policy", () => {
         FYD_SMTP_USER: "nolan.geske@yahoo.com",
         FYD_SMTP_PASS: "test-app-password-not-a-real-secret",
       },
-      transport: async (mail) => {
+      transport: (mail) => {
         sent.push(mail);
-        return { id: "should-not-be-used" };
+        return Promise.resolve({ id: "should-not-be-used" });
       },
-      outbox: async (mail) => {
+      outbox: (mail) => {
         expect(mail?.to).toBe("nolangesk@gmail.com");
         expect(mail?.from).toBe("nolan.geske@yahoo.com");
         // Yahoo refuses an external Reply-To header (550, bisected
         // live 2026-10-25), so the record mail must not carry one
         // even when the submission supplied a reply address.
         expect(mail?.replyTo).toBeUndefined();
-        return { configured: true, persisted: true };
+        return Promise.resolve({ configured: true, persisted: true });
       },
       store: () => {
         throw new Error("EROFS (simulated)");
@@ -279,11 +280,11 @@ describe("acceptSubmission relay policy", () => {
         FYD_SMTP_USER: "nolan.geske@yahoo.com",
         FYD_SMTP_PASS: "test-app-password-not-a-real-secret",
       },
-      transport: async (mail) => {
+      transport: (mail) => {
         sent.push(mail);
-        return { id: "test-message-id" };
+        return Promise.resolve({ id: "test-message-id" });
       },
-      outbox: async () => ({ configured: false, persisted: false }),
+      outbox: () => Promise.resolve({ configured: false, persisted: false }),
       log: () => {},
     });
     expect(outcome.accepted).toBe(true);
@@ -299,10 +300,8 @@ describe("acceptSubmission relay policy", () => {
         FYD_SMTP_USER: "nolan.geske@yahoo.com",
         FYD_SMTP_PASS: "test-app-password-not-a-real-secret",
       },
-      transport: async () => {
-        throw new Error("smtp refused (simulated)");
-      },
-      outbox: async () => ({ configured: true, persisted: false }),
+      transport: () => Promise.reject(new Error("smtp refused (simulated)")),
+      outbox: () => Promise.resolve({ configured: true, persisted: false }),
       store: () => {
         throw new Error("EROFS (simulated)");
       },

@@ -92,7 +92,7 @@ function canonicalize(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (typeof value === "object") {
     const out: Record<string, unknown> = {};
-    for (const key of Object.keys(value as Record<string, unknown>).sort()) {
+    for (const key of Object.keys(value).sort()) {
       if (VOLATILE_KEYS.has(key)) continue;
       out[key] = canonicalize((value as Record<string, unknown>)[key]);
     }
@@ -204,7 +204,7 @@ export function proposeSitePatch(spec: FYDSiteSpec, intent: SiteIntent): PatchRe
       // hidden set (existing hidden ids kept, the target moved first) so the
       // digest covers the full display state.
       const cur = Array.isArray(sec.presentation.hiddenObjectIds)
-        ? (sec.presentation.hiddenObjectIds as string[])
+        ? (sec.presentation.hiddenObjectIds)
         : [];
       const ids = [intent.objectId, ...cur.filter((id) => id !== intent.objectId)];
       return build({
@@ -253,7 +253,7 @@ function build(body: Omit<SitePatchBody, "kind" | "proposalDigest">): PatchResul
  * spec, never mutates.
  */
 export function applySitePatch(spec: FYDSiteSpec, proposal: SitePatchBody): FYDSiteSpec {
-  const next: FYDSiteSpec = JSON.parse(JSON.stringify(spec));
+  const next: FYDSiteSpec = JSON.parse(JSON.stringify(spec)) as FYDSiteSpec;
   if (proposal.component === "theme") {
     const tokens = next.themeTokens as unknown as Record<string, unknown>;
     for (const [path, value] of Object.entries(proposal.propsDiff)) {
@@ -270,14 +270,14 @@ export function applySitePatch(spec: FYDSiteSpec, proposal: SitePatchBody): FYDS
   const diff = proposal.propsDiff;
   if (typeof diff["moveTo"] === "number") {
     const [moved] = page.sections.splice(idx, 1);
-    page.sections.splice(diff["moveTo"] as number, 0, moved);
+    page.sections.splice(diff["moveTo"], 0, moved);
     // Section ids are deterministic: re-derive after a move.
     page.sections.forEach((s, i) => {
       s.id = page.slug + ":" + s.component + ":" + i;
     });
   }
   if (typeof diff["presentation.hidden"] === "boolean") {
-    sec.presentation.hidden = diff["presentation.hidden"] as boolean;
+    sec.presentation.hidden = diff["presentation.hidden"];
   }
   if (Array.isArray(diff["presentation.featuredIds"])) {
     sec.presentation.featuredIds = diff["presentation.featuredIds"] as string[];
@@ -289,10 +289,10 @@ export function applySitePatch(spec: FYDSiteSpec, proposal: SitePatchBody): FYDS
     sec.presentation.hiddenObjectIds = diff["presentation.hiddenObjectIds"] as string[];
   }
   if (typeof diff["presentation.heading"] === "string") {
-    sec.presentation.heading = diff["presentation.heading"] as string;
+    sec.presentation.heading = diff["presentation.heading"];
   }
   if (typeof diff["presentation.copy"] === "string") {
-    sec.presentation.copy = diff["presentation.copy"] as string;
+    sec.presentation.copy = diff["presentation.copy"];
   }
   return next;
 }

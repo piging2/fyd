@@ -18,7 +18,7 @@
 
 import { createHash } from "node:crypto";
 import sharp from "sharp";
-import type { Media } from "../../types/media";
+import type { Media } from "../../../types/media";
 import {
   MediaBindingError,
   bindMediaToAuthority,
@@ -64,19 +64,20 @@ function fakeAuthority(): FakeAuthority {
     existing: new Map(),
   };
   f.deps = {
-    uploadToBlob: async (buffer, filename, contentType) => {
+    uploadToBlob: (buffer, filename, contentType) => {
       f.uploads.push({ buffer, filename, contentType });
-      return {
+      return Promise.resolve({
         url: "https://blob.test/" + filename,
         uploadedAt: TS,
         alreadyExisted: false,
         contentHash: sha(buffer),
-      };
+      });
     },
-    findMediaByContentHash: async (contentHash) =>
-      f.existing.get(contentHash) ?? null,
-    saveMedia: async (media) => {
+    findMediaByContentHash: (contentHash) =>
+      Promise.resolve(f.existing.get(contentHash) ?? null),
+    saveMedia: (media) => {
       f.saved.push(media);
+      return Promise.resolve();
     },
   };
   return f;
@@ -205,7 +206,7 @@ describe("bindMediaToAuthority", () => {
     for (const u of returned) {
       expect(Object.values(receipt.urls)).toContain(u);
     }
-    const variants = (record as { variants: Record<string, unknown> }).variants;
+    const variants = record.variants;
     expect(variants["original"]).toBe(
       "https://blob.test/" + asset.media.id + "-original.png",
     );

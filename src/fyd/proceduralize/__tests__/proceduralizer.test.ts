@@ -45,7 +45,7 @@ describe("proceduralizer stages", () => {
       <title>Plain Title</title>
     </head></html>`;
     const facts = await parse(acquired(html));
-    const names = facts.map((f) => f.name + "=" + f.value);
+    const names = facts.map((f) => f.name + "=" + (Array.isArray(f.value) ? f.value.join(",") : f.value));
     expect(names).toContain("title=Acme");
     expect(names).toContain("phone=555-0100");
     expect(names).toContain("title=OG Title");
@@ -237,7 +237,7 @@ describe("structured tiers, decoding, and privacy", () => {
     expect(title?.value).toBe("Copper & Sons");
   });
 
-  test("Grill 19: private facts fail closed in resolve() and project()", async () => {
+  test("Grill 19: private facts fail closed in resolve() and project()", () => {
     const privateFact: ParsedFact = {
       name: "street_address",
       value: "123 Main St",

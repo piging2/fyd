@@ -224,7 +224,7 @@ describe("flag gate", () => {
     const post = createAdsEventsPostHandler({ env: {} });
     const res = await post(requestFor(organicImpression("render-off")));
     expect(res.status).toBe(404);
-    const json = await res.json();
+    const json = (await res.json()) as { code: string };
     expect(json.code).toBe("ads-loop-disabled");
     expect(new AdsEventLedger().summarize().rows).toBe(0);
   });
@@ -235,7 +235,7 @@ describe("recording", () => {
     seedSlotAndCampaign();
     const res = await handler()(requestFor(organicImpression("render-a")));
     expect(res.status).toBe(201);
-    const json = await res.json();
+    const json = (await res.json()) as { ok: boolean; status: string; receiptRef: string };
     expect(json.ok).toBe(true);
     expect(json.status).toBe("recorded");
     expect(json.receiptRef).toMatch(/^ads-receipt:/);
@@ -319,7 +319,7 @@ describe("malformed bodies write nothing", () => {
     for (const body of cases) {
       const res = await post(requestFor(body));
       expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = (await res.json()) as { code: string };
       expect(json.code).toBe("invalid-event-draft");
     }
     expect(new AdsEventLedger().summarize().rows).toBe(0);
@@ -344,7 +344,7 @@ describe("integration: the full B4 stack", () => {
     const post = handler();
     const res = await post(requestFor(draft));
     expect(res.status).toBe(201);
-    const json = await res.json();
+    const json = (await res.json()) as { status: string; receiptRef: string };
     expect(json.status).toBe("recorded");
     expect(json.receiptRef).toMatch(/^ads-receipt:/);
 

@@ -26,7 +26,7 @@ function findAddressField(obj: ReturnType<typeof findLocationObject>): string {
     (k) =>
       k.toLowerCase().includes("address") &&
       typeof obj.fields[k] === "string" &&
-      (obj.fields[k] as string) !== ""
+      (obj.fields[k]) !== ""
   );
   if (!key) throw new Error("location object has no non-empty address field");
   return key;

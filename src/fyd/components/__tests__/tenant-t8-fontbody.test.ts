@@ -1,14 +1,14 @@
 /**
- * tenant-t8-fontbody.test.ts — pins Website UI audit 2026-11-01
+ * tenant-t8-fontbody.test.ts: pins Website UI audit 2026-11-01
  * finding T8.
  *
  * The finding: every tenant theme declares fontBody (e.g. Geist /
  * sans) but the renderer never applied it, while the global
- * stylesheet set body copy in a Georgia serif stack — tenants
+ * stylesheet set body copy in a Georgia serif stack: tenants
  * rendered body text in a serif they never chose and the token was
  * inert. (The public VisitorExperience already applied
- * var(--fyd-font-body) at its root; the renderer path — builder and
- * owner-editor surfaces — did not.)
+ * var(--fyd-font-body) at its root; the renderer path: builder and
+ * owner-editor surfaces: did not.)
  *
  * The fix applies theme.fontBody on the SectionShell <section>,
  * the one element every rendered section passes through, so all
@@ -42,7 +42,7 @@ function obj(partial: Partial<PingObject> & { id: string; schema: string; title:
       derivedAt: "2026-09-22T00:00:00Z",
     },
     ...partial,
-  } as PingObject;
+  };
 }
 
 const GRAPH: ObjectGraph = {

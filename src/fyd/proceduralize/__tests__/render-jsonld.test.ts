@@ -15,7 +15,7 @@
 
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { localBusinessJsonLd, type JsonLdClaim } from "../render-jsonld";
+import { localBusinessJsonLd } from "../render-jsonld";
 import { VisitorExperience } from "@/fyd/components/visitor-experience";
 import { generateSiteSpec } from "../generator";
 import { COPPERSMITH_GRAPH } from "../__fixtures__/coppersmith-graph";
@@ -84,8 +84,8 @@ describe.each(SITES)("render-jsonld ($siteId)", ({ siteId, graph }) => {
   });
 
   test("structured values appear identically in the visible render", () => {
-    // INV-SD-3: the builder reads through visitorField — the SAME reader
-    // the visible render uses — so structured values are identical to
+    // INV-SD-3: the builder reads through visitorField: the SAME reader
+    // the visible render uses: so structured values are identical to
     // visible values by construction (every claim IS a visitorField
     // read). This test anchors the end-to-end fact: the rendered HTML
     // for the same projection contains the name/phone/url/service titles
@@ -106,7 +106,7 @@ describe.each(SITES)("render-jsonld ($siteId)", ({ siteId, graph }) => {
     const escapeHtml = (s: string) =>
       s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const checked: string[] = [];
-    for (const claim of result!.claims as JsonLdClaim[]) {
+    for (const claim of result!.claims) {
       if (!VISIBLE_FIELDS.has(claim.field)) continue;
       checked.push(claim.value);
       expect(html).toContain(escapeHtml(claim.value));
@@ -117,7 +117,7 @@ describe.each(SITES)("render-jsonld ($siteId)", ({ siteId, graph }) => {
   test("every factual claim passes the BindingVerifier tap", () => {
     const assertions = ownerAssertionsFromGraph(graph);
     expect(result!.claims.length).toBeGreaterThan(0);
-    for (const claim of result!.claims as JsonLdClaim[]) {
+    for (const claim of result!.claims) {
       const verdict = verifyBinding(
         { objectId: claim.objectId, field: claim.field, classification: "direct" },
         graph,
@@ -134,12 +134,12 @@ describe.each(SITES)("render-jsonld ($siteId)", ({ siteId, graph }) => {
 
 describe("visibility respected", () => {
   test("a hidden street address disappears from structured output", () => {
-    const graph = structuredClone(COPPERSMITH_GRAPH) as ObjectGraph;
+    const graph = structuredClone(COPPERSMITH_GRAPH);
     const owner = businessOf(COPPERSMITH_GRAPH);
     const target = graph.objects.find((o) => o.id === owner.id)!;
     // Simulate the projection boundary: a hidden address is CUT from the
     // projection graph (EVIDENCE != VISIBILITY). The builder must then
-    // emit no streetAddress — it cannot see what the projection removed.
+    // emit no streetAddress: it cannot see what the projection removed.
     delete target.fields["streetAddress"];
     const result = localBusinessJsonLd(projectionFor(graph), {
       ownerObjectId: owner.id,
@@ -147,7 +147,7 @@ describe("visibility respected", () => {
     const address = result!.node.address as Record<string, string> | undefined;
     if (address) expect(address.streetAddress).toBeUndefined();
     expect(
-      (result!.claims as JsonLdClaim[]).some((c) => c.field === "streetAddress"),
+      (result!.claims).some((c) => c.field === "streetAddress"),
     ).toBe(false);
   });
 

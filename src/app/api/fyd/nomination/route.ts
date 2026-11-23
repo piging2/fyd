@@ -41,7 +41,6 @@ import {
   nominationReceiptForRecord,
   saveNominationRecord,
   NOMINATION_SITE_ID,
-  type NominationCategory,
   type NominationRecord,
 } from "@/fyd/owner-mode/nomination-store";
 import { acceptSubmission } from "@/fyd/owner-mode/submission-mailer";
@@ -60,7 +59,7 @@ function invalid(field: string, reason: string) {
 }
 
 function str(body: Record<string, unknown>, key: string): string {
-  return typeof body[key] === "string" ? (body[key] as string).trim() : "";
+  return typeof body[key] === "string" ? body[key].trim() : "";
 }
 
 export async function POST(req: NextRequest) {
@@ -82,7 +81,7 @@ export async function POST(req: NextRequest) {
   if (categoryRaw !== "skilled" && categoryRaw !== "knowledge") {
     return invalid("category", "Choose skilled trades or knowledge work.");
   }
-  const category = categoryRaw as NominationCategory;
+  const category = categoryRaw;
   const city = str(body, "city");
   if (city.length < 2 || city.length > 200) {
     return invalid("city", "The city or service area must be 2-200 characters.");

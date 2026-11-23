@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { listMediaIds, getMediaRecordRaw, saveMedia } from '@/lib/media-kv-store';
+import { listMediaIds, getMediaRecordRaw } from '@/lib/media-kv-store';
 import { loadMediaManifest } from '@/lib/media';
 import { getBlobMetadataByContentHash, verifyBlobHash } from '@/lib/blob-storage';
 
@@ -98,7 +98,7 @@ describe('Media Audit Classification', () => {
   });
 
   describe('Local record with static manifest evidence', () => {
-    it('should classify as REPAIRABLE_STATIC when manifest evidence exists', async () => {
+    it('should classify as REPAIRABLE_STATIC when manifest evidence exists', () => {
       // GIVEN: Local source with no storage but manifest evidence
       const localRecord = {
         id: 'local-test-123',
@@ -136,7 +136,7 @@ describe('Media Audit Classification', () => {
       expect(isRepairableStatic).toBe(true);
     });
 
-    it('should classify as AMBIGUOUS without manifest evidence', async () => {
+    it('should classify as AMBIGUOUS without manifest evidence', () => {
       // GIVEN: Local source with no storage and no manifest evidence
       const localRecord = {
         id: 'local-test-456',
@@ -240,7 +240,7 @@ describe('Media Audit Classification', () => {
   });
 
   describe('UI repair target validation', () => {
-    it('should ensure UI repair target contains only repairable IDs', async () => {
+    it('should ensure UI repair target contains only repairable IDs', () => {
       // GIVEN: Classification results
       const classification = {
         missingStorageIds: ['drive-1', 'local-1', 'local-2'],

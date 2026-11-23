@@ -109,7 +109,6 @@ import type {
   Fact,
   ObjectCapability,
   ObjectProjection,
-  RelatedRef,
 } from "@/fyd/object/object-projection";
 import { PeekCard, PEEK_W } from "./PeekCard";
 import { WorkspaceSheet, WORKSPACE_W } from "./WorkspaceSheet";
@@ -806,9 +805,6 @@ export function useObjectProjection(objectId: string): ProjectionState {
 function factKnown(f: Fact): boolean {
   return f.evidence.state !== "unknown";
 }
-function refKnown(r: RelatedRef): boolean {
-  return r.evidence.state !== "unknown";
-}
 
 /* ------------------------------------------------------------------ */
 /* MarginObject: one slot in the margin rail.                         */
@@ -987,8 +983,8 @@ export function MarginObject({
         suppressFocusOpen.current = false;
         return;
       }
-      if (wrapRef.current?.contains(e.target as Node)) {
-        if (!wrapRef.current.contains(e.relatedTarget as Node)) {
+      if (wrapRef.current?.contains(e.target)) {
+        if (!wrapRef.current.contains(e.relatedTarget)) {
           openedVia.current = "keyboard";
           hoverOpen();
         }
@@ -1000,7 +996,7 @@ export function MarginObject({
   const handleBlur = React.useCallback(
     (e: React.FocusEvent) => {
       if (e.target === triggerRef.current) openedVia.current = "unknown";
-      if (!wrapRef.current?.contains(e.relatedTarget as Node)) {
+      if (!wrapRef.current?.contains(e.relatedTarget)) {
         requestCloseSoon(() => focusInside());
       }
     },
@@ -1295,7 +1291,6 @@ function ClusterMemberCard({
   peekStyle,
   onClose,
   askContext,
-  motionProfile,
   viewer,
 }: {
   descriptor: MarginObjectDescriptor;

@@ -1,0 +1,17 @@
+{
+  "description": "S8-01 T1 warning baseline for src/fyd under typescript-eslint recommended-type-checked (T1 severity split). Measurement artifact for burn-down comparison by later tranches; not a suppression mechanism. Regenerate with: node tools/lint-baseline-srcfyd.mjs",
+  "scope": "src/fyd/**/*.ts, src/fyd/**/*.tsx",
+  "date": "2026-11-20",
+  "errorRules": {
+    "@typescript-eslint/no-floating-promises": 0,
+    "@typescript-eslint/no-misused-promises": 0
+  },
+  "totalWarnings": 37,
+  "warningsByRule": {
+    "@typescript-eslint/no-require-imports": 23,
+    "@typescript-eslint/no-unused-vars": 11,
+    "@typescript-eslint/no-base-to-string": 1,
+    "@typescript-eslint/prefer-promise-reject-errors": 1,
+    "@typescript-eslint/require-await": 1
+  }
+}

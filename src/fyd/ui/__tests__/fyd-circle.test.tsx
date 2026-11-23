@@ -151,7 +151,7 @@ describe("FydCircleNodeLink (Phase 2: optional Open Node control)", () => {
     expect(nodeControlFor("", "Happy Place")).toBeNull();
     const el = nodeControlFor("/node/obj-1", "Happy Place");
     expect(el).not.toBeNull();
-    const html = renderToString(el!);
+    const html = renderToString(el);
     expect(html).toContain('href="/node/obj-1"');
     expect(html).toContain("fydc-node");
   });

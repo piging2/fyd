@@ -21,6 +21,22 @@
 import { useEffect } from "react";
 import { featureFlags } from "@/config/ui-flags";
 
+interface NetworkConnectionInfo {
+  saveData?: boolean;
+  effectiveType?: string;
+}
+
+interface NavigatorWithDeviceInfo extends Navigator {
+  connection?: NetworkConnectionInfo;
+  deviceMemory?: number;
+}
+
+declare global {
+  interface Window {
+    gtag?: (command: string, ...args: unknown[]) => void;
+  }
+}
+
 export function SpeculationRules() {
   useEffect(() => {
     if (!featureFlags.speculationNavigation) {
@@ -29,7 +45,7 @@ export function SpeculationRules() {
 
     // Phase 7: Performance guardrails
     // Abort speculation if conditions are poor
-    const connection = (navigator as any).connection;
+    const connection = (navigator as NavigatorWithDeviceInfo).connection;
     if (connection) {
       // Check for Save-Data mode
       if (connection.saveData) {
@@ -42,14 +58,15 @@ export function SpeculationRules() {
       }
 
       // Check for low device memory (less than 2GB)
-      if ((navigator as any).deviceMemory && (navigator as any).deviceMemory < 2) {
+      const deviceMemory = (navigator as NavigatorWithDeviceInfo).deviceMemory;
+      if (deviceMemory && deviceMemory < 2) {
         return;
       }
     }
 
     // Phase 8: Analytics - Track speculation attempt
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'speculation_attempt', {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'speculation_attempt', {
         event_category: 'performance',
         non_interaction: true,
       });
@@ -79,8 +96,8 @@ export function SpeculationRules() {
     document.head.appendChild(script);
 
     // Phase 8: Analytics - Track speculation success
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'speculation_success', {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'speculation_success', {
         event_category: 'performance',
         non_interaction: true,
       });

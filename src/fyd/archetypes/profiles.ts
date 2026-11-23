@@ -153,7 +153,7 @@ export const ALL_ARCHETYPE_IDS = Object.keys(ARCHETYPE_PROFILES) as ArchetypePro
 
 /** Profile for an archetype name; throws on unknown names (fail closed). */
 export function profileForArchetype(archetype: FYDSiteArchetype): ArchetypeProfile {
-  const found = (Object.values(ARCHETYPE_PROFILES) as ArchetypeProfile[]).find(
+  const found = (Object.values(ARCHETYPE_PROFILES)).find(
     (p) => p.archetype === archetype,
   );
   if (!found) throw new Error("Unknown archetype: " + archetype);

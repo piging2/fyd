@@ -22,7 +22,7 @@ export const runtime = "nodejs";
  * stand-in. Unclear-reference-only assets are reference-only by pipeline
  * construction and never appear here.
  */
-export async function GET(request: Request): Promise<NextResponse> {
+export function GET(request: Request): NextResponse {
   const params = new URL(request.url).searchParams;
   const siteId = params.get("siteId")?.trim() ?? "";
   const digest = params.get("digest")?.trim() ?? "";

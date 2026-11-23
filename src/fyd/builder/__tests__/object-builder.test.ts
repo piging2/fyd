@@ -2,6 +2,7 @@
  * Object-builder boundary: tenant attestation, schema catalog, evidence
  * references, visibility, and relationship legality.
  */
+import { describe, expect, test } from "@jest/globals";
 import {
   proposeObjectDelta,
   verifyObjectGraph,

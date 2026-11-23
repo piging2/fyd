@@ -156,7 +156,7 @@ describe("Ask FYD services question: evidence-grounded answers (FYD-007)", () =>
   test.each(["stale", "missing"])("%s source evidence withholds the service name", mode => {
     const target = businessObject();
     const svc = serviceObject("svc-deck", "Unsupported Secret Service");
-    svc.provenance = { ...svc.provenance!, ...(mode === "stale" ? { derivedAt: "2020-01-01T00:00:00Z" } : { ref: "" }) };
+    svc.provenance = { ...svc.provenance, ...(mode === "stale" ? { derivedAt: "2020-01-01T00:00:00Z" } : { ref: "" }) };
     const ans = composeAskFyd(ctxFor(target, [svc], [providesRel("rel-1", target.id, svc.id)]), QUESTION);
     expect(ans.partial).toBe(true);
     expect(ans.answer).not.toContain(svc.title);

@@ -8,7 +8,7 @@
  */
 
 import type { MediaManifest } from "@/types/media";
-import type { ProjectsManifest, Project } from "@/types/projects";
+import type { ProjectsManifest } from "@/types/projects";
 import type { ReviewsManifest } from "@/types/reviews";
 import type { BrandManifest } from "@/types/brand";
 
@@ -134,7 +134,7 @@ export function analyzeMedia(manifest: MediaManifest): MediaAnalysis {
     }
 
     // Check URL validity
-    Object.entries(media.variants || {}).forEach(([_, url]) => {
+    Object.entries(media.variants || {}).forEach(([, url]) => {
       if (typeof url === 'string') {
         try {
           new URL(url);

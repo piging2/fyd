@@ -19,7 +19,10 @@
  */
 
 import { buildAskContext, composeAnswer, stripInternalIds } from "../../../lib/ping/ask-composer";
-import { getPingObjectReader } from "../../../lib/ping/ping-object-reader";
+import {
+  getPingObjectReader,
+  type PingObjectReader,
+} from "../../../lib/ping/ping-object-reader";
 import { answerAskFyd } from "../visitor-answer";
 import type { PingObject, PingRelationship } from "../../../lib/ping/types";
 import type { ObjectGraph, FYDSiteSpec } from "../../sitespec/types";
@@ -45,6 +48,20 @@ const RAW_ID_RE = /\bwebsite-(?:business|service|location)-[0-9a-f]{8,}(?:-[a-z0
 function expectNoRawIds(text: string): void {
   expect(text).not.toMatch(RAW_ID_RE);
 }
+
+/**
+ * The reader as these tests drive it: the public PingObjectReader
+ * surface, plus the class-private allObjects seam the spies stub
+ * (stubbed deliberately, in the class's own shape), so ask() results
+ * stay on their real AskAnswer type. The planActions spy likewise
+ * stubs a null plan, which ask() handles, outside the declared
+ * Promise<CapabilityPlan> shape.
+ */
+type ReaderUnderTest = PingObjectReader & {
+  allObjects: (
+    viewerId?: string | null,
+  ) => Promise<{ objects: PingObject[]; gatewayAvailable: boolean }>;
+};
 
 function businessObject(): PingObject {
   return {
@@ -460,13 +477,13 @@ describe("PROD-3+4-REPAIR: falsified breaks stay fixed", () => {
   // The relationship evidence labels carry raw subject/object ids, so this
   // is non-vacuous: the strip must fire on them.
   test("reader ask() returns no raw ids on any user-facing surface", async () => {
-    const reader = getPingObjectReader() as any;
+    const reader = getPingObjectReader() as ReaderUnderTest;
     const biz = businessObject();
     const objects = [biz, serviceObject(), locationObject()];
     const spies = [
       jest.spyOn(reader, "getObject").mockResolvedValue(biz),
       jest.spyOn(reader, "getRelationships").mockResolvedValue([locatedAt()]),
-      jest.spyOn(reader, "planActions").mockResolvedValue(null),
+      jest.spyOn(reader, "planActions").mockResolvedValue(null as never),
       jest.spyOn(reader, "listIdentities").mockResolvedValue([]),
       jest.spyOn(reader, "allObjects").mockResolvedValue({ objects, gatewayAvailable: true }),
     ];
@@ -484,7 +501,7 @@ describe("PROD-3+4-REPAIR: falsified breaks stay fixed", () => {
 
   // BREAK 3: the reply proposal's rendered target never shows the raw id.
   test("reader ask() reply-draft proposal labels the reply target for display", async () => {
-    const reader = getPingObjectReader() as any;
+    const reader = getPingObjectReader() as ReaderUnderTest;
     const post = {
       ...businessObject(),
       id: "website-business-6fa5ebd99d72c4cb-post-9f8e7d6c5b4a",
@@ -495,7 +512,7 @@ describe("PROD-3+4-REPAIR: falsified breaks stay fixed", () => {
     const spies = [
       jest.spyOn(reader, "getObject").mockResolvedValue(post),
       jest.spyOn(reader, "getRelationships").mockResolvedValue([]),
-      jest.spyOn(reader, "planActions").mockResolvedValue(null),
+      jest.spyOn(reader, "planActions").mockResolvedValue(null as never),
       jest.spyOn(reader, "listIdentities").mockResolvedValue([
         {
           id: "owner-test",
@@ -617,13 +634,13 @@ describe("PROD-3+4-REPAIR-R2: falsifier round-2 breaks stay fixed", () => {
   });
 
   test("reader ask(): claimClassifications carry no raw ids for a blank-title target", async () => {
-    const reader = getPingObjectReader() as any;
+    const reader = getPingObjectReader() as ReaderUnderTest;
     const noTitle = { ...businessObject(), title: "" };
     const objects = [noTitle, serviceObject(), locationObject()];
     const spies = [
       jest.spyOn(reader, "getObject").mockResolvedValue(noTitle),
       jest.spyOn(reader, "getRelationships").mockResolvedValue([locatedAt()]),
-      jest.spyOn(reader, "planActions").mockResolvedValue(null),
+      jest.spyOn(reader, "planActions").mockResolvedValue(null as never),
       jest.spyOn(reader, "listIdentities").mockResolvedValue([]),
       jest.spyOn(reader, "allObjects").mockResolvedValue({ objects, gatewayAvailable: true }),
     ];

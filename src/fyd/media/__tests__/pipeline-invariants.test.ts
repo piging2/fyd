@@ -300,7 +300,7 @@ describe("validator provenance hardening (Phase 4)", () => {
   });
 
   test("accepts the committed coppersmith manifest", () => {
-    const raw = JSON.parse(
+    const raw: unknown = JSON.parse(
       readFileSync(
         join(process.cwd(), "src", "fyd", "media", "manifests", COPPER.site + ".json"),
         "utf8",

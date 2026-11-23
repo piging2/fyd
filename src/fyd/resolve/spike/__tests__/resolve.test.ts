@@ -19,7 +19,7 @@ import {
   urlHost,
 } from "../normalize";
 import { exactPhone, exactUrl, pairScore } from "../matchers";
-import { buildIndex, resolveAll, tierCounts } from "../resolve";
+import { resolveAll, tierCounts } from "../resolve";
 import { COPPERSMITH_GRAPH } from "../../../proceduralize/__fixtures__/coppersmith-graph";
 
 const AT = "2026-09-21T00:00:00.000Z";

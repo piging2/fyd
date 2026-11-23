@@ -18,10 +18,11 @@ import {
   mediaForObject,
   predicateForSubjectSchema,
 } from "../attach";
-import type { MediaManifest } from "../types";
+import type { FydMediaObject, MediaManifest } from "../types";
 import type { ObjectGraph } from "../../sitespec/types";
+import type { ObjectVisibility, PingObject } from "../../../lib/ping/types";
 
-function business(id: string, visibility = "public"): any {
+function business(id: string, visibility: ObjectVisibility = "public"): PingObject {
   return {
     id,
     schema: "ping.social.business@1",
@@ -36,15 +37,37 @@ function business(id: string, visibility = "public"): any {
   };
 }
 
-function service(id: string): any {
+function service(id: string): PingObject {
   return { ...business(id), schema: "ping.social.service@1", title: "Svc " + id };
 }
 
-function project(id: string): any {
+function project(id: string): PingObject {
   return { ...business(id), schema: "ping.social.project@1", title: "Proj " + id };
 }
 
-function media(id: string, rightsSource: "public-demo-source" | "unclear-reference-only" = "public-demo-source", depicts: string[] = []): any {
+/**
+ * The lean attach fixture: it carries exactly these fields of
+ * FydMediaObject (attach reads nothing else), typed as a Pick of the real
+ * type so the fixture cannot drift from it. manifest() bridges to the full
+ * MediaManifest through its existing cast.
+ */
+type MediaFixture = Pick<
+  FydMediaObject,
+  | "id"
+  | "title"
+  | "roles"
+  | "rightsSource"
+  | "rightsBasis"
+  | "provenance"
+  | "digest"
+  | "width"
+  | "height"
+  | "originalFormat"
+  | "depicts"
+  | "variants"
+>;
+
+function media(id: string, rightsSource: "public-demo-source" | "unclear-reference-only" = "public-demo-source", depicts: string[] = []): MediaFixture {
   return {
     id,
     title: "Media " + id,
@@ -61,7 +84,7 @@ function media(id: string, rightsSource: "public-demo-source" | "unclear-referen
   };
 }
 
-function manifest(media: any[]): MediaManifest {
+function manifest(media: MediaFixture[]): MediaManifest {
   return {
     generator: "fyd-media@2",
     siteId: "test",
@@ -71,8 +94,8 @@ function manifest(media: any[]): MediaManifest {
   } as unknown as MediaManifest;
 }
 
-function graph(objects: any[]): ObjectGraph {
-  return { objects, relationships: [] } as unknown as ObjectGraph;
+function graph(objects: PingObject[]): ObjectGraph {
+  return { objects, relationships: [] };
 }
 
 describe("predicateForSubjectSchema", () => {

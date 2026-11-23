@@ -930,12 +930,12 @@ describe("determinism", () => {
     const textA = await runScript(dirA);
     const textB = await runScript(dirB);
     expect(textA).toBe(textB);
-    const lastHashA = JSON.parse(
-      textA.trim().split("\n").slice(-1)[0],
-    ).rowHash as string;
-    const lastHashB = JSON.parse(
-      textB.trim().split("\n").slice(-1)[0],
-    ).rowHash as string;
+    const lastHashA = (
+      JSON.parse(textA.trim().split("\n").slice(-1)[0]) as { rowHash: string }
+    ).rowHash;
+    const lastHashB = (
+      JSON.parse(textB.trim().split("\n").slice(-1)[0]) as { rowHash: string }
+    ).rowHash;
     expect(lastHashA).toBe(lastHashB);
     expect(lastHashA).toMatch(/^[a-f0-9]{64}$/);
   });

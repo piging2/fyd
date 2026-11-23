@@ -57,7 +57,6 @@ export async function generateMetadata({
     resolvePublicProjection(cache, siteId),
   );
   const view = resolved?.view ?? null;
-  const tenantId = resolved?.siteId ?? null;
   if (!view) return { title: { absolute: "Object not found | FYD" }, robots: { index: false } };
   return {
     title: { absolute: view.name },

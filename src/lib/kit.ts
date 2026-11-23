@@ -58,7 +58,7 @@ async function fetchWithBackoff(
  */
 async function parseKitError(response: Response): Promise<string> {
   try {
-    const data = await response.json();
+    const data = (await response.json()) as { errors?: unknown[] };
     if (data.errors && Array.isArray(data.errors)) {
       return data.errors.map((error: unknown) =>
         typeof error === "string" ? error : JSON.stringify(error)
@@ -118,6 +118,16 @@ export interface KitSubscribeResponse {
   failureType?: KitFailureType;
   retryable?: boolean;
   message?: string;
+}
+
+export interface KitSubscriberListResponse {
+  subscribers: KitSubscriber[];
+  pagination: {
+    has_next_page: boolean;
+    has_previous_page: boolean;
+    end_cursor: string;
+    start_cursor: string;
+  };
 }
 
 export type KitFailureType =
@@ -205,7 +215,7 @@ export async function createSubscriber(data: {
       };
     }
 
-    const result = await response.json();
+    const result = (await response.json()) as { subscriber: KitSubscriber };
 
     return {
       subscriber: result.subscriber,
@@ -245,7 +255,7 @@ export async function findSubscriberByEmail(email: string): Promise<KitSubscribe
       return null;
     }
 
-    const result = await response.json();
+    const result = (await response.json()) as { subscribers?: KitSubscriber[] };
     const subscribers = result.subscribers || [];
     return subscribers.length > 0 ? subscribers[0] : null;
   } catch (error) {
@@ -263,7 +273,7 @@ export async function listSubscribers(options: {
   after?: string;
   before?: string;
   per_page?: number;
-}): Promise<{ subscribers: KitSubscriber[]; pagination: { has_next_page: boolean; has_previous_page: boolean; end_cursor: string; start_cursor: string } }> {
+}): Promise<KitSubscriberListResponse> {
   try {
     const params = new URLSearchParams();
     if (options.email_address) params.append("email_address", options.email_address);
@@ -284,7 +294,7 @@ export async function listSubscribers(options: {
       return { subscribers: [], pagination: { has_next_page: false, has_previous_page: false, end_cursor: "", start_cursor: "" } };
     }
 
-    return await response.json();
+    return (await response.json()) as KitSubscriberListResponse;
   } catch (error) {
     console.error("Kit subscriber list failed:", error);
     return { subscribers: [], pagination: { has_next_page: false, has_previous_page: false, end_cursor: "", start_cursor: "" } };

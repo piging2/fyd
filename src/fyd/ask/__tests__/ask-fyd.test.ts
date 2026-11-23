@@ -447,7 +447,7 @@ describe("circleUiActions", () => {
 
   test("unknown future kinds are skipped, never rendered dead", () => {
     const plan = planWith(["follow"]);
-    (plan.actions as { kind: string }[]).push({ kind: "mystery_kind" } as never);
+    (plan.actions as { kind: string }[]).push({ kind: "mystery_kind" });
     expect(circleUiActions(plan, "Ask FYD").map((a) => a.kind)).toEqual(["follow"]);
   });
 

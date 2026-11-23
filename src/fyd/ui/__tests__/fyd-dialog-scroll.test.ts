@@ -70,7 +70,7 @@ test("balance: cancel (Escape) funnels through the same exactly-once close", () 
 
 test("balance: unmount while open releases without calling onClose", () => {
   const { controller, locks } = harness();
-  let closes = 0;
+  const closes = 0;
   controller.open(fakeTrigger());
   controller.dispose();
   expect(closes).toBe(0);

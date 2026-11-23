@@ -42,6 +42,7 @@ import {
 } from "../proceduralize/patch";
 import {
   assertCorrection,
+  type FactRef,
   type OwnerAssertion,
 } from "../owner-mode/corrections";
 import {
@@ -54,7 +55,6 @@ import {
 import {
   factIdFor,
   factLabel,
-  type FactRef,
   type SiteFact,
 } from "../owner-mode/facts";
 import {
@@ -250,7 +250,7 @@ function draftClassic(
   const resolved = resolveCustomizationIntent(ctx.spec, ctx.graph, parsed);
   if (!resolved.resolved) return { ok: false, reason: resolved.reason };
   const proposed = proposeFromSiteIntent(ctx.spec, resolved.siteIntent, ctx.graph);
-  if (!proposed.ok || !proposed.proposal) {
+  if (!proposed.ok) {
     return { ok: false, reason: proposed.error };
   }
   const shell = draftShell(
@@ -360,7 +360,7 @@ function draftShowLocations(
   if (hidden.length > 0) {
     const changes: VisibilityChange[] = hidden.map((f) => ({
       factId: f.factId,
-      visibility: "public" as FactVisibility,
+      visibility: "public",
       factLabel: labelOf(ctx, f),
     }));
     const shell = draftShell(
@@ -407,7 +407,7 @@ function draftShowLocations(
       hidden: false,
     };
     const proposed = proposeFromSiteIntent(ctx.spec, siteIntent, ctx.graph);
-    if (!proposed.ok || !proposed.proposal) {
+    if (!proposed.ok) {
       return { ok: false, reason: proposed.error };
     }
     const shell = draftShell(
@@ -611,7 +611,7 @@ export type ApproveOutcome =
 function digestOfPatchBody(body: SitePatchBody): string {
   const { proposalDigest: _drop, ...rest } = body;
   void _drop;
-  return proposalDigest(rest as Omit<SitePatchBody, "proposalDigest">);
+  return proposalDigest(rest);
 }
 
 /**

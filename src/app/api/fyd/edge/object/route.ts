@@ -29,7 +29,7 @@ const DEMO_SITES: ReadonlySet<string> = new Set([
   "coppersmith-plumbing",
 ]);
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export function GET(request: NextRequest): NextResponse {
   const site = request.nextUrl.searchParams.get("site") ?? "";
   const objectId = request.nextUrl.searchParams.get("objectId") ?? "";
   if (!site || !DEMO_SITES.has(site) || !objectId) {

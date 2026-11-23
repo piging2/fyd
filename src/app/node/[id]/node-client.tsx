@@ -37,7 +37,7 @@ export function NodeClient({ node: initial }: { node: NodePayload }) {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
-      <NodeSections node={node} askPrefill={askPrefill} onAsk={handleAsk} onChanged={refresh} />
+      <NodeSections node={node} askPrefill={askPrefill} onAsk={handleAsk} onChanged={() => { void refresh(); }} />
     </main>
   );
 }

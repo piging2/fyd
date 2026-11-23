@@ -37,9 +37,9 @@ function stubReader(
   seen: string[] = [],
 ): FydOverlayReader {
   return {
-    queryFydSiteOverlays: async (siteId: string) => {
+    queryFydSiteOverlays: (siteId: string) => {
       seen.push(siteId);
-      return overlays.map((o) => ({ ...o, ops: o.ops }));
+      return Promise.resolve(overlays.map((o) => ({ ...o, ops: o.ops })));
     },
   };
 }

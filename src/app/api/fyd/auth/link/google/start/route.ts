@@ -9,7 +9,7 @@ import { loadAuthConfig } from "@/fyd/identity/config";
 import { beginGoogleStart, AuthFlowError, notConfiguredMessage } from "@/fyd/identity/callback-flow";
 import { parseCookies, readSessionValue, SESSION_COOKIE_NAME } from "@/fyd/identity/session";
 
-export async function GET(request: NextRequest) {
+export function GET(request: NextRequest) {
   const config = loadAuthConfig();
   try {
     if (!config.session.configured) {

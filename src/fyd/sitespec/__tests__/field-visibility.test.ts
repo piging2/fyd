@@ -152,7 +152,7 @@ describe("owner address visibility override (address gate)", () => {
 
   test("decision survives re-ingestion: clean re-ingest defaults coarse again, reapplied SHOW restores the full address", () => {
     // Simulate a clean re-ingest: fresh SOURCE STATE with no owner state in it.
-    const reingested: ObjectGraph = JSON.parse(JSON.stringify(COPPERSMITH_GRAPH));
+    const reingested: ObjectGraph = JSON.parse(JSON.stringify(COPPERSMITH_GRAPH)) as ObjectGraph;
     expect(resolveFieldVisibility(target.objectId, target.field, [])).toEqual({
       policy: "coarse",
       source: "conservative_default",

@@ -33,6 +33,7 @@ import {
   type ObjectGraph,
 } from "../../sitespec/types";
 import type { PingObject } from "@/lib/ping/types";
+import type { FydMediaObject, FydMediaRole } from "../types";
 
 const TS = "2026-09-21T00:00:00.000Z";
 
@@ -178,7 +179,7 @@ describe("Hero render wiring (generic component contract)", () => {
 
 const FIXTURE_SITE = "__test-hero-logo";
 
-function fixtureMedia(id: string, roles: string[]): any {
+function fixtureMedia(id: string, roles: FydMediaRole[]): FydMediaObject {
   return {
     id,
     schema: "ping.social.media@1",
@@ -217,7 +218,7 @@ function fixtureMedia(id: string, roles: string[]): any {
 }
 
 /** Run fn with a fixture manifest on disk; the file is always removed. */
-function withFixtureManifest(media: any[], fn: () => void): void {
+function withFixtureManifest(media: FydMediaObject[], fn: () => void): void {
   const manifest = {
     siteId: FIXTURE_SITE,
     generatedAt: TS,

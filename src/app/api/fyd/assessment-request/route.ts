@@ -39,7 +39,7 @@ function invalid(field: string, reason: string) {
 }
 
 function str(body: Record<string, unknown>, key: string): string {
-  return typeof body[key] === "string" ? (body[key] as string).trim() : "";
+  return typeof body[key] === "string" ? body[key].trim() : "";
 }
 
 function contactDetailLooksValid(
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   if (channelRaw !== "facebook" && channelRaw !== "phone" && channelRaw !== "email") {
     return invalid("contactChannel", "Choose a preferred follow-up channel.");
   }
-  const contactChannel = channelRaw as AssessmentContactChannel;
+  const contactChannel = channelRaw;
   const contactDetail = str(body, "contactDetail");
   if (!contactDetailLooksValid(contactChannel, contactDetail)) {
     return invalid(

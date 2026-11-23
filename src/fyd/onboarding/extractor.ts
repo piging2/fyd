@@ -37,7 +37,7 @@ function decodeEntities(s: string): string {
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&#(\d+);/g, (_m, n) => String.fromCharCode(parseInt(n, 10)))
+    .replace(/&#(\d+);/g, (_m: string, n: string) => String.fromCharCode(parseInt(n, 10)))
     .replace(/\s+/g, " ")
     .trim();
 }

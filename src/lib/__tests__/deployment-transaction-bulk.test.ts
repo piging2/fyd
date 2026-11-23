@@ -21,7 +21,7 @@ import { createDeploymentTransaction, getDeploymentTransaction, claimDeploymentT
 import { getKvNamespace } from '../environment';
 
 const TEST_TRANSACTION_PREFIX = 'BULK-TEST-';
-let testTransactionIds: string[] = [];
+const testTransactionIds: string[] = [];
 let testNamespace: string;
 
 beforeAll(() => {
@@ -60,7 +60,7 @@ afterAll(async () => {
         // For now, just log that cleanup is needed
         console.log(`[CLEANUP] Test transaction ${txId} should be cleaned up`);
       }
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors
     }
   }
@@ -166,7 +166,7 @@ describe('Deployment Transaction Bulk Assignment', () => {
     const SLOT_E_KEY = `${testNamespace}workbench-staging:${TRANSACTION_ID}:brand-hero`;
 
     // Register all 5 keys concurrently with Promise.all
-    const results = await Promise.all([
+    await Promise.all([
       createDeploymentTransaction(
         TRANSACTION_ID,
         [SLOT_A_KEY],

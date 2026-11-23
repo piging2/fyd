@@ -7,14 +7,17 @@
 import { HAPPY_PLACE_RICH_GRAPH } from "../../proceduralize/__fixtures__/happy-place-rich-graph";
 import { generateSiteSpec } from "../../proceduralize/generator";
 import { isRenderable, validateSiteSpec } from "../validator";
-import { DEFAULT_FYD_BREAKPOINTS, resolveCollapseBreakpoint } from "../types";
+import { DEFAULT_FYD_BREAKPOINTS, resolveCollapseBreakpoint, type FYDSiteSpec } from "../types";
 
 const OPTS = { generatedAt: "2026-09-21T12:00:00.000Z" };
 
 describe("old SiteSpec compatibility", () => {
   test("a spec with only the original required fields validates clean", () => {
     const spec = generateSiteSpec(HAPPY_PLACE_RICH_GRAPH, OPTS);
-    const legacy = JSON.parse(JSON.stringify(spec));
+    // The JSON round trip deep-clones the spec; binding the clone to
+    // FYDSiteSpec is the point of the fixture: the fields deleted below
+    // are exactly the type's optional fields.
+    const legacy = JSON.parse(JSON.stringify(spec)) as FYDSiteSpec;
     delete legacy.status;
     delete legacy.revision;
     delete legacy.archetype;

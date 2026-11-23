@@ -2,9 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { applyGuideDownloadTag, findSubscriberByEmail } from "@/lib/kit";
 import { logEvent } from "@/lib/events";
 
+// Request body shape, as consumed by the handler below: the download
+// form posts these three fields as strings. The truthiness check in
+// the handler remains the only runtime validation.
+interface ResourceDownloadBody {
+  email?: string;
+  resourceTitle?: string;
+  resourceUrl?: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as ResourceDownloadBody;
     const { email, resourceTitle, resourceUrl } = body;
 
     // Validate input
@@ -27,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Log HPP event
     const url = new URL(request.url);
-    logEvent("GuideDownloaded", {
+    void logEvent("GuideDownloaded", {
       email,
       resourceTitle,
       resourceUrl,

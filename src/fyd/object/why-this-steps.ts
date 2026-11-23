@@ -116,7 +116,7 @@ function statusStep(o: PingObject): { detail: string; state: EvidenceState } {
       : undefined;
   return (
     mapped ?? {
-      state: "unknown" as EvidenceState,
+      state: "unknown",
       detail: "No claim kind recorded for this object.",
     }
   );
@@ -137,7 +137,7 @@ export function whyThisStepsFor(o: PingObject): EvidenceStep[] {
   ) {
     return [];
   }
-  const obj = o as PingObject;
+  const obj = o;
   const source = sourceDetail(obj);
   const method = methodDetail(obj);
   const status = statusStep(obj);
@@ -335,7 +335,7 @@ export function whyThisClaimChainFor(o: PingObject): EvidenceStep[] {
   ) {
     return [];
   }
-  const obj = o as PingObject;
+  const obj = o;
   const source = sourceDetail(obj);
   const observedWhen = observedWhenDetail(obj);
   const evidence = claimEvidenceDetail(obj);

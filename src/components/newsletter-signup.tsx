@@ -37,7 +37,7 @@ export function NewsletterSignup() {
         }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as { success?: boolean; error?: string };
 
       if (!response.ok || !data.success) {
         setError(data.error || "Failed to subscribe. Please try again.");
@@ -74,7 +74,7 @@ export function NewsletterSignup() {
         {isSuccess ? "Request accepted." : isSubmitting ? "Submitting your request…" : ""}
       </p>
       {!isSuccess && (
-        <form onSubmit={handleSubmit} aria-busy={isSubmitting} className="space-y-4">
+        <form onSubmit={(e) => { void handleSubmit(e); }} aria-busy={isSubmitting} className="space-y-4">
           {error && (
             <p id={uid + "-error"} ref={errorRef} tabIndex={-1} className="scroll-mt-24 text-sm text-red-400 focus-visible:outline-2">
               {error}

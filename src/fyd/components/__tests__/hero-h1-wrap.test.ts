@@ -23,8 +23,11 @@
  * uses plain CommonJS JavaScript only (require, no imports, no type
  * annotations), matching what the runner can actually execute.
  */
-const fs = require("fs");
-const path = require("path");
+// The requires stay CommonJS per the note above; the assertions only
+// bind them to the node modules' own types so the reads below are
+// typed (require returns any, which made every derived value any).
+const fs = require("fs") as typeof import("fs");
+const path = require("path") as typeof import("path");
 
 const RENDERER = path.join(
   __dirname,

@@ -265,7 +265,7 @@ export function proposeFromSiteIntent(
       .find((p) => p.slug === siteIntent.pageSlug)
       ?.sections.find((s) => s.id === siteIntent.sectionId);
     const cur = Array.isArray(sec?.presentation.featuredIds)
-      ? [...(sec.presentation.featuredIds as string[])].sort()
+      ? [...(sec.presentation.featuredIds)].sort()
       : [];
     const next = [...siteIntent.objectIds].sort();
     if (cur.join("|") === next.join("|")) {

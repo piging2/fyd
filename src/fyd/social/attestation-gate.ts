@@ -10,7 +10,7 @@
  */
 
 import { fydGatewayBaseUrl } from "./config";
-import { asSequence } from "./readers";
+import { asSequence, asString } from "./readers";
 
 export interface JournalRelationshipRow {
   event_id: string;
@@ -49,14 +49,14 @@ async function readRelationshipJournalRows(): Promise<JournalRelationshipRow[]> 
       continue;
     }
     rows.push({
-      event_id: String(ev.event_id || ""),
+      event_id: asString(ev.event_id),
       sequence: asSequence(ev.sequence),
-      relationship_id: String(p.relationship_id || ""),
+      relationship_id: asString(p.relationship_id),
       subject: p.subject,
       predicate: p.predicate,
       object: p.object,
       status: typeof p.status === "string" ? p.status : "active",
-      created_at: String(ev.created_at || ev.timestamp || ""),
+      created_at: asString(ev.created_at) || asString(ev.timestamp),
     });
   }
   return rows;
@@ -158,7 +158,7 @@ export async function attestObjectCreated(input: {
   const events = Array.isArray(body.events) ? body.events : [];
   const hit = events
     .map((e) => e as Record<string, unknown>)
-    .find((e) => String(e.event_id || "") === input.eventId);
+    .find((e) => asString(e.event_id) === input.eventId);
   if (!hit) {
     return {
       attested: false,
@@ -181,8 +181,8 @@ export async function attestObjectCreated(input: {
   }
   return {
     attested: true,
-    objectId: String(p.object_id || ""),
-    eventId: String(hit.event_id || ""),
+    objectId: asString(p.object_id),
+    eventId: asString(hit.event_id),
     sequence: asSequence(hit.sequence),
   };
 }

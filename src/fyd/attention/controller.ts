@@ -57,7 +57,7 @@ export class AttentionController {
     if (this.primary === id) return true;
     const releasedAt = this.lastRelease.get(id);
     const neverReleased = releasedAt === undefined;
-    if (!neverReleased && now - (releasedAt as number) < ATTENTION.cooldownMs) return false;
+    if (!neverReleased && now - (releasedAt) < ATTENTION.cooldownMs) return false;
     if (this.primary !== null) {
       if (this.locked.has(this.primary)) return false;
       if (now - this.primarySince < ATTENTION.minResidencyMs) return false;

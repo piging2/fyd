@@ -160,7 +160,7 @@ function J({ v }: { v: unknown }) {
   const [copy, setCopy] = useState("Copy JSON");
   return (
     <details className="mc-raw"><summary>Inspect returned record</summary><pre>{JSON.stringify(v, null, 2) ?? "No value returned"}</pre>
-      <button onClick={async () => { try { await navigator.clipboard.writeText(JSON.stringify(v, null, 2) ?? "null"); setCopy("Copied"); } catch { setCopy("Copy unavailable"); } }} aria-live="polite">{copy}</button>
+      <button onClick={() => { void (async () => { try { await navigator.clipboard.writeText(JSON.stringify(v, null, 2) ?? "null"); setCopy("Copied"); } catch { setCopy("Copy unavailable"); } })(); }} aria-live="polite">{copy}</button>
     </details>
   );
 }
@@ -215,7 +215,16 @@ function fmtVal(v: unknown): string {
   if (v === null || v === undefined) return "(not returned)";
   if (Array.isArray(v)) return v.length ? v.map((x) => fmtVal(x)).join(", ") : "(none)";
   if (typeof v === "object") return JSON.stringify(v);
-  return String(v);
+  if (typeof v === "string") return v;
+  if (typeof v === "function") return v.toString();
+  if (
+    typeof v === "number" ||
+    typeof v === "boolean" ||
+    typeof v === "bigint" ||
+    typeof v === "symbol"
+  )
+    return String(v);
+  return "[object Object]";
 }
 
 type FieldView = { text: string; truth: Truth };
@@ -287,10 +296,11 @@ function crmItems(data: Record<string, unknown>): Record<string, unknown>[] {
 }
 
 function crmReason(data: Record<string, unknown>): string {
-  return String(
-    data.reason ??
-      data.unknownReason ??
-      "no person records are projected yet; this view stays UNKNOWN rather than showing placeholder rows"
+  const view = data as { reason?: string; unknownReason?: string };
+  return (
+    view.reason ??
+    view.unknownReason ??
+    "no person records are projected yet; this view stays UNKNOWN rather than showing placeholder rows"
   );
 }
 
@@ -463,7 +473,7 @@ export default function MissionControlPage() {
     const read = async (url: string, receive: (value: Record<string, unknown>) => void) => {
       try { const response = await fetch(url, { cache: "no-store", signal: controller.signal });
         if (!response.ok) throw new Error(`Source returned HTTP ${response.status}`);
-        const value = await response.json(); if (!controller.signal.aborted) receive(value);
+        const value = (await response.json()) as Record<string, unknown>; if (!controller.signal.aborted) receive(value);
       } catch (error) { if (!controller.signal.aborted) receive({ ok: false, status: "DEGRADED", error: error instanceof Error ? error.message : "Source unavailable" }); }
     };
     const refresh = async () => {
@@ -480,14 +490,14 @@ export default function MissionControlPage() {
   useEffect(() => {
     const controller = new AbortController(); setGraph(null); setTrace(null); setForward(null);
     fetch(`/api/mc/graph?siteId=${encodeURIComponent(siteId)}`, { cache: "no-store", signal: controller.signal })
-      .then(r => r.json()).then(value => { if (!controller.signal.aborted) setGraph(value); })
+      .then(r => r.json() as Promise<Record<string, unknown>>).then(value => { if (!controller.signal.aborted) setGraph(value); })
       .catch(error => { if (!controller.signal.aborted) setGraph({ ok: false, error: error instanceof Error ? error.message : "Graph source unavailable" }); });
     return () => controller.abort();
   }, [siteId, refreshKey]);
 
   const ask = useCallback(() => {
     if (!q.trim()) return;
-    fetch(`/api/mc/search?q=${encodeURIComponent(q)}`, { cache: "no-store" })
+    void fetch(`/api/mc/search?q=${encodeURIComponent(q)}`, { cache: "no-store" })
       .then((r) => r.json())
       .then(setAnswer);
   }, [q]);
@@ -564,7 +574,7 @@ export default function MissionControlPage() {
             <select className="mc-mobile-select" aria-label="Workspace view" value={view} onChange={e => { const [s, i] = e.target.value.split("/"); navigate(s, i); }}>{NAV.map(s => <optgroup key={s.id} label={s.label}>{s.items.map(i => <option key={i.id} value={`${s.id}/${i.id}`}>{i.label}</option>)}</optgroup>)}</select>
             <WorkspaceCommand commands={commands} />
             <button className={`mc-icon-button ${refreshing ? "mc-refreshing" : ""}`} aria-label="Refresh source snapshots" title="Refresh source snapshots" disabled={refreshing} onClick={() => setRefreshKey(k => k + 1)}><RefreshCw size={16} /></button>
-            <button className="mc-icon-button" aria-label="Copy workspace link" title="Copy workspace link" onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); setCopyStatus("Link copied"); } catch { setCopyStatus("Copy unavailable"); } }}><Link2 size={16} /></button>
+            <button className="mc-icon-button" aria-label="Copy workspace link" title="Copy workspace link" onClick={() => { void (async () => { try { await navigator.clipboard.writeText(window.location.href); setCopyStatus("Link copied"); } catch { setCopyStatus("Copy unavailable"); } })(); }}><Link2 size={16} /></button>
             <button className="mc-icon-button" aria-label={theme === "dark" ? "Use light theme" : "Use dark theme"} title="Switch theme" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}</button>
             <span className="mc-screen-status" role="status">{copyStatus || (refreshing ? "Reading sources…" : "Sources checked every 30s")}</span>
           </div>
@@ -587,7 +597,7 @@ export default function MissionControlPage() {
                 >
                   <J
                     v={{
-                      services: (today as Record<string, unknown>).services,
+                      services: today.services,
                       degraded: today.degraded,
                     }}
                   />
@@ -647,7 +657,7 @@ export default function MissionControlPage() {
                   health="PROTOTYPE"
                   prov={todayProv("prototype", "UNKNOWN", "nothing observed")}
                 >
-                  <J v={(today as Record<string, unknown>).prototype} />
+                  <J v={today.prototype} />
                 </Card>
               </>
             )}
@@ -762,7 +772,7 @@ export default function MissionControlPage() {
                           <button
                             onClick={() => {
                               setForward(null);
-                              fetch(
+                              void fetch(
                                 `/api/mc/object?siteId=${siteId}&id=${encodeURIComponent(String(oo.id))}`
                               )
                                 .then((r) => r.json())
@@ -798,17 +808,17 @@ export default function MissionControlPage() {
                       happened: "chain assembled from object, claim, evidence, source",
                     }}
                   >
-                    <J v={(trace ?? {}) as Record<string, unknown>} />
+                    <J v={trace ?? {}} />
                     {Boolean(
                       (
-                        ((trace as Record<string, unknown>).trace as
+                        (trace.trace as
                           | Record<string, unknown>
                           | undefined)?.evidence as Record<string, unknown> | undefined
                       )?.journalEvidence
                     ) && (
                       <ForwardButtons
                         evidence={
-                          ((trace as Record<string, unknown>).trace as Record<string, unknown>)
+                          (trace.trace as Record<string, unknown>)
                             .evidence as Record<string, unknown>
                         }
                         setForward={setForward}
@@ -942,7 +952,7 @@ export default function MissionControlPage() {
                   key={c}
                   onClick={() => {
                     setQ(c);
-                    fetch(`/api/mc/search?q=${encodeURIComponent(c)}`)
+                    void fetch(`/api/mc/search?q=${encodeURIComponent(c)}`)
                       .then((r) => r.json())
                       .then(setAnswer);
                   }}
@@ -962,7 +972,7 @@ export default function MissionControlPage() {
             </div>
             {answer && (
               <Card
-                title={`Answer (${String((answer as Record<string, unknown>).intent ?? "unknown")})`}
+                title={`Answer (${String((answer as { intent?: string }).intent ?? "unknown")})`}
                 health="PROVEN"
                 prov={{
                   source: "/api/mc/search (deterministic intent router over object graph, evidence, runtime state; no LLM)",
@@ -1050,9 +1060,12 @@ export default function MissionControlPage() {
                     FYD tenant graphs. One card per business below.
                   </p>
                 </Card>
-                {crmItems(crmCompanies).map((c, i) => (
-                  <CompanyCard key={String(c.siteId ?? c.name ?? i)} c={c} />
-                ))}
+                {crmItems(crmCompanies).map((c, i) => {
+                  const v = c as { siteId?: string; name?: string | null };
+                  return (
+                    <CompanyCard key={String(v.siteId ?? v.name ?? i)} c={c} />
+                  );
+                })}
                 {crmItems(crmCompanies).length === 0 && (
                   <p style={{ color: "#9a97b5" }}>
                     The projection returned zero companies. Nothing is invented
@@ -1118,9 +1131,12 @@ export default function MissionControlPage() {
                     only: contact is withheld until owner approval.
                   </p>
                 </Card>
-                {crmItems(crmLeads).map((lead, i) => (
-                  <LeadCard key={String(lead.id ?? i)} lead={lead} index={i} />
-                ))}
+                {crmItems(crmLeads).map((lead, i) => {
+                  const v = lead as { id?: string };
+                  return (
+                    <LeadCard key={String(v.id ?? i)} lead={lead} index={i} />
+                  );
+                })}
                 {crmItems(crmLeads).length === 0 && (
                   <p style={{ color: "#9a97b5" }}>
                     The projection returned zero leads. Nothing is invented in
@@ -1277,7 +1293,11 @@ export default function MissionControlPage() {
                 {operations.length === 0 && <p>No live runs observed.</p>}
                 <ul style={{ listStyle: "none", padding: 0, fontSize: 12 }}>
                   {operations.map((op) => {
-                    const o = op as Record<string, unknown>;
+                    const o = op as Record<string, unknown> & {
+                      run?: string | string[];
+                      attempt?: number | null;
+                      currentState?: string;
+                    };
                     return (
                       <li key={String(o.mission)} style={{ marginBottom: 6 }}>
                         <TruthBadge t={o.currentState ? "EXECUTED" : "UNKNOWN"} />{" "}
@@ -1312,7 +1332,7 @@ export default function MissionControlPage() {
                     happened: "cron.d schedules were read this pass",
                   }}
                 >
-                  <J v={(agents as Record<string, unknown>).scheduledAgents} />
+                  <J v={agents.scheduledAgents} />
                 </Card>
                 <Card
                   title="Live processes"
@@ -1326,7 +1346,7 @@ export default function MissionControlPage() {
                     happened: "the process list was read this pass",
                   }}
                 >
-                  <J v={(agents as Record<string, unknown>).processes} />
+                  <J v={agents.processes} />
                 </Card>
                 <Card
                   title="Withheld controls"
@@ -1340,14 +1360,14 @@ export default function MissionControlPage() {
                     happened: "no mutation control is exposed by this projection",
                   }}
                 >
-                  <J v={(agents as Record<string, unknown>).controls} />
+                  <J v={agents.controls} />
                 </Card>
                 <Card
                   title="Not yet wired"
                   health="PROTOTYPE"
                   prov={todayProv("agents-prototype", "UNKNOWN", "nothing observed")}
                 >
-                  <J v={(agents as Record<string, unknown>).prototype} />
+                  <J v={agents.prototype} />
                 </Card>
               </>
             )}
@@ -1538,7 +1558,7 @@ export default function MissionControlPage() {
                 approval:
                   "approve/deny runs only through the witnessed POST on the served tree, never from this shell",
                 happened: proposal
-                  ? `lookup was attempted (http ${String((proposal as Record<string, unknown>).httpStatus)})`
+                  ? `lookup was attempted (http ${String(proposal.httpStatus)})`
                   : "no lookup performed yet",
               }}
             >
@@ -1630,7 +1650,7 @@ export default function MissionControlPage() {
               >
                 <J
                   v={{
-                    services: (today as Record<string, unknown>).services,
+                    services: today.services,
                     degraded: today.degraded,
                   }}
                 />
@@ -1723,6 +1743,7 @@ function CrmFetchError({
   title: string;
   data: Record<string, unknown>;
 }) {
+  const errorText = (data as { error?: string }).error ?? "unreachable";
   return (
     <Card
       title={title}
@@ -1733,12 +1754,12 @@ function CrmFetchError({
         truth: "UNKNOWN",
         canDo: "nothing (the projection did not answer)",
         approval: "check the served :3100 tree",
-        happened: `fetch failed: ${String(data.error ?? "unreachable")}`,
+        happened: `fetch failed: ${errorText}`,
       }}
     >
       <p style={{ color: "#9a97b5", margin: 0 }}>
         The CRM projection did not answer from this shell:{" "}
-        {String(data.error ?? "unreachable")}. Nothing is invented in its place.
+        {errorText}. Nothing is invented in its place.
       </p>
     </Card>
   );
@@ -1759,9 +1780,10 @@ function CompanyCard({ c }: { c: Record<string, unknown> }) {
   // (see FYD / Objects); the API projects tenant graphs, so the same applies
   // unless the item claims otherwise.
   const truth = asTruth(c.truth ?? "DERIVED");
+  const view = c as { name?: string | null; siteId?: string };
   return (
     <Card
-      title={String(c.name ?? c.siteId ?? "company")}
+      title={view.name ?? view.siteId ?? "company"}
       health="PROVEN"
       prov={{
         source: "GET /api/mc/crm?view=companies (read-only projection of the FYD tenant graphs)",
@@ -1769,14 +1791,14 @@ function CompanyCard({ c }: { c: Record<string, unknown> }) {
         truth,
         canDo: "inspect the business record",
         approval: "no writes from this view",
-        happened: `company projected from tenant graph ${String(c.siteId ?? "?")}`,
+        happened: `company projected from tenant graph ${view.siteId ?? "?"}`,
       }}
     >
       <div className="mc-field-grid">
         {COMPANY_ROWS.map((r) => (
           <div key={r.label} className="mc-field-row">
             <span>{r.label}</span>
-            <details><summary>{fieldView(c, r.keys).text}</summary><p>Source: company projection · {String(c.siteId ?? "site not returned")} · {truth.toLowerCase()}. Field-level author and observation time are not returned by this endpoint.</p></details>
+            <details><summary>{fieldView(c, r.keys).text}</summary><p>Source: company projection · {view.siteId ?? "site not returned"} · {truth.toLowerCase()}. Field-level author and observation time are not returned by this endpoint.</p></details>
           </div>
         ))}
       </div>
@@ -1818,7 +1840,7 @@ function LeadCard({ lead, index }: { lead: Record<string, unknown>; index: numbe
 
   return (
     <Card
-      title={`Lead ${String(lead.id ?? index + 1)}`}
+      title={`Lead ${String((lead as { id?: string }).id ?? index + 1)}`}
       health="PROVEN"
       prov={{
         source:
@@ -1895,11 +1917,11 @@ function ForwardButtons({
       {ids.map((id) => (
         <button
           key={id}
-          onClick={() =>
-            fetch(`/api/mc/trace-forward?eventId=${encodeURIComponent(id)}`)
+          onClick={() => {
+            void fetch(`/api/mc/trace-forward?eventId=${encodeURIComponent(id)}`)
               .then((r) => r.json())
-              .then(setForward)
-          }
+              .then(setForward);
+          }}
           style={{
             marginRight: 8,
             marginBottom: 6,

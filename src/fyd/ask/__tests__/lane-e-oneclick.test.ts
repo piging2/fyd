@@ -10,7 +10,7 @@
 import { answerAskFyd, type AnswerAskFydInput } from "../visitor-answer";
 import type { SiteBundle } from "../../media/site-bundle";
 import { generateSiteSpec } from "../../proceduralize/generator";
-import type { ObjectGraph } from "../sitespec/types";
+import type { ObjectGraph } from "../../sitespec/types";
 import type { AskFieldConflict } from "../field-conflicts";
 
 const BIZ = "syn-rose-biz";

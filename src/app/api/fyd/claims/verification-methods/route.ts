@@ -10,6 +10,6 @@ import { listVerificationMethods } from "@/fyd/claim/verification-seam";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(): Promise<NextResponse> {
+export function GET(): NextResponse {
   return NextResponse.json({ ok: true, methods: listVerificationMethods() });
 }

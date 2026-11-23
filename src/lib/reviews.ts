@@ -36,7 +36,7 @@ export function loadReviewsManifest(): ReviewsManifest {
 /**
  * Get all reviews
  */
-export async function getAllReviews(): Promise<Review[]> {
+export function getAllReviews(): Review[] {
   const manifest = loadReviewsManifest();
   return manifest.reviews;
 }
@@ -44,8 +44,8 @@ export async function getAllReviews(): Promise<Review[]> {
 /**
  * Get featured reviews only
  */
-export async function getFeaturedReviews(): Promise<Review[]> {
-  const reviews = await getAllReviews();
+export function getFeaturedReviews(): Review[] {
+  const reviews = getAllReviews();
   return filterFeatured(reviews);
 }
 
@@ -54,47 +54,47 @@ export async function getFeaturedReviews(): Promise<Review[]> {
  * This prevents bypassing the public media gate by calling getMediaById directly
  */
 export async function getFeaturedReviewsWithResolvedMedia(): Promise<Review[]> {
-  const reviews = await getFeaturedReviews();
+  const reviews = getFeaturedReviews();
   return await getReviewsWithResolvedMedia(reviews);
 }
 
 /**
  * Get reviews by service
  */
-export async function getReviewsByService(service: ReviewService): Promise<Review[]> {
-  const reviews = await getAllReviews();
-  return filterByField(reviews, 'service' as any, service);
+export function getReviewsByService(service: ReviewService): Review[] {
+  const reviews = getAllReviews();
+  return filterByField(reviews, 'service', service);
 }
 
 /**
  * Get reviews by project ID
  */
-export async function getReviewsByProject(projectId: string): Promise<Review[]> {
-  const reviews = await getAllReviews();
-  return filterByField(reviews, 'projectId' as any, projectId);
+export function getReviewsByProject(projectId: string): Review[] {
+  const reviews = getAllReviews();
+  return filterByField(reviews, 'projectId', projectId);
 }
 
 /**
  * Get verified reviews only
  */
-export async function getVerifiedReviews(): Promise<Review[]> {
-  const reviews = await getAllReviews();
-  return filterByField(reviews, 'verified' as any, true);
+export function getVerifiedReviews(): Review[] {
+  const reviews = getAllReviews();
+  return filterByField(reviews, 'verified', true);
 }
 
 /**
  * Get reviews by provider (manual, google, crm, etc.)
  */
-export async function getReviewsByProvider(provider: ReviewProvider): Promise<Review[]> {
-  const reviews = await getAllReviews();
-  return filterByField(reviews, 'provider' as any, provider);
+export function getReviewsByProvider(provider: ReviewProvider): Review[] {
+  const reviews = getAllReviews();
+  return filterByField(reviews, 'provider', provider);
 }
 
 /**
  * Get latest reviews (sorted by date, most recent first)
  */
-export async function getLatestReviews(limit?: number): Promise<Review[]> {
-  const reviews = await getAllReviews();
+export function getLatestReviews(limit?: number): Review[] {
+  const reviews = getAllReviews();
   const sorted = [...reviews].sort((a, b) => 
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
@@ -104,8 +104,8 @@ export async function getLatestReviews(limit?: number): Promise<Review[]> {
 /**
  * Get review by ID
  */
-export async function getReviewById(id: string): Promise<Review | null> {
-  const reviews = await getAllReviews();
+export function getReviewById(id: string): Review | null {
+  const reviews = getAllReviews();
   return findById(reviews, id);
 }
 
@@ -142,8 +142,8 @@ export async function getReviewsWithResolvedMedia(reviews: Review[]): Promise<Re
 /**
  * Get review statistics
  */
-export async function getReviewStats(): Promise<ReviewAggregate> {
-  const reviews = await getAllReviews();
+export function getReviewStats(): ReviewAggregate {
+  const reviews = getAllReviews();
   const total = reviews.length;
   const averageRating = total > 0 
     ? reviews.reduce((sum, review) => sum + review.rating, 0) / total 

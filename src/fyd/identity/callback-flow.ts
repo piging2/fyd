@@ -16,7 +16,6 @@ import {
   newState,
   verifyGoogleIdToken,
   type FetchImpl,
-  type GoogleOidcConfig,
   type VerifiedAccount,
 } from "./provider";
 import {
@@ -35,7 +34,6 @@ import {
   serializeOAuthStateCookie,
   serializeSessionCookie,
   type OAuthState,
-  type SessionConfig,
 } from "./session";
 import { appendAuthAudit } from "./audit";
 import { isAllowedRedirectUri, notConfiguredMessage, type AuthConfig } from "./config";
@@ -149,7 +147,7 @@ export async function completeGoogleCallback(
       { code: params.code, codeVerifier: oauthState.codeVerifier, redirectUri: google.redirectUri },
       fetchImpl
     );
-  } catch (err) {
+  } catch {
     throw new AuthFlowError("EXCHANGE_FAILED", "Could not exchange the authorization code", 502);
   }
   let verified: VerifiedAccount;
@@ -160,7 +158,7 @@ export async function completeGoogleCallback(
       { expectedNonce: oauthState.nonce },
       fetchImpl
     );
-  } catch (err) {
+  } catch {
     throw new AuthFlowError("ID_TOKEN_INVALID", "Google identity could not be verified", 401);
   }
   // Provider tokens are intentionally dropped here: they never enter

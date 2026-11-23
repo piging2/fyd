@@ -20,7 +20,7 @@ export default function EmbedObjectPage({
 
   React.useEffect(() => {
     let cancelled = false;
-    (async () => {
+    void (async () => {
       const { id } = await searchParams;
       if (!id) {
         if (!cancelled) setError("Missing object id.");

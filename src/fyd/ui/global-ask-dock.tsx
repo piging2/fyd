@@ -228,7 +228,7 @@ export function GlobalAskDock({ context, open, onOpenChange }: GlobalAskDockProp
           </div>
 
           <div className="px-4 py-3">
-            <form onSubmit={onSubmit} aria-label="Ask FYD">
+            <form onSubmit={(e) => { void onSubmit(e); }} aria-label="Ask FYD">
               <label htmlFor="global-ask-input" className="sr-only">
                 {context ? `Ask a question about ${context.name}` : "Ask a question"}
               </label>

@@ -77,7 +77,7 @@ export async function GET(request: Request) {
   };
   for (const t of getFydTenantIds()) {
     if (tenantMentioned(t)) {
-      const { graph, meta } = await getFydTenantGraph(t as never);
+      const { graph, meta } = await getFydTenantGraph(t);
       const services = graph.objects.filter((o) => /service|offer/i.test(o.schema));
       const people = graph.objects.filter((o) => /person|team|employee/i.test(o.schema));
       const corrected = graph.objects.filter((o) => o.ownerFieldCorrections?.length);
@@ -104,8 +104,8 @@ export async function GET(request: Request) {
   if (/what changed|changes today|changed today/.test(q)) {
     const prefix = todayPrefix();
     const overlays = await journalEvents("FYD_SITE_OVERLAY", 100);
-    const todays = overlays.filter((e) =>
-      String(e.timestamp ?? "").startsWith(prefix)
+    const todays = overlays.filter(
+      (e) => typeof e.timestamp === "string" && e.timestamp.startsWith(prefix)
     );
     return NextResponse.json({
       ok: true,

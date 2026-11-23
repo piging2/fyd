@@ -1,5 +1,5 @@
 /**
- * Lane D: GET /api/mc/missions — mission list, projected live from the
+ * Lane D: GET /api/mc/missions: mission list, projected live from the
  * EXISTING journal on every request. No cache, no store: refresh preserves
  * state because state lives in the journal; replay reconstructs it because
  * the projection is deterministic.
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   let scope;
   try {
     scope = callerScope(req);
-  } catch (e) {
+  } catch {
     return Response.json({ ok: false, error: 'invalid_caller_tenant' }, { status: 400 });
   }
   let missions;

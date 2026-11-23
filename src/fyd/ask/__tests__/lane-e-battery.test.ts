@@ -16,7 +16,7 @@ import type { SiteBundle } from "../../media/site-bundle";
 import { COPPERSMITH_GRAPH } from "../../proceduralize/__fixtures__/coppersmith-graph";
 import { generateSiteSpec } from "../../proceduralize/generator";
 import type { AskFieldConflict } from "../field-conflicts";
-import type { FieldVisibilityDecision } from "../sitespec/field-visibility";
+import type { FieldVisibilityDecision } from "../../sitespec/field-visibility";
 
 const BIZ = "website-business-2f1327c09d622175";
 const LOC = "website-business-2f1327c09d622175-location";

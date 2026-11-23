@@ -24,7 +24,6 @@ import {
   type AskAnswerClass,
   type AskAnswerState,
   type AskClaimClass,
-  type AskFydCitation,
   type AskFydEvidenceRef,
   type AskFydObjectRef,
   type AskFydSourceRef,

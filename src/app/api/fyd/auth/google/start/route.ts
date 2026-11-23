@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 import { loadAuthConfig } from "@/fyd/identity/config";
 import { beginGoogleStart, AuthFlowError, notConfiguredMessage } from "@/fyd/identity/callback-flow";
 
-export async function GET() {
+export function GET() {
   const config = loadAuthConfig();
   try {
     const { redirectUrl, stateCookie } = beginGoogleStart({ config });

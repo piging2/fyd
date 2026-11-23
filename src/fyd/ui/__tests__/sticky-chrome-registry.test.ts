@@ -108,16 +108,11 @@ test("shell CSS: one scroll-padding rule reads the vars; no hardcoded guesses", 
 });
 
 function renderCoppersmithVisitor(): string {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { renderToStaticMarkup } = require("react-dom/server");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const React = require("react");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { VisitorExperience } = require("../../components/visitor-experience");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { generateSiteSpec } = require("../../proceduralize/generator");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { COPPERSMITH_GRAPH } = require("../../proceduralize/__fixtures__/coppersmith-graph");
+  const { renderToStaticMarkup } = require("react-dom/server") as typeof import("react-dom/server");
+  const React = require("react") as typeof import("react");
+  const { VisitorExperience } = require("../../components/visitor-experience") as typeof import("../../components/visitor-experience");
+  const { generateSiteSpec } = require("../../proceduralize/generator") as typeof import("../../proceduralize/generator");
+  const { COPPERSMITH_GRAPH } = require("../../proceduralize/__fixtures__/coppersmith-graph") as typeof import("../../proceduralize/__fixtures__/coppersmith-graph");
   const graph = COPPERSMITH_GRAPH;
   const spec = generateSiteSpec(graph, { generatedAt: "2026-10-07T00:00:00Z" });
   const ctx = {

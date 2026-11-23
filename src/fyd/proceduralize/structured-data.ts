@@ -179,16 +179,18 @@ interface LoadedDocument {
   document: NodeObject;
 }
 
-async function offlineDocumentLoader(url: string): Promise<LoadedDocument> {
+function offlineDocumentLoader(url: string): Promise<LoadedDocument> {
   if (SCHEMA_CONTEXT_RE.test(url)) {
-    return {
+    return Promise.resolve({
       contextUrl: undefined,
       documentUrl: url,
       document: { "@context": { "@vocab": SCHEMA_ORG } },
-    };
+    });
   }
   // Fail closed: private context and untrusted remotes are never fetched.
-  throw new Error(`structured-data: offline; refusing remote context ${url}`);
+  return Promise.reject(
+    new Error(`structured-data: offline; refusing remote context ${url}`),
+  );
 }
 
 export interface ExpandedNode {
@@ -569,7 +571,7 @@ function idRefs(value: unknown): string[] {
     if (item !== null && typeof item === "object") {
       const rec = item as Record<string, unknown>;
       if (typeof rec["@id"] === "string" && !("@value" in rec)) {
-        out.push(rec["@id"] as string);
+        out.push(rec["@id"]);
       }
     }
   }

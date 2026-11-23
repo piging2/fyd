@@ -9,7 +9,7 @@ import { buildRssFeed } from "@/lib/rss";
  * Episodes keep their existing external podcast RSS, which is a
  * different medium and is not part of this feed.
  */
-export async function GET() {
+export function GET() {
   const siteUrl =
     getTenant().domain ??
     (process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "https://pingfyd.com");

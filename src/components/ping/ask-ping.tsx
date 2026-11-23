@@ -208,7 +208,7 @@ function ProposalCard({
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={approve}
+            onClick={() => { void approve(); }}
             disabled={state === "approving"}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet disabled:opacity-50"
           >
@@ -280,7 +280,7 @@ export function AskPingPanel({ targetObjectId = null, initialPrefill = null, onC
       <p className="mt-0.5 text-xs text-accent/60">
         Answers come from PING evidence only. Every factual sentence cites its source.
       </p>
-      <form onSubmit={submit} className="mt-3 flex gap-2">
+      <form onSubmit={(e) => { void submit(e); }} className="mt-3 flex gap-2">
         <label htmlFor="ask-ping-input" className="sr-only">
           Your question
         </label>

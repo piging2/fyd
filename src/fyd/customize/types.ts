@@ -1,5 +1,5 @@
 /**
- * Lane D: customize-with-FYD intent pipeline — shared types.
+ * Lane D: customize-with-FYD intent pipeline: shared types.
  *
  * Layer law (frozen): customization operates on INTENT and structured
  * state. Three layers stay separate:
@@ -50,7 +50,7 @@ export type ParseResult =
   | UnsupportedIntent;
 
 export function isUnsupported(r: ParseResult): r is UnsupportedIntent {
-  return "unsupported" in r && (r as UnsupportedIntent).unsupported === true;
+  return "unsupported" in r && (r).unsupported === true;
 }
 
 /** A parsed intent grounded against the site's actual evidence. */

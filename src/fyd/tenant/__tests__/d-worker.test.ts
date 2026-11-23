@@ -41,13 +41,13 @@ describe("tenant boundary: context-less worker paths fail closed", () => {
   });
 
   test("null context: the path never executes", () => {
-    const spy = jest.fn();
+    const spy = jest.fn((tenantId: string) => "ran:" + tenantId);
     expect(() => withTenantContext(null, spy)).toThrow(TenantContextError);
     expect(spy).not.toHaveBeenCalled();
   });
 
   test("empty or malformed tenant id: treated as missing context", () => {
-    const spy = jest.fn();
+    const spy = jest.fn((tenantId: string) => "ran:" + tenantId);
     for (const bad of [
       { tenantId: "" },
       { tenantId: "../escape" },

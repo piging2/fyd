@@ -1,5 +1,5 @@
 /**
- * GET /api/mc/lineage — the ONE operational spine.
+ * GET /api/mc/lineage: the ONE operational spine.
  *
  * A read-only projection over EXISTING truth. No new store, no new
  * authority, no new scheduler. Every section carries an explicit source
@@ -32,7 +32,7 @@ function bad(status: number, error: string, detail?: string | null) {
   return Response.json({ ok: false, error, detail: detail ?? null }, { status });
 }
 
-export async function GET(req: Request) {
+export function GET(req: Request) {
   const url = new URL(req.url);
   const missionId = url.searchParams.get('missionId');
   const proposalId = url.searchParams.get('proposalId');

@@ -163,7 +163,7 @@ describe("replay determinism", () => {
         join(process.env.FYD_OWNER_DIR as string, "happy-place.json"),
         "utf8",
       ),
-    );
+    ) as { version: number; events: unknown[]; fieldCorrections?: unknown; serviceOrder?: unknown };
     expect(raw.version).toBe(2);
     expect(Array.isArray(raw.events)).toBe(true);
     expect(raw.fieldCorrections).toBeUndefined();
@@ -306,7 +306,7 @@ describe("v1 migration", () => {
     );
     const raw = JSON.parse(
       readFileSync(join(dir, "happy-place.json"), "utf8"),
-    );
+    ) as { version: number; events: unknown[]; fieldCorrections?: unknown; serviceOrder?: unknown };
     expect(raw.version).toBe(2);
     const after = readOverrides("happy-place");
     expect(after.fieldCorrections.email.ownerValue).toBe("a@b.com");

@@ -24,12 +24,13 @@ import {
   factKey,
   reversedGraph,
 } from "./support";
+import type { ObjectGraph } from "../../sitespec/types";
 
 describe("INV-01 same input -> same canonical graph", () => {
   const graph = clearwaterGraph();
 
   test("byte-identical input (deep clone) -> identical fact stream", () => {
-    const clone = JSON.parse(JSON.stringify(graph));
+    const clone = JSON.parse(JSON.stringify(graph)) as ObjectGraph;
     expect(extractSiteFacts(clone, T0)).toEqual(extractSiteFacts(graph, T0));
   });
 

@@ -20,7 +20,7 @@
  */
 
 jest.mock("@/lib/ping/session", () => ({
-  getPracticeIdentityId: jest.fn(async () => null),
+  getPracticeIdentityId: jest.fn(() => Promise.resolve(null)),
 }));
 
 import {

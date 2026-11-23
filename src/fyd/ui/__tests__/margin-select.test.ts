@@ -98,7 +98,7 @@ describe("selectMarginObjects", () => {
       rel("r5", "svc-1", "located_at", "loc-1"),
       rel("r6", OWNER, "publishes", "post-1"),
     ],
-  } as ObjectGraph;
+  };
 
   const home = page([
     section("home:Services:0", "Services", {
@@ -189,7 +189,7 @@ describe("selectMarginObjects", () => {
         ...graph.relationships,
         rel("r9", OWNER, "offers", "svc-9"),
       ],
-    } as ObjectGraph;
+    };
     const out = selectMarginObjects({
       graph: g2,
       page: home,

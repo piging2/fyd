@@ -127,7 +127,7 @@ export function SiteEditorClient({
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const link = target.closest('a[href^="/o/"]') as HTMLAnchorElement | null;
+      const link = target.closest('a[href^="/o/"]');
       if (!link) return;
       // Let modifier clicks (new tab), #ask links, and explicit
       // full-navigation links (data-fyd-open-full) pass through.
@@ -447,18 +447,18 @@ function EditorPanel({
       <div className="rounded border border-border-soft bg-surface p-4">
         <p className="font-semibold">Design tokens</p>
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {(["accent", "surface", "ink"] as (keyof FYDThemeTokens)[]).map((token) => (
+          {(["accent", "surface", "ink"] as const).map((token) => (
             <label key={token} className="flex items-center gap-2 text-sm">
               <span className="w-20 capitalize text-accent">{token}</span>
               <input
                 className="min-w-0 flex-1 rounded border border-border-soft bg-background px-3 py-2 text-sm"
-                value={tokenDrafts[token] ?? String(spec.themeTokens[token])}
+                value={tokenDrafts[token] ?? spec.themeTokens[token]}
                 onChange={(e) => setTokenDrafts({ ...tokenDrafts, [token]: e.target.value })}
               />
               <button
                 className="rounded border border-border-soft px-3 py-1 text-xs"
                 onClick={() => {
-                  const value = (tokenDrafts[token] ?? String(spec.themeTokens[token])).trim();
+                  const value = (tokenDrafts[token] ?? spec.themeTokens[token]).trim();
                   onIntent({ kind: "set_theme_token", token, value });
                 }}
               >

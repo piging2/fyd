@@ -227,7 +227,7 @@ export function prefersReducedMotion(): boolean {
 /**
  * Get animation values respecting reduced motion preference
  */
-export function getMotionValues<T extends Record<string, any>>(
+export function getMotionValues<T extends Record<string, unknown>>(
   normal: T,
   reduced: Partial<T>
 ): T {

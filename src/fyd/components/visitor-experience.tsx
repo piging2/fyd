@@ -121,7 +121,6 @@ function HeroFigure({ media, siteId }: { media: DisplayMedia; siteId: string }) 
   });
   return <figure className="ve-hero-media">
     {/* Authorized pipeline derivative, served locally. No runtime hotlink. */}
-    {/* eslint-disable-next-line @next/next/no-img-element */}
     <img
       src={img.src}
       {...(img.srcSet ? { srcSet: img.srcSet } : {})}

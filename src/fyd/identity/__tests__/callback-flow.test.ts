@@ -30,7 +30,7 @@ function configuredEnv() {
   };
 }
 
-function testDeps(mock: MockOidcProvider, store: InMemoryIdentityBindingStore, code: string) {
+function testDeps(mock: MockOidcProvider, store: InMemoryIdentityBindingStore) {
   const config = loadAuthConfig(configuredEnv());
   expect(config.ready).toBe(true);
   const fetchImpl = (async (input: unknown, init?: unknown) => {
@@ -73,7 +73,7 @@ describe("completeGoogleCallback", () => {
   afterEach(() => setAuditSink(null));
 
   async function runStartToCallback(store: InMemoryIdentityBindingStore, mock: MockOidcProvider, linkIdentityId?: string) {
-    const { config, fetchImpl } = testDeps(mock, store, "code-1");
+    const { config, fetchImpl } = testDeps(mock, store);
     const started = beginGoogleStart({ config }, linkIdentityId ? { linkIdentityId } : {});
     const cookies = parseCookies(started.stateCookie);
     const stateCookie = decodeURIComponent(cookies[OAUTH_STATE_COOKIE_NAME]);
@@ -115,7 +115,7 @@ describe("completeGoogleCallback", () => {
   test("state mismatch is rejected", async () => {
     const store = new InMemoryIdentityBindingStore();
     const mock = new MockOidcProvider();
-    const { config, fetchImpl } = testDeps(mock, store, "code-1");
+    const { config, fetchImpl } = testDeps(mock, store);
     const started = beginGoogleStart({ config });
     const cookies = parseCookies(started.stateCookie);
     await expect(
@@ -129,7 +129,7 @@ describe("completeGoogleCallback", () => {
   test("missing state cookie is rejected", async () => {
     const store = new InMemoryIdentityBindingStore();
     const mock = new MockOidcProvider();
-    const { config, fetchImpl } = testDeps(mock, store, "code-1");
+    const { config, fetchImpl } = testDeps(mock, store);
     await expect(
       completeGoogleCallback({ config, store, fetchImpl }, { code: "code-1", state: "s", stateCookie: null })
     ).rejects.toMatchObject({ code: "BAD_STATE", status: 400 });
@@ -137,7 +137,7 @@ describe("completeGoogleCallback", () => {
 
   test("fails closed when not configured", async () => {
     const store = new InMemoryIdentityBindingStore();
-    const mock = new MockOidcProvider();
+    new MockOidcProvider();
     const config = loadAuthConfig({});
     await expect(
       completeGoogleCallback({ config, store }, { code: "c", state: "s", stateCookie: "x" })
@@ -149,7 +149,7 @@ describe("completeGoogleCallback", () => {
     const mock = new MockOidcProvider();
     const first = await runStartToCallback(store, mock);
     // link a second Google subject to the same identity
-    const { config, fetchImpl } = testDeps(mock, store, "code-2");
+    const { config } = testDeps(mock, store);
     const started = beginGoogleStart({ config }, { linkIdentityId: first.identityId });
     const cookies = parseCookies(started.stateCookie);
     const stateCookie = decodeURIComponent(cookies[OAUTH_STATE_COOKIE_NAME]);

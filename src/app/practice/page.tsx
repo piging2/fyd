@@ -61,7 +61,7 @@ export default function PracticePage() {
   const [pageError, setPageError] = React.useState<PracticeError | null>(null);
 
   const [sessionId, setSessionId] = React.useState<string | null>(null);
-  const [sessionIdentity, setSessionIdentity] = React.useState<PingIdentitySummary | null>(null);
+  const [, setSessionIdentity] = React.useState<PingIdentitySummary | null>(null);
   const [identities, setIdentities] = React.useState<PingIdentitySummary[]>([]);
   const [profile, setProfile] = React.useState<PublicCircleProjection | null>(null);
   const [feed, setFeed] = React.useState<PingPost[]>([]);
@@ -110,7 +110,7 @@ export default function PracticePage() {
   }, []);
 
   React.useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
   // -- selection: ctrl/cmd+A selects all cards, Escape clears --------------
@@ -294,7 +294,7 @@ export default function PracticePage() {
         </span>
         <button
           type="button"
-          onClick={refresh}
+          onClick={() => { void refresh(); }}
           className="inline-flex items-center gap-1.5 rounded-lg border border-border-soft px-3 py-1.5 text-sm text-accent/80 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet"
         >
           <RefreshCw className="h-4 w-4" aria-hidden="true" />
@@ -319,7 +319,7 @@ export default function PracticePage() {
               )}
               <button
                 type="button"
-                onClick={refresh}
+                onClick={() => { void refresh(); }}
                 className="mt-3 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet"
               >
                 <RefreshCw className="h-4 w-4" aria-hidden="true" />
@@ -356,7 +356,7 @@ export default function PracticePage() {
           <h2 className="text-lg font-semibold text-accent">Your Circle</h2>
           <div className="mt-3">
             {status === "loading" || !profile ? (
-              <PingCircle identity={null} status={status === "error" ? "error" : "loading"} errorMessage={pageError?.message} onRetry={refresh} />
+              <PingCircle identity={null} status={status === "error" ? "error" : "loading"} errorMessage={pageError?.message} onRetry={() => { void refresh(); }} />
             ) : (
               <PingCircle identity={profile.identity} bio={profile.bio} variant="expanded" />
             )}
@@ -393,7 +393,7 @@ export default function PracticePage() {
                   onToggleSelect={(id) => toggleSelect("identity", id)}
                   following={!!identity.followedByViewer}
                   followPending={followPending.has(identity.id)}
-                  onToggleFollow={handleToggleFollow}
+                  onToggleFollow={(target) => { void handleToggleFollow(target); }}
                 />
               </li>
             ))}
@@ -423,7 +423,7 @@ export default function PracticePage() {
                   selected={selection.has(selKey("post", post.id))}
                   onToggleSelect={(id) => toggleSelect("post", id)}
                   likePending={likePending.has(post.id)}
-                  onToggleLike={handleToggleLike}
+                  onToggleLike={(target) => { void handleToggleLike(target); }}
                   sessionActive={!!sessionId}
                 />
               ))}
@@ -438,7 +438,7 @@ export default function PracticePage() {
         selectedPosts={selectedPostCount}
         running={bulkRunning}
         result={bulkResult}
-        onFollowSelected={handleFollowSelected}
+        onFollowSelected={() => { void handleFollowSelected(); }}
         onClear={() => {
           setSelection(new Set());
           setBulkResult(null);

@@ -23,7 +23,7 @@ function portalWith(kinds: CapabilityKind[]): PortalProjection {
 }
 
 function mockFetchJson(payload: unknown): jest.Mock {
-  const m = jest.fn().mockResolvedValue({ json: async () => payload });
+  const m = jest.fn().mockResolvedValue({ json: () => Promise.resolve(payload) });
   (global as { fetch?: unknown }).fetch = m;
   return m;
 }
@@ -111,7 +111,7 @@ describe("openWebsite", () => {
   it("opens a safe https href _blank noopener", () => {
     openWebsite("https://example.com/menu");
     expect(
-      ((globalThis as { window: { open: jest.Mock } }).window.open as jest.Mock),
+      ((globalThis as { window: { open: jest.Mock } }).window.open),
     ).toHaveBeenCalledWith("https://example.com/menu", "_blank", "noopener,noreferrer");
   });
 
@@ -120,7 +120,7 @@ describe("openWebsite", () => {
     openWebsite("http://example.com/");
     openWebsite("data:text/html,hi");
     expect(
-      ((globalThis as { window: { open: jest.Mock } }).window.open as jest.Mock),
+      ((globalThis as { window: { open: jest.Mock } }).window.open),
     ).not.toHaveBeenCalled();
   });
 });

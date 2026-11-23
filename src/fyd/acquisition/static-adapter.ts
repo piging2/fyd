@@ -206,7 +206,7 @@ export class StaticAcquisitionAdapter implements AcquisitionAdapter {
       ...deps,
       fetchImpl: async (input: string | URL | Request, init?: RequestInit) => {
         const impl = deps?.fetchImpl ?? fetch;
-        const res = await impl(input as string, init);
+        const res = await impl(input, init);
         finalStatus = res.status;
         return res;
       },

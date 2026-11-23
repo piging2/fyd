@@ -117,7 +117,7 @@ describe("site strategies: composition substrate", () => {
       facts: [...factSet(plans.get(name)!, graph)].sort(),
     }));
     // The test is vacuous if nothing is bound; the fixture must bind facts.
-    for (const { name, facts } of factSets) {
+    for (const { facts } of factSets) {
       expect(facts.length).toBeGreaterThan(0);
     }
     const reference = JSON.stringify(factSets[0].facts);

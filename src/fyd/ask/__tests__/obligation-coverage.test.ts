@@ -22,8 +22,8 @@ import { HAPPY_PLACE_GRAPH } from '../../proceduralize/__fixtures__/happy-place-
 import { BASELINE } from './__fixtures__/visitor-concierge-baseline';
 import type { ObjectGraph } from '../../sitespec/types';
 
-const COPPER = COPPERSMITH_GRAPH as unknown as ObjectGraph;
-const HAPPY = HAPPY_PLACE_GRAPH as unknown as ObjectGraph;
+const COPPER = COPPERSMITH_GRAPH;
+const HAPPY = HAPPY_PLACE_GRAPH;
 
 function askConcierge(question: string, graph: ObjectGraph = COPPER) {
   const target = graph.objects.find((o) => o.schema === 'ping.social.business@1')!;
@@ -206,10 +206,7 @@ describe('assertObligationCoverage / missingObligations units', () => {
 
 describe('single-intent byte-identity (guards the obligation refactor)', () => {
   test.each(Object.keys(BASELINE))('unchanged single-intent answer: %s', (question) => {
-    const expected = BASELINE[question] as null | {
-      answer: string; unknowns: string[]; partial: boolean;
-      claims: { claim: string; classification: string; evidenceRefIds: string[] }[];
-    };
+    const expected = BASELINE[question];
     const out = askConcierge(question);
     if (expected === null) {
       expect(out).toBeNull();

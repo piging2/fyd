@@ -7,6 +7,7 @@
  * ActivityPub wire format.
  */
 
+import { describe, expect, test } from "@jest/globals";
 import { buildFollowActivity } from "../follow";
 import { ActivityPubAdapterError, FollowIntent, ResolvedRemoteActor } from "../types";
 

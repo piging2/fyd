@@ -45,7 +45,7 @@ describe("generatedTreatmentFor", () => {
     expect("url" in t).toBe(false);
     expect("img" in t).toBe(false);
     const keys: string[] = [];
-    JSON.stringify(t, (k, v) => {
+    JSON.stringify(t, (k: string, v: unknown) => {
       keys.push(k);
       return v;
     });

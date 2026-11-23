@@ -9,7 +9,7 @@ import { loadAuthConfig } from "@/fyd/identity/config";
 import { parseCookies, readSessionValue, SESSION_COOKIE_NAME } from "@/fyd/identity/session";
 import { FileIdentityBindingStore } from "@/fyd/identity/file-store";
 
-export async function GET(request: NextRequest) {
+export function GET(request: NextRequest) {
   const config = loadAuthConfig();
   if (!config.session.configured) {
     return NextResponse.json({ ok: true, authenticated: false, reason: "session_not_configured" });

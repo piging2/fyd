@@ -119,7 +119,7 @@ function ipv6ToGroups(addr: string): number[] | null {
   if (halves.length === 1 && left.length !== 8) return null;
   const missing = 8 - left.length - right.length;
   if (missing < 0 || (halves.length === 2 && missing < 1)) return null;
-  return [...left, ...new Array(missing).fill(0), ...right];
+  return [...left, ...new Array<number>(missing).fill(0), ...right];
 }
 
 /** True when the numeric IP is public routable space. */

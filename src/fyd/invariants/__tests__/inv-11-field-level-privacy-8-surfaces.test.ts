@@ -1,5 +1,5 @@
 /**
- * INV-11 / Q-C-13 HOSTILE FIELD TEST — CONTAINMENT (Q-C-01 LANDED, 2026-09-25).
+ * INV-11 / Q-C-13 HOSTILE FIELD TEST: CONTAINMENT (Q-C-01 LANDED, 2026-09-25).
  *
  * STATUS: CONTAINMENT. The single verified public projection boundary
  * (src/fyd/sitespec/public-projection.ts) is the only path from a source
@@ -45,7 +45,6 @@ import * as os from "os";
 import * as path from "path";
 
 import {
-  applyFieldVisibility,
   type FieldVisibilityDecision,
 } from "../../sitespec/field-visibility";
 import {
@@ -263,7 +262,7 @@ function attackAllSurfaces(
   expect(isVerifiedPublicProjection(verified)).toBe(true);
   const projected = verified.graph;
 
-  // SURFACE 1 — SiteBundle: the bundle is the server-internal package; the
+  // SURFACE 1: SiteBundle: the bundle is the server-internal package; the
   // invariant binds where it is CONSUMED (the ask pipeline). The bundle is
   // never a response payload.
   {
@@ -285,7 +284,7 @@ function attackAllSurfaces(
     }
   }
 
-  // SURFACE 2 — render model: built ONLY from a verified projection.
+  // SURFACE 2: render model: built ONLY from a verified projection.
   {
     const model = buildSemanticRenderModel(buildSpec(), verified);
     expectBabsent(`${label} [2 render model]`, model);
@@ -295,7 +294,7 @@ function attackAllSurfaces(
     expect(model.viewerKind).toBe("anonymous");
   }
 
-  // SURFACE 3 — public object endpoint (construction path the route delegates to).
+  // SURFACE 3: public object endpoint (construction path the route delegates to).
   {
     const view = composeObjectView(verified, SITE_ID, BIZ_ID, BIZ_ID, SITE_ID);
     expect(view).not.toBeNull();
@@ -304,7 +303,7 @@ function attackAllSurfaces(
     expectAuseful(`${label} [3 object endpoint]`, view);
   }
 
-  // SURFACE 5 — Circle/Node (edge lane construction path).
+  // SURFACE 5: Circle/Node (edge lane construction path).
   {
     const sheet = buildObjectSheet(verified, BIZ_ID, EDGE_VISITOR);
     expect(sheet).not.toBeNull();
@@ -312,7 +311,7 @@ function attackAllSurfaces(
     expectAuseful(`${label} [5 Circle/Node sheet]`, sheet);
   }
 
-  // SURFACE 6 — Ask FYD context: direct object ID attack + traversal attack.
+  // SURFACE 6: Ask FYD context: direct object ID attack + traversal attack.
   {
     const direct = answerAskFyd(
       askInput("Tell me about this object.", BIZ_ID),
@@ -349,7 +348,7 @@ function attackAllSurfaces(
     }
   }
 
-  // SURFACE 7 — Ask FYD answer/citations artifacts, swept as one payload.
+  // SURFACE 7: Ask FYD answer/citations artifacts, swept as one payload.
   {
     const outcome = answerAskFyd(
       askInput("What is the business address?"),
@@ -361,7 +360,7 @@ function attackAllSurfaces(
     }
   }
 
-  // SURFACE 8 — serialization/loggable response: the /sites serialized page
+  // SURFACE 8: serialization/loggable response: the /sites serialized page
   // state IS the verified public graph. B is gone BEFORE serialization,
   // at the boundary, not at an object-level gate afterward.
   {
@@ -370,7 +369,7 @@ function attackAllSurfaces(
     expectAuseful(`${label} [8 serialized page state]`, pageState);
   }
 
-  // SURFACE 4 — search/index projection: the search seam carries id+rank
+  // SURFACE 4: search/index projection: the search seam carries id+rank
   // metadata only (the compiler fetches nothing through search; visibility
   // stays enforced at assembly). Structural contract assertion.
   {
@@ -539,7 +538,7 @@ describe("Q-C-13 hostile field test: PUBLIC field A + PRIVATE field B (B reachab
       );
       const verifiedObj = syncObj(body.siteId as string, "anonymous");
       const recomputed = objectViewToProjection(
-        body.view as import("../../object/view").ObjectView,
+        body.view as import("../../object/types").ObjectView,
         verifiedObj.graph,
       );
       expect(jsonOf(body.projection)).toBe(jsonOf(recomputed));
@@ -549,7 +548,7 @@ describe("Q-C-13 hostile field test: PUBLIC field A + PRIVATE field B (B reachab
   describe("replay: the owner HIDE decision survives the event-log replay", () => {
     test("append -> replay -> projectOwnerState keeps the HIDE; restart keeps it too", () => {
       // NOTE (trace finding): the owner.hid-fact event vocabulary covers
-      // contact:address and service:* only — the general field-HIDE lives
+      // contact:address and service:* only: the general field-HIDE lives
       // in the separate FieldVisibilityDecision bounded control. The replay
       // below exercises the real durable path (address HIDE); the
       // FieldVisibilityDecision replay is covered by the regen battery
@@ -579,9 +578,9 @@ describe("Q-C-13 hostile field test: PUBLIC field A + PRIVATE field B (B reachab
 
         // RESTART: fresh module registry, same dir -> same decision.
         jest.resetModules();
-        const fresh = jest.requireActual(
-          "../../object/owner-store",
-        ) as typeof import("../../object/owner-store");
+        const fresh = jest.requireActual<
+          typeof import("../../object/owner-store")
+        >("../../object/owner-store");
         const afterRestart = fresh.readOverrides(LOC_ID);
         expect(afterRestart.addressVisibility).toBe("hide");
         expect(
@@ -606,12 +605,12 @@ describe("Q-C-13 hostile field test: PUBLIC field A + PRIVATE field B (B reachab
 
     test("restart: fresh module registry, the battery still holds", () => {
       jest.resetModules();
-      const freshProjection = jest.requireActual(
-        "../../sitespec/public-projection",
-      ) as typeof import("../../sitespec/public-projection");
-      const freshAsk = jest.requireActual(
-        "../../ask/visitor-answer",
-      ) as typeof import("../../ask/visitor-answer");
+      const freshProjection = jest.requireActual<
+        typeof import("../../sitespec/public-projection")
+      >("../../sitespec/public-projection");
+      const freshAsk = jest.requireActual<
+        typeof import("../../ask/visitor-answer")
+      >("../../ask/visitor-answer");
       const verified = freshProjection.verifyPublicProjection(
         buildRawGraph(),
         DECISIONS,

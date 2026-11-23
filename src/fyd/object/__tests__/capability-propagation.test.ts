@@ -32,13 +32,6 @@ import { getVerifiedPublicProjectionSync } from "../../data/ping-object-source";
 
 /** Resolve the anonymous verified projection for a fixture slug. */
 const proj = (slug: string) => getVerifiedPublicProjectionSync(slug, "anonymous");
-const projOrNull = (slug: string) => {
-  try {
-    return proj(slug);
-  } catch {
-    return null;
-  }
-};
 
 const PROJECTIONS = join(__dirname, "fixtures", "projections");
 

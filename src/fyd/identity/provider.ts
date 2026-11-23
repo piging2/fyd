@@ -165,7 +165,7 @@ export async function exchangeCodeForTokens(
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body: body.toString(),
     });
-  } catch (err) {
+  } catch {
     throw new OAuthExchangeError("TOKEN_ENDPOINT_UNREACHABLE", "Token endpoint unreachable");
   }
   if (!res.ok) {
@@ -178,9 +178,9 @@ export async function exchangeCodeForTokens(
   }
   return {
     idToken,
-    accessToken: typeof data["access_token"] === "string" ? (data["access_token"] as string) : undefined,
-    tokenType: typeof data["token_type"] === "string" ? (data["token_type"] as string) : undefined,
-    expiresIn: typeof data["expires_in"] === "number" ? (data["expires_in"] as number) : undefined,
+    accessToken: typeof data["access_token"] === "string" ? (data["access_token"]) : undefined,
+    tokenType: typeof data["token_type"] === "string" ? (data["token_type"]) : undefined,
+    expiresIn: typeof data["expires_in"] === "number" ? (data["expires_in"]) : undefined,
   };
 }
 
@@ -298,6 +298,6 @@ export async function verifyGoogleIdToken(
     subject: sub,
     email: typeof email === "string" ? email : undefined,
     emailVerified: claims["email_verified"] === true || claims["email_verified"] === "true",
-    name: typeof claims["name"] === "string" ? (claims["name"] as string) : undefined,
+    name: typeof claims["name"] === "string" ? (claims["name"]) : undefined,
   };
 }

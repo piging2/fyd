@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Container, Section, SectionHeading } from "@/components/section";
+import { Container, Section } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
 import { Reveal } from "@/components/reveal";
 import { getTenant } from "@/lib/tenant-config";

@@ -15,8 +15,7 @@
  */
 
 import { loadMediaManifest } from './media';
-import type { Media, MediaManifest } from '@/types/media';
-import { getMedia as getMediaFromKV } from './media-kv-store';
+import type { Media } from '@/types/media';
 
 // Visual slot structure
 export interface VisualSlot {
@@ -44,7 +43,16 @@ export interface VisualAsset extends Media {
 }
 
 // August 3 baseline assets (from archive/legacy-runtime/media.v1.json)
-const AUGUST_3_BASELINE = [
+interface August3BaselineAsset {
+  filename: string;
+  driveId: string;
+  project: string | null;
+  service: string | null;
+  roles: string[];
+  featured: boolean;
+}
+
+const AUGUST_3_BASELINE: August3BaselineAsset[] = [
   { filename: 'FENCE BUILD.jpg', driveId: 'fences-001-master', project: 'fences-001', service: 'fences', roles: ['hero'], featured: true },
   { filename: 'FENCE BEFORE.jpg', driveId: 'drive-c266e5096e43', project: 'fences-001', service: 'fences', roles: ['before'], featured: false },
   { filename: 'FENCE AFTER.jpg', driveId: 'drive-7a4b33c8b2bb', project: 'fences-001', service: 'fences', roles: ['after'], featured: false },
@@ -113,7 +121,7 @@ const WEBSITE_VISUAL_SLOTS: VisualSlot[] = [
  * Combines current media.v1.json with August 3 baseline data
  * Note: Vercel KV Drive assets are loaded dynamically when needed
  */
-export async function loadVisualAssetRegistry(): Promise<VisualAsset[]> {
+export function loadVisualAssetRegistry(): VisualAsset[] {
   const manifest = loadMediaManifest();
   const registry: VisualAsset[] = [];
   const contentHashMap = new Map<string, VisualAsset>(); // P0 FIX: Deduplicate by content hash
@@ -121,7 +129,7 @@ export async function loadVisualAssetRegistry(): Promise<VisualAsset[]> {
   // Add current media assets from media.v1.json
   manifest.media.forEach(m => {
     const augustData = AUGUST_3_BASELINE.find(a => a.filename === m.filename);
-    const classification = classifyAsset(m, augustData);
+    const classification = classifyAsset(m);
     const usageSlots = getUsageSlots(m);
     const physicalPath = `/images/projects/${m.projectId || 'unknown'}/${m.filename}`;
     const physicalStatus = determinePhysicalStatus(m, augustData);
@@ -208,7 +216,7 @@ export async function loadVisualAssetRegistry(): Promise<VisualAsset[]> {
 /**
  * Classify asset based on semantic analysis
  */
-function classifyAsset(media: Media, augustData?: any): VisualAsset['classification'] {
+function classifyAsset(media: Media): VisualAsset['classification'] {
   // PUBLISHED: Materialized from Drive with local source and Blob storage
   if (media.source === 'local' && media.lifecycleState === 'published') {
     return 'PUBLISHED';
@@ -288,7 +296,7 @@ function getUsageSlots(media: Media): VisualSlot[] {
 /**
  * Get usage slots for August 3 asset
  */
-function getUsageSlotsForAugustAsset(august: any): VisualSlot[] {
+function getUsageSlotsForAugustAsset(august: August3BaselineAsset): VisualSlot[] {
   const slots: VisualSlot[] = [];
   
   if (august.roles.includes('hero') && august.project === 'exterior-painting-001') {
@@ -316,7 +324,7 @@ function getUsageSlotsForAugustAsset(august: any): VisualSlot[] {
 /**
  * Determine physical status
  */
-function determinePhysicalStatus(media: Media, augustData?: any): 'PRESENT' | 'MISSING' | 'RECOVERABLE' | 'DRIVE_ONLY' {
+function determinePhysicalStatus(media: Media, augustData?: August3BaselineAsset): 'PRESENT' | 'MISSING' | 'RECOVERABLE' | 'DRIVE_ONLY' {
   if (media.provenance?.drive_canonical && !media.variants?.original) {
     return 'DRIVE_ONLY';
   }
@@ -349,16 +357,16 @@ export function getVisualSlotsByRoute(route: string): VisualSlot[] {
 /**
  * Get empty/broken slots
  */
-export async function getEmptySlots(): Promise<VisualSlot[]> {
-  const registry = await loadVisualAssetRegistry();
+export function getEmptySlots(): VisualSlot[] {
+  loadVisualAssetRegistry();
   return WEBSITE_VISUAL_SLOTS.filter(s => s.physicalStatus === 'MISSING' || s.physicalStatus === 'RECOVERABLE');
 }
 
 /**
  * Get August 3 recoverable assets
  */
-export async function getAugust3RecoverableAssets(): Promise<VisualAsset[]> {
-  const registry = await loadVisualAssetRegistry();
+export function getAugust3RecoverableAssets(): VisualAsset[] {
+  const registry = loadVisualAssetRegistry();
   return registry.filter(a => a.classification === 'AUGUST_RECOVERABLE' || a.augustDriveId);
 }
 
@@ -452,7 +460,7 @@ export async function getPublishedMediaAssets(): Promise<PublishedMediaAssetsRes
           usageSlots,
           physicalPath,
           physicalStatus,
-        } as VisualAsset);
+        });
       }
     }
     
@@ -482,7 +490,7 @@ export async function getPublishedMediaAssets(): Promise<PublishedMediaAssetsRes
  * - Drive source → materialized → PublishedMediaAsset should be classified as PUBLISHED
  * - Physical status should reflect Blob storage, not Drive dependency
  */
-export async function addDriveAssetToRegistry(media: Media): Promise<VisualAsset> {
+export function addDriveAssetToRegistry(media: Media): VisualAsset {
   // CONSTITUTIONAL FIX: Materialized assets are not DRIVE_ONLY
   // They have been converted from Drive source to local Blob storage
   const classification = media.lifecycleState === 'published' ? 'PUBLISHED' : 'DRIVE_ONLY';
@@ -496,5 +504,5 @@ export async function addDriveAssetToRegistry(media: Media): Promise<VisualAsset
     usageSlots,
     physicalPath,
     physicalStatus,
-  } as VisualAsset;
+  }
 }

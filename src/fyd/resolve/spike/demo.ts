@@ -50,7 +50,7 @@ function fixtureBusiness(graph: { objects: Array<{ id: string; schema: string; t
     return typeof v === "string" ? v : undefined;
   };
   const siteFields = site?.fields ?? {};
-  const siteUrl = typeof siteFields["url"] === "string" ? (siteFields["url"] as string) : field("website");
+  const siteUrl = typeof siteFields["url"] === "string" ? (siteFields["url"]) : field("website");
   return {
     id,
     name: field("title") ?? biz?.title ?? "",
@@ -82,10 +82,10 @@ function main(): void {
   const candidates: ResolveEntity[] = candidateRows.map((r, i) =>
     prospectToEntity(r, `cand:${i}:${(r.business_name ?? "?").slice(0, 40)}`),
   );
-  candidates.push(fixtureBusiness(COPPERSMITH_GRAPH as never, "fixture:coppersmith-plumbing"));
-  candidates.push(fixtureBusiness(HAPPY_PLACE_GRAPH as never, "fixture:happy-place-carpentry"));
+  candidates.push(fixtureBusiness(COPPERSMITH_GRAPH, "fixture:coppersmith-plumbing"));
+  candidates.push(fixtureBusiness(HAPPY_PLACE_GRAPH, "fixture:happy-place-carpentry"));
 
-  const index = buildIndex(corpus);
+  buildIndex(corpus);
   const decisions = resolveAll(candidates, corpus, { corpusRef });
   const counts = tierCounts(decisions);
   const ms = Date.now() - t0;

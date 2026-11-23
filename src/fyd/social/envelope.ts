@@ -13,6 +13,7 @@
 import { canonicalizeJson } from "@/lib/ping/dev-signer";
 import { signAsFydIdentity } from "./key-custody";
 import { fydGatewayBaseUrl } from "./config";
+import { asString } from "./readers";
 import { FYD_SOCIAL_GENERATOR_VERSION as GEN } from "./transition-id";
 
 export type SocialEventType = "OBJECT_CREATED" | "OBJECT_UPDATED" | "RELATIONSHIP_CREATED";
@@ -81,13 +82,13 @@ export async function submitEnvelope(
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {
     throw new EnvelopeRejectedError(
-      String(body.error || `HTTP_${res.status}`),
-      String(body.message || "unknown gateway rejection"),
+      asString(body.error) || `HTTP_${res.status}`,
+      asString(body.message) || "unknown gateway rejection",
     );
   }
   return {
-    event_id: String(body.event_id || ""),
-    event_type: String(body.event_type || env.type),
-    status: String(body.status || "ok"),
+    event_id: asString(body.event_id),
+    event_type: asString(body.event_type) || env.type,
+    status: asString(body.status) || "ok",
   };
 }

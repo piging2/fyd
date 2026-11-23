@@ -103,7 +103,7 @@ describe("issuance", () => {
     const { broker } = brokerWith(undefined, () => t);
     const h = broker.request({ ...SCOPE, credentialId: CRED_ID, ttlSeconds: 999_999 });
     t += MAX_TTL_SECONDS * 1000 + 1;
-    await expect(broker.execute(h, SCOPE, async () => "x")).rejects.toThrow(
+    await expect(broker.execute(h, SCOPE, () => "x")).rejects.toThrow(
       expect.objectContaining({ code: "EXPIRED" }),
     );
   });
@@ -123,7 +123,7 @@ describe("execution scope binding", () => {
     const { broker } = brokerWith();
     const h = broker.request({ ...SCOPE, credentialId: CRED_ID });
     await expect(
-      broker.execute(h, { ...SCOPE, operation: "fetch:admin" }, async (s) => s),
+      broker.execute(h, { ...SCOPE, operation: "fetch:admin" }, (s) => s),
     ).rejects.toThrow(expect.objectContaining({ code: "PERMISSION_DENIED" }));
   });
 
@@ -131,7 +131,7 @@ describe("execution scope binding", () => {
     const { broker } = brokerWith();
     const h = broker.request({ ...SCOPE, credentialId: CRED_ID });
     await expect(
-      broker.execute(h, { ...SCOPE, principal: "connector:github:svc-2" }, async (s) => s),
+      broker.execute(h, { ...SCOPE, principal: "connector:github:svc-2" }, (s) => s),
     ).rejects.toThrow(expect.objectContaining({ code: "PERMISSION_DENIED" }));
   });
 
@@ -139,15 +139,15 @@ describe("execution scope binding", () => {
     const { broker } = brokerWith();
     const h = broker.request({ ...SCOPE, credentialId: CRED_ID });
     await expect(
-      broker.execute(h, { ...SCOPE, tenantId: "tenant-evil" }, async (s) => s),
+      broker.execute(h, { ...SCOPE, tenantId: "tenant-evil" }, (s) => s),
     ).rejects.toThrow(expect.objectContaining({ code: "PERMISSION_DENIED" }));
   });
 
-  it("wrong audience (seam) is rejected — stolen handle is useless elsewhere", async () => {
+  it("wrong audience (seam) is rejected: stolen handle is useless elsewhere", async () => {
     const { broker } = brokerWith();
     const h = broker.request({ ...SCOPE, credentialId: CRED_ID });
     await expect(
-      broker.execute(h, { ...SCOPE, audience: "attacker-seam" }, async (s) => s),
+      broker.execute(h, { ...SCOPE, audience: "attacker-seam" }, (s) => s),
     ).rejects.toThrow(expect.objectContaining({ code: "PERMISSION_DENIED" }));
   });
 
@@ -156,14 +156,14 @@ describe("execution scope binding", () => {
     const { broker } = brokerWith(undefined, () => t);
     const h = broker.request({ ...SCOPE, credentialId: CRED_ID, ttlSeconds: 60 });
     t += 61_000;
-    await expect(broker.execute(h, SCOPE, async () => "x")).rejects.toThrow(
+    await expect(broker.execute(h, SCOPE, () => "x")).rejects.toThrow(
       expect.objectContaining({ code: "EXPIRED" }),
     );
   });
 
   it("unknown handle is rejected", async () => {
     const { broker } = brokerWith();
-    await expect(broker.execute("pingsec_1_forged", SCOPE, async () => "x")).rejects.toThrow(
+    await expect(broker.execute("pingsec_1_forged", SCOPE, () => "x")).rejects.toThrow(
       expect.objectContaining({ code: "AUTH_REQUIRED" }),
     );
   });
@@ -171,8 +171,8 @@ describe("execution scope binding", () => {
   it("single-use default: second execution is rejected", async () => {
     const { broker } = brokerWith();
     const h = broker.request({ ...SCOPE, credentialId: CRED_ID });
-    await broker.execute(h, SCOPE, async () => "first");
-    await expect(broker.execute(h, SCOPE, async () => "second")).rejects.toThrow(
+    await broker.execute(h, SCOPE, () => "first");
+    await expect(broker.execute(h, SCOPE, () => "second")).rejects.toThrow(
       expect.objectContaining({ code: "PERMISSION_DENIED" }),
     );
   });
@@ -181,7 +181,7 @@ describe("execution scope binding", () => {
     const { broker } = brokerWith();
     const h = broker.request({ ...SCOPE, credentialId: CRED_ID });
     broker.revoke(h);
-    await expect(broker.execute(h, SCOPE, async () => "x")).rejects.toThrow(
+    await expect(broker.execute(h, SCOPE, () => "x")).rejects.toThrow(
       expect.objectContaining({ code: "PERMISSION_DENIED" }),
     );
   });
@@ -191,8 +191,8 @@ describe("execution scope binding", () => {
     const h1 = broker.request({ ...SCOPE, credentialId: CRED_ID });
     const h2 = broker.request({ ...SCOPE, credentialId: CRED_ID, maxUses: 5 });
     expect(broker.revokeAll(PRINCIPAL)).toBe(2);
-    await expect(broker.execute(h1, SCOPE, async () => "x")).rejects.toThrow();
-    await expect(broker.execute(h2, SCOPE, async () => "x")).rejects.toThrow();
+    await expect(broker.execute(h1, SCOPE, () => "x")).rejects.toThrow();
+    await expect(broker.execute(h2, SCOPE, () => "x")).rejects.toThrow();
   });
 
   it("unreachable secret backend fails closed WITHOUT running the work", async () => {
@@ -202,7 +202,7 @@ describe("execution scope binding", () => {
     store.failGet = true;
     let ran = false;
     await expect(
-      broker.execute(h, SCOPE, async () => {
+      broker.execute(h, SCOPE, () => {
         ran = true;
         return "x";
       }),
@@ -217,7 +217,7 @@ describe("attenuation", () => {
     const parent = broker.request({ ...SCOPE, credentialId: CRED_ID, ttlSeconds: 600, maxUses: 5 });
     const child = broker.attenuate(parent, { ttlSeconds: 60, maxUses: 1 });
     expect(child).not.toBe(parent);
-    await expect(broker.execute(child, SCOPE, async () => "ok")).resolves.toBe("ok");
+    await expect(broker.execute(child, SCOPE, () => "ok")).resolves.toBe("ok");
   });
 
   it("cannot attenuate an expired parent", () => {
@@ -235,13 +235,13 @@ describe("rotation", () => {
   it("unexecuted handles resolve the NEW value; executed handles are sealed", async () => {
     const { broker } = brokerWith();
     const h1 = broker.request({ ...SCOPE, credentialId: CRED_ID });
-    await broker.execute(h1, SCOPE, async (s) => {
+    await broker.execute(h1, SCOPE, (s) => {
       expect(s).toBe(CANARY);
       return "done";
     });
     const h2 = broker.request({ ...SCOPE, credentialId: CRED_ID });
     broker.rotate(CRED_ID, "ROTATED_VALUE_abcdef1234");
-    const seen = await broker.execute(h2, SCOPE, async (s) => s);
+    const seen = await broker.execute(h2, SCOPE, (s) => s);
     expect(seen).toBe("ROTATED_VALUE_abcdef1234");
     expect(JSON.stringify(broker.auditTrail()).includes("ROTATED_VALUE_abcdef1234")).toBe(false);
     expect(JSON.stringify(broker.auditTrail()).includes(CANARY)).toBe(false);
@@ -257,7 +257,7 @@ describe("renewal", () => {
     t += 50_000;
     broker.renew(h, SCOPE, 60);
     t += 50_000; // past original expiry, inside renewal
-    return expect(broker.execute(h, SCOPE, async () => "ok")).resolves.toBe("ok");
+    return expect(broker.execute(h, SCOPE, () => "ok")).resolves.toBe("ok");
   });
 
   it("renewal beyond max total lease lifetime is denied", () => {
@@ -300,7 +300,7 @@ describe("seam error masking (RT-1)", () => {
     const h = broker.request({ ...SCOPE, credentialId: CRED_ID });
     let caught: unknown;
     try {
-      await broker.execute(h, SCOPE, async (secret) => {
+      await broker.execute(h, SCOPE, (secret) => {
         // provider 401 echoing the key, plus a .cause chain carrying it
         const cause = new Error(`refresh token ${secret} rejected`);
         throw new Error(`401 unauthorized: bad api key ${secret}`, { cause } as never);
@@ -325,15 +325,15 @@ describe("secret boundary (the whole point)", () => {
     const handle = broker.request({ ...SCOPE, credentialId: CRED_ID });
     agentLog.push(`agent received handle: ${handle}`);
 
-    async function providerFetch(authHeader: string) {
+    function providerFetch(authHeader: string) {
       if (authHeader !== `Bearer ${CANARY}`) {
         throw new Error("401 unauthorized");
       }
       return { issues: [{ id: 1, title: "leaky faucet" }, { id: 2, title: "dead outlet" }] };
     }
 
-    const observation = await broker.execute(handle, SCOPE, async (secret) => {
-      const res = await providerFetch(`Bearer ${secret}`);
+    const observation = await broker.execute(handle, SCOPE, (secret) => {
+      const res = providerFetch(`Bearer ${secret}`);
       return {
         type: "github.issues",
         source: SCOPE.target,
@@ -358,13 +358,13 @@ describe("secret boundary (the whole point)", () => {
   it("audit trail is correlatable but not replayable", async () => {
     const { broker } = brokerWith();
     const h = broker.request({ ...SCOPE, credentialId: CRED_ID });
-    await broker.execute(h, SCOPE, async () => "ok");
+    await broker.execute(h, SCOPE, () => "ok");
     const audit = broker.auditTrail();
     const issued = audit.find((r) => r.event === "issued")!;
     const executed = audit.find((r) => r.event === "executed")!;
     expect(issued.handleFp).toBe(executed.handleFp);
     expect(issued.handleFp.includes("pingsec_1_")).toBe(false);
-    await expect(broker.execute(issued.handleFp, SCOPE, async () => "x")).rejects.toThrow(
+    await expect(broker.execute(issued.handleFp, SCOPE, () => "x")).rejects.toThrow(
       expect.objectContaining({ code: "AUTH_REQUIRED" }),
     );
   });

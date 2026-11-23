@@ -16,6 +16,7 @@ import {
   newRequestId,
   runIdempotentWrite,
   type DeriveResult,
+  type DiagEvent,
   type ExecuteResult,
   type WriteDeps,
 } from "../write-boundary";
@@ -50,7 +51,7 @@ function fakeDeps(
     action: "approve",
     requestId,
     digest,
-    derive: opts.derive ?? (async () => ({ ok: true, derived: { n: 1 } })),
+    derive: opts.derive ?? (() => Promise.resolve({ ok: true, derived: { n: 1 } })),
     execute:
       opts.execute ??
       (async () => {
@@ -162,10 +163,11 @@ describe("runIdempotentWrite", () => {
   test("derive rejection -> rejected, execute not called, nothing recorded", async () => {
     const dir = tempDir();
     const { deps, calls } = fakeDeps(dir, {
-      derive: async () => ({
-        ok: false,
-        failure: { code: "stale_digest", error: "moved", status: 409 },
-      }),
+      derive: () =>
+        Promise.resolve({
+          ok: false,
+          failure: { code: "stale_digest", error: "moved", status: 409 },
+        }),
     });
     const out = await runIdempotentWrite(deps);
     expect(out.kind).toBe("rejected");
@@ -204,7 +206,7 @@ describe("runIdempotentWrite", () => {
     expect(journal.size).toBe(1); // exactly one journaled effect
   });
 
-  test("LOST UPDATES: ZERO — 10 concurrent same-request_id writes -> execute once, one eventId", async () => {
+  test("LOST UPDATES: ZERO: 10 concurrent same-request_id writes -> execute once, one eventId", async () => {
     const dir = tempDir();
     // Shared pair, exactly like the production singleton: this is what
     // makes the in-process mutex serialize the 10 racers.
@@ -232,7 +234,7 @@ describe("runIdempotentWrite", () => {
     expect(outcomes.filter((o) => o.kind === "replayed")).toHaveLength(9);
   });
 
-  test("LOST UPDATES: ZERO across instances — separate ledger/lock pairs still converge via lockfile + refresh", async () => {
+  test("LOST UPDATES: ZERO across instances: separate ledger/lock pairs still converge via lockfile + refresh", async () => {
     const dir = tempDir();
     const rid = newRequestId();
     const digest = canonicalPayloadDigest({ action: "approve", siteId: "s1" });
@@ -332,8 +334,9 @@ describe("SiteLock", () => {
     const old = new Date(Date.now() - 120_000);
     utimesSync(stale, old, old);
     let ran = false;
-    await locks.withLock("site-stale", async () => {
+    await locks.withLock("site-stale", () => {
       ran = true;
+      return Promise.resolve();
     });
     expect(ran).toBe(true);
     expect(reaped).toBe("site-stale");
@@ -343,13 +346,12 @@ describe("SiteLock", () => {
     const dir = tempDir();
     const locks = new SiteLock(dir);
     await expect(
-      locks.withLock("site-e", async () => {
-        throw new Error("boom");
-      }),
+      locks.withLock("site-e", () => Promise.reject(new Error("boom"))),
     ).rejects.toThrow("boom");
     let ran = false;
-    await locks.withLock("site-e", async () => {
+    await locks.withLock("site-e", () => {
       ran = true;
+      return Promise.resolve();
     });
     expect(ran).toBe(true);
   });
@@ -361,7 +363,7 @@ describe("appendDiagnostic", () => {
     appendDiagnostic(dir, { kind: "replay", request_id: "r1", siteId: "s1" });
     const lines = readFileSync(join(dir, "diagnostics.jsonl"), "utf8").trim().split("\n");
     expect(lines).toHaveLength(1);
-    const doc = JSON.parse(lines[0]);
+    const doc = JSON.parse(lines[0]) as Extract<DiagEvent, { request_id: string }> & { at: string };
     expect(doc.kind).toBe("replay");
     expect(doc.request_id).toBe("r1");
     expect(typeof doc.at).toBe("string");

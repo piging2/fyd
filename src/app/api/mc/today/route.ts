@@ -206,7 +206,7 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     generatedAt: new Date().toISOString(),
-    status: (degraded.length ? "DEGRADED" : "PROVEN") as Health,
+    status: (degraded.length ? "DEGRADED" : "PROVEN"),
     degraded,
     services: {
       journalGateway: {
@@ -218,49 +218,49 @@ export async function GET() {
     },
     today: {
       happening: {
-        status: "PROVEN" as Health,
+        status: "PROVEN",
         runningWorkers: inprogress,
         recentMissionVerdicts: recentVerdicts,
       },
       changed: {
-        status: (overlaysRaw.ok ? "PROVEN" : "DEGRADED") as Health,
+        status: (overlaysRaw.ok ? "PROVEN" : "DEGRADED"),
         recentOverlayEvents: overlayEvents,
         overlayEventCount: overlayEvents.length,
       },
       failed: {
-        status: (ledgerTail === null ? "DEGRADED" : "PROVEN") as Health,
+        status: (ledgerTail === null ? "DEGRADED" : "PROVEN"),
         entries: failedEntries,
       },
       needsAuthority: {
-        status: (authorityItems === null ? "DEGRADED" : "PROVEN") as Health,
+        status: (authorityItems === null ? "DEGRADED" : "PROVEN"),
         activeGrillQuestions: authorityItems,
       },
       willHappenNext: {
-        status: "PROVEN" as Health,
+        status: "PROVEN",
         scheduledJobs: schedules,
       },
       repoState: {
-        status: (dirty === null ? "DEGRADED" : "PROVEN") as Health,
+        status: (dirty === null ? "DEGRADED" : "PROVEN"),
         dirtyFiles: dirty,
         note: "Dirty files are inventoried by owning lane, never swept.",
       },
     },
     problems: {
-      status: "PROVEN" as Health,
+      status: "PROVEN",
       stuckMissions: {
-        count: (stuckMissions as unknown[]).length,
+        count: (stuckMissions).length,
         missions: stuckMissions,
         note: "Non-terminal missions. Must be zero.",
       },
-      evidenceFailures: (pipeline as Record<string, unknown>).evidenceFailures ?? null,
+      evidenceFailures: (pipeline).evidenceFailures ?? null,
     },
     pipeline: {
-      status: "PROVEN" as Health,
+      status: "PROVEN",
       note: "OBSERVE -> EVIDENCE -> LEARNING chain, today (UTC).",
-      observations: (pipeline as Record<string, unknown>).observations ?? null,
-      missionsCreated: (pipeline as Record<string, unknown>).missions_created ?? null,
-      missionsCompleted: (pipeline as Record<string, unknown>).missions_completed ?? null,
-      claimsCreated: (pipeline as Record<string, unknown>).claims_created ?? null,
+      observations: (pipeline).observations ?? null,
+      missionsCreated: (pipeline).missions_created ?? null,
+      missionsCompleted: (pipeline).missions_completed ?? null,
+      claimsCreated: (pipeline).claims_created ?? null,
     },
     prototype: [
       "opportunities-found (marketing intelligence feed) not yet wired to a backend projection",

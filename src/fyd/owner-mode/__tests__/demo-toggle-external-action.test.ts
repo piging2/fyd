@@ -58,8 +58,8 @@ describe("demo owner mode cannot trigger external action", () => {
     // to the PING gateway. They do not consult isDemoOwnerModeEnabled.
     // This is a structural assertion: the social module must not import
     // the demo gate. We verify by checking the module source.
-    const fs = require("fs");
-    const path = require("path");
+    const fs = require("fs") as typeof import("fs");
+    const path = require("path") as typeof import("path");
     const socialSrc = fs.readFileSync(
       path.join(__dirname, "../../social/actions.ts"),
       "utf-8",
@@ -71,8 +71,8 @@ describe("demo owner mode cannot trigger external action", () => {
     // The claim identity bridge and customize server must not contain
     // fetch() calls to non-localhost URLs. We verify the source does not
     // reference external publish/provider endpoints.
-    const fs = require("fs");
-    const path = require("path");
+    const fs = require("fs") as typeof import("fs");
+    const path = require("path") as typeof import("path");
     for (const rel of ["../../claim/identity.ts", "../../customize/server.ts"]) {
       const src = fs.readFileSync(path.join(__dirname, rel), "utf-8");
       // No https:// external calls (localhost http is the demo journal).

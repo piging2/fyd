@@ -310,7 +310,7 @@ function AskInline({
             <button
               key={q}
               type="button"
-              onClick={() => ask(q)}
+              onClick={() => { void ask(q); }}
               disabled={busy}
               className="rounded-full border border-purple-200 bg-purple-50 px-3 py-1.5 text-left text-xs text-purple-900 hover:bg-purple-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-700 disabled:opacity-50"
             >
@@ -323,7 +323,7 @@ function AskInline({
         className="mt-2 flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          ask(question);
+          void ask(question);
         }}
       >
         <label htmlFor="identity-ask-input" className="sr-only">
@@ -625,7 +625,6 @@ export function IdentityObject({ handle }: { handle: ObjectHandle }) {
         dispatch({ type: "unhover" });
       }, 250);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clearTimers, machine.state]);
 
   const onFocus = React.useCallback(() => {
@@ -635,7 +634,7 @@ export function IdentityObject({ handle }: { handle: ObjectHandle }) {
 
   const onBlur = React.useCallback(
     (e: React.FocusEvent) => {
-      if (wrapperRef.current?.contains(e.relatedTarget as Node | null)) return;
+      if (wrapperRef.current?.contains(e.relatedTarget)) return;
       clearTimers();
       dispatch({ type: "blur" });
       blurTimer.current = window.setTimeout(() => {
@@ -711,7 +710,11 @@ export function IdentityObject({ handle }: { handle: ObjectHandle }) {
     setNavError(null);
     try {
       const res = await fetch("/api/fyd/objects/" + encodeURIComponent(id));
-      const data = await res.json().catch(() => null);
+      const data = (await res.json().catch(() => null)) as {
+        ok?: unknown;
+        projection?: unknown;
+        siteId?: unknown;
+      } | null;
       if (!res.ok || !data || data.ok !== true || !data.projection || !data.siteId) {
         throw new Error("unavailable");
       }
@@ -738,7 +741,6 @@ export function IdentityObject({ handle }: { handle: ObjectHandle }) {
 
   const onAskToggle = React.useCallback(() => {
     dispatch({ type: machine.state === "ask" ? "askClose" : "askOpen" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [machine.state]);
 
   const contextLine = [p0.category?.value, p0.location?.value]

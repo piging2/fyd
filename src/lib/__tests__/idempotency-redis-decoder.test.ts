@@ -76,8 +76,8 @@ describe('Use-Drive-Asset Idempotency Redis Decoder Regression Test', () => {
 
       expect(result).toEqual(testIdempotencyResult);
       expect(typeof result).toBe('object');
-      expect((result as any).success).toBe(true);
-      expect((result as any).canonicalMediaId).toBe('6fd33914d4c27fbf71871bbc6405ff1c');
+      expect((result as typeof testIdempotencyResult).success).toBe(true);
+      expect((result as typeof testIdempotencyResult).canonicalMediaId).toBe('6fd33914d4c27fbf71871bbc6405ff1c');
     });
 
     it('should handle non-JSON string by returning as-is', () => {
@@ -102,8 +102,8 @@ describe('Use-Drive-Asset Idempotency Redis Decoder Regression Test', () => {
 
       expect(result).toEqual(testIdempotencyResult);
       expect(typeof result).toBe('object');
-      expect((result as any).success).toBe(true);
-      expect((result as any).canonicalMediaId).toBe('6fd33914d4c27fbf71871bbc6405ff1c');
+      expect((result as typeof testIdempotencyResult).success).toBe(true);
+      expect((result as typeof testIdempotencyResult).canonicalMediaId).toBe('6fd33914d4c27fbf71871bbc6405ff1c');
     });
 
     it('should handle plain object without JSON structure', () => {
@@ -121,7 +121,7 @@ describe('Use-Drive-Asset Idempotency Redis Decoder Regression Test', () => {
       const objectResult = parseRedisValue(testIdempotencyResult);
 
       expect(stringResult).toEqual(objectResult);
-      expect((stringResult as any).canonicalMediaId).toBe('6fd33914d4c27fbf71871bbc6405ff1c');
+      expect((stringResult as typeof testIdempotencyResult).canonicalMediaId).toBe('6fd33914d4c27fbf71871bbc6405ff1c');
     });
   });
 

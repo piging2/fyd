@@ -133,7 +133,6 @@ export function PortalHost({ portals, onAskRequest, onContextChange, anchorSelec
       mgr.dispose();
       controllerRef.current?.reset();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // The ONE global assistant's context follows attention: engaged wins,

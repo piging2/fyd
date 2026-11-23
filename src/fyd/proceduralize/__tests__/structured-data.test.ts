@@ -10,12 +10,10 @@
 
 import {
   discoverStructuredData,
-  expandJsonLdBlocks,
-  entityCandidates,
   extractStructuredData,
   selectPrimaryBusiness,
-  type ParsedFact,
 } from "../structured-data";
+import type { ParsedFact } from "../proceduralizer";
 import {
   ALL_STRUCTURED_FIXTURES,
   FIXTURE_ORG_SIMPLE,

@@ -115,7 +115,7 @@ export function QuoteForm({
         <button
           type="button"
           disabled={busy}
-          onClick={() => key && submit(key)}
+          onClick={() => { if (key) { void submit(key); } }}
           style={{ marginTop: 12, padding: "8px 14px", cursor: "pointer" }}
         >
           {busy ? "Retrying…" : "Retry with the same request (idempotency proof)"}

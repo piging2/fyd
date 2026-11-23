@@ -43,6 +43,39 @@ function safeParentOrigin(): string {
   }
 }
 
+/**
+ * Workbench drag payload shared by the DRAG_START postMessage bridge and
+ * the dataTransfer MIME payloads (application/x-workbench-asset and
+ * application/x-workbench-gallery-reorder). One protocol, three
+ * transports: the parent sends it by postMessage, gallery drags serialize
+ * it into dataTransfer, and drop handlers parse it back.
+ */
+interface WorkbenchDragPayload {
+  type?: string;
+  source?: string;
+  fileId?: string;
+  name?: string;
+  mimeType?: string;
+  assetId?: string;
+  sourceSlotId?: string;
+  sourceMediaId?: string;
+  projectId?: string;
+}
+
+/** Inbound parent-frame message envelope consumed by handleMessage. */
+interface SlotParentMessage {
+  type?: string;
+  dragData?: WorkbenchDragPayload;
+}
+
+/**
+ * The element expando VisualSlot sets during a gallery drag so parent
+ * click handlers can suppress the click that follows a drag.
+ */
+type WorkbenchDragElement = HTMLDivElement & {
+  __workbench_dragInProgress?: boolean;
+};
+
 interface VisualSlotProps {
   id: string;
   route: string;
@@ -74,7 +107,7 @@ export function VisualSlot({
   const elementRef = useRef<HTMLDivElement>(null);
   const [isWorkbenchMode, setIsWorkbenchMode] = useState(false);
   const lastDragOverLogRef = useRef<number>(0);
-  const bridgedDragDataRef = useRef<any>(null); // P0 FIX: Store drag data from parent postMessage
+  const bridgedDragDataRef = useRef<WorkbenchDragPayload | null>(null); // P0 FIX: Store drag data from parent postMessage
 
   // UNCONDITIONAL LOG - will appear in iframe console if component renders
   console.log('[SLOT-RENDER]', id);
@@ -132,13 +165,13 @@ export function VisualSlot({
       slotId: id,
       isWorkbenchMode,
       windowIsIframe,
-      registryInstanceId: (slotRegistry as any).instanceId,
+      registryInstanceId: slotRegistry.getInstanceId(),
       registryImplementation: 'SlotRegistry class',
     });
     slotRegistry.register(slot);
     console.log('[SLOT] REGISTER_COMPLETE', {
       slotId: id,
-      registryInstanceId: (slotRegistry as any).instanceId,
+      registryInstanceId: slotRegistry.getInstanceId(),
       registeredCount: slotRegistry.getAll().length,
     });
 
@@ -201,16 +234,17 @@ export function VisualSlot({
 
     // Listen for REFRESH_SLOTS and DRAG_START messages from parent
     const handleMessage = (event: MessageEvent) => {
+      const messageData = event.data as SlotParentMessage;
       console.log('[VS_FORENSIC] MESSAGE_RECEIVED', {
         slotId: id,
         eventOrigin: event.origin,
         expectedOrigin: window.location.origin,
-        messageType: event.data?.type,
-        messageKeys: event.data ? Object.keys(event.data) : [],
+        messageType: messageData?.type,
+        messageKeys: messageData ? Object.keys(messageData) : [],
         timestamp: Date.now(),
       });
 
-      if (event.data.type === 'REFRESH_SLOTS') {
+      if (messageData.type === 'REFRESH_SLOTS') {
         console.log('[VS_FORENSIC] REFRESH_SLOTS_ACCEPTED', { id });
         // Re-register with current mediaId to sync state
         slotRegistry.register(slot);
@@ -222,7 +256,7 @@ export function VisualSlot({
           }, targetOrigin);
           console.log('[VS_FORENSIC] REFRESH_REGISTER_SENT', { slotId: id, targetOrigin });
         }
-      } else if (event.data.type === 'DRAG_START') {
+      } else if (messageData.type === 'DRAG_START') {
         // P0 FIX: Harden iframe DRAG_START bridge with origin/source/schema validation
         // Accept only messages from the parent window at the same origin
         const isSameOrigin = event.origin === window.location.origin;
@@ -241,7 +275,7 @@ export function VisualSlot({
         }
 
         // Validate payload schema
-        const dragData = event.data.dragData;
+        const dragData = messageData.dragData;
         if (!dragData || typeof dragData !== 'object') {
           console.error('[VS_FORENSIC] DRAG_START_BRIDGE_REJECTED', {
             slotId: id,
@@ -308,7 +342,7 @@ export function VisualSlot({
       } else {
         console.log('[VS_FORENSIC] MESSAGE_IGNORED', {
           slotId: id,
-          messageType: event.data?.type,
+          messageType: messageData?.type,
           reason: 'TYPE_MISMATCH',
         });
       }
@@ -434,10 +468,10 @@ export function VisualSlot({
     // P0 FIX: Prevent click event from firing after drag completes
     // Set a flag on the element that parent click handlers can check
     if (elementRef.current) {
-      (elementRef.current as any).__workbench_dragInProgress = true;
+      (elementRef.current as WorkbenchDragElement).__workbench_dragInProgress = true;
       setTimeout(() => {
         if (elementRef.current) {
-          (elementRef.current as any).__workbench_dragInProgress = false;
+          (elementRef.current as WorkbenchDragElement).__workbench_dragInProgress = false;
         }
       }, 200);
     }
@@ -514,7 +548,7 @@ export function VisualSlot({
       // GALLERY_REORDER: Accept gallery-to-gallery reordering via explicit MIME type
       if (galleryReorderData) {
         try {
-          const parsed = JSON.parse(galleryReorderData);
+          const parsed = JSON.parse(galleryReorderData) as WorkbenchDragPayload;
           
           console.log('[VS_DND] GALLERY_REORDER_PARSED', {
             slotId: id,
@@ -594,11 +628,11 @@ export function VisualSlot({
       // GALLERY_ADD: Accept regular asset drops via explicit MIME type
       if (assetData) {
         let assetId: string;
-        let applicationData: any = null;
+        let applicationData: WorkbenchDragPayload | null = null;
 
         try {
           // Parse JSON payload
-          const parsed = JSON.parse(assetData);
+          const parsed = JSON.parse(assetData) as WorkbenchDragPayload;
 
           // Preserve full applicationData for Drive references
           applicationData = parsed;
@@ -617,7 +651,7 @@ export function VisualSlot({
             });
             return;
           }
-        } catch (error) {
+        } catch {
           // Fallback: treat as plain asset ID if JSON parse fails
           console.warn('[VS_DND] GALLERY_ADD_PARSE_FALLBACK', {
             slotId: id,
@@ -695,11 +729,11 @@ export function VisualSlot({
 
     if (assetData) {
       let assetId: string;
-      let applicationData: any = null;
+      let applicationData: WorkbenchDragPayload | null = null;
 
       try {
         // Parse JSON payload
-        const parsed = JSON.parse(assetData);
+        const parsed = JSON.parse(assetData) as WorkbenchDragPayload;
 
         // Preserve full applicationData for Drive references
         applicationData = parsed;
@@ -718,7 +752,7 @@ export function VisualSlot({
           });
           return;
         }
-      } catch (error) {
+      } catch {
         // Fallback: treat as plain asset ID if JSON parse fails
         console.warn('[VS_DND] ASSET_ASSIGNMENT_PARSE_FALLBACK', {
           slotId: id,

@@ -94,7 +94,7 @@ export function BioEditor({ bio, onSave, saving, error, onClearError }: BioEdito
       <div className="mt-3 flex gap-2">
         <button
           type="button"
-          onClick={save}
+          onClick={() => { void save(); }}
           disabled={saving}
           className="inline-flex items-center gap-2 rounded-lg bg-honey px-4 py-2 text-sm font-semibold text-honey-foreground hover:bg-honey-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet disabled:opacity-50"
         >

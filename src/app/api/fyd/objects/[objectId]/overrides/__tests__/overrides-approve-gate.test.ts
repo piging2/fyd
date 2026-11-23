@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { NextRequest } from "next/server";
 import { POST } from "../route";
 
-jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: async () => null }));
+jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: () => null }));
 
 const OBJECT_ID = "happy-place";
 const SPOOFED_HOST = "evil.example.com";

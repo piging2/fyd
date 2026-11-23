@@ -17,7 +17,6 @@ import {
   detectHighConsequenceRequest,
   invertOwnerCommand,
   type EffectResolutionInput,
-  type OwnerCommand,
 } from "../commands";
 
 describe("detectHighConsequenceRequest", () => {
@@ -146,48 +145,48 @@ describe("consequence tiers and owner language", () => {
 
   test("command tiers: move-service is LOW", () => {
     expect(
-      commandConsequenceTier({ type: "move-service", id: "a", to: "first" } as OwnerCommand),
+      commandConsequenceTier({ type: "move-service", id: "a", to: "first" }),
     ).toBe("LOW");
   });
 
   test("command tiers: set-address-visibility is MEDIUM (FYD product authority directive, Nolan 2026-09-25)", () => {
     expect(
-      commandConsequenceTier({ type: "set-address-visibility", visibility: "hide" } as OwnerCommand),
+      commandConsequenceTier({ type: "set-address-visibility", visibility: "hide" }),
     ).toBe("MEDIUM");
     expect(
-      commandConsequenceTier({ type: "set-address-visibility", visibility: "show" } as OwnerCommand),
+      commandConsequenceTier({ type: "set-address-visibility", visibility: "show" }),
     ).toBe("MEDIUM");
     expect(
-      commandConsequenceTier({ type: "set-address-visibility", visibility: "default" } as OwnerCommand),
+      commandConsequenceTier({ type: "set-address-visibility", visibility: "default" }),
     ).toBe("MEDIUM");
   });
 
   test("command tiers: service visibility, contact, and add-service are MEDIUM", () => {
     expect(
-      commandConsequenceTier({ type: "set-service-visibility", id: "a", visible: false } as OwnerCommand),
+      commandConsequenceTier({ type: "set-service-visibility", id: "a", visible: false }),
     ).toBe("MEDIUM");
     expect(
-      commandConsequenceTier({ type: "set-contact-field", field: "phone", value: "x" } as OwnerCommand),
+      commandConsequenceTier({ type: "set-contact-field", field: "phone", value: "x" }),
     ).toBe("MEDIUM");
     expect(
-      commandConsequenceTier({ type: "add-service", name: "Decks" } as OwnerCommand),
+      commandConsequenceTier({ type: "add-service", name: "Decks" }),
     ).toBe("MEDIUM");
   });
 
   test("only LOW commands invert (fast undo); MEDIUM has no exact inverse", () => {
     expect(
-      invertOwnerCommand({ type: "move-service", id: "a", to: "first" } as OwnerCommand),
+      invertOwnerCommand({ type: "move-service", id: "a", to: "first" }),
     ).not.toBeNull();
     // Address visibility is MEDIUM: no automatic undo (it unwinds via
     // an explicit DEFAULT command, not the LOW fast-undo path).
     expect(
-      invertOwnerCommand({ type: "set-address-visibility", visibility: "hide" } as OwnerCommand),
+      invertOwnerCommand({ type: "set-address-visibility", visibility: "hide" }),
     ).toBeNull();
     expect(
-      invertOwnerCommand({ type: "set-service-visibility", id: "a", visible: false } as OwnerCommand),
+      invertOwnerCommand({ type: "set-service-visibility", id: "a", visible: false }),
     ).toBeNull();
     expect(
-      invertOwnerCommand({ type: "set-contact-field", field: "phone", value: "x" } as OwnerCommand),
+      invertOwnerCommand({ type: "set-contact-field", field: "phone", value: "x" }),
     ).toBeNull();
   });
 });

@@ -42,7 +42,7 @@ describe("Q-C-03 public response contract versions", () => {
 
   test("GET /api/fyd/circle serves its contract version", async () => {
     const { GET } = await import("../../../app/api/fyd/circle/route");
-    const res = await GET(
+    const res = GET(
       new Request("http://localhost/api/fyd/circle?id=happy-place"),
     );
     expect(res.status).toBe(200);

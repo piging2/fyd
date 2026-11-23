@@ -10,7 +10,7 @@ import { loadAuthConfig } from "@/fyd/identity/config";
 import { clearSessionCookie, parseCookies, readSessionValue, SESSION_COOKIE_NAME } from "@/fyd/identity/session";
 import { appendAuthAudit } from "@/fyd/identity/audit";
 
-async function signOut(request: NextRequest) {
+function signOut(request: NextRequest) {
   const config = loadAuthConfig();
   const res = NextResponse.redirect(new URL("/", request.url));
   res.headers.append("Set-Cookie", clearSessionCookie(config.session));
@@ -24,10 +24,10 @@ async function signOut(request: NextRequest) {
   return res;
 }
 
-export async function POST(request: NextRequest) {
+export function POST(request: NextRequest) {
   return signOut(request);
 }
 
-export async function GET(request: NextRequest) {
+export function GET(request: NextRequest) {
   return signOut(request);
 }

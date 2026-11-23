@@ -50,7 +50,8 @@
 // runtime (root tsconfig jsx=preserve); renderer.tsx references the React
 // global, so provide it. Harmless under react-jsx.
 import * as React from "react";
-(globalThis as any).React = (globalThis as any).React ?? React;
+const globalScope = globalThis as typeof globalThis & { React?: typeof React };
+globalScope.React = globalScope.React ?? React;
 
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -576,7 +577,10 @@ function traceObjectField(
   const path = `${PROJECTIONS}/${cfg.siteId}.json`;
   let doc: { meta: Record<string, unknown>; graph: ObjectGraph };
   try {
-    doc = JSON.parse(readFileSync(path, "utf8"));
+    doc = JSON.parse(readFileSync(path, "utf8")) as {
+      meta: Record<string, unknown>;
+      graph: ObjectGraph;
+    };
   } catch (err) {
     return {
       graph: null,
@@ -593,8 +597,8 @@ function traceObjectField(
       },
     };
   }
-  const meta = doc.meta as Record<string, unknown>;
-  const graph = doc.graph as ObjectGraph;
+  const meta = doc.meta;
+  const graph = doc.graph;
   // Mirror ping-object-source.ts parseAndVerify: site match, provenance refs,
   // graphDigest recompute.
   const checks: Record<string, unknown> = {
@@ -615,7 +619,7 @@ function traceObjectField(
   if (!checks["metaSiteIdMatches"] || !checks["allObjectsHaveProvenanceRef"] || !checks["graphDigestMatches"]) {
     return {
       graph: null,
-      meta: meta as Record<string, unknown>,
+      meta: meta,
       link: {
         stage: "object_field",
         status: "missing",
@@ -632,7 +636,7 @@ function traceObjectField(
   if (!obj || !field) {
     return {
       graph,
-      meta: meta as Record<string, unknown>,
+      meta: meta,
       link: {
         stage: "object_field",
         status: "missing",
@@ -647,7 +651,7 @@ function traceObjectField(
   if (!live) {
     return {
       graph,
-      meta: meta as Record<string, unknown>,
+      meta: meta,
       link: {
         stage: "object_field",
         status: "missing",
@@ -663,7 +667,7 @@ function traceObjectField(
   const liveHit = findClaimInObject(live, claim);
   return {
     graph,
-    meta: meta as Record<string, unknown>,
+    meta: meta,
     link: {
       stage: "object_field",
       status: liveHit ? "resolved" : "missing",
@@ -735,8 +739,9 @@ function traceSitespecBinding(
       needed: "the EVIDENCE stage must resolve first (no object to bind)",
     };
   }
+  const generatedAt = meta?.["generatedAt"];
   const spec = generateSiteSpec(graph, {
-    generatedAt: String(meta?.["generatedAt"] ?? "2026-09-21T12:00:00.000Z"),
+    generatedAt: typeof generatedAt === "string" ? generatedAt : "2026-09-21T12:00:00.000Z",
     eventSequences: (meta?.["eventSequences"] as [number, number] | null) ?? undefined,
   });
   const knownSchemas = new Set(graph.objects.map((o) => o.schema));
@@ -779,13 +784,21 @@ function traceSitespecBinding(
     };
   }
   const first = bindings[0] as { sectionId: string; component: string };
+  // page, sectionId, and component are strings by construction at the
+  // push site above; this narrowing restates that for the excerpt label.
+  const bindingLabel = (b: Record<string, unknown>): string => {
+    const page = typeof b["page"] === "string" ? b["page"] : "";
+    const sectionId = typeof b["sectionId"] === "string" ? b["sectionId"] : "";
+    const component = typeof b["component"] === "string" ? b["component"] : "";
+    return `${page}:${sectionId} (${component})`;
+  };
   return {
     stage: "sitespec_binding",
     status: "resolved",
     pointer: `FYDSiteSpec#${first.sectionId}`,
     excerpt:
       `generateSiteSpec binds ${obj.id} into ${bindings.length} section(s): ` +
-      `${bindings.map((b) => `${b["page"]}:${b["sectionId"]} (${b["component"]})`).join(", ")}`,
+      `${bindings.map(bindingLabel).join(", ")}`,
     detail: {
       generator: "fyd-site-generator@1.0.0 (src/fyd/proceduralize/generator.ts)",
       specOwnerObjectId: spec.ownerObjectId,
@@ -819,8 +832,9 @@ function traceRenderedClaim(
       needed: "the EVIDENCE stage must resolve first (no object to render)",
     };
   }
+  const generatedAt = meta?.["generatedAt"];
   const spec = generateSiteSpec(graph, {
-    generatedAt: String(meta?.["generatedAt"] ?? "2026-09-21T12:00:00.000Z"),
+    generatedAt: typeof generatedAt === "string" ? generatedAt : "2026-09-21T12:00:00.000Z",
     eventSequences: (meta?.["eventSequences"] as [number, number] | null) ?? undefined,
   });
   const ctx = buildRenderContext(spec, graph, { viewerId: null, displayName: null });
@@ -838,7 +852,7 @@ function traceRenderedClaim(
       let html = "";
       let error: string | null = null;
       try {
-        html = renderToStaticMarkup(renderSection(section, ctx, 0) as any);
+        html = renderToStaticMarkup(renderSection(section, ctx, 0));
       } catch (err) {
         error = String(err);
       }

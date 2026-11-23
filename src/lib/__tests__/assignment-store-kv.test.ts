@@ -60,7 +60,7 @@ describe('assignment-store KV credential resolution', () => {
   beforeEach(() => {
     jest.resetModules();
     upstashMock.Redis.mockReset();
-    upstashMock.Redis.mockImplementation((_opts: unknown) => ({
+    upstashMock.Redis.mockImplementation(() => ({
       get: jest.fn().mockResolvedValue(null),
       set: jest.fn().mockResolvedValue('OK'),
       del: jest.fn().mockResolvedValue(1),
@@ -75,7 +75,6 @@ describe('assignment-store KV credential resolution', () => {
     delete process.env.KV_REST_API__REDIS_URL;
     delete process.env.KV_REST_API__KV_URL;
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     store = require('../assignment-store');
   });
 

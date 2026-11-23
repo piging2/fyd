@@ -1,5 +1,5 @@
 /**
- * Lane D: GET /api/mc/missions/[id] — one mission, fully projected from the
+ * Lane D: GET /api/mc/missions/[id]: one mission, fully projected from the
  * EXISTING journal: mission, run, execution, start/end, capabilities granted,
  * artifacts, evidence, events, result, reconciliation state.
  *
@@ -26,7 +26,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   let scope;
   try {
     scope = callerScope(req);
-  } catch (e) {
+  } catch {
     return Response.json({ ok: false, error: 'invalid_caller_tenant' }, { status: 400 });
   }
   let missions;

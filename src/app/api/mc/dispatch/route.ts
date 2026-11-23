@@ -20,7 +20,7 @@
  */
 
 import { spawnSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
@@ -45,7 +45,6 @@ import {
   appendDispatchEvent,
   findPriorMission,
   loadProfiles,
-  mintEventId,
   nowIso,
   publishArtifact,
   sha256hex,
@@ -72,7 +71,7 @@ function bad(status: number, error: string, detail?: string) {
 }
 
 /** Catalog of what this control may dispatch. Agent truth comes from the adapter. */
-export async function GET() {
+export function GET() {
   let profiles: Record<string, AgentProfile>;
   try {
     profiles = loadProfiles();
@@ -105,17 +104,26 @@ export async function GET() {
   });
 }
 
+// The broker state file is external JSON written by the broker; this
+// records exactly the row shape the quota check reads. Fields stay
+// unknown-typed: the check re-validates each value it relies on.
+interface BrokerStateRow {
+  status?: unknown;
+  quota_state?: unknown;
+  quota_remaining?: unknown;
+}
+
 function checkBrokerQuota(identityId: string): { eligible: boolean; reason: string } {
   try {
     if (!existsSync(BROKER_STATE)) return { eligible: false, reason: 'broker state file absent' };
-    const state = JSON.parse(readFileSync(BROKER_STATE, 'utf8'));
+    const state = JSON.parse(readFileSync(BROKER_STATE, 'utf8')) as Record<string, BrokerStateRow>;
     const row = state?.[identityId];
     if (!row) return { eligible: false, reason: `no broker row for ${identityId}` };
     if (row.status !== 'ACTIVE' && row.status !== 'DEGRADED') {
-      return { eligible: false, reason: `identity status ${row.status}` };
+      return { eligible: false, reason: `identity status ${String(row.status)}` };
     }
     if (row.quota_state !== 'OK') {
-      return { eligible: false, reason: `quota_state ${row.quota_state} (fail-closed)` };
+      return { eligible: false, reason: `quota_state ${String(row.quota_state)} (fail-closed)` };
     }
     if (typeof row.quota_remaining !== 'number' || row.quota_remaining < 1) {
       return { eligible: false, reason: 'no quota remaining' };
@@ -200,11 +208,12 @@ function runBroker(identityId: string, prompt: string, deadlineS: number): Agent
   } catch {
     return { kind: 'transport-failed', error: 'broker returned unparsable output', evidence: { startedAt, endedAt, host: 'pig-wsl', identityUsed: identityId } };
   }
+  const reply = parsed as { reason?: string; classification?: string };
   if (parsed.timed_out) {
     return { kind: 'timeout', error: 'broker reports agent timed out', evidence: { startedAt, endedAt, host: 'pig-wsl', identityUsed: identityId, classification: parsed.classification } };
   }
   if (parsed.route === 'blocked') {
-    return { kind: 'timeout', error: `broker blocked: ${String(parsed.reason || 'unknown')}`, evidence: { startedAt, endedAt, host: 'pig-wsl', identityUsed: identityId } };
+    return { kind: 'timeout', error: `broker blocked: ${String(reply.reason || 'unknown')}`, evidence: { startedAt, endedAt, host: 'pig-wsl', identityUsed: identityId } };
   }
   const text = typeof parsed.result_text === 'string' ? parsed.result_text : null;
   if (text && text.length > 0) {
@@ -218,7 +227,7 @@ function runBroker(identityId: string, prompt: string, deadlineS: number): Agent
       },
     };
   }
-  return { kind: 'ran', error: `broker completed without result_text (classification=${String(parsed.classification || 'n/a')})`, evidence: { startedAt, endedAt, host: 'pig-wsl', identityUsed: identityId } };
+  return { kind: 'ran', error: `broker completed without result_text (classification=${String(reply.classification || 'n/a')})`, evidence: { startedAt, endedAt, host: 'pig-wsl', identityUsed: identityId } };
 }
 
 export async function POST(req: Request) {

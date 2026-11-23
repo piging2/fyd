@@ -137,7 +137,7 @@ async function runE2E() {
     sourceUrl: "https://testco.example/",
     observedAt: TS,
     controllerId: "runner-test",
-  } as never);
+  });
   return out.graph;
 }
 

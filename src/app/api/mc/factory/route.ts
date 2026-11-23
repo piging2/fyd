@@ -31,7 +31,7 @@ const SNAPSHOT = path.join(
 export async function GET() {
   try {
     const raw = await readFile(SNAPSHOT, "utf-8");
-    const snapshot = JSON.parse(raw);
+    const snapshot: unknown = JSON.parse(raw);
     return NextResponse.json({
       status: "PROVEN",
       source: "data/factory-projection/factory-state.json",

@@ -73,7 +73,7 @@ describe("live preview route with bounded upstream transport", () => {
     const response = await request();
     expect(await response.text()).toContain("too large to embed");
     expect(cancel).toHaveBeenCalledTimes(1);
-    const options = (global.fetch as jest.Mock).mock.calls[0][1] as RequestInit;
+    const options = ((global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit])[1];
     expect(options.signal?.aborted).toBe(true);
   });
 

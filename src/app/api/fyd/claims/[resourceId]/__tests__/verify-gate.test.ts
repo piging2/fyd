@@ -23,7 +23,7 @@ let claimDirectory: string;
 function req(body: unknown, host = "localhost:3000", resourceId = "happy-place") {
   return {
     req: {
-      json: async () => {
+      json: () => {
         if (body === null) throw new Error("no body");
         return body;
       },

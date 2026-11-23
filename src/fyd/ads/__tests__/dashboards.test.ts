@@ -53,6 +53,8 @@ import {
   buildPublisherDashboard,
   LOOP_ADVERTISER_TENANT_ID,
   LOOP_HOUSE_CAMPAIGN_ID,
+  type AdvertiserDashboard,
+  type PublisherDashboard,
 } from "../dashboards";
 import { writePlacementDecision } from "../decision-store";
 import { DISCLOSURE_TEXT_VERSION } from "../disclosure";
@@ -69,7 +71,6 @@ import {
   LOOP_PUBLISHER_TENANT_ID,
   LOOP_SURFACE,
   budgetScopeRef,
-  utcDayKey,
 } from "../policy";
 
 const PAYER = LOOP_ADVERTISER_TENANT_ID;
@@ -608,7 +609,11 @@ describe("dashboards route", () => {
     const GET = createAdsDashboardGetHandler({ ...routeDeps, ledger });
     const res = await GET(getRequest(cookieFor(PUBLISHER_IDENTITY)));
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = (await res.json()) as {
+      ok: boolean;
+      view: "publisher";
+      dashboard: PublisherDashboard;
+    };
     expect(body.view).toBe("publisher");
     expect(body.dashboard.slots[0].counted).toEqual({
       impressions: 2,
@@ -625,10 +630,14 @@ describe("dashboards route", () => {
     const GET = createAdsDashboardGetHandler({ ...routeDeps, ledger });
     const res = await GET(getRequest(cookieFor(ADVERTISER_IDENTITY)));
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = (await res.json()) as {
+      ok: boolean;
+      view: "advertiser";
+      dashboard: AdvertiserDashboard;
+    };
     expect(body.view).toBe("advertiser");
-    expect(body.dashboard.campaign.campaignId).toBe(CAMPAIGN_ID);
-    expect(body.dashboard.campaign.today).toEqual({
+    expect(body.dashboard.campaign!.campaignId).toBe(CAMPAIGN_ID);
+    expect(body.dashboard.campaign!.today).toEqual({
       day: DAY,
       impressions: 2,
       clicks: 1,

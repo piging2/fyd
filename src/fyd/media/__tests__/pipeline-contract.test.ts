@@ -21,7 +21,7 @@ import { generateDerivatives, hashContentBytes, planDerivatives } from "../deriv
 import { safeFetchImage, type SafeFetchDeps } from "../safe-fetch";
 import { validatePipelineManifest } from "../bundle-media";
 import { heroMediaFor } from "../select";
-import { isAcquirable } from "../types";
+import { isAcquirable, type FydMediaObject } from "../types";
 import type { ObjectGraph } from "../../sitespec/types";
 import type { PingObject } from "@/lib/ping/types";
 
@@ -51,7 +51,7 @@ function manifestPath(): string {
   return join(process.cwd(), "src", "fyd", "media", "manifests", SITE + ".json");
 }
 
-const publicDns: SafeFetchDeps["dnsLookup"] = async () => [{ address: "93.184.216.34" }];
+const publicDns: SafeFetchDeps["dnsLookup"] = () => Promise.resolve([{ address: "93.184.216.34" }]);
 
 describe("pipeline happy path (no network)", () => {
   test("bytes -> digest -> metadata -> derivatives -> manifest -> render", async () => {
@@ -94,7 +94,7 @@ describe("pipeline happy path (no network)", () => {
 
       // MANIFEST: the minted object carries the full provenance chain and
       // validates as production truth.
-      const media: any = {
+      const media: FydMediaObject = {
         id: "fyd-media-" + digest.slice(0, 16),
         schema: "ping.social.media@1",
         title: "Contract fixture",
@@ -175,8 +175,8 @@ describe("unsafe URL rejected", () => {
   });
 
   test("a redirect into private space is rejected, not followed", async () => {
-    const fetchImpl = (async () =>
-      new Response(null, { status: 302, headers: { location: "http://169.254.169.254/" } })) as unknown as typeof fetch;
+    const fetchImpl = (() =>
+      Promise.resolve(new Response(null, { status: 302, headers: { location: "http://169.254.169.254/" } }))) as unknown as typeof fetch;
     const res = await safeFetchImage("https://example.com/a.jpg", undefined, {
       dnsLookup: publicDns,
       fetchImpl,
@@ -186,10 +186,10 @@ describe("unsafe URL rejected", () => {
   });
 
   test("non-image content-types are rejected", async () => {
-    const fetchImpl = (async () =>
-      new Response(Buffer.from("<html></html>"), {
+    const fetchImpl = (() =>
+      Promise.resolve(new Response(Buffer.from("<html></html>"), {
         headers: { "content-type": "text/html" },
-      })) as unknown as typeof fetch;
+      }))) as unknown as typeof fetch;
     const res = await safeFetchImage("https://example.com/a.jpg", undefined, {
       dnsLookup: publicDns,
       fetchImpl,
@@ -201,10 +201,10 @@ describe("unsafe URL rejected", () => {
 
 describe("oversized image rejected/capped", () => {
   test("declared content-length over the cap is rejected", async () => {
-    const fetchImpl = (async () =>
-      new Response(Buffer.alloc(10), {
+    const fetchImpl = (() =>
+      Promise.resolve(new Response(Buffer.alloc(10), {
         headers: { "content-type": "image/jpeg", "content-length": "999999999" },
-      })) as unknown as typeof fetch;
+      }))) as unknown as typeof fetch;
     const res = await safeFetchImage("https://example.com/big.jpg", { maxBytes: 1000 }, {
       dnsLookup: publicDns,
       fetchImpl,
@@ -222,8 +222,8 @@ describe("oversized image rejected/capped", () => {
         controller.close();
       },
     });
-    const fetchImpl = (async () =>
-      new Response(stream, { headers: { "content-type": "image/jpeg" } })) as unknown as typeof fetch;
+    const fetchImpl = (() =>
+      Promise.resolve(new Response(stream, { headers: { "content-type": "image/jpeg" } }))) as unknown as typeof fetch;
     const res = await safeFetchImage("https://example.com/big.jpg", { maxBytes: 1000 }, {
       dnsLookup: publicDns,
       fetchImpl,
@@ -298,7 +298,7 @@ describe("unauthorized source excluded", () => {
   });
 
   test("a manifest containing a non-acquirable object fails validation as a unit", () => {
-    const bad: any = {
+    const bad: FydMediaObject = {
       id: "fyd-media-" + "b".repeat(16),
       schema: "ping.social.media@1",
       title: "Bad fixture",

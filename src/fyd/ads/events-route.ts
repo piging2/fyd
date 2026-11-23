@@ -39,7 +39,6 @@ import {
   isAdsLoopEnabled,
 } from "@/fyd/ads/policy";
 import type {
-  FydObjectAction,
   FydObjectEventDraft,
 } from "@/fyd/rank/object-events";
 import { loadAuthConfig } from "@/fyd/identity/config";
@@ -170,7 +169,7 @@ export function parseAdsEventDraft(body: unknown): FydObjectEventDraft {
     if (typeof body.action !== "string" || !ACTIONS.has(body.action)) {
       throw new AdsEventDraftError("draft field action is not a contract action");
     }
-    draft.action = body.action as FydObjectAction;
+    draft.action = body.action;
   }
   if (body.sponsorship !== undefined) {
     if (!isRecord(body.sponsorship)) {

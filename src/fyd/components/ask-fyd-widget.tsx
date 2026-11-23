@@ -106,7 +106,7 @@ export function AskFydWidget({ siteId, pageCheckpoint, theme, inputId = "ask-fyd
     setError("");
     setAnswer(""); setCitations([]);
     try {
-      const res = await fetch(`/api/fyd/ask/${encodeURIComponent(siteId!)}`, {
+      const res = await fetch(`/api/fyd/ask/${encodeURIComponent(siteId)}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ siteId, question: q, mode: "visitor", pageCheckpoint }),

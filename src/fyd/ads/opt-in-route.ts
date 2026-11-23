@@ -312,13 +312,15 @@ function storeErrorResponse(error: unknown): NextResponse | null {
 }
 
 export function createAdsOptInGetHandler(deps: AdsOptInRouteDeps = {}) {
-  return async function GET(request: NextRequest): Promise<NextResponse> {
-    if (!isAdsLoopEnabled(deps.env)) return loopDisabled();
+  return function GET(request: NextRequest): Promise<NextResponse> {
+    if (!isAdsLoopEnabled(deps.env)) return Promise.resolve(loopDisabled());
     const gate = requireLoopPublisher(request, deps);
-    if ("response" in gate) return gate.response;
-    return NextResponse.json(
-      { ok: true, state: readOptInState(gate.actor.tenantId) },
-      { status: 200 },
+    if ("response" in gate) return Promise.resolve(gate.response);
+    return Promise.resolve(
+      NextResponse.json(
+        { ok: true, state: readOptInState(gate.actor.tenantId) },
+        { status: 200 },
+      ),
     );
   };
 }

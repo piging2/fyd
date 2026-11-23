@@ -34,19 +34,17 @@
  * survives at the obligation level: no claim presents an ungrounded
  * topic as offered.
  */
-import { getSiteBundle, type SiteBundle } from "../../../../../fyd/media/site-bundle";
+import { getSiteBundle } from "../../../../../fyd/media/site-bundle";
 import { POST as postNested } from "../[siteId]/route";
 import type { NextRequest } from "next/server";
 import { startStubJournal, type StubJournal } from "./stub-journal";
 
 let journal: StubJournal;
-let HAPPY_BUNDLE: SiteBundle;
 
 beforeAll(async () => {
   journal = await startStubJournal();
   const happy = await getSiteBundle("happy-place");
   if (!happy) throw new Error("stub journal did not serve happy-place");
-  HAPPY_BUNDLE = happy;
 });
 afterAll(async () => {
   await journal.close();
@@ -68,7 +66,7 @@ interface AskBody {
 async function askTrusted(question: string): Promise<AskBody> {
   const resp = await postNested(
     {
-      json: async () => ({ siteId: "happy-place", question, mode: "visitor" }),
+      json: () => ({ siteId: "happy-place", question, mode: "visitor" }),
     } as unknown as NextRequest,
     { params: Promise.resolve({ siteId: "happy-place" }) },
   );

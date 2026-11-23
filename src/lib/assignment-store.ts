@@ -16,7 +16,6 @@
  */
 
 import { Redis } from '@upstash/redis';
-import crypto from 'crypto';
 
 // In-memory store for DEV_MODE_SKIP_KV testing
 // Use global to survive Next.js hot module reloading in development
@@ -276,8 +275,6 @@ export interface QuarantineReport {
  */
 const GATE_COMMIT_SHA = 'e2409e87b13ff554eb1378a6c156fa21f7e3eb2e';
 const GATE_COMMIT_TIMESTAMP = '2026-08-20T22:51:34Z';
-const ENHANCED_GATE_COMMIT_SHA = '0041a41ca4563f49d7ccf51ba4c723880a8de6e5';
-const ENHANCED_GATE_COMMIT_TIMESTAMP = '2026-08-20T23:45:24Z';
 
 /**
  * Validate ServiceCardAssignment schema at runtime
@@ -528,7 +525,7 @@ export async function storeServiceCardAssignment(
         String(expectedRevision),
         JSON.stringify(assignment),
       ]
-    ) as number;
+    );
     
     console.log('[ASSIGNMENT_WRITE] SET_SUCCESS', {
       operationId,
@@ -923,7 +920,7 @@ export async function findPoisonedAssignments(): Promise<{
  */
 export async function cleanupCorruptedAssignments(): Promise<QuarantineReport> {
   try {
-    const client = createRedisClient();
+    createRedisClient();
     const rawRecords = await scanRawAssignmentRecords();
 
     const schemaInvalidRecords = rawRecords.filter(r => r.schemaClassification !== 'VALID');

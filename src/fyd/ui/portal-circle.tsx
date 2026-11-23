@@ -420,8 +420,8 @@ function PortalCircleContent(props: PortalCircleProps) {
                   canLike={canLike}
                   canAsk={canAsk}
                   webHref={webHref}
-                  onToggleFollow={toggleFollow}
-                  onToggleLike={toggleLike}
+                  onToggleFollow={() => { void toggleFollow(); }}
+                  onToggleLike={() => { void toggleLike(); }}
                   onAskRequest={askFromPortal}
                   onExpand={() => setPopupStage("full")}
                   onClose={closeAndFocus}
@@ -458,8 +458,8 @@ function PortalCircleContent(props: PortalCircleProps) {
               webHref={webHref}
               showEvidence={showEvidence}
               setShowEvidence={setShowEvidence}
-              onToggleFollow={toggleFollow}
-              onToggleLike={toggleLike}
+              onToggleFollow={() => { void toggleFollow(); }}
+              onToggleLike={() => { void toggleLike(); }}
               onAskRequest={askFromPortal}
               onClose={closeAndFocus}
               onDismiss={closePortal}

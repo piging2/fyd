@@ -38,7 +38,7 @@ import type { ObjectGraph, ViewerContext } from "../../sitespec/types";
 import type { PingObject } from "@/lib/ping/types";
 
 const VIEWER: ViewerContext = { viewerId: null, displayName: null };
-const GRAPH = COPPERSMITH_GRAPH as unknown as ObjectGraph;
+const GRAPH = COPPERSMITH_GRAPH;
 
 function doorwayHref(id: string): string {
   return `/o/${encodeURIComponent(id)}`;

@@ -240,7 +240,6 @@ function CardBody({
     <div className="p-5">
       <div className="flex items-start gap-3">
         {data.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={data.avatarUrl} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover" />
         ) : (
           <span
@@ -385,14 +384,14 @@ function CardBody({
           objectId={data.objectId}
           website={data.website}
           onAsk={onAsk}
-          onToggleFollow={toggleFollow}
+          onToggleFollow={() => { void toggleFollow(); }}
           followPending={pending}
         />
       ) : (
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={toggleFollow}
+          onClick={() => { void toggleFollow(); }}
           disabled={pending}
           aria-pressed={relationshipContext.followedByViewer}
           className={cn(
@@ -516,7 +515,7 @@ export function IntelligentCircle({
   }, [dialogOpen, closeDialog]);
 
   const onTriggerBlur = (e: React.FocusEvent) => {
-    if (!wrapperRef.current?.contains(e.relatedTarget as Node | null)) closeCard();
+    if (!wrapperRef.current?.contains(e.relatedTarget)) closeCard();
   };
 
   const compactLabel = data ? `${data.identity.displayName} (@${data.identity.handle})` : "PING Circle";

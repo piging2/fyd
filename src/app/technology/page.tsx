@@ -3,7 +3,6 @@ import { getTenant } from "@/lib/tenant-config";
 import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
-import { ScrollReveal } from "@/components/scroll-reveal";
 import { Reveal } from "@/components/reveal";
 import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
 import {

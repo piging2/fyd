@@ -58,7 +58,7 @@ function seedBusinessProjection(dir: string, siteId: string): void {
     relationships: [],
   };
   const digest = createHash("sha256")
-    .update(canonicalize(graph as never), "utf8")
+    .update(canonicalize(graph), "utf8")
     .digest("hex");
   const meta = {
     siteId,

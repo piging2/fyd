@@ -33,12 +33,13 @@ describe("owner identity seam", () => {
   it("binds a real provider through the seam", async () => {
     const production: OwnerIdentityProvider = {
       name: "test-sso",
-      resolveIdentity: async () => ({
-        identityId: "owner-123",
-        verified: true,
-        method: "sso",
-        note: "verified via test double",
-      }),
+      resolveIdentity: () =>
+        Promise.resolve({
+          identityId: "owner-123",
+          verified: true,
+          method: "sso",
+          note: "verified via test double",
+        }),
     };
     bindIdentityProvider(production);
     expect(identityProvider().name).toBe("test-sso");
@@ -53,7 +54,7 @@ describe("owner identity seam", () => {
   it("treats an anonymous caller as no verified owner", async () => {
     bindIdentityProvider({
       name: "test-anonymous",
-      resolveIdentity: async () => null,
+      resolveIdentity: () => Promise.resolve(null),
     });
     expect(await hasVerifiedOwner()).toBe(false);
     bindIdentityProvider(new DemoIdentityProvider());

@@ -21,7 +21,7 @@ function caller(overrides: Partial<CallerContext> = {}): CallerContext {
 }
 
 describe('gateApprovalCapability (NO REQUIRED CAPABILITY -> NO APPROVAL)', () => {
-  test('allows a caller holding the required capability', async () => {
+  test('allows a caller holding the required capability', () => {
     const r = gateApprovalCapability(caller(), 'fyd.sitespec.patch');
     expect(r.ok).toBe(true);
   });
@@ -36,7 +36,7 @@ describe('gateApprovalCapability (NO REQUIRED CAPABILITY -> NO APPROVAL)', () =>
     }
   });
 
-  test('refuses 403 when the record declares no capability (fail closed)', async () => {
+  test('refuses 403 when the record declares no capability (fail closed)', () => {
     for (const missing of [undefined, '', null]) {
       const r = gateApprovalCapability(caller(), missing);
       expect(r.ok).toBe(false);
@@ -44,7 +44,7 @@ describe('gateApprovalCapability (NO REQUIRED CAPABILITY -> NO APPROVAL)', () =>
     }
   });
 
-  test('capability match is exact (no substring grants)', async () => {
+  test('capability match is exact (no substring grants)', () => {
     const r = gateApprovalCapability(
       caller({ capabilities: ['fyd.sitespec'] }),
       'fyd.sitespec.patch',
@@ -124,7 +124,7 @@ describe('gateProposalTenant (P0-2: PROPOSAL TENANT vs CALLER ENTITLEMENT)', () 
     expect(gateProposalTenant(caller(), { status: 'DENIED' }, 'deny').ok).toBe(true);
   });
 
-  test('a tenant-bearing terminal record still enforces entitlement', async () => {
+  test('a tenant-bearing terminal record still enforces entitlement', () => {
     const c = caller({ tenant: 'other-tenant', entitled_tenants: ['other-tenant'] });
     const r = gateProposalTenant(c, { tenant: 'demo-owner', status: 'APPROVED' }, 'approve');
     expect(r.ok).toBe(false);

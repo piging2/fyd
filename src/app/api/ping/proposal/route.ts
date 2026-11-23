@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const body: unknown = await request.json().catch(() => null);
     const rec = (typeof body === "object" && body !== null ? body : {}) as Record<string, unknown>;
     if (!isProposal(rec.proposal)) throw new BadRequestError("proposal is required and must be a drafted AskProposal.");
-    const proposal = rec.proposal as AskProposal;
+    const proposal = rec.proposal;
     if (proposal.kind === "site_patch") {
       // The FYD lane owns the signing key material: verify the draft's digest,
       // its canonical envelope signature, and the envelope's digest binding.

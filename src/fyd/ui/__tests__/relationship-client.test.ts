@@ -6,6 +6,7 @@ const ok = (state: boolean): RelationshipResult => ({ ok: true, state, scope: "d
 const failed: RelationshipResult = { ok: false, code: "NETWORK_UNAVAILABLE", message: "Retry the same choice.", retryable: true, scope: null };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const row = (kind: "follow" | "like", state = false) => ({ ok: true, objectId: "happy-place", relationship: kind, state, scope: "demo-session", accountConnected: false });
+type FetchCall = [string, RequestInit];
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(r => { resolve = r; }); return { promise, resolve }; }
 afterEach(() => { global.fetch = originalFetch; jest.resetModules(); });
 
@@ -21,9 +22,9 @@ describe("relationship HTTP client", () => {
     bootstrap.resolve(json({ ok: true, scope: "demo-session", accountConnected: false }));
     expect(await follow).toMatchObject({ ok: true, state: false, scope: "demo-session" });
     expect(await like).toMatchObject({ ok: true, state: false });
-    expect(mock.mock.calls.filter(call => call[0].endsWith("relationship-session"))).toHaveLength(1);
+    expect((mock.mock.calls as FetchCall[]).filter(call => call[0].endsWith("relationship-session"))).toHaveLength(1);
     expect(mock).toHaveBeenCalledTimes(3);
-    expect(mock.mock.calls.every(call => call[1].credentials === "same-origin" && call[1].cache === "no-store")).toBe(true);
+    expect((mock.mock.calls as FetchCall[]).every(call => call[1].credentials === "same-origin" && call[1].cache === "no-store")).toBe(true);
   });
   test("terminal account boundary stops all relationship reads", async () => {
     const mock = jest.fn().mockResolvedValue(json({ ok: false, code: "ACCOUNT_BINDING_UNAVAILABLE", error: "Account not connected.", retryable: false }, 403));
@@ -37,7 +38,7 @@ describe("relationship HTTP client", () => {
     global.fetch = mock;
     const { setObjectRelationship } = await import("@/fyd/capabilities/relationship-client");
     expect(await setObjectRelationship("happy-place", "follow", true)).toMatchObject({ ok: false, retryable: true, code: "RESPONSE_UNCONFIRMED" });
-    expect(JSON.parse(mock.mock.calls[1][1].body)).toEqual({ objectId: "happy-place", state: true });
+    expect(JSON.parse((mock.mock.calls[1] as [string, { body: string }])[1].body)).toEqual({ objectId: "happy-place", state: true });
   });
   test("an expired session is re-established only on the next explicit retry", async () => {
     const mock = jest.fn()
@@ -50,7 +51,7 @@ describe("relationship HTTP client", () => {
     expect(await setObjectRelationship("happy-place", "follow", true)).toMatchObject({ ok: false, code: "SESSION_REQUIRED" });
     expect(mock).toHaveBeenCalledTimes(2);
     expect(await setObjectRelationship("happy-place", "follow", true)).toMatchObject({ ok: true, state: true });
-    expect(mock.mock.calls.filter(call => call[0].endsWith("relationship-session"))).toHaveLength(2);
+    expect((mock.mock.calls as FetchCall[]).filter(call => call[0].endsWith("relationship-session"))).toHaveLength(2);
   });
 });
 

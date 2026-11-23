@@ -122,7 +122,7 @@ function objectWhy(o: PingObject): {
   };
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export function GET(request: NextRequest): NextResponse {
   const siteId = request.nextUrl.searchParams.get("siteId") ?? "";
   const objectId = request.nextUrl.searchParams.get("objectId") ?? "";
   const field = request.nextUrl.searchParams.get("field") ?? "";
@@ -168,7 +168,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         { status: 200 },
       );
     }
-    const targetObj = byId.get(rel.object)!;
     // A recorded relationship is DIRECT support: observed in the site
     // data, not derived and not an owner assertion.
     return NextResponse.json({

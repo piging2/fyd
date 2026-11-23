@@ -25,7 +25,7 @@ describe("Kit synchronization boundary", () => {
       ok: status >= 200 && status < 300,
       status,
       statusText: status === 201 ? "Created" : "OK",
-      json: async () => body,
+      json: () => body,
     } as Response;
   }
 

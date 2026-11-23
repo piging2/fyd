@@ -1,5 +1,5 @@
 /**
- * projectMarketingOS — deterministic read-only projection of an
+ * projectMarketingOS: deterministic read-only projection of an
  * INTELLIGENCE_RESEARCH mission into the MarketingOS projection shape.
  *
  * Contract: ~/workspace/goals/ping-agent-execution-stack/files/MARKETINGOS-PROJECTION-CONTRACT.md
@@ -12,7 +12,7 @@
  * - verdicts: CONFIRMED / REFUTED / UNCLEAR (landed @ ae4b6843f)
  * - approval events: PROPOSED_ACTION / ACTION_APPROVED / REJECTED
  *   (landed @ 217294506; note: the contract draft says ACTION_REJECTED, the
- *   landed type is REJECTED — the projection uses the LANDED vocabulary)
+ *   landed type is REJECTED: the projection uses the LANDED vocabulary)
  * - approval payloads (landed shape): PROPOSED_ACTION carries action_id,
  *   capability, target_identity, preview, reason, evidence_refs, risk,
  *   proposed_by, expires_at; ACTION_APPROVED/REJECTED carry action_id,
@@ -444,7 +444,8 @@ export function projectMarketingOS(
   for (const e of approvalEvents.filter(
     (e) => e.event_type === 'PROPOSED_ACTION',
   )) {
-    proposals.set(String(e.payload.action_id ?? e.event_id), {
+    const actionId = (e.payload as { action_id?: string }).action_id;
+    proposals.set(String(actionId ?? e.event_id), {
       action_id: e.payload.action_id ?? null,
       capability: e.payload.capability ?? null,
       proposed_by: e.payload.proposed_by ?? null,
@@ -459,7 +460,8 @@ export function projectMarketingOS(
   for (const e of approvalEvents.filter((e) =>
     ['ACTION_APPROVED', 'REJECTED'].includes(e.event_type),
   )) {
-    const key = String(e.payload.action_id ?? '');
+    const actionId = (e.payload as { action_id?: string }).action_id;
+    const key = String(actionId ?? '');
     const p = proposals.get(key);
     const decision = {
       decision: e.event_type === 'ACTION_APPROVED' ? 'APPROVED' : 'REJECTED',

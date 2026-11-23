@@ -172,7 +172,7 @@ interface AddressCandidate {
  */
 function selectAddress(candidates: AddressCandidate[]): AddressCandidate {
   const labeled = candidates.filter((c) => c.labeled);
-  return (labeled.length > 0 ? labeled[0] : candidates[0]) as AddressCandidate;
+  return (labeled.length > 0 ? labeled[0] : candidates[0]);
 }
 
 /**

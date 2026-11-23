@@ -141,7 +141,7 @@ export default function PresenceBox() {
         business, and builds your presence from evidence. Nothing to configure.
       </p>
 
-      <form onSubmit={onBuild} className="mt-8">
+      <form onSubmit={(e) => { void onBuild(e); }} className="mt-8">
         <label htmlFor="fyd-url" className="block text-sm font-medium">
           Website URL
         </label>

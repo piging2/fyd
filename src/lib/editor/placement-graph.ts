@@ -19,9 +19,17 @@
  * - Methods return ValidationResult instead of throwing
  */
 
-import { CropRegion, FocalPoint, SlotConstraints } from './command-pattern';
+import { CropRegion, FocalPoint } from './command-pattern';
 import { sequenceAuthority } from './sequence-authority';
-import { ValidationResult, ValidationFailure } from './validation-result';
+
+/**
+ * Deep copy of a placement via JSON round-trip. Placements are JSON-plain
+ * data by construction, so the parsed value carries the Placement type;
+ * the assertion sits here at the production site instead of at callers.
+ */
+function deepCopyPlacement(placement: Placement): Placement {
+  return JSON.parse(JSON.stringify(placement)) as Placement;
+}
 
 export interface Placement {
   placementId: string;
@@ -143,7 +151,7 @@ class PlacementGraphManager {
    */
   getPlacement(placementId: string): Placement | undefined {
     const placement = this.graph.placements.find(p => p.placementId === placementId);
-    return placement ? JSON.parse(JSON.stringify(placement)) : undefined;
+    return placement ? deepCopyPlacement(placement) : undefined;
   }
 
   /**
@@ -157,7 +165,7 @@ class PlacementGraphManager {
       // Cardinality violation - this should never happen
       return undefined;
     }
-    return placements[0] ? JSON.parse(JSON.stringify(placements[0])) : undefined;
+    return placements[0] ? deepCopyPlacement(placements[0]) : undefined;
   }
 
   /**
@@ -167,7 +175,7 @@ class PlacementGraphManager {
   getPlacementsForPage(pageId: string): Placement[] {
     return this.graph.placements
       .filter(p => p.pageId === pageId)
-      .map(p => JSON.parse(JSON.stringify(p)));
+      .map(p => deepCopyPlacement(p));
   }
 
   /**
@@ -177,7 +185,7 @@ class PlacementGraphManager {
   getPlacementsForComponent(componentId: string): Placement[] {
     return this.graph.placements
       .filter(p => p.componentId === componentId)
-      .map(p => JSON.parse(JSON.stringify(p)));
+      .map(p => deepCopyPlacement(p));
   }
 
   /**
@@ -187,7 +195,7 @@ class PlacementGraphManager {
   getPlacementsForAsset(assetId: string): Placement[] {
     return this.graph.placements
       .filter(p => p.assetId === assetId)
-      .map(p => JSON.parse(JSON.stringify(p)));
+      .map(p => deepCopyPlacement(p));
   }
 
   /**

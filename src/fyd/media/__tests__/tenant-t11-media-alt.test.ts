@@ -1,13 +1,13 @@
 /**
- * tenant-t11-media-alt.test.ts — pins Website UI audit 2026-11-01
+ * tenant-t11-media-alt.test.ts: pins Website UI audit 2026-11-01
  * finding T11 (already satisfied on main; regression pin only).
  *
  * The finding feared images shipping with empty alt because the
  * audit's tree passed alt={m.alt ?? ""}. On current main the
- * contract is stronger: the renderer NEVER selects media itself —
+ * contract is stronger: the renderer NEVER selects media itself:
  * every tenant image arrives as a DisplayMedia built once by
  * select.ts, whose alt is (altText trimmed) || title ||
- * "Business photo" — never empty — and every renderer call site
+ * "Business photo": never empty: and every renderer call site
  * passes DisplayMedia.alt through unchanged.
  *
  * This pin exercises the real read path (fixture manifest on disk,
@@ -18,6 +18,7 @@ import { join } from "node:path";
 import { listObjectMedia } from "../select";
 import type { ObjectGraph } from "../../sitespec/types";
 import type { PingObject } from "@/lib/ping/types";
+import type { FydMediaObject } from "../types";
 
 const TS = "2026-09-21T00:00:00.000Z";
 const FIXTURE_SITE = "__test-t11-alt";
@@ -34,10 +35,10 @@ function businessObject(id: string): PingObject {
     createdAt: TS,
     updatedAt: TS,
     provenance: { kind: "website-derived", ref: "test", derivedAt: TS },
-  } as PingObject;
+  };
 }
 
-function fixtureMedia(id: string, title: string, altText: string | null): any {
+function fixtureMedia(id: string, title: string, altText: string | null): FydMediaObject {
   return {
     id,
     schema: "ping.social.media@1",
@@ -75,7 +76,7 @@ function fixtureMedia(id: string, title: string, altText: string | null): any {
   };
 }
 
-function withFixtureManifest(media: any[], fn: () => void): void {
+function withFixtureManifest(media: FydMediaObject[], fn: () => void): void {
   const manifest = {
     siteId: FIXTURE_SITE,
     generatedAt: TS,

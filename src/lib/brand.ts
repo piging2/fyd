@@ -8,7 +8,7 @@
  */
 
 import type { BrandManifest, BrandHero, BrandOwnerPortrait } from "@/types/brand";
-import { loadAuthority, clearAuthorityCache } from "./authority-loader";
+import { loadAuthority } from "./authority-loader";
 
 export function loadBrandManifest(): BrandManifest {
   return loadAuthority<BrandManifest>({

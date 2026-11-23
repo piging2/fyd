@@ -35,8 +35,6 @@ import { startStubJournal, type StubJournal } from "./stub-journal";
 let journal: StubJournal;
 /** Pre-resolved bundles; answerAskFyd's loader seam stays sync. */
 let HAPPY_BUNDLE: SiteBundle;
-let COPPER_BUNDLE: SiteBundle;
-let DEPS: AnswerAskFydDeps;
 
 beforeAll(async () => {
   journal = await startStubJournal();
@@ -44,12 +42,6 @@ beforeAll(async () => {
   const copper = await getSiteBundle("coppersmith-plumbing");
   if (!happy || !copper) throw new Error("stub journal did not serve the tenants");
   HAPPY_BUNDLE = happy;
-  COPPER_BUNDLE = copper;
-  const byId = new Map([
-    ["happy-place", HAPPY_BUNDLE],
-    ["coppersmith-plumbing", COPPER_BUNDLE],
-  ]);
-  DEPS = { loadBundle: (id) => byId.get(id) ?? null };
 });
 
 afterAll(async () => {
@@ -58,7 +50,7 @@ afterAll(async () => {
 
 function nestedReq(siteId: string, body: unknown) {
   return {
-    req: { json: async () => body } as unknown as NextRequest,
+    req: { json: () => body } as unknown as NextRequest,
     params: Promise.resolve({ siteId }),
   };
 }
@@ -75,7 +67,7 @@ describe("claimClassFor (5-class mapping)", () => {
     ["unknown", "SUPPORTED DIRECTLY"],
     [undefined, "SUPPORTED DIRECTLY"],
   ])("classification %p maps to %p", (classification, expected) => {
-    expect(claimClassFor(classification as string | undefined)).toBe(expected);
+    expect(claimClassFor(classification)).toBe(expected);
   });
 
   test.each([["DERIVED_FACT"], ["derived"], ["INFERENCE"], ["GENERATED_COPY"]])(
@@ -304,14 +296,14 @@ describe("5-class wiring on live answers", () => {
   test("DERIVED / KNOWN: a DERIVED_FACT claim is explicitly labeled DERIVED but still known", () => {
     const real = HAPPY_BUNDLE;
     expect(real).not.toBeNull();
-    const objects = (real as SiteBundle).graph.objects.map((o) =>
+    const objects = real.graph.objects.map((o) =>
       o.schema === "ping.social.business@1"
         ? { ...o, fields: { ...o.fields, claimKind: "DERIVED_FACT" } }
         : o,
     );
     const bundle: SiteBundle = {
-      ...(real as SiteBundle),
-      graph: { objects, relationships: (real as SiteBundle).graph.relationships },
+      ...real,
+      graph: { objects, relationships: real.graph.relationships },
     };
     const deps: AnswerAskFydDeps = {
       loadBundle: (id) => (id === "happy-place-derived" ? bundle : null),
@@ -416,16 +408,16 @@ describe("visitor vs owner scope", () => {
     try {
       const store = jest.requireActual(
         "../../../../../fyd/object/owner-store",
-      ) as typeof import("../../../../../fyd/object/owner-store");
+      );
       const viewMod = jest.requireActual(
         "../../../../../fyd/object/view",
-      ) as typeof import("../../../../../fyd/object/view");
+      );
       const srcMod = jest.requireActual(
         "../../../../../fyd/data/ping-object-source",
-      ) as typeof import("../../../../../fyd/data/ping-object-source");
+      );
       const overlayMod = jest.requireActual(
         "../../../../../fyd/object/owner-overlay",
-      ) as typeof import("../../../../../fyd/object/owner-overlay");
+      );
       const { ids, names } = viewMod.knownServices("happy-place");
       const command = store.parseOwnerCommand({
         type: "set-contact-field",

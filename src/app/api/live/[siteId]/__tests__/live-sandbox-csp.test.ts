@@ -19,7 +19,7 @@ function mockFetch(upstreamCsp: string | null) {
   if (upstreamCsp !== null) headers["content-security-policy"] = upstreamCsp;
   global.fetch = jest.fn(async () =>
     new Response(HTML, { status: 200, headers }),
-  ) as unknown as typeof fetch;
+  );
 }
 
 beforeEach(() => {

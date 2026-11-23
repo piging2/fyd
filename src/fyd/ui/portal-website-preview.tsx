@@ -23,7 +23,8 @@ function useEmbedCrashBeacon(
   onCrashRef.current = onCrash;
   React.useEffect(() => {
     const onMessage = (event: MessageEvent) => {
-      if (!event.data || event.data.type !== CRASH_BEACON_MESSAGE_TYPE) return;
+      const data = event.data as { type?: unknown } | null;
+      if (!data || data.type !== CRASH_BEACON_MESSAGE_TYPE) return;
       const frame = iframeRef.current;
       if (!frame || event.source !== frame.contentWindow) return;
       onCrashRef.current();

@@ -11,10 +11,11 @@
  * - Eliminate race conditions in idempotency
  */
 
-import { put, head, del } from '@vercel/blob';
+import { put, head } from '@vercel/blob';
 import { Redis } from '@upstash/redis';
 import crypto from 'crypto';
-import { getEnvironment, getKvNamespace } from '@/lib/environment';
+import { getKvNamespace } from '@/lib/environment';
+import type { Media } from '@/types/media';
 
 /**
  * Verification result with distinct error types
@@ -38,7 +39,6 @@ function getRedisClient(): Redis | null {
   // Check integration-generated variables
   const integrationUrl = process.env.KV_REST_API__KV_REST_API_URL || process.env.KV_REST_API__REDIS_URL || process.env.KV_REST_API__KV_URL;
   const integrationToken = process.env.KV_REST_API__KV_REST_API_TOKEN;
-  const readOnlyToken = process.env.KV_REST_API__KV_REST_API_READ_ONLY_TOKEN;
   
   // Use integration credentials if primary not set
   if (!url && integrationUrl) {
@@ -177,7 +177,7 @@ export async function verifyBlobExists(blobUrl: string): Promise<boolean> {
  * @param media - The media record to verify
  * @returns object with verification results for each rendition type
  */
-export async function verifyRenditionCompleteness(media: any): Promise<{
+export async function verifyRenditionCompleteness(media: Media): Promise<{
   complete: boolean;
   details: {
     original: boolean;

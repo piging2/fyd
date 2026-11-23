@@ -76,7 +76,7 @@ export async function GET(request: Request) {
     );
   }
   try {
-    const { graph, meta } = await getFydTenantGraph(siteId as never);
+    const { graph, meta } = await getFydTenantGraph(siteId);
     const obj = graph.objects.find((o) => o.id === id);
     if (!obj) {
       return NextResponse.json(

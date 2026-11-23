@@ -126,7 +126,7 @@ export function OwnerPanel({ siteId }: { siteId: string }) {
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    (async () => {
+    void (async () => {
       try {
         const res = await fetch(endpoint);
         const data = (await res.json()) as {

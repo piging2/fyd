@@ -52,9 +52,13 @@ function warn(resourceId: string, path: string, message: string): FYDFinding {
 export function validateSiteSpec(spec: FYDSiteSpec, knownSchemas: Set<string>): FYDFinding[] {
   const findings: FYDFinding[] = [];
   const rid = "spec:" + spec.ownerObjectId;
+  // Read as string: the declared type is the one valid literal, so inside
+  // the branch below spec.kind narrows to never; untyped input can still
+  // carry another value and the message must name what arrived.
+  const kind: string = spec.kind;
 
-  if (spec.kind !== "fyd.sitespec@1") {
-    findings.push(err(rid, "kind", "Unknown spec kind '" + spec.kind + "'."));
+  if (kind !== "fyd.sitespec@1") {
+    findings.push(err(rid, "kind", "Unknown spec kind '" + kind + "'."));
   }
   if (spec.pages.length === 0) {
     findings.push(err(rid, "pages", "A site needs at least one page."));

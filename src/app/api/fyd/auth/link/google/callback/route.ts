@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { loadAuthConfig } from "@/fyd/identity/config";
-import { completeGoogleCallback, AuthFlowError, notConfiguredMessage } from "@/fyd/identity/callback-flow";
+import { completeGoogleCallback, AuthFlowError } from "@/fyd/identity/callback-flow";
 import { FileIdentityBindingStore } from "@/fyd/identity/file-store";
 import { OAUTH_STATE_COOKIE_NAME, clearOAuthStateCookie } from "@/fyd/identity/session";
 

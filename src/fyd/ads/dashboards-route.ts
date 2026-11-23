@@ -64,20 +64,24 @@ function errorJson(
 export function createAdsDashboardGetHandler(
   deps: AdsDashboardRouteDeps = {},
 ) {
-  return async function GET(request: NextRequest): Promise<NextResponse> {
+  return function GET(request: NextRequest): Promise<NextResponse> {
     if (!isAdsLoopEnabled(deps.env)) {
-      return errorJson(
-        404,
-        "ads-loop-disabled",
-        "The FYD ads loop is not enabled.",
+      return Promise.resolve(
+        errorJson(
+          404,
+          "ads-loop-disabled",
+          "The FYD ads loop is not enabled.",
+        ),
       );
     }
     const actor = resolveAdsOptInActor(request, deps);
     if (actor === null) {
-      return errorJson(
-        401,
-        "dashboard-session-required",
-        "A session is required for the loop dashboards.",
+      return Promise.resolve(
+        errorJson(
+          401,
+          "dashboard-session-required",
+          "A session is required for the loop dashboards.",
+        ),
       );
     }
     if (actor.tenantId === LOOP_PUBLISHER_TENANT_ID) {
@@ -85,9 +89,11 @@ export function createAdsDashboardGetHandler(
         ledger: deps.ledger,
         now: deps.now,
       });
-      return NextResponse.json(
-        { ok: true, view: dashboard.view, dashboard },
-        { status: 200 },
+      return Promise.resolve(
+        NextResponse.json(
+          { ok: true, view: dashboard.view, dashboard },
+          { status: 200 },
+        ),
       );
     }
     if (actor.tenantId === LOOP_ADVERTISER_TENANT_ID) {
@@ -95,15 +101,19 @@ export function createAdsDashboardGetHandler(
         ledger: deps.ledger,
         now: deps.now,
       });
-      return NextResponse.json(
-        { ok: true, view: dashboard.view, dashboard },
-        { status: 200 },
+      return Promise.resolve(
+        NextResponse.json(
+          { ok: true, view: dashboard.view, dashboard },
+          { status: 200 },
+        ),
       );
     }
-    return errorJson(
-      403,
-      "not-a-loop-tenant",
-      "The loop dashboards serve the loop's publisher and advertiser only.",
+    return Promise.resolve(
+      errorJson(
+        403,
+        "not-a-loop-tenant",
+        "The loop dashboards serve the loop's publisher and advertiser only.",
+      ),
     );
   };
 }

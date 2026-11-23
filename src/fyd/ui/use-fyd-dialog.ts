@@ -175,7 +175,6 @@ export function useFydDialog(
 
   React.useEffect(() => {
     if (!open) return;
-    const root = ref.current;
 
     const controller = createDialogController({
       setScrollLock: (locked: boolean) => lockRef.current(locked),
@@ -297,6 +296,5 @@ export function useFydDialog(
     // Only `open` retriggers. Stage, onClose identity, and focus policy are
     // read at open time via refs so a re-render never re-locks or steals
     // focus mid-morph.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 }

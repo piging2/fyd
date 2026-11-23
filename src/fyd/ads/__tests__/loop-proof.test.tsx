@@ -110,6 +110,8 @@ import { createAdsCollector } from "../collector";
 import {
   buildAdvertiserDashboard,
   buildPublisherDashboard,
+  type AdvertiserDashboard,
+  type PublisherDashboard,
 } from "../dashboards";
 import {
   listPlacementDecisionIds,
@@ -123,7 +125,11 @@ import {
   LoopComposition,
   type LoopCompositionEntry,
 } from "../loop-composition";
-import { readOptInState } from "../opt-in";
+import {
+  readOptInState,
+  type OptInReadback,
+  type OptInSlotReadback,
+} from "../opt-in";
 import {
   BUDGET_WINDOW_MS,
   DAILY_CLICKS_CAP,
@@ -201,6 +207,48 @@ function evidence(step: string, data: Record<string, unknown>): void {
 
 function sha256File(path: string): string {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
+
+/** Response body shapes for the real routes driven below. The routes
+ *  answer with the exported readback/dashboard types; res.json() is
+ *  untyped, so the body is bound to its contract type here and every
+ *  field is then asserted individually by the steps. */
+interface OptInPostBody {
+  ok: boolean;
+  slot: OptInSlotReadback;
+}
+
+interface OptInGetBody {
+  ok: boolean;
+  state: OptInReadback;
+}
+
+interface EventsPostBody {
+  ok: boolean;
+  status: string;
+  receiptRef: string;
+}
+
+interface PublisherDashboardBody {
+  ok: boolean;
+  view: "publisher";
+  dashboard: PublisherDashboard;
+}
+
+interface AdvertiserDashboardBody {
+  ok: boolean;
+  view: "advertiser";
+  dashboard: AdvertiserDashboard;
+}
+
+interface RouteErrorBody {
+  ok: boolean;
+  code: string;
+  message: string;
+}
+
+async function bodyAs<T>(res: Response): Promise<T> {
+  return (await res.json()) as T;
 }
 
 interface StoredLogEvent {
@@ -452,7 +500,7 @@ describe("B7 proof main line: opt-in, campaign, render, delivery, reporting", ()
       optInRequest("POST", grantBody(), cookieFor(PUBLISHER_IDENTITY)),
     );
     expect(res.status).toBe(200);
-    const json = await res.json();
+    const json = await bodyAs<OptInPostBody>(res);
     expect(json.ok).toBe(true);
     expect(json.slot.consentStatus).toBe("active");
     expect(json.slot.disclosureTextVersion).toBe(DISCLOSURE_TEXT_VERSION);
@@ -475,7 +523,7 @@ describe("B7 proof main line: opt-in, campaign, render, delivery, reporting", ()
       optInRequest("GET", undefined, cookieFor(PUBLISHER_IDENTITY)),
     );
     expect(getRes.status).toBe(200);
-    const state = (await getRes.json()).state;
+    const state = (await bodyAs<OptInGetBody>(getRes)).state;
     expect(state.slots).toHaveLength(1);
     expect(state.slots[0]).toMatchObject({
       slotId: SLOT_ID,
@@ -646,7 +694,7 @@ describe("B7 proof main line: opt-in, campaign, render, delivery, reporting", ()
     const post = createAdsEventsPostHandler(eventsDeps);
     const res = await post(eventsRequest(drafts[0]));
     expect(res.status).toBe(201);
-    const json = await res.json();
+    const json = await bodyAs<EventsPostBody>(res);
     expect(json.status).toBe("recorded");
     impressionReceipt = json.receiptRef;
     expect(impressionReceipt).toMatch(/^ads-receipt:/);
@@ -676,7 +724,7 @@ describe("B7 proof main line: opt-in, campaign, render, delivery, reporting", ()
     expect(clickDrafts).toHaveLength(1);
     const clickRes = await post(eventsRequest(clickDrafts[0]));
     expect(clickRes.status).toBe(201);
-    clickReceipt = (await clickRes.json()).receiptRef;
+    clickReceipt = (await bodyAs<EventsPostBody>(clickRes)).receiptRef;
 
     expect(ledger.countedTotalsByCampaign(CAMPAIGN_ID, day)).toEqual({
       impressions: 1,
@@ -749,19 +797,19 @@ describe("B7 proof main line: opt-in, campaign, render, delivery, reporting", ()
     const get = createAdsDashboardGetHandler(dashboardDeps);
     const pubRes = await get(dashboardRequest(cookieFor(PUBLISHER_IDENTITY)));
     expect(pubRes.status).toBe(200);
-    const pubJson = await pubRes.json();
+    const pubJson = await bodyAs<PublisherDashboardBody>(pubRes);
     expect(pubJson.view).toBe("publisher");
-    expect(pubJson.dashboard.totals.impressions).toBe(1);
-    expect(pubJson.dashboard.totals.clicks).toBe(1);
+    expect(pubJson.dashboard.totals?.impressions).toBe(1);
+    expect(pubJson.dashboard.totals?.clicks).toBe(1);
     expect(pubJson.dashboard.stamp.trustworthy).toBe(true);
     const advRes = await get(
       dashboardRequest(cookieFor(ADVERTISER_IDENTITY)),
     );
     expect(advRes.status).toBe(200);
-    const advJson = await advRes.json();
+    const advJson = await bodyAs<AdvertiserDashboardBody>(advRes);
     expect(advJson.view).toBe("advertiser");
-    expect(advJson.dashboard.campaign.today.impressions).toBe(1);
-    expect(advJson.dashboard.campaign.today.clicks).toBe(1);
+    expect(advJson.dashboard.campaign?.today?.impressions).toBe(1);
+    expect(advJson.dashboard.campaign?.today?.clicks).toBe(1);
     expect(advJson.dashboard.stamp.trustworthy).toBe(true);
 
     evidence("step5", {
@@ -817,7 +865,7 @@ describe("B7 proof step 6a: revoke consent stops delivery", () => {
       ),
     );
     expect(revokeRes.status).toBe(200);
-    expect((await revokeRes.json()).slot.consentStatus).toBe("revoked");
+    expect((await bodyAs<OptInPostBody>(revokeRes)).slot.consentStatus).toBe("revoked");
     expect(readSlot(SLOT_ID, PUBLISHER)?.consentActive).toBe(false);
 
     const after = evaluateComposition({
@@ -1054,7 +1102,7 @@ describe("B7 proof step 6d: tenant isolation", () => {
     const get = createAdsDashboardGetHandler(dashboardDeps);
     const res = await get(dashboardRequest(cookieFor(OTHER_IDENTITY)));
     expect(res.status).toBe(403);
-    const json = await res.json();
+    const json = await bodyAs<RouteErrorBody>(res);
     expect(json.code).toBe("not-a-loop-tenant");
     expect(JSON.stringify(json)).not.toContain(SLOT_ID);
     expect(JSON.stringify(json)).not.toContain(CAMPAIGN_ID);

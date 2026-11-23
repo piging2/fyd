@@ -1,5 +1,5 @@
 /**
- * GET /api/fyd/inquiry/inbox — owner inbox (TEST PLANE ONLY).
+ * GET /api/fyd/inquiry/inbox: owner inbox (TEST PLANE ONLY).
  *
  * Caller-key authenticated + tenant-entitled via the operator-provisioned
  * registry (fail closed: unknown/missing key or unreadable registry ->
@@ -21,7 +21,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
+export function GET(req: NextRequest) {
   const siteId = req.nextUrl.searchParams.get("siteId") ?? "";
   if (!isolatedSiteAllowlist().includes(siteId)) {
     return NextResponse.json(

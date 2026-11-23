@@ -6,13 +6,14 @@ type Data = Record<string, unknown>;
 const record = (v: unknown): Data => v && typeof v === "object" && !Array.isArray(v) ? v as Data : {};
 const rows = (v: unknown): Data[] => Array.isArray(v) ? v.filter(x => x && typeof x === "object") as Data[] : [];
 const count = (v: unknown) => typeof v === "number" && Number.isFinite(v) ? String(v) : "—";
+const text = (v: unknown, fallback: string): string => typeof v === "string" ? v : typeof v === "number" && Number.isFinite(v) ? String(v) : fallback;
 export function OperationalOverview({ today, agents, navigate }: {
   today: Data | null; agents: Data | null; navigate: (section: string, item: string) => void;
 }) {
   const data = record(today?.today); const pipeline = record(today?.pipeline);
   const events = rows(record(data.changed).recentOverlayEvents);
   const operations = rows(agents?.operations);
-  const degraded = Array.isArray(today?.degraded) ? today.degraded.filter(x => typeof x === "string") as string[] : [];
+  const degraded = Array.isArray(today?.degraded) ? today.degraded.filter(x => typeof x === "string") : [];
   const healthy = today?.ok === true && today.status === "PROVEN";
   const stages = [
     { label: "Observations", value: pipeline.observations, section: "system", item: "event-history", icon: Radio },
@@ -41,10 +42,10 @@ export function OperationalOverview({ today, agents, navigate }: {
     <div className="mc-overview-columns">
       <section className="mc-panel"><div className="mc-section-label"><h3>Recent source activity</h3><button className="mc-text-button" onClick={() => navigate("system", "event-history")}>Mission events <ArrowUpRight size={14} /></button></div>
         <p className="mc-muted">FYD overlay events · latest returned sample</p>
-        {events.length ? <ol className="mc-activity">{events.slice(0, 6).map((e, i) => <li key={String(e.event_id ?? i)}><span className="mc-activity-dot" aria-hidden="true" /><div><strong>{typeof e.site === "string" ? e.site : "Site overlay"}</strong><code>{String(e.event_id ?? "Event ID not returned")}</code></div><time>{typeof e.timestamp === "string" ? new Date(e.timestamp).toLocaleTimeString() : "Time unavailable"}</time></li>)}</ol> : <div className="mc-empty-inline"><GitBranch size={24} /><strong>{!today ? "Reading activity…" : record(data.changed).status === "DEGRADED" ? "Activity source unavailable" : "No overlay events returned"}</strong><p>{record(data.changed).status === "DEGRADED" ? "The journal could not supply this activity sample. Other views remain available." : "Execution evidence is available separately in Missions."}</p><button onClick={() => navigate("missions", "missions")} className="mc-text-button">Open missions →</button></div>}
+        {events.length ? <ol className="mc-activity">{events.slice(0, 6).map((e, i) => <li key={text(e.event_id, String(i))}><span className="mc-activity-dot" aria-hidden="true" /><div><strong>{typeof e.site === "string" ? e.site : "Site overlay"}</strong><code>{text(e.event_id, "Event ID not returned")}</code></div><time>{typeof e.timestamp === "string" ? new Date(e.timestamp).toLocaleTimeString() : "Time unavailable"}</time></li>)}</ol> : <div className="mc-empty-inline"><GitBranch size={24} /><strong>{!today ? "Reading activity…" : record(data.changed).status === "DEGRADED" ? "Activity source unavailable" : "No overlay events returned"}</strong><p>{record(data.changed).status === "DEGRADED" ? "The journal could not supply this activity sample. Other views remain available." : "Execution evidence is available separately in Missions."}</p><button onClick={() => navigate("missions", "missions")} className="mc-text-button">Open missions →</button></div>}
       </section>
       <section className="mc-panel"><div className="mc-section-label"><h3>Executor presence</h3><button className="mc-text-button" onClick={() => navigate("missions", "agents")}>Inspect <ArrowUpRight size={14} /></button></div><p className="mc-muted">Observed worker state · authority remains separate</p>
-        {operations.length ? <ul className="mc-agents">{operations.slice(0, 5).map((op, i) => <li key={String(op.mission ?? i)}><span className={String(op.currentState) === "RUNNING" ? "mc-live-dot" : "mc-quiet-dot"} /><div><strong>{String(op.mission ?? "Unnamed operation")}</strong><span>{String(op.currentState ?? "State unavailable")}</span></div></li>)}</ul> : <div className="mc-empty-inline"><CircleDot size={24} /><strong>{!agents ? "Reading worker state…" : agents.ok === false ? "Worker source unavailable" : "No active operations returned"}</strong><p>Historical execution records remain available. This is not a claim that every worker is idle.</p></div>}
+        {operations.length ? <ul className="mc-agents">{operations.slice(0, 5).map((op, i) => <li key={text(op.mission, String(i))}><span className={String(op.currentState) === "RUNNING" ? "mc-live-dot" : "mc-quiet-dot"} /><div><strong>{text(op.mission, "Unnamed operation")}</strong><span>{text(op.currentState, "State unavailable")}</span></div></li>)}</ul> : <div className="mc-empty-inline"><CircleDot size={24} /><strong>{!agents ? "Reading worker state…" : agents.ok === false ? "Worker source unavailable" : "No active operations returned"}</strong><p>Historical execution records remain available. This is not a claim that every worker is idle.</p></div>}
       </section>
     </div>
     {degraded.length > 0 && <details className="mc-source-notice"><summary><ShieldQuestion size={16} />{degraded.length} source visibility notes</summary><ul>{degraded.map(note => <li key={note}>{note}</li>)}</ul></details>}

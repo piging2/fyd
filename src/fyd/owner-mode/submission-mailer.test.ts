@@ -22,10 +22,10 @@ const CONFIGURED_ENV = {
 };
 
 function captureTransport(sent: SubmissionMail[], fail = false) {
-  return async (mail: SubmissionMail) => {
-    if (fail) throw new Error("smtp connection refused (test)");
+  return (mail: SubmissionMail) => {
+    if (fail) return Promise.reject(new Error("smtp connection refused (test)"));
     sent.push(mail);
-    return { id: "test-message-id" };
+    return Promise.resolve({ id: "test-message-id" });
   };
 }
 

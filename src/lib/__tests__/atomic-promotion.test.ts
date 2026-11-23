@@ -34,7 +34,7 @@ import { getKvNamespace } from '../environment';
 import type { Media } from '@/types/media';
 
 const TEST_PREFIX = 'ATOMIC-PROMOTION-TEST-';
-let testServiceSlugs: string[] = [];
+const testServiceSlugs: string[] = [];
 let testNamespace: string;
 
 beforeAll(async () => {
@@ -116,13 +116,13 @@ beforeAll(async () => {
   }
 });
 
-afterAll(async () => {
+afterAll(() => {
   // Cleanup test assignments
   for (const serviceSlug of testServiceSlugs) {
     try {
       // Note: cleanup would require Redis client access
       console.log(`[CLEANUP] Test assignment ${serviceSlug} should be cleaned up`);
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors
     }
   }

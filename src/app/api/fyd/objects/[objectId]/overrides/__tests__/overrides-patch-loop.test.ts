@@ -25,7 +25,7 @@ import { buildPatchPreview } from "../patch-loop";
 import { readOverrides } from "@/fyd/object/owner-store";
 import { invalidateSiteBundle } from "@/fyd/media/site-bundle";
 
-jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: async () => null }));
+jest.mock("@/lib/ping/session", () => ({ getPracticeIdentityId: () => null }));
 
 const PHONE_CMD = {
   type: "set-contact-field",
@@ -46,7 +46,7 @@ interface ContactView {
 function req(body: unknown, objectId = "happy-place") {
   return {
     req: {
-      json: async () => body,
+      json: () => body,
       headers: new Headers({ host: "localhost:3000" }),
     } as unknown as NextRequest,
     params: Promise.resolve({ objectId }),
@@ -336,12 +336,8 @@ describe("propose -> approve digest binding", () => {
     // The event log is a real file on disk: a restarted server reads the
     // same directory and re-projects the same state.
     expect(existsSync(join(dir, "happy-place.json"))).toBe(true);
-    const store = jest.requireActual("@/fyd/object/owner-store") as typeof import(
-      "@/fyd/object/owner-store"
-    );
-    const eventsMod = jest.requireActual("@/fyd/object/owner-events") as typeof import(
-      "@/fyd/object/owner-events"
-    );
+    const store = jest.requireActual("@/fyd/object/owner-store");
+    const eventsMod = jest.requireActual("@/fyd/object/owner-events");
     const replayed = store.readOverrides("happy-place");
     expect(replayed.fieldCorrections.phone?.ownerValue).toBe("+1 541 555 0123");
     expect(eventsMod.readOwnerEvents("happy-place").length).toBeGreaterThan(0);
@@ -353,9 +349,7 @@ describe("propose -> approve digest binding", () => {
   test("correction record keeps owner value and source value side by side", async () => {
     const applied = await approveProposal(await propose());
     expect(applied.status).toBe(200);
-    const store = jest.requireActual("@/fyd/object/owner-store") as typeof import(
-      "@/fyd/object/owner-store"
-    );
+    const store = jest.requireActual("@/fyd/object/owner-store");
     const corr = store.readOverrides("happy-place").fieldCorrections.phone;
     expect(corr?.ownerValue).toBe("+1 541 555 0123");
     expect(corr?.sourceValue).toBe("+15412865190");

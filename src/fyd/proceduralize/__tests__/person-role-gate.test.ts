@@ -53,7 +53,7 @@ async function run() {
       sourceUrl: "https://testco.example/",
       observedAt: TS,
       controllerId: "runner-test",
-    } as never,
+    },
   );
   return out.graph.objects.filter((o) => o.schema === "ping.social.person@1");
 }

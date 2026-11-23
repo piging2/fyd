@@ -1,5 +1,5 @@
 /**
- * Mission Control — proposal detail.
+ * Mission Control: proposal detail.
  * PROPOSAL → APPROVAL → CANONICAL EVENT. Read-only view of the recorded
  * proposal through the existing approvals route. The decision itself stays
  * behind the gated POST /api/mc/approvals with an authenticated caller.
@@ -28,7 +28,21 @@ async function getProposal(id: string) {
 }
 
 function Row({ k, v }: { k: string; v: unknown }) {
-  const text = v === null || v === undefined ? "—" : typeof v === "object" ? JSON.stringify(v, null, 2) : String(v);
+  const text =
+    v === null || v === undefined
+      ? "—"
+      : typeof v === "object"
+        ? JSON.stringify(v, null, 2)
+        : typeof v === "string"
+          ? v
+          : typeof v === "function"
+            ? v.toString()
+            : typeof v === "number" ||
+                typeof v === "boolean" ||
+                typeof v === "bigint" ||
+                typeof v === "symbol"
+              ? String(v)
+              : "[object Object]";
   return (
     <div className="flex gap-2 text-sm py-1 border-b last:border-0 border-slate-100">
       <dt className="w-44 shrink-0 font-mono text-xs uppercase text-slate-500 pt-0.5">{k}</dt>
@@ -50,16 +64,17 @@ export default async function ProposalDetail({ params }: { params: Promise<{ id:
     );
   }
   const p = res.proposal;
+  const pv = p as { id?: string; status?: string };
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-10 font-sans">
       <Link href="/mc" className="text-sm underline text-blue-800">← Mission Control</Link>
       <header className="mt-4 mb-6">
         <p className="text-xs font-mono uppercase tracking-widest text-slate-500">proposal</p>
-        <h1 className="text-2xl font-bold font-mono break-all mt-1">{String(p.id ?? id)}</h1>
+        <h1 className="text-2xl font-bold font-mono break-all mt-1">{String(pv.id ?? id)}</h1>
         <p className="mt-2">
           <span className="inline-block px-2 py-0.5 text-xs font-mono border rounded bg-slate-100">
-            {String(p.status ?? "UNKNOWN")}
+            {String(pv.status ?? "UNKNOWN")}
           </span>
         </p>
       </header>
@@ -96,7 +111,7 @@ export default async function ProposalDetail({ params }: { params: Promise<{ id:
 
       <p className="text-xs font-mono text-slate-500">
         Approval decisions are made through the gated POST /api/mc/approvals with an
-        authenticated caller key — never from this page.
+        authenticated caller key, never from this page.
       </p>
     </main>
   );

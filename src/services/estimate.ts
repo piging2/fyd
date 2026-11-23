@@ -1,20 +1,21 @@
 import type { EstimateRequest } from "@/types";
+import type { Company } from "@/types/company";
 import { getCompany } from "@/lib/company";
 import { getServiceBySlug } from "@/lib/registries";
 import { features } from "@/config/infrastructure-flags";
 
 /**
- * Estimate submission service — INTERFACE.
+ * Estimate submission service: INTERFACE.
  *
  * The MVP submits via email (mailto). Later, swap the implementation (e.g.
- * `submitEstimateApi`) WITHOUT touching any component — components depend on
+ * `submitEstimateApi`) WITHOUT touching any component: components depend on
  * this interface only. This is the single swap point mandated by Directive 021.
  */
 export interface EstimateService {
   /** Build a shareable submission (mailto link today; API payload later). */
   prepare(request: EstimateRequest, forceMailto?: boolean): { kind: "mailto"; href: string } | { kind: "api"; body: unknown };
   /**
-   * Submit the request. UI calls this and awaits a uniform result — identical
+   * Submit the request. UI calls this and awaits a uniform result: identical
    * to the future API workflow. Today it opens the user's mail client. When a
    * backend exists, swap this implementation to POST; the wizard does not change.
    */
@@ -49,7 +50,7 @@ export const mockEstimateService: EstimateService = {
     if (features.estimateApi && !forceMailto) {
       return { kind: "api", body: req };
     }
-    const company = getCompany();
+    const company: Company = getCompany();
     const svcTitles = req.services.map((sl) => getServiceBySlug(sl)?.name ?? sl);
     const subject = `Estimate request: ${svcTitles.join(", ") || "General inquiry"}`;
     const body = [
@@ -98,7 +99,7 @@ export const mockEstimateService: EstimateService = {
         });
         if (!res.ok) throw new Error(`api ${res.status}`);
         return { ok: true, transport: "api", message: "Request sent. We'll be in touch soon." };
-      } catch (error) {
+      } catch {
         // Fallback to mailto so the customer is never blocked.
         const mailto = this.prepare(req, true);
         if (mailto.kind === "mailto" && typeof window !== "undefined") {

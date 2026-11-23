@@ -37,8 +37,8 @@ function askConcierge(question: string, graph: ObjectGraph) {
   return out;
 }
 
-const COPPER = COPPERSMITH_GRAPH as unknown as ObjectGraph;
-const HAPPY = HAPPY_PLACE_GRAPH as unknown as ObjectGraph;
+const COPPER = COPPERSMITH_GRAPH;
+const HAPPY = HAPPY_PLACE_GRAPH;
 
 const ACCEPTANCE: { question: string; graph: ObjectGraph }[] = [
   { question: 'Can they repair heat pumps, and how do I contact them?', graph: COPPER },
@@ -81,7 +81,7 @@ function servedOutcome(out: AskFydAnswer) {
     },
     answerClass,
     answerState,
-    claims: contractClaimsFor(out.claimClassifications as never[]),
+    claims: contractClaimsFor(out.claimClassifications),
   };
 }
 

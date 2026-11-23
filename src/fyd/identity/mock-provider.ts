@@ -5,7 +5,7 @@
  * provider-console credentials.
  */
 
-import { createPrivateKey, createPublicKey, createSign, generateKeyPairSync } from "node:crypto";
+import { createPrivateKey, createSign, generateKeyPairSync } from "node:crypto";
 import type { FetchImpl } from "./provider";
 
 export interface MockTokenClaims {
@@ -39,16 +39,18 @@ export class MockOidcProvider {
   }
 
   /** A fetch implementation that serves the mock JWKS and token endpoint. */
-  fetch: FetchImpl = (async (input: unknown, init?: unknown) => {
+  fetch: FetchImpl = (input: unknown, init?: unknown) => {
     const url = String(input);
     if (url === this.jwksUri) {
-      return new Response(JSON.stringify(this.jwks()), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
+      return Promise.resolve(
+        new Response(JSON.stringify(this.jwks()), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
     }
-    throw new Error("mock fetch: unexpected URL " + url);
-  }) as unknown as FetchImpl;
+    return Promise.reject(new Error("mock fetch: unexpected URL " + url));
+  };
 
   issueIdToken(claims: MockTokenClaims): string {
     const now = Math.floor(Date.now() / 1000);

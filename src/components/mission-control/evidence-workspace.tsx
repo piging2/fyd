@@ -37,7 +37,7 @@ function stamp(value: string | null | undefined) {
 function object(value: unknown): Record<string, unknown> { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function valueAt(value: unknown, ...keys: string[]): string | null {
   const data = object(value);
-  for (const key of keys) if (typeof data[key] === "string" && data[key]) return data[key] as string;
+  for (const key of keys) if (typeof data[key] === "string" && data[key]) return data[key];
   return null;
 }
 function RawRecord({ data, label = "Projected record JSON" }: { data: unknown; label?: string }) {
@@ -51,7 +51,7 @@ function Status({ status }: { status: string }) {
 }
 async function loadJson(url: string, signal: AbortSignal): Promise<unknown> {
   const response = await fetch(url, { cache: "no-store", signal });
-  const body = await response.json();
+  const body: unknown = await response.json();
   if (!response.ok || object(body).ok === false) throw new Error(valueAt(body, "error") ?? `Request failed (${response.status})`);
   return body;
 }
@@ -197,7 +197,7 @@ export function EvidenceWorkspace({ mode, refreshSignal = 0 }: { mode: EvidenceW
     {detailLoading && <div className={styles.skeleton}>Loading execution and lineage…</div>}
     {detailError && <div role="alert" className={styles.error}>Mission detail unavailable: {detailError}</div>}
     {mission && visibleMissions.some(record => record.mission_id === mission.mission_id) && <div className={styles.detail}>
-      <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>SELECTED MISSION</span><h3>{mission.capability || "Execution record"}</h3><code className={styles.identifier}>{mission.mission_id}</code></div><div className={styles.actions}><Status status={mission.status} /><button className={styles.button} type="button" onClick={() => showTrace("mission")}>Trace this</button><button className={styles.button} type="button" onClick={() => copy(window.location.href, "Deep link")}>Copy link</button></div></div>
+      <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>SELECTED MISSION</span><h3>{mission.capability || "Execution record"}</h3><code className={styles.identifier}>{mission.mission_id}</code></div><div className={styles.actions}><Status status={mission.status} /><button className={styles.button} type="button" onClick={() => showTrace("mission")}>Trace this</button><button className={styles.button} type="button" onClick={() => { void copy(window.location.href, "Deep link"); }}>Copy link</button></div></div>
       <dl className={styles.facts}><Fact label="Executor" value={mission.agent} /><Fact label="Commissioning tenant" value={mission.tenant} /><Fact label="Started" value={stamp(mission.started_at)} /><Fact label="Reconciliation" value={mission.reconciliation_state} /></dl>
       <MissionViews mission={mission} raw={missionRaw} perspective={selection.perspective} selectedEventId={selection.event} selectEvent={chooseEvent} setPerspective={perspective => navigate({ perspective })} />
       <div className={styles.sectionHeading}><div><span className={styles.eyebrow}>CAUSAL RECORD</span><h3>Follow the evidence chain</h3></div><span className={styles.subtle}>Select a stage to inspect its source</span></div>
@@ -219,13 +219,13 @@ export function EvidenceWorkspace({ mode, refreshSignal = 0 }: { mode: EvidenceW
           <div className={styles.inspectorSource}><span className={styles.sourceBadge}>{selectedStage?.source ?? "PROJECTED EVENT"}</span><span>{selectedStage?.note ?? "Summary from the mission journal projection; full event envelope is not exposed here."}</span></div>
           <dl className={styles.inspectorFacts}><Fact label={selectedEvent ? "Event identity" : "Stage"} value={selectedEvent?.event_id ?? selectedStage?.stage} /><Fact label="Recorded time" value={selectedEvent?.timestamp ?? valueAt(inspectorData, "created_at", "queued_at", "authorized_at", "ended_at")} /><Fact label="Source" value="Mission journal projection" /><Fact label="Principal / originator" value={principal} /><Fact label="Tenant" value={mission?.tenant} /><Fact label="Namespace" value={namespace} /><Fact label="Canonical authority" value={valueAt(inspectorData, "authority")} /><Fact label="Executor" value={mission?.agent} /><Fact label="Causation" value={valueAt(inspectorData, "causation_id")} /><Fact label="Correlation" value={valueAt(inspectorData, "correlation_id")} /><Fact label="Witness hash" value={valueAt(inspectorData, "witness_hash")} /><Fact label="Replay receipt" value={valueAt(inspectorData, "replay_status")} /></dl>
           <p className={styles.note}>Recorded provenance and verification are different states. Confidence, witness, and human verification are shown only when the source exposes them.</p>
-          <div className={styles.actions}><button className={styles.button} type="button" onClick={() => showTrace(selectedEvent ? "event" : "stage")}>Trace this</button>{selectedEvent && <button className={styles.button} type="button" onClick={() => copy(selectedEvent.event_id, "Event ID")}>Copy event ID</button>}</div>
+          <div className={styles.actions}><button className={styles.button} type="button" onClick={() => showTrace(selectedEvent ? "event" : "stage")}>Trace this</button>{selectedEvent && <button className={styles.button} type="button" onClick={() => { void copy(selectedEvent.event_id, "Event ID"); }}>Copy event ID</button>}</div>
           <RawRecord data={inspectorData} label={selectedEvent ? "Projected event record JSON" : "Lineage stage data JSON"} />
           {selectedEvent && <div className={styles.inspectorNavigation}><button type="button" className={styles.button} disabled={events.indexOf(selectedEvent) <= 0} onClick={() => chooseEvent(events[events.indexOf(selectedEvent) - 1])}>← Previous event</button><button type="button" className={styles.button} disabled={events.indexOf(selectedEvent) === events.length - 1} onClick={() => chooseEvent(events[events.indexOf(selectedEvent) + 1])}>Next event →</button></div>}
         </>}
         <p role="status" aria-live="polite" className={notice && inspectorOpen ? styles.note : styles.srOnly}>{inspectorOpen ? notice : ""}</p>
       </>}
-      <button className={styles.button} type="button" onClick={() => copy(window.location.href, "Trace link")}>Copy inspector link</button>
+      <button className={styles.button} type="button" onClick={() => { void copy(window.location.href, "Trace link"); }}>Copy inspector link</button>
       <p role="status" aria-live="polite" className={notice ? styles.note : styles.srOnly}>{notice}</p>
     </RecordInspector>
     <div role="status" aria-live="polite" className={notice && !inspectorOpen ? styles.toast : styles.srOnly}>{inspectorOpen ? "" : notice}</div>

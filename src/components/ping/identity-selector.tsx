@@ -70,7 +70,7 @@ export function IdentitySelector({
         {activeId && (
           <button
             type="button"
-            onClick={onSignOut}
+            onClick={() => { void onSignOut(); }}
             disabled={busy}
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-accent/70 hover:bg-surface-2 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ping-violet disabled:opacity-50"
           >
@@ -97,7 +97,7 @@ export function IdentitySelector({
               <li key={id.id}>
                 <button
                   type="button"
-                  onClick={() => onSelect(id.id)}
+                  onClick={() => { void onSelect(id.id); }}
                   disabled={busy || active}
                   aria-pressed={active}
                   className={cn(
@@ -143,7 +143,7 @@ export function IdentitySelector({
             New test identity
           </button>
         ) : (
-          <form onSubmit={submitCreate} className="rounded-lg border border-border-soft bg-background p-4">
+          <form onSubmit={(e) => { void submitCreate(e); }} className="rounded-lg border border-border-soft bg-background p-4">
             <h3 className="text-sm font-semibold text-accent">Create test identity</h3>
             <p className="mt-1 text-xs text-accent/60">
               A fresh Ed25519 keypair is generated server-side and the identity is registered through the

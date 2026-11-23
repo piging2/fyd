@@ -61,7 +61,7 @@ export interface FydObjectEventAdapter {
 }
 export const UNBOUND_OBJECT_EVENT_ADAPTER: FydObjectEventAdapter = Object.freeze({
   authority: "unbound" as const,
-  async publish(_event: FydObjectEventDraft) { return { status: "unbound" as const }; },
+  publish(_event: FydObjectEventDraft) { return Promise.resolve({ status: "unbound" as const }); },
 });
 
 function baseEvent(context: ObjectEventContext, at: number) {

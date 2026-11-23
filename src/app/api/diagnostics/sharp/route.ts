@@ -33,8 +33,32 @@ const FIXTURE_PNG = Buffer.from([
   0x82
 ]);
 
+// The diagnostics report shape: stages are recorded under fixed keys
+// with per-stage fields; the route returns this object verbatim as JSON.
+interface SharpStageResult {
+  status: string;
+  version?: string;
+  formats?: string;
+  width?: number;
+  height?: number;
+  format?: string;
+  outputSize?: number;
+  errorCode?: string;
+}
+
+interface SharpDiagnosticsReport {
+  requestId: string;
+  timestamp: string;
+  stages: Record<string, SharpStageResult>;
+}
+
+// The sharp module is required inside the probe on purpose: a load
+// failure is itself stage 1's result, so the module cannot be a static
+// import. The cast records sharp's own bundled type for the module.
+type SharpModule = (typeof import('sharp'))['default'];
+
 async function runSharpDiagnostics(requestId: string) {
-  const results: any = {
+  const results: SharpDiagnosticsReport = {
     requestId,
     timestamp: new Date().toISOString(),
     stages: {},
@@ -42,7 +66,7 @@ async function runSharpDiagnostics(requestId: string) {
 
   // Stage 1: Module import
   try {
-    const sharp = require('sharp');
+    const sharp = require('sharp') as SharpModule;
     results.stages.moduleImport = {
       status: 'passed',
     };
@@ -57,7 +81,7 @@ async function runSharpDiagnostics(requestId: string) {
         status: 'passed',
         formats: sharp.format ? 'available' : 'unavailable',
       };
-    } catch (e) {
+    } catch {
       results.stages.formatCapabilities = {
         status: 'failed',
         errorCode: 'SHARP_FORMAT_QUERY_FAILED',
@@ -73,7 +97,7 @@ async function runSharpDiagnostics(requestId: string) {
         height: metadata.height,
         format: metadata.format,
       };
-    } catch (e) {
+    } catch {
       results.stages.metadata = {
         status: 'failed',
         errorCode: 'SHARP_METADATA_FAILED',
@@ -88,7 +112,7 @@ async function runSharpDiagnostics(requestId: string) {
         status: 'passed',
         outputSize: transformed.length,
       };
-    } catch (e) {
+    } catch {
       results.stages.transform = {
         status: 'failed',
         errorCode: 'SHARP_TRANSFORM_FAILED',
@@ -102,7 +126,7 @@ async function runSharpDiagnostics(requestId: string) {
         status: 'passed',
         outputSize: webp.length,
       };
-    } catch (e) {
+    } catch {
       results.stages.webp = {
         status: 'failed',
         errorCode: 'SHARP_WEBP_FAILED',
@@ -116,14 +140,14 @@ async function runSharpDiagnostics(requestId: string) {
         status: 'passed',
         outputSize: avif.length,
       };
-    } catch (e) {
+    } catch {
       results.stages.avif = {
         status: 'failed',
         errorCode: 'SHARP_AVIF_FAILED',
       };
     }
 
-  } catch (e) {
+  } catch {
     results.stages.moduleImport = {
       status: 'failed',
       errorCode: 'SHARP_IMPORT_FAILED',
