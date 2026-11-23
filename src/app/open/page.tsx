@@ -14,22 +14,22 @@ const siteUrl =
     : "https://pingfyd.com");
 
 export const metadata: Metadata = {
-  title: "Building in the Open: Counters, Evals, and Costs | PingFyd",
+  title: "Building in the Open: Counters, Evals, Costs",
   description:
-    "Builds in the open: live factory counters with provenance, the eval gates our work must pass, what the stack costs, and the three tiers. Every number real or labeled.",
+    "Builds in the open: factory counters with provenance, the eval gates the work must pass, what the stack costs, and three tiers. Numbers real or labeled.",
   alternates: { canonical: "/open" },
   openGraph: {
     type: "website",
-    title: "Building in the Open: Counters, Evals, and Costs | PingFyd",
-    description: "Builds in the open: live factory counters with provenance, the eval gates our work must pass, what the stack costs, and the three tiers. Every number real or labeled.",
+    title: "Building in the Open: Counters, Evals, Costs",
+    description: "Builds in the open: factory counters with provenance, the eval gates the work must pass, what the stack costs, and three tiers. Numbers real or labeled.",
     url: siteUrl + "/open",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
-    title: "Building in the Open: Counters, Evals, and Costs | PingFyd",
-    description: "Builds in the open: live factory counters with provenance, the eval gates our work must pass, what the stack costs, and the three tiers. Every number real or labeled.",
+    title: "Building in the Open: Counters, Evals, Costs",
+    description: "Builds in the open: factory counters with provenance, the eval gates the work must pass, what the stack costs, and three tiers. Numbers real or labeled.",
   },
 };
 

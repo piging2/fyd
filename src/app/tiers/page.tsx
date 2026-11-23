@@ -17,22 +17,22 @@ const siteUrl =
     : "https://pingfyd.com");
 
 export const metadata: Metadata = {
-  title: "Pricing: $0 Self-Hosted, $29/mo Hosted, $2,500 Concierge",
+  title: "Pricing: $0 Self-Hosted, $29 Hosted, $2,500 Concierge",
   description:
-    "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, zero 1:1 owner time. Concierge: Builds $2,500 fixed, Retainers $1,250/mo, capped hours.",
+    "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, no 1:1 time. Concierge: Builds $2,500, Retainers $1,250/mo, capped hours.",
   alternates: { canonical: "/tiers" },
   openGraph: {
     type: "website",
-    title: "Pricing: $0 Self-Hosted, $29/mo Hosted, $2,500 Concierge",
-    description: "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, zero 1:1 owner time. Concierge: Builds $2,500 fixed, Retainers $1,250/mo, capped hours.",
+    title: "Pricing: $0 Self-Hosted, $29 Hosted, $2,500 Concierge",
+    description: "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, no 1:1 time. Concierge: Builds $2,500, Retainers $1,250/mo, capped hours.",
     url: siteUrl + "/tiers",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
-    title: "Pricing: $0 Self-Hosted, $29/mo Hosted, $2,500 Concierge",
-    description: "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, zero 1:1 owner time. Concierge: Builds $2,500 fixed, Retainers $1,250/mo, capped hours.",
+    title: "Pricing: $0 Self-Hosted, $29 Hosted, $2,500 Concierge",
+    description: "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, no 1:1 time. Concierge: Builds $2,500, Retainers $1,250/mo, capped hours.",
   },
 };
 
