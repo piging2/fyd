@@ -6,6 +6,11 @@
  *
  * Only implemented verification methods are accepted; the rest return 501
  * with the full method list so the UI can say what is coming, honestly.
+ *
+ * S3-03: requires an authenticated identity from the claim identity
+ * bridge; 401 when none is available. The identity is resolved before
+ * any attestation is built, so attestOperatorControl is never reached
+ * unauthenticated.
  * Operator attestation is limited to explicitly enabled development owner
  * hosts. Demo owner mode is not real authentication.
  */
@@ -17,6 +22,7 @@ import {
   isVerificationMethodImplemented,
   listVerificationMethods,
 } from "@/fyd/claim/verification-seam";
+import { resolveClaimIdentity } from "@/fyd/claim/identity";
 import { readClaim, writeClaim } from "@/fyd/claim/store";
 import { projectClaimForViewer } from "@/fyd/claim/claim-projection";
 import { isDevOwnerHost } from "@/fyd/owner-mode/gate";
@@ -58,6 +64,23 @@ export async function POST(
     return NextResponse.json(
       { ok: false, code: "invalid-resource-id", message: "Malformed resource id." },
       { status: 400 },
+    );
+  }
+
+  // S3-03: verification writes claim state, so it requires the same
+  // authenticated identity the claim route requires. Resolved through
+  // the claim bridge and fails closed on null, before
+  // attestOperatorControl can be reached. Composed application on the
+  // reconciled tree: this guard sits behind the env-plus-host gate at
+  // the handler top (gate first, identity behind it).
+  if (!resolveClaimIdentity()) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "identity-required",
+        message: "Verifying a claim needs an authenticated identity.",
+      },
+      { status: 401 },
     );
   }
 

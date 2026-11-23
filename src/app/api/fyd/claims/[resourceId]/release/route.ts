@@ -3,11 +3,14 @@
  *
  * CLAIMED or VERIFIED-CONTROLLED -> OBSERVED. Only the identity that holds
  * the claim can release it. The audit history is preserved.
+ * S3-03: requires the env-plus-host gate the overrides approve stage
+ * applies (DEMO OWNER MODE on a dev host); 403 otherwise.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { isValidResourceId, release } from "@/fyd/claim/machine";
 import { ClaimError } from "@/fyd/claim/types";
 import { resolveClaimIdentity } from "@/fyd/claim/identity";
+import { isDemoOwnerModeEnabled, isDevOwnerHost } from "@/fyd/owner-mode/gate";
 import { readClaim, writeClaim } from "@/fyd/claim/store";
 import { projectClaimForViewer } from "@/fyd/claim/claim-projection";
 
@@ -15,7 +18,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   ctx: { params: Promise<{ resourceId: string }> },
 ): Promise<NextResponse> {
   const { resourceId } = await ctx.params;
@@ -25,6 +28,30 @@ export async function POST(
       { status: 400 },
     );
   }
+  // S3-03: the env-plus-host gate the overrides approve stage applies.
+  // Releasing writes claim state, so it is DEVELOPMENT OWNER MODE only:
+  // NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 on a localhost/private-network or
+  // explicitly allowlisted host. DEMO OWNER MODE - not real authentication;
+  // no identity was verified.
+  const demoEnabled = isDemoOwnerModeEnabled();
+  const hostPrivate = isDevOwnerHost(req.headers?.get("host") ?? "");
+  if (!demoEnabled || !hostPrivate) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "demo_owner_mode_required",
+        error:
+          "Claim release requires DEV/DEMO OWNER MODE " +
+          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+          "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+          "this mode is for explicit development hosts only.",
+        demoOwnerMode: demoEnabled,
+        hostPrivate,
+      },
+      { status: 403 },
+    );
+  }
+
   const identity = resolveClaimIdentity();
   if (!identity) {
     return NextResponse.json(

@@ -4,11 +4,14 @@
  * OBSERVED -> CLAIMED. Requires an authenticated identity from the claim
  * identity bridge. 401 when none is available (fail closed, never invent).
  * 403 for demo-context objects. 409 when the resource is not observed.
+ * S3-03: also requires the env-plus-host gate the overrides approve
+ * stage applies (DEMO OWNER MODE on a dev host); 403 otherwise.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { claim, createObserved, DEMO_CONTEXT_IDS, isValidResourceId } from "@/fyd/claim/machine";
 import { ClaimError } from "@/fyd/claim/types";
 import { resolveClaimIdentity } from "@/fyd/claim/identity";
+import { isDemoOwnerModeEnabled, isDevOwnerHost } from "@/fyd/owner-mode/gate";
 import { readClaim, writeClaim } from "@/fyd/claim/store";
 import { projectClaimForViewer } from "@/fyd/claim/claim-projection";
 
@@ -33,6 +36,30 @@ export async function POST(
         code: "demo-context",
         message:
           "This is a source-derived demo object in a labeled demo/testing context. It cannot be claimed.",
+      },
+      { status: 403 },
+    );
+  }
+
+  // S3-03: the env-plus-host gate the overrides approve stage applies.
+  // Claiming writes claim state, so it is DEVELOPMENT OWNER MODE only:
+  // NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1 on a localhost/private-network or
+  // explicitly allowlisted host. DEMO OWNER MODE - not real authentication;
+  // no identity was verified.
+  const demoEnabled = isDemoOwnerModeEnabled();
+  const hostPrivate = isDevOwnerHost(req.headers?.get("host") ?? "");
+  if (!demoEnabled || !hostPrivate) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "demo_owner_mode_required",
+        error:
+          "Claim actions require DEV/DEMO OWNER MODE " +
+          "(NEXT_PUBLIC_FYD_DEMO_OWNER_MODE=1) on a localhost or private-network host. " +
+          "DEMO OWNER MODE - not real authentication. No identity was verified; " +
+          "this mode is for explicit development hosts only.",
+        demoOwnerMode: demoEnabled,
+        hostPrivate,
       },
       { status: 403 },
     );
