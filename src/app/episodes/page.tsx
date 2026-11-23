@@ -83,7 +83,7 @@ export default function EpisodesPage() {
             {episodePages.map(({ slug, video }) => (
               <div
                 key={video.id}
-                className="overflow-hidden rounded-lg border border-border-soft bg-surface"
+                className="episode-card overflow-hidden rounded-lg border border-border-soft bg-surface"
               >
                 <Link href={"/episodes/" + slug} className="group block">
                   <div className="relative aspect-video w-full overflow-hidden bg-deep">
