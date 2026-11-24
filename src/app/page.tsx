@@ -767,7 +767,7 @@ export default async function HomePage() {
 
       {/* 08 WHAT IS REAL: the honesty strip, roadmap folded in */}
       <div id="status">
-      <Section className="bg-surface-2" size="minor">
+      <Section id="roadmap" className="bg-surface-2" size="minor">
         <Container className="max-w-5xl">
           <SectionHeading
             eyebrow="/status"

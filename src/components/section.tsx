@@ -12,13 +12,19 @@ export function Section({
   className,
   children,
   size = "major",
+  id,
 }: {
   className?: string;
   children: React.ReactNode;
   size?: "major" | "minor";
+  id?: string;
 }) {
   const pad = size === "minor" ? "py-16 sm:py-20" : "py-24 sm:py-32";
-  return <section className={cn(pad, className)}>{children}</section>;
+  return (
+    <section id={id} className={cn(pad, className)}>
+      {children}
+    </section>
+  );
 }
 
 /** A quiet section separator: thin cedar rule + tiny brass pin. Never obvious. */
