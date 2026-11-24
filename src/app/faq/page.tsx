@@ -3,6 +3,7 @@ import { getTenant } from "@/lib/tenant-config";
 import { CTASection } from "@/components/cta-section";
 import { FaqSection } from "@/components/faq-section";
 import { getAllFaqs } from "@/lib/faq";
+import { BUYING_FAQ_ITEMS } from "@/lib/buying-faq";
 
 const siteUrl =
   getTenant().domain ??
@@ -36,6 +37,7 @@ export default function FaqPage() {
   return (
     <>
       <FaqSection items={faqItems} eyebrow="FAQ" title="Questions About PING" headingLevel="h1" />
+      <FaqSection items={BUYING_FAQ_ITEMS} eyebrow="Buying" title="Buying Questions" />
       <CTASection />
     </>
   );

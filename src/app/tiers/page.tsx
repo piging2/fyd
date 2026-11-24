@@ -4,6 +4,8 @@ import { Check } from "lucide-react";
 import { Container, Section } from "@/components/section";
 import { buttonVariants } from "@/components/ui/button";
 import { buildItemListJsonLd } from "@/lib/structured-data";
+import { FaqSection } from "@/components/faq-section";
+import { BUYING_FAQ_ITEMS } from "@/lib/buying-faq";
 import { getTenant } from "@/lib/tenant-config";
 import { cn } from "@/lib/utils";
 
@@ -177,6 +179,27 @@ export default function TiersPage() {
         </Container>
       </Section>
 
+      <Section>
+        <Container>
+          <h2 className="text-2xl font-bold text-text">The tiers, side by side</h2>
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse text-[15px] text-text-muted">
+              <thead>
+                <tr className="text-left"><th scope="col" className="py-3 pr-4 font-semibold text-text"> </th><th scope="col" className="px-4 py-3 font-semibold text-text">Tier 1 · Self-Hosted</th><th scope="col" className="px-4 py-3 font-semibold text-text">Tier 2 · Hosted DIY</th><th scope="col" className="py-3 pl-4 font-semibold text-text">Tier 3 · Concierge</th></tr>
+              </thead>
+              <tbody>
+                <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">Price</th><td className="px-4 py-3">$0 forever</td><td className="px-4 py-3">Launch $29/mo, Growth $59/mo</td><td className="py-3 pl-4">Build $2,500 fixed, Retainer $1,250/mo</td></tr>
+                <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">1:1 owner time</th><td className="px-4 py-3">None</td><td className="px-4 py-3">None, ever</td><td className="py-3 pl-4">Capped: 10 hours per Build, 5 per Retainer month</td></tr>
+                <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">Support</th><td className="px-4 py-3">Community support</td><td className="px-4 py-3">Async tickets, next business day target</td><td className="py-3 pl-4">Inside the capped hours; the Retainer adds a monthly performance review</td></tr>
+                <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">Ticket caps</th><td className="px-4 py-3">No tickets</td><td className="px-4 py-3">3 per month on Launch, 6 on Growth</td><td className="py-3 pl-4">No tickets; capped owner hours instead</td></tr>
+                <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">Annual and discount terms</th><td className="px-4 py-3">Free forever</td><td className="px-4 py-3">Annual is two months free, never deeper</td><td className="py-3 pl-4">Never discounted</td></tr>
+                <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">Getting started</th><td className="px-4 py-3">Take the open core and the library</td><td className="px-4 py-3">Start from the contact form</td><td className="py-3 pl-4">A free conversation first</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </Container>
+      </Section>
+
       <Section className="bg-surface-2">
         <Container className="max-w-4xl">
           <h2 className="text-2xl font-bold text-text">How pricing works here</h2>
@@ -189,6 +212,8 @@ export default function TiersPage() {
           </div>
         </Container>
       </Section>
+
+      <FaqSection items={BUYING_FAQ_ITEMS} eyebrow="Buying questions" title="Buying questions, answered plainly" containerClassName="max-w-4xl" />
     </>
   );
 }
