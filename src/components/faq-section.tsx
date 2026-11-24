@@ -10,6 +10,11 @@ import type { FaqItem } from "@/types/faq";
  * never describe questions the page does not display. Pages choose their
  * items from the shared FAQ authority (@/lib/faq); /faq passes all of
  * them, other pages pass their relevant category.
+ *
+ * A page mounting more than one section passes emitJsonLd={false} and
+ * emits a single page-level FAQPage block over the union of its items
+ * (the /faq form): one canonical block per page, still generated from
+ * exactly the questions the page displays.
  */
 export function buildFaqJsonLd(items: FaqItem[]) {
   return {
@@ -33,6 +38,7 @@ export function FaqSection({
   headingLevel = "h2",
   containerClassName,
   align = "left",
+  emitJsonLd = true,
 }: {
   items: FaqItem[];
   eyebrow?: string;
@@ -40,14 +46,17 @@ export function FaqSection({
   headingLevel?: "h1" | "h2";
   containerClassName?: string;
   align?: "left" | "center";
+  emitJsonLd?: boolean;
 }) {
   const faqJsonLd = buildFaqJsonLd(items);
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
-      />
+      {emitJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }}
+        />
+      )}
       <Section>
         <Container className={containerClassName}>
           <SectionHeading headingLevel={headingLevel} eyebrow={eyebrow} title={title} align={align} />

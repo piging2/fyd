@@ -1,7 +1,8 @@
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { FaqSection, buildFaqJsonLd } from "../faq-section";
-import { getFaqsByCategory } from "@/lib/faq";
+import { getFaqsByCategory, getAllFaqs } from "@/lib/faq";
+import { BUYING_FAQ_ITEMS } from "@/lib/buying-faq";
 
 /**
  * Wave 15 (B-11): the FAQPage JSON-LD on a page that reuses the shared
@@ -77,5 +78,39 @@ describe("FaqSection PingFyd mount for /build-my-fyd", () => {
     expect(ld.mainEntity.map((q: { name: string }) => q.name)).toEqual(socialItems.map((i) => i.question));
     const detailsCount = (html.match(/<details/g) || []).length;
     expect(detailsCount).toBe(socialItems.length);
+  });
+});
+
+/**
+ * FAQPage consolidation (2026-11-24): a page mounting more than one
+ * section opts out of per-section JSON-LD and emits one page-level
+ * block over the union of its items (the /faq form). The opt-out
+ * must suppress the script entirely while the visible questions
+ * render unchanged.
+ */
+describe("FaqSection emitJsonLd opt-out (multi-section pages)", () => {
+  const items = getFaqsByCategory("PING");
+
+  it("renders no JSON-LD script with emitJsonLd={false}", () => {
+    const html = renderToStaticMarkup(
+      <FaqSection items={items} title="Questions" emitJsonLd={false} />,
+    );
+    expect(html).not.toContain("application/ld+json");
+    const detailsCount = (html.match(/<details/g) || []).length;
+    expect(detailsCount).toBe(items.length);
+    for (const i of items) {
+      expect(html).toContain(i.question);
+    }
+  });
+
+  it("the /faq union block carries every displayed question once", () => {
+    const union = [...getAllFaqs(), ...BUYING_FAQ_ITEMS];
+    const ld = buildFaqJsonLd(union);
+    expect(ld["@type"]).toBe("FAQPage");
+    expect(ld.mainEntity.map((q) => q.name)).toEqual(
+      union.map((i) => i.question),
+    );
+    const names = ld.mainEntity.map((q) => q.name);
+    expect(new Set(names).size).toBe(names.length);
   });
 });
