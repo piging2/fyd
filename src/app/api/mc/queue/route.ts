@@ -9,6 +9,13 @@
  * Fail-closed: journal unreachable -> 503 DEGRADED with no invented missions,
  * never an unhandled 500. Zero rows -> the honest empty state, 200, never
  * mock data.
+ *
+ * R10 (2026-11-23): this surface is tenant-bearing by construction
+ * (every row carries tenant attribution), so it is scoped in the
+ * read-authorization arc's form: an unauthenticated caller is
+ * refused 401 caller_key_required before the journal leg, and a
+ * credentialed caller receives only rows inside its
+ * credential-derived scope.
  */
 
 import {
@@ -17,11 +24,26 @@ import {
 } from '../_lib/mc-ping-journal';
 import { projectQueueMissions } from '../_lib/mc-queue-project';
 import { nowIso } from '../_lib/mc-dispatch';
+import { callerScope } from '../_lib/mc-tenant-gate';
+import { inReadScope, readAuthResponse } from '../_lib/mc-read-identity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
+  let scope;
+  try {
+    scope = callerScope(req);
+  } catch (err) {
+    return readAuthResponse(err);
+  }
+  if (scope.kind === 'operator') {
+    return Response.json(
+      { ok: false, error: 'caller_key_required', status: 'PROVEN' },
+      { status: 401 },
+    );
+  }
+
   let rows;
   try {
     rows = await listPingQueueMissions();
@@ -33,7 +55,9 @@ export async function GET() {
     );
   }
 
-  const missions = projectQueueMissions(rows);
+  const missions = projectQueueMissions(rows).filter((m) =>
+    inReadScope(scope, m.tenant_id),
+  );
 
   if (missions.length === 0) {
     return Response.json({
