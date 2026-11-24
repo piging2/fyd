@@ -82,6 +82,7 @@ export default function TiersPage() {
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-text">Tier 1 · Self-Hosted</h2>
               <p className="mt-4 text-4xl font-bold text-text">$0</p>
               <p className="mt-1 text-sm text-text-muted">Forever. No license fee, no per-seat fee. You run it, you host it.</p>
+              <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners and builders who run their own stack. <span className="font-medium text-text">Outcome:</span> a site generated from your structured profile, on your hosting, at no license cost.</p>
               <List items={[
                 "The open core: site generation from a structured profile, the ad-object renderer, the backend core",
                 "The Build-in-Open Library: the same playbooks Tier 2 uses, given away",
@@ -93,6 +94,12 @@ export default function TiersPage() {
                 No hosting. No 1:1 help of any kind. No updates SLA, no managed upgrades, no backups,
                 no priority support. If you need a hand, Tier 2 and Tier 3 are the hands.
               </p>
+              <p className="mt-6 text-sm font-medium text-text">What happens next</p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-[15px] text-text-muted">
+                <li>Take the open core and the Build-in-Open Library.</li>
+                <li>Generate your site from your structured profile.</li>
+                <li>Host it and run it yourself; community support is the channel.</li>
+              </ol>
               <p className="mt-8">
                 <Link href="/open" className="font-medium text-honey-text underline-offset-4 hover:underline">
                   Read the library
@@ -107,6 +114,7 @@ export default function TiersPage() {
                 Launch: $29/mo or $290/yr (two months free). Growth: $59/mo or $590/yr, up to 3 sites,
                 additional sites $15/site/mo.
               </p>
+              <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners who will run it themselves and want the machinery handled. <span className="font-medium text-text">Outcome:</span> your site live on managed hosting, every inquiry captured in one inbox with attribution, support by ticket.</p>
               <p className="mt-6 text-sm font-medium text-text">Everything in Self-Hosted, plus:</p>
               <List items={[
                 "Managed hosting: uptime, backups, updates, and security patches handled",
@@ -121,6 +129,12 @@ export default function TiersPage() {
                 both levels: <span className="font-medium text-text">zero 1:1 owner time, ever.</span>{" "}
                 No done-for-you work, no phone support, no guaranteed leads or rankings.
               </p>
+              <p className="mt-6 text-sm font-medium text-text">What happens next</p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-[15px] text-text-muted">
+                <li>Start from the contact form.</li>
+                <li>Your site is generated from your verified profile and placed on managed hosting.</li>
+                <li>You edit and run it day to day; tickets bring async support on a next business day target.</li>
+              </ol>
               <p className="mt-8">
                 <Link href="/contact" className={cn(buttonVariants({ variant: "primary" }), "bg-honey text-honey-foreground shadow-warm hover:bg-honey-hover")}>
                   Start Hosted DIY
@@ -134,6 +148,7 @@ export default function TiersPage() {
               <p className="mt-1 text-sm text-text-muted">
                 The Build, fixed. The Retainer is $1,250/mo. We run it for you, inside capped owner hours.
               </p>
+              <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners buying back hours. <span className="font-medium text-text">Outcome:</span> a finished site and offer, lead flow tested end to end, then a monthly review of what it produced.</p>
               <List items={[
                 "Concierge Build, $2,500 fixed: profile, site finished by hand where it matters, offer written with you, objects placed, lead flow tested end to end",
                 "Build hours capped at 10 owner hours, logged and visible to you; at the cap, work stops or converts, never silently overflows",
@@ -146,6 +161,12 @@ export default function TiersPage() {
                 full, a waitlist holds your place with a $500 deposit, credited in full against your
                 first package.
               </p>
+              <p className="mt-6 text-sm font-medium text-text">What happens next</p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-[15px] text-text-muted">
+                <li>A free conversation comes first.</li>
+                <li>The engagement is scoped and priced in writing before work starts.</li>
+                <li>The Build runs inside its 10-hour cap, evenings and weekends; the Retainer keeps improving it month to month.</li>
+              </ol>
               <p className="mt-8">
                 <Link href="/contact" className="font-medium text-honey-text underline-offset-4 hover:underline">
                   Ask about Concierge
