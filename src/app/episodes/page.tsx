@@ -131,6 +131,22 @@ export default function EpisodesPage() {
           </div>
         </Container>
       </Section>
+
+      <Section>
+        <Container className="max-w-4xl">
+          <SectionHeading
+            eyebrow="Production note"
+            title="Episode 5, in production"
+          />
+          <p className="measure mt-6 text-text-muted">
+            The governing assembly, EP5-GOVERNING-ASSEMBLY-MASTER-20261121.MP4,
+            stands in finished form at 22.767 minutes at F:\PIGLIB\FINISHED\,
+            on destination evidence. Episode 5 is not released: this note
+            records the governing assembly&apos;s destination standing, and
+            nothing in it is a release announcement or a finished-film claim.
+          </p>
+        </Container>
+      </Section>
     </>
   );
 }
