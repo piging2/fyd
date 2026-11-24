@@ -45,6 +45,15 @@ export async function GET(req: Request) {
         { status: 404 },
       );
     }
+    if (scope.kind === 'operator') {
+      // Case 7 (desk ruling 2026-11-23): a tenant-specific read with
+      // no credential is refused in the graph repair's form; the
+      // operator view does not extend to tenant-naming reads.
+      return Response.json(
+        { ok: false, error: 'caller_key_required', status: 'PROVEN' },
+        { status: 401 },
+      );
+    }
     if (!inReadScope(scope, siteIdParam)) {
       return Response.json(
         { ok: false, error: 'cross_tenant_denied', siteId: siteIdParam, status: 'PROVEN' },

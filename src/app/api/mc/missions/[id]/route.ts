@@ -12,7 +12,8 @@
  * only (no tenant field, no metadata, no hint about the owning
  * tenant). An asserted `x-mc-tenant` header alone grants nothing (401
  * caller_key_required without a key). No key and no header means the
- * operator view and is unchanged.
+ * operator view, which this tenant-specific surface refuses (case 7,
+ * desk ruling 2026-11-23).
  *
  * Feed wiring (2026-10-07): also checks the PING journal (brain-postgres
  * ping_missions) when the FYD journal has no match. Source is attributed
@@ -39,6 +40,14 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     scope = callerScope(req);
   } catch (e) {
     return readAuthResponse(e);
+  }
+  if (scope.kind === 'operator') {
+    // Case 7 (desk ruling 2026-11-23): this surface is addressed by
+    // one tenant's mission id, so the read is tenant-specific by
+    // construction; the operator refusal precedes the journal leg,
+    // in the graph repair's form. The unknown-mission 404 remains
+    // for credentialed callers.
+    return Response.json({ ok: false, error: 'caller_key_required', status: 'PROVEN' }, { status: 401 });
   }
   let events;
   try {

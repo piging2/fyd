@@ -55,6 +55,12 @@ export async function GET(req: Request) {
 
   // ---- MISSION view ----
   if (missionId) {
+    if (scope.kind === 'operator') {
+      // Case 7 (desk ruling 2026-11-23): the mission view is
+      // tenant-specific by construction; refuse before the journal
+      // leg, in the graph repair's form.
+      return Response.json({ ok: false, error: 'caller_key_required', status: 'PROVEN' }, { status: 401 });
+    }
     let events;
     try {
       journalPath();
