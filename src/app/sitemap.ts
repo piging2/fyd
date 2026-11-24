@@ -9,7 +9,7 @@ import { episodePages } from "@/lib/episodes";
  * Bump when the entry shape or the covered route set changes; inv-13
  * pins the current value so a contract change without a bump fails.
  */
-export const SITEMAP_CONTRACT_VERSION = "fyd.sitemap@3";
+export const SITEMAP_CONTRACT_VERSION = "fyd.sitemap@4";
 
 /**
  * Site URL resolves from the tenant config. Falls back to the current Vercel
@@ -38,7 +38,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Every other route omits the element entirely; a build or request
   // timestamp shared by dozens of URLs describes the deployment, not
   // the pages, and teaches crawlers to distrust the field.
-  const staticRoutes = ["", "/technology", "/blog", "/episodes", "/products", "/about", "/contact", "/faq", "/privacy", "/newsletter", "/open", "/open/evals", "/open/costs", "/tiers"];
+  const staticRoutes = ["", "/technology", "/blog", "/episodes", "/products", "/about", "/contact", "/faq", "/privacy", "/newsletter", "/open", "/open/evals", "/open/costs", "/tiers", "/compare", "/cost"];
 
   const entries: MetadataRoute.Sitemap = staticRoutes.map((r) => ({
     url: `${siteUrl}${r}`,

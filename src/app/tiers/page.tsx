@@ -213,6 +213,25 @@ export default function TiersPage() {
         </Container>
       </Section>
 
+
+      <Section>
+        <Container className="max-w-4xl">
+          <h2 className="text-2xl font-bold text-text">Comparing your options</h2>
+          <div className="mt-6 space-y-4 text-text-muted">
+            <p>
+              The honest side-by-side with the other two ways of getting a website is on the{" "}
+              <Link href="/compare" className="font-medium text-honey-text underline-offset-4 hover:underline">comparison page</Link>:
+              PingFyd against a DIY builder and a local agency, on who does the work, the published
+              prices, and the follow-up each one includes.
+            </p>
+            <p>
+              The full price walk-through, with year-one totals for each path, is on the{" "}
+              <Link href="/cost" className="font-medium text-honey-text underline-offset-4 hover:underline">cost guide</Link>.
+            </p>
+          </div>
+        </Container>
+      </Section>
+
       <FaqSection items={BUYING_FAQ_ITEMS} eyebrow="Buying questions" title="Buying questions, answered plainly" containerClassName="max-w-4xl" />
     </>
   );
