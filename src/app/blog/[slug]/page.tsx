@@ -6,6 +6,7 @@ import { SectionNavigation } from "@/components/section-navigation";
 import { getAllPosts, getAllSlugs, getPost, renderMarkdown } from "@/lib/blog";
 import { episodeVideos, featuredFilm } from "@/lib/longping-media";
 import { getTenant } from "@/lib/tenant-config";
+import { buildBreadcrumbJsonLd } from "@/lib/structured-data";
 import { SocialsHub } from "@/components/socials-hub";
 import { CrossSell } from "@/components/cross-sell";
 import { EssayQuestions } from "@/components/essay-questions";
@@ -106,6 +107,12 @@ export default async function BlogPostPage({
     publisher: { "@type": "Organization", name: tenant.siteName, url: siteUrl },
   };
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Home", url: siteUrl },
+    { name: "Blog", url: siteUrl + "/blog" },
+    { name: post.title, url: `${siteUrl}/blog/${slug}` },
+  ]);
+
   const { html, headings } = renderMarkdown(post.body);
   const sectionHeadings = headings.filter(({ level, label }) => level > 1 && label);
   const episodeIndex = EPISODE_ORDER.findIndex((e) => e.slug === slug);
@@ -127,6 +134,10 @@ export default async function BlogPostPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <Section className="bg-deep">
         <Container className="max-w-4xl">
