@@ -216,6 +216,13 @@ export default function TiersPage() {
 
       <Section>
         <Container className="max-w-4xl">
+          <h2 className="text-2xl font-bold text-text">Your records stay yours</h2>
+          <p className="mt-6 text-text-muted">Your content and your data are yours. Everything on your site is stored as your own records, and you can export all of it, in full, at any time.</p>
+        </Container>
+      </Section>
+
+      <Section>
+        <Container className="max-w-4xl">
           <h2 className="text-2xl font-bold text-text">Comparing your options</h2>
           <div className="mt-6 space-y-4 text-text-muted">
             <p>
