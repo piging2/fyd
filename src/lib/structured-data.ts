@@ -7,10 +7,11 @@
  * a true site fact passed in by the caller; builders never invent data
  * and omit any field the caller cannot support.
  *
- * Honest boundary: this site sells nothing with public prices and has
- * no reviews, so there is deliberately no Product, Offer, price,
- * rating, or review builder here, and none may be added until the site
- * itself carries that content.
+ * Honest boundary: this site has no reviews, so there is deliberately
+ * no rating or review builder here. Prices were added only once the
+ * site itself published its price book: the Offer builder below
+ * mirrors the prices printed on /tiers exactly, and an offer may be
+ * listed only while the page itself carries that price.
  */
 
 export interface OrganizationInput {
@@ -164,4 +165,54 @@ export function buildBreadcrumbJsonLd(items: BreadcrumbItemInput[]) {
       item: item.url,
     })),
   };
+}
+
+
+export interface OfferInput {
+  name: string;
+  price: number;
+  description?: string;
+  url?: string;
+}
+
+export function buildProductOffersJsonLd(input: {
+  name: string;
+  url: string;
+  offers: OfferInput[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: input.name,
+    url: input.url,
+    offers: input.offers.map((o) => ({
+      "@type": "Offer",
+      name: o.name,
+      price: o.price,
+      priceCurrency: "USD",
+      ...(o.description ? { description: o.description } : {}),
+      ...(o.url ? { url: o.url } : {}),
+    })),
+  };
+}
+
+/**
+ * The PingFyd price book as structured data, one canonical list.
+ * Every price here is printed on /tiers in the same form; monthly
+ * prices say so in their description. Update only with the page.
+ */
+export function buildPingFydOffersJsonLd(base: string) {
+  return buildProductOffersJsonLd({
+    name: "PingFyd",
+    url: base + "/tiers",
+    offers: [
+      { name: "Self-Hosted", price: 0, description: "Free forever.", url: base + "/tiers#self-hosted" },
+      { name: "Hosted DIY Launch", price: 29, description: "Per month.", url: base + "/tiers#hosted" },
+      { name: "Hosted DIY Growth", price: 59, description: "Per month.", url: base + "/tiers#hosted" },
+      { name: "Extra site on Hosted DIY", price: 15, description: "Per site, per month.", url: base + "/tiers#hosted" },
+      { name: "Concierge Build", price: 2500, description: "Fixed price.", url: base + "/tiers#concierge" },
+      { name: "Concierge Retainer", price: 1250, description: "Per month.", url: base + "/tiers#concierge" },
+      { name: "AI Workspace", price: 10000, description: "Setup, with a 9-hour labor cap.", url: base + "/tiers#ai-workspace" },
+    ],
+  });
 }

@@ -14,7 +14,7 @@ import {
   type Product,
   type ProductStatus,
 } from "@/lib/products";
-import { buildItemListJsonLd } from "@/lib/structured-data";
+import { buildItemListJsonLd, buildPingFydOffersJsonLd } from "@/lib/structured-data";
 
 const siteUrl =
   getTenant().domain ??
@@ -139,12 +139,17 @@ export default function ProductsPage() {
   const itemListJsonLd = buildItemListJsonLd(
     orderedProducts.map((p) => ({ name: p.name, url: siteUrl + p.cta.href })),
   );
+  const offersJsonLd = buildPingFydOffersJsonLd(siteUrl);
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(offersJsonLd) }}
       />
       <Section className="bg-deep">
         <Container className="max-w-4xl">

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { Container, Section } from "@/components/section";
 import { buttonVariants } from "@/components/ui/button";
-import { buildItemListJsonLd } from "@/lib/structured-data";
+import { buildItemListJsonLd, buildPingFydOffersJsonLd } from "@/lib/structured-data";
 import { FaqSection } from "@/components/faq-section";
 import { BUYING_FAQ_ITEMS } from "@/lib/buying-faq";
 import { getTenant } from "@/lib/tenant-config";
@@ -58,16 +58,19 @@ export default function TiersPage() {
     { name: "Self-Hosted", url: base + "/tiers#self-hosted" },
     { name: "Hosted DIY", url: base + "/tiers#hosted" },
     { name: "Concierge", url: base + "/tiers#concierge" },
+    { name: "AI Workspace", url: base + "/tiers#ai-workspace" },
   ]);
+  const offersJsonLd = buildPingFydOffersJsonLd(base);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(offersJsonLd) }} />
       <Section className="bg-deep">
         <Container className="max-w-4xl">
           <p className="text-sm font-semibold uppercase tracking-[0.12em]"><span className="text-honey">Pricing</span></p>
           <h1 className="mt-4 font-display text-4xl font-bold text-text-on-dark sm:text-5xl">
-            Three tiers. Priced in the open.
+            Three tiers, one workspace. Priced in the open.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-text-on-dark/90">
             The prices are below, and so is the logic that produced them. Owner time is the scarce
@@ -175,6 +178,30 @@ export default function TiersPage() {
                 </Link>
               </p>
             </div>
+          </div>
+        </Container>
+      </Section>
+
+      <Section>
+        <Container className="max-w-4xl">
+          <div id="ai-workspace">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-text">Beyond Concierge</p>
+            <h2 className="mt-4 text-3xl font-bold text-text">AI Workspace</h2>
+            <p className="mt-4 text-4xl font-bold text-text">$10,000</p>
+            <p className="mt-1 text-sm text-text-muted">Setup is priced in writing from $7,000. The full Workspace price is $10,000, with a 9-hour labor cap, never discounted.</p>
+            <p className="mt-4 text-[15px] text-text-muted">The Workspace puts the whole operation on one system: your site, your customer records, your follow-up, and your day-to-day tools, scoped in writing before any work begins. Most businesses are served completely by the tiers below this one. The Workspace exists for the operation that has outgrown them.</p>
+            <p className="mt-4 text-[15px] text-text-muted">Built for multi-location and operations-heavy businesses whose work no longer fits a single site.</p>
+            <p className="mt-6 text-sm font-medium text-text">What happens next</p>
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-[15px] text-text-muted">
+              <li>A free conversation comes first.</li>
+              <li>The scope is written and priced in writing before work starts.</li>
+              <li>Setup runs inside its 9-hour labor cap.</li>
+            </ol>
+            <p className="mt-8">
+              <Link href="/contact" className="font-medium text-honey-text underline-offset-4 hover:underline">
+                Ask about the Workspace
+              </Link>
+            </p>
           </div>
         </Container>
       </Section>
