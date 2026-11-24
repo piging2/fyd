@@ -363,7 +363,7 @@ export default async function HomePage() {
       <Section size="minor" className="bg-surface-2">
         <Container className="max-w-5xl">
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-honey-text">/offers</p>
-          <h2 className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
+          <h2 id="offers" className="mt-4 text-3xl font-bold text-text sm:text-4xl" style={{ lineHeight: 'var(--leading-display)', letterSpacing: 'var(--tracking-display)' }}>
             What PingFyd can do for your business
           </h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
