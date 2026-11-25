@@ -127,7 +127,7 @@ export default function TiersPage() {
                 its own hours, and its own phone number, so a customer never lands on the other
                 town's facts.
               </p>
-              <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners who will run it themselves and want the machinery handled. <span className="font-medium text-text">Outcome:</span> your site live on managed hosting, carrying your services, hours, and phone in words a customer and an answer engine can read, every inquiry captured in one inbox with attribution, support by ticket.</p>
+              <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners who will run it themselves and want the machinery handled. <span className="font-medium text-text">Outcome:</span> your site live on managed hosting, carrying your services, hours, and phone in words a customer and an answer engine can read, your hours and phone printed the same everywhere, every inquiry captured in one inbox with attribution, support by ticket.</p>
               <p className="mt-6 text-sm font-medium text-text">Everything in Self-Hosted, plus:</p>
               <List items={[
                 "Managed hosting: uptime, backups, updates, and security patches handled",
