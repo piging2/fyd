@@ -73,9 +73,15 @@ export default function TiersPage() {
             Three tiers, one workspace. Priced in the open.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-text-on-dark/90">
+            Every tier starts from the same place: your site, your listings, and your follow-up,
+            working from one record of your business. The tiers differ in who does the work. Run
+            it yourself with the machinery handled, or hand it over inside a fixed number of hours.
+          </p>
+          <p className="mt-5 max-w-2xl text-lg text-text-on-dark/90">
             The prices are below, and so is the logic that produced them. Owner time is the scarce
             resource in this business, so it is priced like one: a $200 per hour floor, packages
-            built to realize $250, hours capped in writing, and no discounting, ever.
+            built to realize $250, hours capped in writing, and no discounting, ever. The logic is
+            published so you can check the price before the first conversation, not during it.
           </p>
         </Container>
       </Section>
@@ -86,7 +92,7 @@ export default function TiersPage() {
             <div id="self-hosted" className="md:pr-8">
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-text">Tier 1 · Self-Hosted</h2>
               <p className="mt-4 text-4xl font-bold text-text">$0</p>
-              <p className="mt-1 text-sm text-text-muted">Forever. No license fee, no per-seat fee. You run it, you host it.</p>
+              <p className="mt-1 text-sm text-text-muted">Forever. No license fee, no per-seat fee. You run it, you host it. The generated site prints your services, hours, and phone in words from your structured profile, the same substance standard as the paid tiers; what the free tier leaves out is the hosting and the hands, not the words.</p>
               <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners and builders who run their own stack. <span className="font-medium text-text">Outcome:</span> a site generated from your structured profile, on your hosting, at no license cost.</p>
               <List items={[
                 "The open core: site generation from a structured profile, the ad-object renderer, the backend core",
@@ -117,16 +123,20 @@ export default function TiersPage() {
               <p className="mt-4 text-4xl font-bold text-text">$29<span className="text-base font-medium text-text-muted"> / mo</span></p>
               <p className="mt-1 text-sm text-text-muted">
                 Launch: $29/mo or $290/yr (two months free). Growth: $59/mo or $590/yr, up to 3 sites,
-                additional sites $15/site/mo.
+                additional sites $15/site/mo. A second site is for a second location: its own page,
+                its own hours, and its own phone number, so a customer never lands on the other
+                town's facts.
               </p>
-              <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners who will run it themselves and want the machinery handled. <span className="font-medium text-text">Outcome:</span> your site live on managed hosting, every inquiry captured in one inbox with attribution, support by ticket.</p>
+              <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners who will run it themselves and want the machinery handled. <span className="font-medium text-text">Outcome:</span> your site live on managed hosting, carrying your services, hours, and phone in words a customer and an answer engine can read, every inquiry captured in one inbox with attribution, support by ticket.</p>
               <p className="mt-6 text-sm font-medium text-text">Everything in Self-Hosted, plus:</p>
               <List items={[
                 "Managed hosting: uptime, backups, updates, and security patches handled",
                 "Your site generated from your verified profile, with an editing surface you control",
+                "An answers page you can grow yourself from the library's question templates, starting with the questions you are tired of answering",
                 "FYD objects with attribution: views, clicks, and inquiries kept distinct",
                 "Lead inbox with notifications, a custom domain, and a verified business profile",
-                "The Build-in-Open Library as your onboarding: playbooks, templates, checklists, and self-serve evals",
+                "Your hours, phone, and address checked against your public listings when your profile is verified, and printed the same way on your site: one set of hours, everywhere a customer looks",
+                "The Build-in-Open Library as your onboarding: playbooks, templates, checklists, and self-serve evals, including the review ask playbook: who to ask, when, and what to say",
                 "Async ticket support, next business day target: 3 tickets/mo on Launch, 6 on Growth",
               ]} />
               <p className="mt-6 text-[15px] text-text-muted">
@@ -136,6 +146,7 @@ export default function TiersPage() {
               </p>
               <p className="mt-6 text-sm font-medium text-text">What happens next</p>
               <ol className="mt-2 list-decimal space-y-1 pl-5 text-[15px] text-text-muted">
+                <li>We read what a customer finds today: your listing, the site it points to, your hours and phone. If the link points at a directory page or the wrong business, you hear it from us first, in plain terms.</li>
                 <li>Start from the contact form.</li>
                 <li>Your site is generated from your verified profile and placed on managed hosting.</li>
                 <li>You edit and run it day to day; tickets bring async support on a next business day target.</li>
@@ -156,8 +167,9 @@ export default function TiersPage() {
               <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners buying back hours. <span className="font-medium text-text">Outcome:</span> a finished site and offer, lead flow tested end to end, then a monthly review of what it produced.</p>
               <List items={[
                 "Concierge Build, $2,500 fixed: profile, site finished by hand where it matters, offer written with you, objects placed, lead flow tested end to end",
+                "An answers page written with you from the questions your customers actually ask, in your words, so the site answers them before the phone rings",
                 "Build hours capped at 10 owner hours, logged and visible to you; at the cap, work stops or converts, never silently overflows",
-                "Concierge Retainer, $1,250/mo: up to 5 owner hours a month for iteration, campaign adjustments, and a monthly performance review",
+                "Concierge Retainer, $1,250/mo: up to 5 owner hours a month for iteration, campaign adjustments, a monthly review ask sent to that month's finished jobs, and a monthly performance review",
                 "Overage is prepaid only: $250/hr, or extra time in prepaid 5-hour blocks at $1,250. Unused retainer hours expire monthly",
               ]} />
               <p className="mt-6 text-[15px] text-text-muted">
@@ -231,7 +243,7 @@ export default function TiersPage() {
         <Container className="max-w-4xl">
           <h2 className="text-2xl font-bold text-text">How pricing works here</h2>
           <div className="mt-6 space-y-4 text-text-muted">
-            <p><span className="font-semibold text-text">Concierge is never discounted and never overflows.</span> The rate floor is $200 per owner hour; packages are built so full use realizes $250. Overage is prepaid. When capacity fills, the waitlist absorbs demand, not the calendar.</p>
+            <p><span className="font-semibold text-text">Overage is prepaid.</span> When capacity fills, the waitlist absorbs demand, not the calendar.</p>
             <p><span className="font-semibold text-text">The DIY tier never gets 1:1 owner time.</span> Support is async, content-first, and ticket-capped. A question asked twice becomes a published playbook entry, not a longer ticket thread.</p>
             <p><span className="font-semibold text-text">Annual is two months free, about 17%, and never deeper.</span> No coupon stacking, no lifetime deals. Annual prepay funds content production and lowers churn work; it is not a growth bribe.</p>
             <p><span className="font-semibold text-text">Each tier pays its own way.</span> Self-Hosted is distribution and is measured on the conversions it creates. Hosted DIY holds software margins only while its support minutes hold. Concierge never subsidizes the DIY price.</p>

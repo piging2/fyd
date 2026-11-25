@@ -375,6 +375,7 @@ export default async function HomePage() {
             <div className="rounded-lg border border-border-soft bg-surface p-5">
               <h3 className="font-bold text-text">Find what is wasting your time and money</h3>
               <p className="mt-2 text-sm text-text-muted">A scoped introductory assessment: what is wasting time or money, the root cause, and what would genuinely improve it.</p>
+              <p className="mt-2 text-sm text-text-muted">The first thing it reads is what a customer finds today: your hours, your phone number, and your site, checked against each other. When those disagree, that is usually the first thing worth fixing.</p>
               <Link href="/assessment" className="mt-3 inline-block font-medium text-honey-text hover:underline">Explore the assessment</Link>
             </div>
             <div className="rounded-lg border border-border-soft bg-surface p-5">
