@@ -54,7 +54,6 @@ export const ENV_REGISTRY: EnvEntry[] = [
   { name: "FYD_JOURNAL_GATEWAY_URL", kind: "url", exposure: "server", purpose: "Journal gateway the site reader queries before the snapshot fallback." },
   { name: "FYD_CUSTOMIZE_GATEWAY_URL", kind: "url", exposure: "server", purpose: "Customize gateway base URL." },
   { name: "PING_GATEWAY_BASE_URL", kind: "url", exposure: "server", purpose: "PING gateway base URL for the object reader." },
-  { name: "FYD_PING_GATEWAY_BASE_URL", kind: "url", exposure: "server", purpose: "PING gateway base URL for the FYD social configuration." },
   { name: "KV_REST_API_URL", kind: "url", exposure: "server", purpose: "Upstash KV REST endpoint." },
   { name: "KV_REST_API__KV_REST_API_URL", kind: "url", exposure: "server", purpose: "Upstash KV REST endpoint, Vercel integration injected name." },
   { name: "KV_REST_API__KV_URL", kind: "url", exposure: "server", purpose: "Upstash KV URL, Vercel integration injected name." },

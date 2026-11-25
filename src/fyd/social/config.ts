@@ -12,7 +12,7 @@
  */
 export function fydGatewayBaseUrl(): string {
   const fromEnv =
-    process.env.FYD_PING_GATEWAY_BASE_URL || process.env.PING_GATEWAY_BASE_URL;
+    process.env.PING_GATEWAY_BASE_URL;
   if (fromEnv) return fromEnv.replace(/\/+$/, "");
   // Sprint demo default: repo-booted PING gateway on the Pig (see h2-proof).
   return "http://127.0.0.1:18199";
