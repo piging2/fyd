@@ -8,25 +8,26 @@ import type { FeaturedVideo } from "@/lib/longping-media";
  * never shows an error state.
  *
  * The fallback is the resolver's own last verified answer, shaped
- * exactly like a live answer. Measured 2026-11-26: the production
- * fetch has never picked up a newer entry (it has fallen back on
- * every prerender and revalidation since 2026-11-04, while the feed
- * itself answers 200 from other egresses with the resolver's own
- * user agent), so this fallback is the operative answer and is kept
- * current by hand from the feed. Last verified 2026-11-26 from two
- * network egresses against the channel RSS: the entry below is the
- * feed's newest. When a feed check finds a newer entry, update the
- * fallback.
+ * exactly like a live answer. Root cause of the long fallback era,
+ * found and repaired 2026-11-26: the feed parser's field reader
+ * built its pattern from a double-quoted string whose backslash
+ * collapsed, so no real entry could ever parse and every resolution
+ * fell back, whatever the fetch returned. The fetch itself is
+ * proven live in this runtime: GET /api/featured-video reads the
+ * feed's newest entry in both the resolver's cached form and a
+ * plain no-store form (verified at destination 2026-11-26). The
+ * fallback below is therefore a safety net only, deliberately an
+ * older verified entry, so a served fallback is visible as one.
  */
 const LAST_VERIFIED_VIDEO: FeaturedVideo = {
-  id: "ZapscplMR9I",
-  title: "Most Teams Use Scale as a Fog Machine | The Long Ping EP4",
-  kind: "Short",
-  watchUrl: "https://www.youtube.com/shorts/ZapscplMR9I",
-  thumbnail: "https://i.ytimg.com/vi/ZapscplMR9I/hqdefault.jpg",
-  thumbnailCard: "https://i.ytimg.com/vi/ZapscplMR9I/hqdefault.jpg",
-  thumbnailFallback: "https://i.ytimg.com/vi/ZapscplMR9I/hqdefault.jpg",
-  blurb: "The latest Short from The Long Ping, straight from the PingFyd channel on YouTube.",
+  id: "ilkHr7tO4mU",
+  title: "AI Got Possessed by Good Architecture | The Long Ping EP4: Halloween Preview",
+  kind: "Film",
+  watchUrl: "https://www.youtube.com/watch?v=ilkHr7tO4mU",
+  thumbnail: "https://i.ytimg.com/vi/ilkHr7tO4mU/hqdefault.jpg",
+  thumbnailCard: "https://i.ytimg.com/vi/ilkHr7tO4mU/hqdefault.jpg",
+  thumbnailFallback: "https://i.ytimg.com/vi/ilkHr7tO4mU/hqdefault.jpg",
+  blurb: "The latest film from The Long Ping, straight from the PingFyd channel on YouTube.",
 };
 
 const CHANNEL_FEED_URL =

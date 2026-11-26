@@ -41,7 +41,7 @@ describe("probeFeaturedVideoFetch", () => {
     });
     expect(probe.plainForm.ok).toBe(false);
     expect(probe.plainForm.error).toBe("TypeError");
-    expect(probe.fallbackVideoId).toBe("ZapscplMR9I");
+    expect(probe.fallbackVideoId).toBe("ilkHr7tO4mU");
   });
 
   it("reports a non-OK status without inventing a video", async () => {
