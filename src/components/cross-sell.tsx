@@ -1,7 +1,10 @@
-import { substackSubscribeUrl } from "@/lib/longping-media";
+import { socialDestinations, substackSubscribeUrl } from "@/lib/longping-media";
 
-const SUBSTACK_HOME = "https://trustping.substack.com";
-const YOUTUBE_CHANNEL = "https://www.youtube.com/@pingfyd";
+// The destinations are read from the one canonical list
+// (socialDestinations in @/lib/longping-media), never re-typed here:
+// a handle change lands in the list and propagates to this block.
+const SUBSTACK_HOME = socialDestinations.find((d) => d.platform === "Substack")!.href;
+const YOUTUBE_CHANNEL = socialDestinations.find((d) => d.platform === "YouTube")!.href;
 
 /**
  * The grouped cross-sell: written content together selling Substack,
