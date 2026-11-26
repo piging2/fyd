@@ -1,7 +1,7 @@
 import { substackSubscribeUrl } from "@/lib/longping-media";
 
 const SUBSTACK_HOME = "https://trustping.substack.com";
-const YOUTUBE_CHANNEL = "https://www.youtube.com/channel/UCsl7RnATG9bn--EWh2davTQ";
+const YOUTUBE_CHANNEL = "https://www.youtube.com/@pingfyd";
 
 /**
  * The grouped cross-sell: written content together selling Substack,
