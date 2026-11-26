@@ -7,6 +7,7 @@ import { Reveal } from "@/components/reveal";
 import { ProofRail } from "@/components/proof-rail";
 import PigiGif from "@/components/pigi-gif";
 import { NewsletterSignup } from "@/components/newsletter-signup";
+import { SocialsHub } from "@/components/socials-hub";
 import { PingWordmark } from "@/components/ping-wordmark";
 import { BlueprintGrid } from "@/components/blueprint-grid";
 import { MaturityLabel, type Maturity } from "@/components/maturity-label";
@@ -825,6 +826,13 @@ export default async function HomePage() {
                 </a>
               ))}
           </div>
+        </Container>
+      </Section>
+
+      {/* 08c FOLLOW PING EVERYWHERE: the social row, from the canonical destinations list */}
+      <Section size="minor" className="bg-surface-2">
+        <Container>
+          <SocialsHub />
         </Container>
       </Section>
 

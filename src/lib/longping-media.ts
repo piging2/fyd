@@ -104,9 +104,45 @@ export interface SocialDestination {
 export const socialDestinations: SocialDestination[] = [
   {
     platform: "YouTube",
-    label: "PingFyd",
-    href: "https://www.youtube.com/channel/UCsl7RnATG9bn--EWh2davTQ",
+    label: "@pingfyd",
+    href: "https://www.youtube.com/@pingfyd",
     blurb: "The films and the Shorts. Every episode of The Long Ping, free in full.",
+  },
+  {
+    platform: "X",
+    label: "@pingfyd",
+    href: "https://x.com/pingfyd",
+    blurb: "The daily nerd hot take, and the fastest way to argue with the show.",
+  },
+  {
+    platform: "Instagram",
+    label: "@pingfyd",
+    href: "https://www.instagram.com/pingfyd",
+    blurb: "Reels from every episode, plus the build as it happens.",
+  },
+  {
+    platform: "Threads",
+    label: "@pingfyd",
+    href: "https://www.threads.net/@pingfyd",
+    blurb: "Short takes, hot arguments, and episode threads.",
+  },
+  {
+    platform: "Facebook Page",
+    label: "PingFyd",
+    href: "https://www.facebook.com/profile.php?id=61594275542163",
+    blurb: "The PingFyd page: films, clips, and the Western Colorado business community.",
+  },
+  {
+    platform: "LinkedIn",
+    label: "Nolan Geske",
+    href: "https://www.linkedin.com/in/nolan-geske-063393406/",
+    blurb: "The person behind PingFyd, on the professional record.",
+  },
+  {
+    platform: "TikTok",
+    label: "@pingfyd",
+    href: "https://www.tiktok.com/@pingfyd",
+    blurb: "The Shorts, cut native for TikTok, plus clips from the long films.",
   },
   {
     platform: "Substack",
@@ -119,36 +155,6 @@ export const socialDestinations: SocialDestination[] = [
     label: "The Long Ping",
     href: "https://open.spotify.com/episode/4sVCjSrgV7nE9LhqhOo8xY",
     blurb: "The audio edition of every episode, for the drive, the shop, and the site.",
-  },
-  {
-    platform: "Facebook",
-    label: "PingFyd",
-    href: "https://www.facebook.com/profile.php?id=61594275542163",
-    blurb: "The PingFyd page: films, clips, and the Western Colorado business community.",
-  },
-  {
-    platform: "Instagram",
-    label: "@nolanpigi",
-    href: "https://www.instagram.com/nolanpigi/",
-    blurb: "Reels from every episode, plus the build as it happens.",
-  },
-  {
-    platform: "Threads",
-    label: "@nolanpigi",
-    href: "https://www.threads.net/@nolanpigi",
-    blurb: "Short takes, hot arguments, and episode threads.",
-  },
-  {
-    platform: "X",
-    label: "@GeskeNolan",
-    href: "https://x.com/GeskeNolan",
-    blurb: "The daily nerd hot take, and the fastest way to argue with the show.",
-  },
-  {
-    platform: "Rumble",
-    label: "The Long Ping",
-    href: "https://rumble.com/v7gyms6-the-long-ping-episode-2-the-water-wheel-problem-chapters-1-10.html",
-    blurb: "The episodes on Rumble, for the audience that lives there.",
   },
   {
     platform: "RSS",

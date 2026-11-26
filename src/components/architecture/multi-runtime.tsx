@@ -12,7 +12,7 @@ import { MaturityLabel, type Maturity } from "@/components/maturity-label";
 const RUNTIMES: { id: string; label: string; status: Maturity; detail: string; color: string }[] = [
   { id: "js", label: "JS WORKERS", status: "Built", detail: "Deterministic task execution in the PING runtime. 150 executions in the captured commissioning run (2026-07-28).", color: "#2E5A4F" },
   { id: "py", label: "PYTHON WORKERS", status: "Built", detail: "A real Python capability (python.canonical_hash) executed a PING task against live Oracle Postgres: 44/44 assertions, zero Python-emitted events (captured 2026-09-16/17). Adapter code is uncommitted worktree code, not a live worker runtime.", color: "#7C5CD6" },
-  { id: "agents", label: "EXTERIOR AGENTS", status: "Experimental", detail: "Codex, Hermes and similar workers are exterior agents, not PING subsystems. First scoped execution captured 2026-09-17: Hermes WorkOrder 0d598aef352b9a8a, exit 0, independently verified, three canonical PING events. One execution, not a fleet.", color: "#C9A227" },
+  { id: "agents", label: "EXTERIOR AGENTS", status: "Experimental", detail: "Codex, Hermes and similar workers are exterior agents, not PING subsystems. First scoped execution captured 2026-09-17: a Hermes work order, exit 0, independently verified, three canonical PING events. One execution, not a fleet.", color: "#C9A227" },
 ];
 
 const LOCATIONS: { id: string; label: string; status: Maturity; color: string }[] = [

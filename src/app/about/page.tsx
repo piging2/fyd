@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Section, SectionHeading } from "@/components/section";
 import { CTASection } from "@/components/cta-section";
+import { SocialsHub } from "@/components/socials-hub";
 import PigiGif from "@/components/pigi-gif";
 import { getTenant } from "@/lib/tenant-config";
 import { buildAboutPageJsonLd } from "@/lib/structured-data";
@@ -173,6 +174,11 @@ export default function AboutPage() {
           <p className="mt-4 text-text-muted">
             Operated by {tenant.operator.name}, {tenant.operator.role} of {tenant.operator.business}.
           </p>
+        </Container>
+      </Section>
+      <Section className="bg-surface-2">
+        <Container>
+          <SocialsHub />
         </Container>
       </Section>
       <CTASection />
