@@ -13,6 +13,7 @@
  * mirrors the prices printed on /tiers exactly, and an offer may be
  * listed only while the page itself carries that price.
  */
+import { PINGFYD_PRICE_BOOK } from "@/lib/price-book";
 
 export interface OrganizationInput {
   name: string;
@@ -197,22 +198,20 @@ export function buildProductOffersJsonLd(input: {
 }
 
 /**
- * The PingFyd price book as structured data, one canonical list.
- * Every price here is printed on /tiers in the same form; monthly
- * prices say so in their description. Update only with the page.
+ * The PingFyd price book as structured data. The offers come from
+ * the one price book module (@/lib/price-book), which the /tiers
+ * price displays also read, so the page and the structured data
+ * cannot drift apart.
  */
 export function buildPingFydOffersJsonLd(base: string) {
   return buildProductOffersJsonLd({
     name: "PingFyd",
     url: base + "/tiers",
-    offers: [
-      { name: "Self-Hosted", price: 0, description: "Free forever.", url: base + "/tiers#self-hosted" },
-      { name: "Hosted DIY Launch", price: 29, description: "Per month.", url: base + "/tiers#hosted" },
-      { name: "Hosted DIY Growth", price: 59, description: "Per month.", url: base + "/tiers#hosted" },
-      { name: "Extra site on Hosted DIY", price: 15, description: "Per site, per month.", url: base + "/tiers#hosted" },
-      { name: "Concierge Build", price: 2500, description: "Fixed price.", url: base + "/tiers#concierge" },
-      { name: "Concierge Retainer", price: 1250, description: "Per month.", url: base + "/tiers#concierge" },
-      { name: "AI Workspace", price: 10000, description: "Setup, with a 9-hour labor cap.", url: base + "/tiers#ai-workspace" },
-    ],
+    offers: PINGFYD_PRICE_BOOK.map((o) => ({
+      name: o.name,
+      price: o.price,
+      description: o.description,
+      url: base + "/tiers" + o.anchor,
+    })),
   });
 }

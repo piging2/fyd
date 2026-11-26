@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import { Container, Section } from "@/components/section";
 import { buttonVariants } from "@/components/ui/button";
 import { buildItemListJsonLd, buildPingFydOffersJsonLd } from "@/lib/structured-data";
+import { formatPrice, priceBookOffer } from "@/lib/price-book";
 import { FaqSection } from "@/components/faq-section";
 import { BUYING_FAQ_ITEMS } from "@/lib/buying-faq";
 import { getTenant } from "@/lib/tenant-config";
@@ -91,7 +92,7 @@ export default function TiersPage() {
           <div className="grid md:grid-cols-3">
             <div id="self-hosted" className="md:pr-8">
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-text">Tier 1 · Self-Hosted</h2>
-              <p className="mt-4 text-4xl font-bold text-text">$0</p>
+              <p className="mt-4 text-4xl font-bold text-text">{formatPrice(priceBookOffer("self-hosted").price)}</p>
               <p className="mt-1 text-sm text-text-muted">Forever. No license fee, no per-seat fee. You run it, you host it. The generated site prints your services, hours, and phone in words from your structured profile, the same substance standard as the paid tiers; what the free tier leaves out is the hosting and the hands, not the words.</p>
               <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners and builders who run their own stack. <span className="font-medium text-text">Outcome:</span> a site generated from your structured profile, on your hosting, at no license cost.</p>
               <List items={[
@@ -120,7 +121,7 @@ export default function TiersPage() {
 
             <div id="hosted" className="mt-12 border-t border-border pt-10 md:mt-0 md:border-l md:border-t-0 md:pl-8 md:pt-0">
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-text">Tier 2 · Hosted DIY</h2>
-              <p className="mt-4 text-4xl font-bold text-text">$29<span className="text-base font-medium text-text-muted"> / mo</span></p>
+              <p className="mt-4 text-4xl font-bold text-text">{formatPrice(priceBookOffer("hosted-launch").price)}<span className="text-base font-medium text-text-muted"> / mo</span></p>
               <p className="mt-1 text-sm text-text-muted">
                 Launch: $29/mo or $290/yr (two months free). Growth: $59/mo or $590/yr, up to 3 sites,
                 additional sites $15/site/mo. A second site is for a second location: its own page,
@@ -160,7 +161,7 @@ export default function TiersPage() {
 
             <div id="concierge" className="mt-12 border-t border-border pt-10 md:mt-0 md:border-l md:border-t-0 md:pl-8 md:pt-0">
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-text">Tier 3 · Concierge</h2>
-              <p className="mt-4 text-4xl font-bold text-text">$2,500</p>
+              <p className="mt-4 text-4xl font-bold text-text">{formatPrice(priceBookOffer("concierge-build").price)}</p>
               <p className="mt-1 text-sm text-text-muted">
                 The Build, fixed. The Retainer is $1,250/mo. We run it for you, inside capped owner hours.
               </p>
@@ -199,7 +200,7 @@ export default function TiersPage() {
           <div id="ai-workspace">
             <p className="text-sm font-semibold uppercase tracking-[0.12em] text-text">Beyond Concierge</p>
             <h2 className="mt-4 text-3xl font-bold text-text">AI Workspace</h2>
-            <p className="mt-4 text-4xl font-bold text-text">$10,000</p>
+            <p className="mt-4 text-4xl font-bold text-text">{formatPrice(priceBookOffer("ai-workspace").price)}</p>
             <p className="mt-1 text-sm text-text-muted">Setup is priced in writing from $7,000. The full Workspace price is $10,000, with a 9-hour labor cap, never discounted.</p>
             <p className="mt-4 text-[15px] text-text-muted">The Workspace puts the whole operation on one system: your site, your customer records, your follow-up, and your day-to-day tools, scoped in writing before any work begins. Most businesses are served completely by the tiers below this one. The Workspace exists for the operation that has outgrown them.</p>
             <p className="mt-4 text-[15px] text-text-muted">Built for multi-location and operations-heavy businesses whose work no longer fits a single site.</p>
