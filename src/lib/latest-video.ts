@@ -33,8 +33,25 @@ const CHANNEL_FEED_URL =
   "https://www.youtube.com/feeds/videos.xml?channel_id=UCsl7RnATG9bn--EWh2davTQ";
 
 function firstEntryField(entry: string, tag: string): string | null {
-  const match = entry.match(new RegExp("<" + tag + ">([\s\S]*?)</" + tag + ">"));
-  return match ? match[1].trim() : null;
+  const open = "<" + tag + ">";
+  const close = "</" + tag + ">";
+  const start = entry.indexOf(open);
+  if (start < 0) return null;
+  const end = entry.indexOf(close, start + open.length);
+  if (end < 0) return null;
+  return entry.slice(start + open.length, end).trim();
+}
+
+/** The feed's first entry (its newest), or null when unparseable. */
+function firstEntry(xml: string): { id: string; title: string; link: string } | null {
+  const entry = xml.split("<entry>")[1];
+  if (!entry) return null;
+  const id = firstEntryField(entry, "yt:videoId");
+  const title = firstEntryField(entry, "title");
+  if (!id || !title) return null;
+  const linkMatch = entry.match(/<link rel="alternate" href="([^"]+)"/);
+  const link = linkMatch ? linkMatch[1] : "https://www.youtube.com/watch?v=" + id;
+  return { id, title, link };
 }
 
 export async function getFeaturedVideo(): Promise<FeaturedVideo> {
@@ -45,13 +62,9 @@ export async function getFeaturedVideo(): Promise<FeaturedVideo> {
     });
     if (!response.ok) return LAST_VERIFIED_VIDEO;
     const xml = await response.text();
-    const entry = xml.split("<entry>")[1];
-    if (!entry) return LAST_VERIFIED_VIDEO;
-    const id = firstEntryField(entry, "yt:videoId");
-    const title = firstEntryField(entry, "title");
-    if (!id || !title) return LAST_VERIFIED_VIDEO;
-    const linkMatch = entry.match(/<link rel="alternate" href="([^"]+)"/);
-    const link = linkMatch ? linkMatch[1] : "https://www.youtube.com/watch?v=" + id;
+    const first = firstEntry(xml);
+    if (!first) return LAST_VERIFIED_VIDEO;
+    const { id, title, link } = first;
     const isShort = link.includes("/shorts/");
     return {
       id,
@@ -68,4 +81,52 @@ export async function getFeaturedVideo(): Promise<FeaturedVideo> {
   } catch {
     return LAST_VERIFIED_VIDEO;
   }
+}
+
+export interface FeedProbeOutcome {
+  ok: boolean;
+  status: number | null;
+  videoId: string | null;
+  title: string | null;
+  error: string | null;
+}
+
+async function probeVariant(init: RequestInit): Promise<FeedProbeOutcome> {
+  try {
+    const response = await fetch(CHANNEL_FEED_URL, init);
+    if (!response.ok) {
+      return { ok: false, status: response.status, videoId: null, title: null, error: null };
+    }
+    const first = firstEntry(await response.text());
+    if (!first) {
+      return { ok: false, status: response.status, videoId: null, title: null, error: "unparseable_feed" };
+    }
+    return { ok: true, status: response.status, videoId: first.id, title: first.title, error: null };
+  } catch (err) {
+    return {
+      ok: false,
+      status: null,
+      videoId: null,
+      title: null,
+      error: err instanceof Error ? err.name : "unknown",
+    };
+  }
+}
+
+/**
+ * The featured-video sync, observable: runs the feed fetch in the
+ * resolver's own cached form and in a plain no-store form and reports
+ * both outcomes. Served at /api/featured-video so the mechanism is
+ * proven or disproven at destination, on evidence.
+ */
+export async function probeFeaturedVideoFetch(): Promise<{
+  at: string;
+  fallbackVideoId: string;
+  resolverForm: FeedProbeOutcome;
+  plainForm: FeedProbeOutcome;
+}> {
+  const headers = { "user-agent": "fyd-product featured-video resolver" };
+  const resolverForm = await probeVariant({ next: { revalidate: 3600 }, headers });
+  const plainForm = await probeVariant({ cache: "no-store", headers });
+  return { at: new Date().toISOString(), fallbackVideoId: LAST_VERIFIED_VIDEO.id, resolverForm, plainForm };
 }
