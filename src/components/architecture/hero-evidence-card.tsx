@@ -18,7 +18,7 @@ const CAPTURED_STEPS = [
     detail: "Something happened. Recorded with timestamp and source.",
     meta: [
       ["event_type", "LEAD_CREATED"],
-      ["event_id", "e9591d72…ce5864c5"],
+      ["event_id", "Proof on file"],
       ["recorded", "2026-07-28T02:10:54Z"],
     ],
   },
@@ -36,7 +36,7 @@ const CAPTURED_STEPS = [
     title: "Mission created: LEAD_FOLLOWUP",
     detail: "The event triggered a mission, the objective to pursue.",
     meta: [
-      ["mission_id", "51009ceae9ef316a"],
+      ["mission_id", "Tracked in the record"],
       ["priority", "3"],
     ],
   },
