@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import { Container, Section } from "@/components/section";
 import { buttonVariants } from "@/components/ui/button";
 import { buildItemListJsonLd, buildPingFydOffersJsonLd } from "@/lib/structured-data";
-import { formatPrice, priceBookOffer } from "@/lib/price-book";
+import { formatPrice, priceBookOffer, priceBookTerm } from "@/lib/price-book";
 import { FaqSection } from "@/components/faq-section";
 import { BUYING_FAQ_ITEMS } from "@/lib/buying-faq";
 import { getTenant } from "@/lib/tenant-config";
@@ -19,23 +19,26 @@ const siteUrl =
     ? "https://" + process.env.VERCEL_URL
     : "https://pingfyd.com");
 
+const TIERS_TITLE = `Pricing: ${formatPrice(priceBookOffer("self-hosted").price)} Self-Hosted, ${formatPrice(priceBookOffer("hosted-launch").price)} Hosted, ${formatPrice(priceBookOffer("concierge-build").price)} Concierge`;
+const TIERS_DESCRIPTION = `Self-Hosted free forever. Hosted DIY: Launch ${formatPrice(priceBookOffer("hosted-launch").price)}/mo, Growth ${formatPrice(priceBookOffer("hosted-growth").price)}/mo, ticket caps, no 1:1 time. Concierge: Builds ${formatPrice(priceBookOffer("concierge-build").price)}, Retainers ${formatPrice(priceBookOffer("concierge-retainer").price)}/mo, capped hours.`;
+
 export const metadata: Metadata = {
-  title: "Pricing: $0 Self-Hosted, $29 Hosted, $2,500 Concierge",
+  title: TIERS_TITLE,
   description:
-    "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, no 1:1 time. Concierge: Builds $2,500, Retainers $1,250/mo, capped hours.",
+    TIERS_DESCRIPTION,
   alternates: { canonical: "/tiers" },
   openGraph: {
     type: "website",
-    title: "Pricing: $0 Self-Hosted, $29 Hosted, $2,500 Concierge",
-    description: "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, no 1:1 time. Concierge: Builds $2,500, Retainers $1,250/mo, capped hours.",
+    title: TIERS_TITLE,
+    description: TIERS_DESCRIPTION,
     url: siteUrl + "/tiers",
     images: [{ url: "/brand/og-card.webp", width: 1200, height: 630, alt: "PingFyd" }],
   },
   twitter: {
     card: "summary_large_image",
     images: ["/brand/og-card.webp"],
-    title: "Pricing: $0 Self-Hosted, $29 Hosted, $2,500 Concierge",
-    description: "Self-Hosted free forever. Hosted DIY: Launch $29/mo, Growth $59/mo, ticket caps, no 1:1 time. Concierge: Builds $2,500, Retainers $1,250/mo, capped hours.",
+    title: TIERS_TITLE,
+    description: TIERS_DESCRIPTION,
   },
 };
 
@@ -80,8 +83,8 @@ export default function TiersPage() {
           </p>
           <p className="mt-5 max-w-2xl text-lg text-text-on-dark/90">
             The prices are below, and so is the logic that produced them. Owner time is the scarce
-            resource in this business, so it is priced like one: a $200 per hour floor, packages
-            built to realize $250, hours capped in writing, and no discounting, ever. The logic is
+            resource in this business, so it is priced like one: a {formatPrice(priceBookTerm("hourlyFloor"))} per hour floor, packages
+            built to realize {formatPrice(priceBookTerm("overageHourly"))}, hours capped in writing, and no discounting, ever. The logic is
             published so you can check the price before the first conversation, not during it.
           </p>
         </Container>
@@ -123,8 +126,8 @@ export default function TiersPage() {
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-text">Tier 2 · Hosted DIY</h2>
               <p className="mt-4 text-4xl font-bold text-text">{formatPrice(priceBookOffer("hosted-launch").price)}<span className="text-base font-medium text-text-muted"> / mo</span></p>
               <p className="mt-1 text-sm text-text-muted">
-                Launch: $29/mo or $290/yr (two months free). Growth: $59/mo or $590/yr, up to 3 sites,
-                additional sites $15/site/mo. A second site is for a second location: its own page,
+                Launch: {formatPrice(priceBookOffer("hosted-launch").price)}/mo or {formatPrice(priceBookTerm("hostedLaunchAnnual"))}/yr (two months free). Growth: {formatPrice(priceBookOffer("hosted-growth").price)}/mo or {formatPrice(priceBookTerm("hostedGrowthAnnual"))}/yr, up to 3 sites,
+                additional sites {formatPrice(priceBookOffer("extra-site").price)}/site/mo. A second site is for a second location: its own page,
                 its own hours, and its own phone number, so a customer never lands on the other
                 town's facts.
               </p>
@@ -163,20 +166,20 @@ export default function TiersPage() {
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-text">Tier 3 · Concierge</h2>
               <p className="mt-4 text-4xl font-bold text-text">{formatPrice(priceBookOffer("concierge-build").price)}</p>
               <p className="mt-1 text-sm text-text-muted">
-                The Build, fixed. The Retainer is $1,250/mo. We run it for you, inside capped owner hours.
+                The Build, fixed. The Retainer is {formatPrice(priceBookOffer("concierge-retainer").price)}/mo. We run it for you, inside capped owner hours.
               </p>
               <p className="mt-4 text-[15px] text-text-muted"><span className="font-medium text-text">For:</span> owners buying back hours. <span className="font-medium text-text">Outcome:</span> a finished site and offer, lead flow tested end to end, then a monthly review of what it produced.</p>
               <List items={[
-                "Concierge Build, $2,500 fixed: profile, site finished by hand where it matters, offer written with you, objects placed, lead flow tested end to end",
+                `Concierge Build, ${formatPrice(priceBookOffer("concierge-build").price)} fixed: profile, site finished by hand where it matters, offer written with you, objects placed, lead flow tested end to end`,
                 "An answers page written with you from the questions your customers actually ask, in your words, so the site answers them before the phone rings",
                 "Build hours capped at 10 owner hours, logged and visible to you; at the cap, work stops or converts, never silently overflows",
-                "Concierge Retainer, $1,250/mo: up to 5 owner hours a month for iteration, campaign adjustments, a monthly review ask sent to that month's finished jobs, and a monthly performance review",
-                "Overage is prepaid only: $250/hr, or extra time in prepaid 5-hour blocks at $1,250. Unused retainer hours expire monthly",
+                `Concierge Retainer, ${formatPrice(priceBookOffer("concierge-retainer").price)}/mo: up to 5 owner hours a month for iteration, campaign adjustments, a monthly review ask sent to that month's finished jobs, and a monthly performance review`,
+                `Overage is prepaid only: ${formatPrice(priceBookTerm("overageHourly"))}/hr, or extra time in prepaid 5-hour blocks at ${formatPrice(priceBookTerm("overageBlock5h"))}. Unused retainer hours expire monthly`,
               ]} />
               <p className="mt-6 text-[15px] text-text-muted">
                 Capacity, stated rather than implied: concierge work is delivered in evenings and
                 weekends, because school hours are school hours. Slots are limited. When capacity is
-                full, a waitlist holds your place with a $500 deposit, credited in full against your
+                full, a waitlist holds your place with a {formatPrice(priceBookTerm("waitlistDeposit"))} deposit, credited in full against your
                 first package.
               </p>
               <p className="mt-6 text-sm font-medium text-text">What happens next</p>
@@ -201,7 +204,7 @@ export default function TiersPage() {
             <p className="text-sm font-semibold uppercase tracking-[0.12em] text-text">Beyond Concierge</p>
             <h2 className="mt-4 text-3xl font-bold text-text">AI Workspace</h2>
             <p className="mt-4 text-4xl font-bold text-text">{formatPrice(priceBookOffer("ai-workspace").price)}</p>
-            <p className="mt-1 text-sm text-text-muted">Setup is priced in writing from $7,000. The full Workspace price is $10,000, with a 9-hour labor cap, never discounted.</p>
+            <p className="mt-1 text-sm text-text-muted">Setup is priced in writing from {formatPrice(priceBookTerm("workspaceSetupFrom"))}. The full Workspace price is {formatPrice(priceBookOffer("ai-workspace").price)}, with a 9-hour labor cap, never discounted.</p>
             <p className="mt-4 text-[15px] text-text-muted">The Workspace puts the whole operation on one system: your site, your customer records, your follow-up, and your day-to-day tools, scoped in writing before any work begins. Most businesses are served completely by the tiers below this one. The Workspace exists for the operation that has outgrown them.</p>
             <p className="mt-4 text-[15px] text-text-muted">Built for multi-location and operations-heavy businesses whose work no longer fits a single site.</p>
             <p className="mt-6 text-sm font-medium text-text">What happens next</p>
@@ -228,7 +231,7 @@ export default function TiersPage() {
                 <tr className="text-left"><th scope="col" className="py-3 pr-4 font-semibold text-text"> </th><th scope="col" className="px-4 py-3 font-semibold text-text">Tier 1 · Self-Hosted</th><th scope="col" className="px-4 py-3 font-semibold text-text">Tier 2 · Hosted DIY</th><th scope="col" className="py-3 pl-4 font-semibold text-text">Tier 3 · Concierge</th></tr>
               </thead>
               <tbody>
-                <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">Price</th><td className="px-4 py-3">$0 forever</td><td className="px-4 py-3">Launch $29/mo, Growth $59/mo</td><td className="py-3 pl-4">Build $2,500 fixed, Retainer $1,250/mo</td></tr>
+                <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">Price</th><td className="px-4 py-3">{formatPrice(priceBookOffer("self-hosted").price)} forever</td><td className="px-4 py-3">Launch {formatPrice(priceBookOffer("hosted-launch").price)}/mo, Growth {formatPrice(priceBookOffer("hosted-growth").price)}/mo</td><td className="py-3 pl-4">Build {formatPrice(priceBookOffer("concierge-build").price)} fixed, Retainer {formatPrice(priceBookOffer("concierge-retainer").price)}/mo</td></tr>
                 <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">1:1 owner time</th><td className="px-4 py-3">None</td><td className="px-4 py-3">None, ever</td><td className="py-3 pl-4">Capped: 10 hours per Build, 5 per Retainer month</td></tr>
                 <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">Support</th><td className="px-4 py-3">Community support</td><td className="px-4 py-3">Async tickets, next business day target</td><td className="py-3 pl-4">Inside the capped hours; the Retainer adds a monthly performance review</td></tr>
                 <tr className="border-t border-border"><th scope="row" className="py-3 pr-4 text-left font-medium text-text">Ticket caps</th><td className="px-4 py-3">No tickets</td><td className="px-4 py-3">3 per month on Launch, 6 on Growth</td><td className="py-3 pl-4">No tickets; capped owner hours instead</td></tr>

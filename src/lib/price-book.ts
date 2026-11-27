@@ -32,6 +32,28 @@ export function priceBookOffer(id: string): PriceBookOffer {
 }
 
 /** "$0", "$29", "$2,500", "$10,000": manual grouping, locale-free. */
+/**
+ * The locked commercial terms that are not offers: annual prices,
+ * the hourly floor and overage, the waitlist deposit, and the
+ * Workspace setup floor. Same rule as the offers: they change only
+ * on the owner's word, and the standing gate pins them here.
+ */
+export const PINGFYD_PRICE_TERMS = {
+  hostedLaunchAnnual: 290,
+  hostedGrowthAnnual: 590,
+  hourlyFloor: 200,
+  overageHourly: 250,
+  overageBlock5h: 1250,
+  waitlistDeposit: 500,
+  workspaceSetupFrom: 7000,
+} as const;
+
+export type PriceBookTermId = keyof typeof PINGFYD_PRICE_TERMS;
+
+export function priceBookTerm(id: PriceBookTermId): number {
+  return PINGFYD_PRICE_TERMS[id];
+}
+
 export function formatPrice(price: number): string {
   return "$" + String(price).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
